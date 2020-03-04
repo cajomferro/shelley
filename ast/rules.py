@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 from typing import Dict
 from events import GenericEvent
 from ast.triggers import TriggersVisitor
-
+from ast.node import CheckWFSyntaxVisitor as GenericCheckWFSyntaxVisitor
 from ast.node import Visitor, Node
 
 
@@ -130,22 +130,9 @@ class RulesVisitor(Visitor):
         pass
 
 
-class CheckWFSyntax(RulesVisitor):
-    declared_components = None
-
+class CheckWFSyntaxVisitor(GenericCheckWFSyntaxVisitor):
     def __init__(self, declared_components: Dict[str, Device]):
         self.declared_components = declared_components
-
-    def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
-        element.check_wf_syntax(self.declared_components)
-
-    def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
-        element.left_trigger_rule.accept(self)
-        element.right_trigger_rule.accept(self)
-
-    def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
-        element.left_trigger_rule.accept(self)
-        element.right_trigger_rule.accept(self)
 
 
 class PrettyPrint(TriggersVisitor):

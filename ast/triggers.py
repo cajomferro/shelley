@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, List, Dict
 if TYPE_CHECKING:
     from devices import Device
 
-from ast.node import Node, Visitor
+from ast.node import Node, Visitor, CheckWFSyntaxVisitor as GenericCheckWFSyntaxVisitor
 from ast.rules import TriggerRule
 from events import EEvent
 
@@ -58,21 +58,12 @@ class TriggersVisitor(Visitor):
         pass
 
 
-class CheckWFSyntax(TriggersVisitor):
-    triggers_list = None  # type: List[Trigger]
-    declared_e_events = None  # type: List[EEvent]
-    declared_components = None  # type: Dict[str, Device]
+class CheckWFSyntaxVisitor(GenericCheckWFSyntaxVisitor):
 
     def __init__(self, declared_e_events: List[EEvent], declared_components: Dict[str, Device]):
         self.triggers_list = []
         self.declared_e_events = declared_e_events
         self.declared_components = declared_components
-
-    def visit(self, trigger: Trigger) -> None:
-        trigger.check_event_is_declared(self.declared_e_events)
-        trigger.check_is_duplicated(self.triggers_list)
-        trigger.trigger_rule.accept(self)
-        self.triggers_list.append(trigger)
 
 
 class TriggersListEmptyError(Exception):

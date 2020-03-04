@@ -1,5 +1,5 @@
 import unittest
-from ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, PrettyPrint, CheckWFSyntax
+from ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, PrettyPrint, CheckWFSyntaxVisitor
 
 
 class TestRules(unittest.TestCase):
@@ -28,7 +28,7 @@ class TestRules(unittest.TestCase):
             ),
             TriggerRuleEvent("ledB", "on")
         )
-        visitor = CheckWFSyntax()
+        visitor = CheckWFSyntaxVisitor()
         trigger.accept(visitor)
 
         # self.assertEqual("((b.released  xor (ledA.on  xor t.canceled )) ; ledB.on )", visitor.rule)

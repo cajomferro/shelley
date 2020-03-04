@@ -3,7 +3,7 @@ from typing import List, Dict
 from events import GenericEvent
 from events import EEvent
 from devices import Device
-from triggers import Trigger, TriggerRule, TriggerRuleEvent, TriggerRuleGroup
+from triggers import Trigger, TriggerRule, TriggerRuleEvent
 
 
 class TriggersListEmptyError(Exception):
@@ -30,7 +30,6 @@ class TriggerRuleEventNotDeclaredError(Exception):
     pass
 
 
-# TODO: GROUP TRIGGER RULES HAVE EMPTY EVENT, WILL RAISE ERROR
 def check_trigger_rules(trigger_rule: TriggerRule,
                         declared_components: Dict[str, Device]):
     if trigger_rule is None:
@@ -53,9 +52,6 @@ def check_trigger_rules(trigger_rule: TriggerRule,
             raise TriggerRuleEventNotDeclaredError(
                 "Event '{0}' not declared for device {1}!".format(trigger_rule.component_event,
                                                                   trigger_rule.component_name))
-
-    elif type(trigger_rule) is TriggerRuleGroup:
-        check_trigger_rules(trigger_rule.trigger_rule, declared_components)
     else:
         check_trigger_rules(trigger_rule.left_trigger_rule, declared_components)
         check_trigger_rules(trigger_rule.right_trigger_rule, declared_components)

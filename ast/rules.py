@@ -1,22 +1,20 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from typing import List
+from abc import abstractmethod
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from devices import Device
 
-from typing import List, Dict
-from events import GenericEvent, EEvent
+from typing import Dict
+from events import GenericEvent
+from ast.triggers import TriggersVisitor
 
 from ast.node import Visitor, Node
 
 
 class TriggerRule(Node):
-    @abstractmethod
-    def accept(self, visitor: Visitor) -> None:
-        pass
+    pass
 
 
 class TriggerRuleEvent(TriggerRule):
@@ -112,30 +110,6 @@ class TriggerRuleChoice(TriggerRule):
         return self.left_trigger_rule == other.left_trigger_rule and self.right_trigger_rule == other.right_trigger_rule
 
 
-class TriggersListEmptyError(Exception):
-    pass
-
-
-class TriggersListDuplicatedError(Exception):
-    pass
-
-
-class TriggersEventUndeclaredError(Exception):
-    pass
-
-
-class TriggerRulesListEmptyError(Exception):
-    pass
-
-
-class TriggerRuleDeviceNotDeclaredError(Exception):
-    pass
-
-
-class TriggerRuleEventNotDeclaredError(Exception):
-    pass
-
-
 class RulesVisitor(Visitor):
     """
     The Visitor Interface declares a set of visiting methods that correspond to
@@ -174,41 +148,33 @@ class CheckWFSyntax(RulesVisitor):
         element.right_trigger_rule.accept(self)
 
 
-class PrettyPrint(RulesVisitor):
-    rule = None
+class PrettyPrint(TriggersVisitor):
+    rules = None
 
     def __init__(self):
-        self.rule = ""
+        self.rules = ""
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
-        self.rule += "{0}.{1} ".format(element.component_name, element.component_event)
+        self.rules += "{0}.{1} ".format(element.component_name, element.component_event)
 
     def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
-        self.rule += "("
+        self.rules += "("
         element.left_trigger_rule.accept(self)
-        self.rule += " ; "
+        self.rules += " ; "
         element.right_trigger_rule.accept(self)
-        self.rule += ")"
+        self.rules += ")"
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
-        self.rule += "("
+        self.rules += "("
         element.left_trigger_rule.accept(self)
-        self.rule += " xor "
+        self.rules += " xor "
         element.right_trigger_rule.accept(self)
-        self.rule += ")"
+        self.rules += ")"
 
 
-class Trigger:
-    event = None  # type: EEvent
-    trigger_rule = None  # type: TriggerRule
+class TriggerRuleDeviceNotDeclaredError(Exception):
+    pass
 
-    def __init__(self, event: EEvent, trigger_rule: TriggerRule):
-        self.event = event
-        self.trigger_rule = trigger_rule
 
-    def __eq__(self, other):
-        if not isinstance(other, Trigger):
-            # don't attempt to compare against unrelated types
-            raise Exception("Instance is not of Trigger type")
-
-        return self.event == other.event  # and self.device_name == other.device_name
+class TriggerRuleEventNotDeclaredError(Exception):
+    pass

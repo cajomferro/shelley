@@ -1,8 +1,10 @@
 from __future__ import annotations
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from ast.node import Node
-from wfsyntax.ast.visitors import Visitor
+
+if TYPE_CHECKING:
+    from ast.visitors import Visitor
 
 
 class Action(Node):

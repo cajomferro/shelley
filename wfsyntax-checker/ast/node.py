@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from wfsyntax.ast.visitors import Visitor
+    from ast.visitors import Visitor
 
 
 class Node(ABC):

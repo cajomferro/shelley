@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import List
-
-from ast.node import Node
-from wfsyntax.ast.visitors import Visitor
+from typing import List, TYPE_CHECKING
 from abc import abstractmethod
+from ast.node import Node
+
+if TYPE_CHECKING:
+    from ast.visitors import Visitor
 
 
 class GenericEvent(Node):
@@ -12,7 +13,7 @@ class GenericEvent(Node):
     def __init__(self, name: str):
         self.name = name
 
-    @abstractmethod
+#    @abstractmethod -> fix this!
     def accept(self, visitor: Visitor) -> None:
         pass
 

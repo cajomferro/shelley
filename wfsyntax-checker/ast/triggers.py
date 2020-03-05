@@ -1,10 +1,12 @@
 from __future__ import annotations
-from typing import List
+from typing import List, TYPE_CHECKING
 
 from ast.node import Node
-from wfsyntax.ast.visitors import Visitor
 from ast.rules import TriggerRule
 from ast.events import EEvent
+
+if TYPE_CHECKING:
+    from ast.visitors import Visitor
 
 
 class Trigger(Node):

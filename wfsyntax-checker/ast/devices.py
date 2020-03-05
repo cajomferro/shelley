@@ -1,14 +1,16 @@
 from __future__ import annotations
-from typing import List, Dict
+from typing import List, Dict, TYPE_CHECKING
 
 from ast.node import Node
-from wfsyntax.ast.visitors import Visitor
 from ast.actions import Action
-from ast.events import GenericEvent, IEvent, EEvent
 from ast.behaviours import Behaviour
 from ast.components import Component
-from wfsyntax.ast.triggers import Trigger
+from ast.triggers import Trigger
 from ast.rules import TriggerRule
+from ast.events import GenericEvent, IEvent, EEvent
+
+if TYPE_CHECKING:
+    from ast.visitors import Visitor
 
 
 class Device(Node):

@@ -2,14 +2,13 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Dict
 
-if TYPE_CHECKING:
-    from ast.devices import Device
-    from wfsyntax.ast.triggers import Trigger
-    from ast.actions import Action
-    from ast.events import EEvent, IEvent
-    from ast.behaviours import Behaviour
-    from ast.components import Component
-    from ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent
+from ast.devices import Device
+from ast.triggers import Trigger
+from ast.actions import Action
+from ast.events import EEvent, IEvent
+from ast.behaviours import Behaviour
+from ast.components import Component
+from ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent
 
 
 class Visitor(ABC):
@@ -74,12 +73,14 @@ class CheckWFSyntaxVisitor(Visitor):
         self.actions = []
         self.ievents = []
         self.eevents = []
+        self.behaviours = []
+        self.components = []
         self.triggers = []
         self.declared_devices = declared_devices
         self.declared_uses = declared_uses
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
-        element.check_wf_syntax(self.declared_devices)
+        element.check_wf_syntax(Device.components_as_dict(self.components))
 
     def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
         element.left_trigger_rule.accept(self)

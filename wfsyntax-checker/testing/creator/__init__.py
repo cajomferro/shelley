@@ -3,7 +3,7 @@ from parser.events import parse as parse_events
 from parser.actions import parse as parse_actions
 from parser.behaviours import parse as parse_behaviours
 from ast.devices import Device
-from wfsyntax.ast.triggers import Trigger
+from ast.triggers import Trigger
 from ast.rules import TriggerRuleEvent, TriggerRuleSequence, TriggerRuleChoice
 from ast.components import Component
 

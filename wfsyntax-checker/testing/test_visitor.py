@@ -1,6 +1,6 @@
 import unittest
 from testing.creator import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
-from wfsyntax.ast.visitors import PrettyPrintVisitor, CheckWFSyntaxVisitor
+from ast.visitors import PrettyPrintVisitor, CheckWFSyntaxVisitor
 
 
 class TestDevice(unittest.TestCase):
@@ -37,10 +37,7 @@ class TestDevice(unittest.TestCase):
     #         self.assertEqual(expected_str, visitor.result)
 
     def test_check_wf_syntax(self):
-        declared_events = self.d_desk_lamp.get_all_events()
-        declared_components = self.d_desk_lamp.components_as_dict(self.d_desk_lamp.components)
-
-        visitor = CheckWFSyntaxVisitor(declared_events, declared_components)
+        visitor = CheckWFSyntaxVisitor(self.d_desk_lamp.uses, self.declared_devices)
         for device in [self.d_desk_lamp]:
             device.accept(visitor)
 

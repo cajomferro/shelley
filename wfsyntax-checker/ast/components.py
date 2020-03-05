@@ -2,10 +2,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, List, Dict
 
 from ast.node import Node
-from wfsyntax.ast.visitors import Visitor
 
 # https://stackoverflow.com/questions/39740632/python-type-hinting-without-cyclic-imports
 if TYPE_CHECKING:
+    from ast.visitors import Visitor
     from ast.devices import Device
 
 

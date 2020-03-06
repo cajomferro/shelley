@@ -60,6 +60,9 @@ class TriggerRuleEvent(TriggerRule):
 
         return self.component_name == other.component_name and self.component_event == other.component_event
 
+    def __str__(self):
+        return "{0}.{1}".format(self.component_name, self.component_event)
+
 
 class TriggerRuleSequence(TriggerRule):
     def __init__(self, left_trigger_rule: TriggerRule, right_trigger_rule: TriggerRule):

@@ -71,12 +71,12 @@ def check_valid(devices, events, triggers):
     for d in devices:
         alphabet.update(d.alphabet)
     # Get the NFA
-    decoded_events_n = regex_to_nfa(decoded_events, ALL)
+    decoded_events_n = regex_to_nfa(decoded_events_r, ALL)
 
     # TODO: We need to implement NFA subtraction
-    # decoded_triggers -= dev
+    # decoded_events_n -= dev
     # TODO: We need to implement the emptyness test
-    # return decoded_triggers.is_empty()
+    # return decoded_events_n.is_empty()
     return False
 
 def main(fs):

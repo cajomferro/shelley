@@ -3,7 +3,7 @@ from dfaapp.automaton import NFA
 from dfaapp.regex import nfa_to_regex, regex_to_nfa, Union, Char, Empty, Nil, Concat, Star, concat, op_and as And, Regex
 
 
-def replace(r: Regex, rules: Dict[str, Regex]):
+def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     if r is Nil:
         return r
     elif r is Empty:

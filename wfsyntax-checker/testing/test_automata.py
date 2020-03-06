@@ -47,31 +47,31 @@ def replace(r, rules):
 def And(c1, c2):
     return Union(concat(c1, c2), concat(c2, c1))
 
-def decode_triggers(triggers, decoder):
+def decode_triggers(behavior, triggers):
     """
     Given an NFA and a map of decoders, returns a REGEX with all the
     substitutions performed.
     """
     # Convert the given triggers into a regex
-    triggers_r = nfa_to_regex(triggers)
+    behavior_r = nfa_to_regex(behavior)
     # Replace tokens by REGEX in decoder
-    return replace(trigger_r, decoder)
+    return replace(behavior_r, triggers)
 
 
-def check_valid(devices, events, triggers):
+def check_valid(devices, behavior, triggers):
     # Shuffle all devices:
     dev = devices.pop()
     for d in devices:
         dev = dev.shuffle(d)
 
     # Decode the triggers according to the decoder-map
-    decoded_events_r = decode_triggers(events, triggers)
+    decoded_behavior = decode_triggers(behavior, triggers)
     # Get all tokens:
     alphabet = set()
     for d in devices:
         alphabet.update(d.alphabet)
     # Get the NFA
-    decoded_events_n = regex_to_nfa(decoded_events_r, ALL)
+    decoded_behavior = regex_to_nfa(decoded_behavior, ALL)
 
     # TODO: We need to implement NFA subtraction
     # decoded_events_n -= dev

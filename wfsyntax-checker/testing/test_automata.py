@@ -47,6 +47,37 @@ def replace(r, rules):
 def And(c1, c2):
     return Union(concat(c1, c2), concat(c2, c1))
 
+def decode_triggers(triggers, decoder):
+    """
+    Given an NFA and a map of decoders, returns a REGEX with all the
+    substitutions performed.
+    """
+    # Convert the given triggers into a regex
+    triggers_r = nfa_to_regex(triggers)
+    # Replace tokens by REGEX in decoder
+    return replace(trigger_r, decoder)
+
+
+def check_valid(devices, triggers, decoder):
+    # Shuffle all devices:
+    dev = devices.pop()
+    for d in devices:
+        dev = dev.shuffle(d)
+
+    # Decode the triggers according to the decoder-map
+    triggers_r = decode_triggers(triggers, decoder)
+    # Get all tokens:
+    alphabet = set()
+    for d in devices:
+        alphabet.update(d.alphabet)
+    # Get the NFA
+    decoded_triggers = regex_to_nfa(trigger_r, ALL)
+
+    # TODO: We need to implement NFA subtraction
+    # decoded_triggers -= dev
+    # TODO: We need to implement the emptyness test
+    # return decoded_triggers.is_empty()
+    return False
 
 def main(fs):
     def L(x):

@@ -74,9 +74,9 @@ def check_valid(components, behavior, triggers):
     decoded_behavior = regex_to_nfa(decoded_behavior, ALL)
 
     # TODO: We need to implement NFA subtraction
-    # decoded_events_n -= dev
+    # decoded_behavior -= dev
     # TODO: We need to implement the emptyness test
-    # return decoded_events_n.is_empty()
+    # return decoded_behavior.is_empty()
     return False
 
 def main(fs):

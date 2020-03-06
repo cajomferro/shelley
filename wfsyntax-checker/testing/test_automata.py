@@ -58,20 +58,20 @@ def decode_triggers(triggers, decoder):
     return replace(trigger_r, decoder)
 
 
-def check_valid(devices, triggers, decoder):
+def check_valid(devices, events, triggers):
     # Shuffle all devices:
     dev = devices.pop()
     for d in devices:
         dev = dev.shuffle(d)
 
     # Decode the triggers according to the decoder-map
-    triggers_r = decode_triggers(triggers, decoder)
+    decoded_events_r = decode_triggers(events, triggers)
     # Get all tokens:
     alphabet = set()
     for d in devices:
         alphabet.update(d.alphabet)
     # Get the NFA
-    decoded_triggers = regex_to_nfa(trigger_r, ALL)
+    decoded_events_n = regex_to_nfa(decoded_events, ALL)
 
     # TODO: We need to implement NFA subtraction
     # decoded_triggers -= dev

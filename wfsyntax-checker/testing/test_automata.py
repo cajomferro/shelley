@@ -58,10 +58,10 @@ def decode_triggers(behavior, triggers):
     return replace(behavior_r, triggers)
 
 
-def check_valid(devices, behavior, triggers):
+def check_valid(components, behavior, triggers):
     # Shuffle all devices:
-    dev = devices.pop()
-    for d in devices:
+    dev = components.pop()
+    for d in components:
         dev = dev.shuffle(d)
 
     # Decode the triggers according to the decoder-map

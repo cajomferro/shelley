@@ -1,7 +1,4 @@
-from itertools import chain
-
-from automaton import NFA, tag
-from automaton import render_dfa, render_nfa
+from dfaapp.automaton import NFA, tag, render_dfa, render_nfa
 
 
 class Regex:
@@ -157,6 +154,10 @@ def union(left, right):
     return Union.from_list(Union(left, right).flatten())
 
 
+def op_and(c1, c2):
+    return Union(concat(c1, c2), concat(c2, c1))
+
+
 class Star(Regex):
     def __init__(self, child):
         self.child = child
@@ -213,7 +214,7 @@ class GNFA:
 
     def as_graph(self):
         return self.states, dict(
-            (x, (y, )) for x, y in self.transitions.items())
+            (x, (y,)) for x, y in self.transitions.items())
 
     def accepted_states(self, st):
         return st == self.end_state
@@ -303,7 +304,7 @@ def regex_to_nfa(r, alphabet):
         return regex_to_nfa(r.child, alphabet).star()
 
 
-def nfa_to_regex(nfa):
+def nfa_to_regex(nfa: NFA) -> Regex:
     g = GNFA.from_nfa(nfa)
     return g.to_regex()
 
@@ -352,13 +353,13 @@ def save_nfa_to_regex_dot(n, prefix, dry_run=False, **kwargs):
             prefix + "-wrapped-hl",
             dry_run=dry_run,
             **get_highlights(w, nodes),
-            #transition_name=on_tsx,
+            # transition_name=on_tsx,
         ))
     result.append(
         render_nfa.save_tex(
             w,
             prefix + "-wrapped",
-            #transition_name=on_tsx,
+            # transition_name=on_tsx,
             dry_run=dry_run,
             **kwargs))
     # Write out GNFA reduction

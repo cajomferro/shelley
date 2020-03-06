@@ -1,5 +1,4 @@
-from graphviz import *
-from operator import *
+from graphviz import Digraph
 import os
 
 
@@ -74,7 +73,8 @@ def save_dot(a, prefix, **kwargs):
     if dry_run:
         return filename
     else:
-        return b.save(filename, directory=os.getcwd())
+        return b.save(filename, directory=os.path.realpath(
+            os.path.join(os.getcwd(), 'dot_output')))  # TODO: this should a parameter
 
 
 def tex_state_name(q):
@@ -138,4 +138,5 @@ def save_reduction_dot(a, prefix, inputs, **kwargs):
 
 if __name__ == '__main__':
     import doctest
+
     doctest.testmod()

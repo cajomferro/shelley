@@ -1,83 +1,8 @@
-import sys
-import os
+from dfaapp import app
+from dfaapp.automaton import NFA
+from dfaapp.regex import nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, op_and as And
+from dfaapp.checker import check_valid, replace
 
-from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
-
-import app
-from automaton import *
-from automaton.render_nfa import *
-from regex import *
-import regex
-
-
-def replace(r, rules):
-    if r is Nil:
-        return r
-    elif r is Empty:
-        return r
-    elif isinstance(r, Char):
-        return rules.get(r.char, r)
-
-    to_proc = [r]
-
-    def do_subst(r, attr):
-        child = getattr(r, attr)
-        if isinstance(child, Char):
-            new_child = rules.get(child.char, None)
-            if new_child is not None and isinstance(new_child, str):
-                raise ValueError(child.char)
-            if new_child is not None:
-                setattr(r, attr, new_child)
-            return
-        elif isinstance(child, Concat) or isinstance(
-                child, Union) or isinstance(child, Star):
-            to_proc.append(child)
-
-    while len(to_proc) > 0:
-        elem = to_proc.pop()
-        if isinstance(elem, Star):
-            do_subst(elem, "child")
-        else:
-            do_subst(elem, "left")
-            do_subst(elem, "right")
-    return r
-
-
-def And(c1, c2):
-    return Union(concat(c1, c2), concat(c2, c1))
-
-def decode_triggers(behavior, triggers):
-    """
-    Given an NFA and a map of decoders, returns a REGEX with all the
-    substitutions performed.
-    """
-    # Convert the given triggers into a regex
-    behavior_r = nfa_to_regex(behavior)
-    # Replace tokens by REGEX in decoder
-    return replace(behavior_r, triggers)
-
-
-def check_valid(components, behavior, triggers):
-    # Shuffle all devices:
-    dev = components.pop()
-    for d in components:
-        dev = dev.shuffle(d)
-
-    # Decode the triggers according to the decoder-map
-    decoded_behavior = decode_triggers(behavior, triggers)
-    # Get all tokens:
-    alphabet = set()
-    for d in devices:
-        alphabet.update(d.alphabet)
-    # Get the NFA
-    decoded_behavior = regex_to_nfa(decoded_behavior, ALL)
-
-    # TODO: We need to implement NFA subtraction
-    # decoded_behavior -= dev
-    # TODO: We need to implement the emptyness test
-    # return decoded_behavior.is_empty()
-    return False
 
 def main(fs):
     def L(x):
@@ -171,21 +96,21 @@ def main(fs):
     T_STANDBY2 = L("s2")
     lbl_to_rex = {
         T_LEVEL1:
-        Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
+            Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
         T_LEVEL2:
-        Concat.from_list([
-            Char(B_P),
-            Char(B_R),
-            And(Char(T_C), Char(LB_ON)),
-            Char(T_S),
-        ]),
+            Concat.from_list([
+                Char(B_P),
+                Char(B_R),
+                And(Char(T_C), Char(LB_ON)),
+                Char(T_S),
+            ]),
         T_STANDBY1:
-        concat(Char(T_T), Char(LA_OFF)),
+            concat(Char(T_T), Char(LA_OFF)),
         T_STANDBY2:
-        concat(
-            Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
-            And(Char(LB_OFF), Char(LA_OFF)),
-        ),
+            concat(
+                Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+                And(Char(LB_OFF), Char(LA_OFF)),
+            ),
     }
 
     TRIGGER = NFA(
@@ -214,6 +139,6 @@ def main(fs):
 
 
 if __name__ == '__main__':
-    os.chdir(str(Path(__file__).parent))
-    with app.run() as fs:
+    dest_path = 'dot_output'
+    with app.run(dest_path) as fs:
         main(fs)

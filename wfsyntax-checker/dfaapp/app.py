@@ -5,18 +5,18 @@ from contextlib import contextmanager
 from pathlib import Path
 from itertools import chain
 
-import automaton
-import automaton.render_nfa
-import automaton.render_dfa
-import regex
+from dfaapp import automaton, regex
+import dfaapp.automaton.render_nfa
+import dfaapp.automaton.render_dfa
 
 
 class App:
-    def __init__(self):
-        self.save_dfa_dot = automaton.render_dfa.save_tex
-        self.save_dfa_reduction_dot = automaton.render_dfa.save_reduction_dot
-        self.save_nfa_dot = automaton.render_nfa.save_tex
-        self.save_nfa_reduction_dot = automaton.render_nfa.save_reduction_dot
+    def __init__(self, dest_path: str):
+        self.dest_path = dest_path
+        self.save_dfa_dot = dfaapp.automaton.render_dfa.save_tex
+        self.save_dfa_reduction_dot = dfaapp.automaton.render_dfa.save_reduction_dot
+        self.save_nfa_dot = dfaapp.automaton.render_nfa.save_tex
+        self.save_nfa_reduction_dot = dfaapp.automaton.render_nfa.save_reduction_dot
         self.save_gnfa_dot = regex.save_tex
         self.save_nfa_to_regex_dot = regex.save_nfa_to_regex_dot
 
@@ -133,13 +133,13 @@ class DryRun:
 
 
 @contextmanager
-def run():
+def run(dest_path: str):
     parser = argparse.ArgumentParser()
     parser.add_argument('--deps', action='store_true')
     parser.add_argument('--git-ignore', action='store_true')
     args = parser.parse_args()
     run_app = not args.deps and not args.git_ignore
-    app = App() if run_app else DryRun(args.git_ignore)
+    app = App(dest_path) if run_app else DryRun(args.git_ignore)
     try:
         yield app
     finally:

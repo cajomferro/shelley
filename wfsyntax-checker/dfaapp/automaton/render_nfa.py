@@ -1,8 +1,8 @@
-from graphviz import *
+from graphviz import Digraph, render
 import os
 from collections import namedtuple
-from . import render_dfa
-from automaton import NFA
+from dfaapp.automaton import render_dfa
+from dfaapp.automaton import NFA
 
 Step = namedtuple("Step", ["source", "input", "target"])
 

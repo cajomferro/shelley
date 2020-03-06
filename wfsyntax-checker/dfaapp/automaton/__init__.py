@@ -1,4 +1,3 @@
-from operator import *
 from itertools import combinations, chain, product
 
 

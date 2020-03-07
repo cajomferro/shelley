@@ -20,6 +20,20 @@ def create_button():
         accepted_states=[0, 1],
     )
 
+LA_ON = "la.on"
+LA_OFF = "la.off"
+def create_led_a():
+    return NFA(
+        states=[0, 1],
+        alphabet=[LA_ON, LA_OFF],
+        transition_func=NFA.transition_edges([
+            (0, [LA_ON], 1),
+            (1, [LA_OFF], 0),
+        ]),
+        start_state=0,
+        accepted_states=[0, 1],
+    )
+
 def test_button():
     button = create_button()
     assert button.accepts([])
@@ -37,7 +51,7 @@ def test_convert_dfa():
 
 def test_complement():
     """
-    Simple test on the complement of a DFA
+    A simple test on the complement of a DFA
     """
     button = create_button()
     button = button.convert_to_dfa()
@@ -46,6 +60,24 @@ def test_complement():
     assert not button.accepts([B_P,B_R])
     assert not button.accepts([B_P])
     assert button.accepts([B_R])
+
+def test_shuffle():
+    button = create_button()
+    led_a = create_led_a()
+    both = button.shuffle(led_a)
+    # Both should accept all behaviors of the button
+    assert both.accepts([])
+    assert both.accepts([B_P,B_R])
+    assert both.accepts([B_P])
+    assert not both.accepts([B_R])
+    # It should also accept all behaviors of led
+    assert both.accepts([LA_ON,LA_OFF])
+    assert both.accepts([LA_ON])
+    assert not both.accepts([LA_OFF])
+    # Finally, it should accept interleaving of LED and Button:
+    assert both.accepts([LA_ON,B_P,B_R, LA_OFF,B_P])
+    # Here we fail because we have B_P followed by B_P
+    assert not both.accepts([LA_ON,B_P,LA_OFF,B_P])
 
 
 def run(dest_path: str):

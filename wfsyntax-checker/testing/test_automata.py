@@ -54,6 +54,72 @@ def create_led_a():
         accepted_states=[0, 1],
     )
 
+LB_ON = "lb.on"
+LB_OFF = "lb.off"
+
+def create_led_b():
+    return NFA(
+        states=[0, 1],
+        alphabet=[LB_ON, LB_OFF],
+        transition_func=NFA.transition_edges([
+            (0, [LB_ON], 1),
+            (1, [LB_OFF], 0),
+        ]),
+        start_state=0,
+        accepted_states=[0, 1],
+    )
+
+T_T = "t.t"
+T_C = "t.c"
+T_S = "t.s"
+def create_timer():
+    return NFA(
+        states=[0, 1],
+        alphabet=[T_T, T_C, T_S],
+        transition_func=NFA.transition_edges([
+            (0, [T_S], 1),
+            (1, [T_C, T_T], 0),
+        ]),
+        start_state=0,
+        accepted_states=[0, 1],
+    )
+
+
+LEVEL1 = "l1"
+LEVEL2 = "l2"
+STANDBY1 = "s1"
+STANDBY2 = "s2"
+HELLO_WORLD_TRIGGERS = {
+    LEVEL1:
+        Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
+    LEVEL2:
+        Concat.from_list([
+            Char(B_P),
+            Char(B_R),
+            And(Char(T_C), Char(LB_ON)),
+            Char(T_S),
+        ]),
+    STANDBY1:
+        concat(Char(T_T), Char(LA_OFF)),
+    STANDBY2:
+        concat(
+            Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+            And(Char(LB_OFF), Char(LA_OFF)),
+        ),
+}
+def create_hello_world():
+    return NFA(
+        states=[0, 1, 2],
+        alphabet=[LEVEL1, LEVEL2, STANDBY1, STANDBY2],
+        transition_func=NFA.transition_edges([
+            (0, [LEVEL1], 1),
+            (1, [LEVEL2], 2),
+            (1, [STANDBY1], 0),
+            (2, [STANDBY2], 0),
+        ]),
+        start_state=0,
+        accepted_states=lambda x: 0 <= x <= 2,
+    )
 
 def create_led_and_button():
     """
@@ -144,121 +210,12 @@ def test_contains():
     behavior = create_led_and_button()
     assert both.convert_to_dfa().contains(behavior.convert_to_dfa())
 
-
-def run(dest_path: str):
-    with app.run(dest_path) as fs:
-        def L(x):
-            return "{\\tt " + x + "}"
-
-        B_P = L("b.p")
-        B_R = L("b.r")
-
-        B = NFA(
-            states=[0, 1],
-            alphabet=[B_P, B_R],
-            transition_func=NFA.transition_edges([
-                (0, [B_P], 1),
-                (1, [B_R], 0),
-            ]),
-            start_state=0,
-            accepted_states=[0, 1],
-        )
-        fs.save_nfa_dot(B, "button")
-
-        LA_ON = L("la.on")
-        LA_OFF = L("la.off")
-        LA = NFA(
-            states=[0, 1],
-            alphabet=[LA_ON, LA_OFF],
-            transition_func=NFA.transition_edges([
-                (0, [LA_ON], 1),
-                (1, [LA_OFF], 0),
-            ]),
-            start_state=0,
-            accepted_states=[0, 1],
-        )
-        fs.save_nfa_dot(LA, "led-a")
-
-        LB_ON = L("lb.on")
-        LB_OFF = L("lb.off")
-        LB = NFA(
-            states=[0, 1],
-            alphabet=[LB_ON, LB_OFF],
-            transition_func=NFA.transition_edges([
-                (0, [LB_ON], 1),
-                (1, [LB_OFF], 0),
-            ]),
-            start_state=0,
-            accepted_states=[0, 1],
-        )
-        fs.save_nfa_dot(LA, "led-b")
-
-        T_T = L("t.t")
-        T_C = L("t.c")
-        T_S = L("t.s")
-        T = NFA(
-            states=[0, 1],
-            alphabet=[T_T, T_C, T_S],
-            transition_func=NFA.transition_edges([
-                (0, [T_S], 1),
-                (1, [T_C, T_T], 0),
-            ]),
-            start_state=0,
-            accepted_states=[0, 1],
-        )
-        fs.save_nfa_dot(T, "timer")
-
-        # Merge all
-
-
-        fs.save_nfa_dot(B.shuffle(LA).shuffle(LB).shuffle(T),
-                        "dev",
-                        state_name=render_state_name)
-
-        T_LEVEL1 = L("l1")
-        T_LEVEL2 = L("l2")
-        T_STANDBY1 = L("s1")
-        T_STANDBY2 = L("s2")
-        lbl_to_rex = {
-            T_LEVEL1:
-                Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
-            T_LEVEL2:
-                Concat.from_list([
-                    Char(B_P),
-                    Char(B_R),
-                    And(Char(T_C), Char(LB_ON)),
-                    Char(T_S),
-                ]),
-            T_STANDBY1:
-                concat(Char(T_T), Char(LA_OFF)),
-            T_STANDBY2:
-                concat(
-                    Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
-                    And(Char(LB_OFF), Char(LA_OFF)),
-                ),
-        }
-
-        TRIGGER = NFA(
-            states=[0, 1, 2],
-            alphabet=[T_LEVEL1, T_LEVEL2, T_STANDBY1, T_STANDBY2],
-            transition_func=NFA.transition_edges([
-                (0, [T_LEVEL1], 1),
-                (1, [T_LEVEL2], 2),
-                (1, [T_STANDBY1], 0),
-                (2, [T_STANDBY2], 0),
-            ]),
-            start_state=0,
-            accepted_states=lambda x: 0 <= x <= 2,
-        )
-        fs.save_nfa_dot(TRIGGER, "trigger-abs")
-        trigger_r = nfa_to_regex(TRIGGER)
-
-        print(trigger_r)
-
-        # Replace tokens by REGEX
-        trigger_r = replace(trigger_r, lbl_to_rex)
-        ALL = (tuple(B.alphabet) + tuple(LA.alphabet) + tuple(LB.alphabet) +
-               tuple(T.alphabet))
-
-        trigger_nfa = regex_to_nfa(trigger_r, ALL)
-        fs.save_nfa_dot(trigger_nfa, "trigger-full")
+def test_hello_world():
+    components = [
+        create_button(),
+        create_led_a(),
+        create_led_b(),
+        create_timer()
+    ]
+    behavior = create_hello_world()
+    assert check_valid(components, behavior, HELLO_WORLD_TRIGGERS)

@@ -69,7 +69,7 @@ class DFA:
                    accepted_states=is_final)
 
     def complement(dfa):
-        is_final = nfa.accepted_states
+        is_final = dfa.accepted_states
         return DFA(
             states = dfa.states,
             alphabet = dfa.alphabet,

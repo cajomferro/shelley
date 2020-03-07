@@ -5,14 +5,47 @@ from dfaapp.automaton import NFA
 from dfaapp.regex import nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, op_and as And
 from dfaapp.checker import check_valid, replace
 
+B_P = "b.pressed"
+B_R = "b.release"
 
-class TestDot(unittest.TestCase):
+def create_button():
+    return NFA(
+        states=[0, 1],
+        alphabet=[B_P, B_R],
+        transition_func=NFA.transition_edges([
+            (0, [B_P], 1),
+            (1, [B_R], 0),
+        ]),
+        start_state=0,
+        accepted_states=[0, 1],
+    )
 
-    def setUp(self) -> None:
-        self.dest_path = 'dot_output'
+def test_button():
+    button = create_button()
+    assert button.accepts([])
+    assert button.accepts([B_P,B_R])
+    assert button.accepts([B_P])
+    assert not button.accepts([B_R])
 
-    def test_is_valid(self):
-        run(self.dest_path)
+def test_convert_dfa():
+    button = create_button()
+    button = button.convert_to_dfa()
+    assert button.accepts([])
+    assert button.accepts([B_P,B_R])
+    assert button.accepts([B_P])
+    assert not button.accepts([B_R])
+
+def test_complement():
+    """
+    Simple test on the complement of a DFA
+    """
+    button = create_button()
+    button = button.convert_to_dfa()
+    button = button.complement()
+    assert not button.accepts([])
+    assert not button.accepts([B_P,B_R])
+    assert not button.accepts([B_P])
+    assert button.accepts([B_R])
 
 
 def run(dest_path: str):
@@ -150,7 +183,3 @@ def run(dest_path: str):
 
         trigger_nfa = regex_to_nfa(trigger_r, ALL)
         fs.save_nfa_dot(trigger_nfa, "trigger-full")
-
-
-if __name__ == '__main__':
-    unittest.main()

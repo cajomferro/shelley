@@ -88,9 +88,12 @@ class DFA:
                    accepted_states=dfa.accepted_states)
 
     def subtract(dfa1, dfa2):
-        return dfa1.intersect(dfa2.complement())
+        return dfa1.intersection(dfa2.complement())
 
-    def transitions(self):
+    def contains(dfa1, dfa2):
+        return dfa2.subtract(dfa1).is_empty()
+
+    def transitions(dfa):
         visited_nodes = set()
         to_visit = [dfa.start_state]
         while len(to_visit) > 0:
@@ -109,7 +112,7 @@ class DFA:
 
     def is_empty(self):
         for node, _ in self.transitions():
-            if self.accepted_state(node):
+            if self.accepted_states(node):
                 return False
         return True
 

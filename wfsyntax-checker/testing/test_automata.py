@@ -5,6 +5,26 @@ from dfaapp.automaton import NFA
 from dfaapp.regex import nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, op_and as And
 from dfaapp.checker import check_valid, replace
 
+def render_state_name(st):
+    elems = []
+    to_proc = [st]
+    while len(to_proc) > 0:
+        st = to_proc.pop()
+        if isinstance(st, int):
+            elems.append(st)
+        elif isinstance(st, str):
+            elems.append(st)
+        else:
+            to_proc.extend(st)
+
+    def on_elem(x):
+        if isinstance(x, int):
+            return "q_{" + str(x) + "}"
+        return str(x)
+
+    return "\\{" + ",".join(map(on_elem, elems)) + "\\}"
+
+
 B_P = "b.pressed"
 B_R = "b.release"
 
@@ -33,6 +53,28 @@ def create_led_a():
         start_state=0,
         accepted_states=[0, 1],
     )
+
+
+def create_led_and_button():
+    """
+    This example should be a sub-behavior of shuffling button with led-a.
+    
+    (0) LEDA.ON --->  (1)  BTN.PRS ----> (2)
+        <--- LEDA.OFF      <--- BTN.REL
+    """
+    return NFA(
+        states=[0, 1, 2],
+        alphabet=[LA_ON, LA_OFF],
+        transition_func=NFA.transition_edges([
+            (0, [LA_ON], 1),
+            (1, [LA_OFF], 0),
+            (1, [B_P], 2),
+            (2, [B_R], 1),
+        ]),
+        start_state=0,
+        accepted_states=[0, 1, 2],
+    )
+
 
 def test_button():
     button = create_button()
@@ -78,6 +120,29 @@ def test_shuffle():
     assert both.accepts([LA_ON,B_P,B_R, LA_OFF,B_P])
     # Here we fail because we have B_P followed by B_P
     assert not both.accepts([LA_ON,B_P,LA_OFF,B_P])
+
+def test_led_and_button():
+    both = create_led_and_button()
+    # Both should accept all behaviors of the button
+    assert both.accepts([])
+    assert both.accepts([LA_ON])
+    assert both.accepts([LA_ON,LA_OFF])
+    # It should also accept all behaviors of led
+    assert both.accepts([LA_ON, B_P])
+    assert both.accepts([LA_ON, B_P,B_R, LA_OFF])
+    assert both.accepts([LA_ON,B_P,B_R,LA_OFF,LA_ON])
+    # Here we fail because we have B_P followed by B_P
+    assert not both.accepts([B_R])
+    assert not both.accepts([B_P])
+    assert not both.accepts([LA_ON, B_R])
+    assert not both.accepts([LA_ON,B_P,LA_OFF])
+
+def test_contains():
+    button = create_button()
+    led_a = create_led_a()
+    both = button.shuffle(led_a)
+    behavior = create_led_and_button()
+    assert both.convert_to_dfa().contains(behavior.convert_to_dfa())
 
 
 def run(dest_path: str):
@@ -145,24 +210,6 @@ def run(dest_path: str):
 
         # Merge all
 
-        def render_state_name(st):
-            elems = []
-            to_proc = [st]
-            while len(to_proc) > 0:
-                st = to_proc.pop()
-                if isinstance(st, int):
-                    elems.append(st)
-                elif isinstance(st, str):
-                    elems.append(st)
-                else:
-                    to_proc.extend(st)
-
-            def on_elem(x):
-                if isinstance(x, int):
-                    return "q_{" + str(x) + "}"
-                return str(x)
-
-            return "\\{" + ",".join(map(on_elem, elems)) + "\\}"
 
         fs.save_nfa_dot(B.shuffle(LA).shuffle(LB).shuffle(T),
                         "dev",

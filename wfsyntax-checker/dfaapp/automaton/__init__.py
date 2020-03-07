@@ -215,6 +215,24 @@ class NFA:
             states = self.epsilon(self.multi_transition(states, i))
         return len(set(filter(self.accepted_states, states))) > 0
 
+    def complement(nfa):
+        return NFA(
+            states = frozenset(nfa.states),
+            alphabet = frozenset(nfa.alphabet),
+            transition_func = nfa.transition_func,
+            start_state = nfa.start_state,
+            accepted_states = lambda x: not nfa.accepted_states(x)
+        )
+
+    def intersection(nfa1, nfa2):
+        return nfa1.complement().union(nfa2.complement()).complement()
+
+    def subtract(nfa1, nfa2):
+        # We implement the intersection in terms of the union.
+        # Thus, rather than A = /\ ~ B, I just write the simplified form:
+        # A /\ ~ B = ~ (~ A \/ ~ ~ B ) = ~ (A \/ B)
+        return nfa1.complement().union(nfa2).complement()
+
     def union(nfa1, nfa2):
         states = set(tag(0, nfa1.states))
         states.update(tag(1, nfa2.states))

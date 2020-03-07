@@ -59,11 +59,8 @@ def check_valid(components: List[NFA], behavior: NFA, triggers: Dict[str, Regex]
     alphabet = set()
     for c in components:
         alphabet.update(c.alphabet)
-    # Get the NFA
-    decoded_behavior = regex_to_nfa(decoded_behavior, alphabet)
+    # Get the DFA
+    decoded_behavior = regex_to_nfa(decoded_behavior, alphabet).convert_to_dfa()
 
-    # TODO: We need to implement NFA subtraction
-    # decoded_behavior -= dev
-    # TODO: We need to implement the emptyness test
-    # return decoded_behavior.is_empty()
-    return False
+    odd_behavior = decoded_behavior.subtract(dev.convert_to_dfa())
+    return odd_behavior.is_empty()

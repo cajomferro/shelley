@@ -53,8 +53,30 @@ class DFA:
                    start_state=(dfa1.start_state, dfa2.start_state),
                    accepted_states=is_final)
 
-    def concat(dfa1, dfa2):
-        return dfa1.convert_to_nfa().concat(dfa2.convert_to_nfa())
+    def intersection(dfa1, dfa2):
+        def transition(q, a):
+            q1, q2 = q
+            return (dfa1.transition_func(q1, a), dfa2.transition_func(q2, a))
+
+        def is_final(q):
+            q1, q2 = q
+            return dfa1.accepted_states(q1) and dfa2.accepted_states(q2)
+
+        return DFA(states=frozenset(product(dfa1.states, dfa2.states)),
+                   alphabet=frozenset(dfa1.alphabet).union(dfa2.alphabet),
+                   transition_func=transition,
+                   start_state=(dfa1.start_state, dfa2.start_state),
+                   accepted_states=is_final)
+
+    def complement(dfa):
+        is_final = nfa.accepted_states
+        return DFA(
+            states = dfa.states,
+            alphabet = dfa.alphabet,
+            transition_func = dfa.transition_func,
+            start_state = dfa.start_state,
+            accepted_states = lambda x: not is_final(x)
+        )
 
     def convert_to_nfa(dfa):
         return NFA(states=dfa.states,
@@ -64,6 +86,32 @@ class DFA:
                    } if a is not None else {},
                    start_state=dfa.start_state,
                    accepted_states=dfa.accepted_states)
+
+    def subtract(dfa1, dfa2):
+        return dfa1.intersect(dfa2.complement())
+
+    def transitions(self):
+        visited_nodes = set()
+        to_visit = [dfa.start_state]
+        while len(to_visit) > 0:
+            src = to_visit.pop()
+            if src in visited_nodes:
+                continue
+            # New node
+            visited_nodes.add(src)
+            outgoing = []
+            for char in dfa.alphabet:
+                dst = dfa.transition_func(src, char)
+                outgoing.append((char, dst))
+                to_visit.append(dst)
+            yield (src, outgoing)
+
+
+    def is_empty(self):
+        for node, _ in self.transitions():
+            if self.accepted_state(node):
+                return False
+        return True
 
     def get_table(self):
         row = [None]
@@ -77,25 +125,13 @@ class DFA:
             yield row
 
     def get_minimized_graph(dfa):
-        visited_edges = set()
         visited_nodes = set()
-        to_visit = [dfa.start_state]
-        while len(to_visit) > 0:
-            src = to_visit.pop()
-            if src in visited_nodes:
-                continue
+        for src, outs in self.transitions():
             visited_nodes.add(src)
-            for char in dfa.alphabet:
-                dst = dfa.transition_func(src, char)
-                edge = (src, char, dst)
-                visited_edges.add(edge)
-                to_visit.append(dst)
-        edges = {}
-        # Merge edges
-        for (src, char, dst) in visited_edges:
-            chars = edges.get((src, dst), [])
-            chars.append(char)
-            edges[(src, dst)] = chars
+            for (char, dst) in outs:
+                chars = edges.get((src, dst), set())
+                chars.add(char)
+                edges[(src, dst)] = chars
         return visited_nodes, edges
 
     def get_full_graph(dfa):
@@ -214,24 +250,6 @@ class NFA:
             # Get the transitions and then perform epsilon transitions
             states = self.epsilon(self.multi_transition(states, i))
         return len(set(filter(self.accepted_states, states))) > 0
-
-    def complement(nfa):
-        return NFA(
-            states = frozenset(nfa.states),
-            alphabet = frozenset(nfa.alphabet),
-            transition_func = nfa.transition_func,
-            start_state = nfa.start_state,
-            accepted_states = lambda x: not nfa.accepted_states(x)
-        )
-
-    def intersection(nfa1, nfa2):
-        return nfa1.complement().union(nfa2.complement()).complement()
-
-    def subtract(nfa1, nfa2):
-        # We implement the intersection in terms of the union.
-        # Thus, rather than A = /\ ~ B, I just write the simplified form:
-        # A /\ ~ B = ~ (~ A \/ ~ ~ B ) = ~ (A \/ B)
-        return nfa1.complement().union(nfa2).complement()
 
     def union(nfa1, nfa2):
         states = set(tag(0, nfa1.states))

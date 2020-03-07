@@ -21,10 +21,8 @@ def tag(st, iterable):
 
 
 class DFA:
-    def __init__(self, states, alphabet, transition_func, start_state,
+    def __init__(self, alphabet, transition_func, start_state,
                  accepted_states):
-        assert start_state in states, "%r in %r" % (start_state, states)
-        self.states = states
         self.alphabet = alphabet
         self.transition_func = transition_func
         self.start_state = start_state
@@ -47,8 +45,7 @@ class DFA:
             q1, q2 = q
             return dfa1.accepted_states(q1) or dfa2.accepted_states(q2)
 
-        return DFA(states=frozenset(product(dfa1.states, dfa2.states)),
-                   alphabet=frozenset(dfa1.alphabet).union(dfa2.alphabet),
+        return DFA(alphabet=frozenset(dfa1.alphabet).union(dfa2.alphabet),
                    transition_func=transition,
                    start_state=(dfa1.start_state, dfa2.start_state),
                    accepted_states=is_final)
@@ -62,8 +59,7 @@ class DFA:
             q1, q2 = q
             return dfa1.accepted_states(q1) and dfa2.accepted_states(q2)
 
-        return DFA(states=frozenset(product(dfa1.states, dfa2.states)),
-                   alphabet=frozenset(dfa1.alphabet).union(dfa2.alphabet),
+        return DFA(alphabet=frozenset(dfa1.alphabet).union(dfa2.alphabet),
                    transition_func=transition,
                    start_state=(dfa1.start_state, dfa2.start_state),
                    accepted_states=is_final)
@@ -71,7 +67,6 @@ class DFA:
     def complement(dfa):
         is_final = dfa.accepted_states
         return DFA(
-            states = dfa.states,
             alphabet = dfa.alphabet,
             transition_func = dfa.transition_func,
             start_state = dfa.start_state,
@@ -79,8 +74,7 @@ class DFA:
         )
 
     def convert_to_nfa(dfa):
-        return NFA(states=dfa.states,
-                   alphabet=dfa.alphabet,
+        return NFA(alphabet=dfa.alphabet,
                    transition_func=lambda q, a: {
                        dfa.transition_func(q, a),
                    } if a is not None else {},
@@ -109,6 +103,10 @@ class DFA:
                 to_visit.append(dst)
             yield (src, outgoing)
 
+    @property
+    def states(self):
+        for src, _ in self.transitions():
+            yield src
 
     def is_empty(self):
         for node, _ in self.transitions():
@@ -187,8 +185,7 @@ class DFA:
 
     @classmethod
     def make_empty(cls, alphabet):
-        return cls(states=[0, 1],
-                   alphabet=alphabet,
+        return cls(alphabet=alphabet,
                    transition_func=lambda q, a: 1,
                    start_state=0,
                    accepted_states=lambda x: x == 0)
@@ -196,8 +193,7 @@ class DFA:
     @classmethod
     def make_char(cls, alphabet, char):
         assert char in alphabet
-        return cls(states=[0, 1, 2],
-                   alphabet=alphabet,
+        return cls(alphabet=alphabet,
                    transition_func=lambda q, a: 1
                    if q == 0 and a == char else 2,
                    start_state=0,
@@ -210,14 +206,12 @@ class DFA:
         def transition(q, a):
             return q
 
-        return cls([Q1], alphabet, transition, Q1, lambda x: False)
+        return cls(alphabet, transition, Q1, lambda x: False)
 
 
 class NFA:
-    def __init__(self, states, alphabet, transition_func, start_state,
+    def __init__(self, alphabet, transition_func, start_state,
                  accepted_states):
-        assert start_state in states, f"start_state={start_state} not in states={states}"
-        self.states = states
         self.alphabet = alphabet
         self.transition_func = transition_func
         self.start_state = start_state
@@ -226,16 +220,16 @@ class NFA:
     def multi_transition(self, states, input):
         new_states = set()
         for st in states:
-            assert st in self.states, f"{st} in {self.states}"
+            #assert st in self.states, f"{st} in {self.states}"
             new_states.update(self.transition_func(st, input))
         return frozenset(new_states)
 
     def epsilon(self, states):
-        for idx, st in enumerate(states, 1):
-            if st not in self.states:
-                raise ValueError(
-                    f"Error at state #{idx}={repr(st)} not in states={self.states}"
-                )
+        #for idx, st in enumerate(states, 1):
+        #    if st not in self.states:
+        #        raise ValueError(
+        #            f"Error at state #{idx}={repr(st)} not in states={self.states}"
+        #        )
         states = set(states)
         while True:
             count = len(states)
@@ -255,9 +249,6 @@ class NFA:
         return len(set(filter(self.accepted_states, states))) > 0
 
     def union(nfa1, nfa2):
-        states = set(tag(0, nfa1.states))
-        states.update(tag(1, nfa2.states))
-        states.add((2, 0))
         tsx = (nfa1.transition_func, nfa2.transition_func)
         fin = (nfa1.accepted_states, nfa2.accepted_states)
 
@@ -276,7 +267,6 @@ class NFA:
             return fin[idx](st)
 
         return NFA(
-            states=frozenset(states),
             alphabet=frozenset(nfa1.alphabet).union(nfa2.alphabet),
             transition_func=transition,
             accepted_states=is_final,
@@ -310,15 +300,12 @@ class NFA:
 
         return NFA(
             alphabet=frozenset(nfa1.alphabet).union(nfa2.alphabet),
-            states=tuple(product(nfa1.states, nfa2.states)),
             start_state=(nfa1.start_state, nfa2.start_state),
             accepted_states=is_final,
             transition_func=transition,
         )
 
     def concat(nfa1, nfa2):
-        states = set(tag(0, nfa1.states))
-        states.update(tag(1, nfa2.states))
         tsx = (nfa1.transition_func, nfa2.transition_func)
         fin = (nfa1.accepted_states, nfa2.accepted_states)
 
@@ -336,7 +323,6 @@ class NFA:
             return idx == 1 and nfa2.accepted_states(st)
 
         return NFA(
-            states=frozenset(states),
             alphabet=frozenset(nfa1.alphabet).union(nfa2.alphabet),
             transition_func=transition,
             accepted_states=is_final,
@@ -359,7 +345,6 @@ class NFA:
             return idx == 0 or nfa.accepted_states(st)
 
         return NFA(
-            states=frozenset(chain(tag(1, nfa.states), [(0, 0)])),
             alphabet=nfa.alphabet,
             transition_func=transition,
             accepted_states=[(0, 0)],
@@ -378,8 +363,7 @@ class NFA:
                     return True
             return False
 
-        return DFA(states=powerset(nfa.states),
-                   alphabet=nfa.alphabet,
+        return DFA(alphabet=nfa.alphabet,
                    transition_func=transition,
                    start_state=nfa.epsilon({nfa.start_state}),
                    accepted_states=accept_state)
@@ -394,8 +378,7 @@ class NFA:
     def get_incoming(self, node):
         return (src for (src, dst) in self.transitions if dst == node)
 
-    def as_graph(nfa):
-        visited_edges = set()
+    def get_states(nfa):
         visited_nodes = set()
         to_visit = [nfa.start_state]
         alpha = set(nfa.alphabet)
@@ -404,18 +387,29 @@ class NFA:
             src = to_visit.pop()
             if src in visited_nodes:
                 continue
+            # New node
             visited_nodes.add(src)
+            outgoing = []
             for char in alpha:
                 for dst in nfa.transition_func(src, char):
-                    edge = (src, char, dst)
-                    visited_edges.add(edge)
+                    outgoing.append((char, dst))
                     to_visit.append(dst)
+            yield (src, outgoing)
+
+    @property
+    def states(self):
+        for src,_ in self.get_states():
+            yield src
+
+    def as_graph(nfa):
+        visited_nodes = set()
         edges = {}
-        # Merge edges
-        for (src, char, dst) in visited_edges:
-            chars = edges.get((src, dst), [])
-            chars.append(char)
-            edges[(src, dst)] = chars
+        for (src, out) in nfa.get_states():
+            visited_nodes.add(src)
+            for (char, dst) in out:
+                chars = edges.get((src, dst), set())
+                chars.add(char)
+                edges[(src, dst)] = chars
         return visited_nodes, edges
 
     @property
@@ -431,8 +425,7 @@ class NFA:
     @classmethod
     def make_empty(cls, alphabet):
         Q1 = 0
-        return cls(states=[Q1],
-                   alphabet=alphabet,
+        return cls(alphabet=alphabet,
                    transition_func=lambda q, a: frozenset(),
                    start_state=Q1,
                    accepted_states=lambda x: x == Q1)
@@ -467,12 +460,12 @@ class NFA:
     def make_char(cls, alphabet, char):
         if char not in alphabet:
             raise ValueError(f"{repr(char)} not in {repr(alphabet)}")
-        states = Q1, Q2 = range(2)
+        Q1, Q2 = range(2)
 
         def transition(q, a):
             return {Q2} if a == char and q == Q1 else {}
 
-        return cls(states, alphabet, transition, Q1, lambda x: x == Q2)
+        return cls(alphabet, transition, Q1, lambda x: x == Q2)
 
     @classmethod
     def make_nil(cls, alphabet):

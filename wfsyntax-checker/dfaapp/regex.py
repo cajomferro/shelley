@@ -177,9 +177,9 @@ def star(child):
 def wrap(nfa):
     start = (0, 0)
     end = (0, 1)
-    states = set(tag(1, nfa.states))
-    states.add(start)
-    states.add(end)
+    #states = set(tag(1, nfa.states))
+    #states.add(start)
+    #states.add(end)
 
     def tsx(st, a):
         if st is start:
@@ -194,8 +194,7 @@ def wrap(nfa):
             return rest.union({end})
         return rest
 
-    return NFA(states=frozenset(states),
-               alphabet=nfa.alphabet,
+    return NFA(alphabet=nfa.alphabet,
                transition_func=tsx,
                start_state=start,
                accepted_states=lambda x: x is end)
@@ -277,7 +276,7 @@ class GNFA:
             tsx[(q1, q2)] = Union.from_list(chars)
 
         return cls(
-            states=nfa.states,
+            states=list(nfa.states),
             alphabet=nfa.alphabet,
             transitions=tsx,
             start_state=start,

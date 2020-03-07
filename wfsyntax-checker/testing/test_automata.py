@@ -30,7 +30,7 @@ B_R = "b.release"
 
 def create_button():
     return NFA(
-        states=[0, 1],
+        #states=[0, 1],
         alphabet=[B_P, B_R],
         transition_func=NFA.transition_edges([
             (0, [B_P], 1),
@@ -44,7 +44,7 @@ LA_ON = "la.on"
 LA_OFF = "la.off"
 def create_led_a():
     return NFA(
-        states=[0, 1],
+        #states=[0, 1],
         alphabet=[LA_ON, LA_OFF],
         transition_func=NFA.transition_edges([
             (0, [LA_ON], 1),
@@ -59,7 +59,7 @@ LB_OFF = "lb.off"
 
 def create_led_b():
     return NFA(
-        states=[0, 1],
+        #states=[0, 1],
         alphabet=[LB_ON, LB_OFF],
         transition_func=NFA.transition_edges([
             (0, [LB_ON], 1),
@@ -74,7 +74,7 @@ T_C = "t.c"
 T_S = "t.s"
 def create_timer():
     return NFA(
-        states=[0, 1],
+        #states=[0, 1],
         alphabet=[T_T, T_C, T_S],
         transition_func=NFA.transition_edges([
             (0, [T_S], 1),
@@ -109,7 +109,7 @@ HELLO_WORLD_TRIGGERS = {
 }
 def create_hello_world():
     return NFA(
-        states=[0, 1, 2],
+        #states=[0, 1, 2],
         alphabet=[LEVEL1, LEVEL2, STANDBY1, STANDBY2],
         transition_func=NFA.transition_edges([
             (0, [LEVEL1], 1),
@@ -129,7 +129,7 @@ def create_led_and_button():
         <--- LEDA.OFF      <--- BTN.REL
     """
     return NFA(
-        states=[0, 1, 2],
+        #states=[0, 1, 2],
         alphabet=[LA_ON, LA_OFF],
         transition_func=NFA.transition_edges([
             (0, [LA_ON], 1),
@@ -219,3 +219,33 @@ def test_hello_world():
     ]
     behavior = create_hello_world()
     assert check_valid(components, behavior, HELLO_WORLD_TRIGGERS)
+
+def test_fail_hello_world():
+    HELLO_WORLD_TRIGGERS = {
+        LEVEL1:
+            Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
+        LEVEL2:
+            Concat.from_list([
+                Char(B_P),
+                #Char(B_R),
+                And(Char(T_C), Char(LB_ON)),
+                Char(T_S),
+            ]),
+        STANDBY1:
+            concat(Char(T_T), Char(LA_OFF)),
+        STANDBY2:
+            concat(
+                Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+                And(Char(LB_OFF), Char(LA_OFF)),
+            ),
+    }
+    components = [
+        create_button(),
+        create_led_a(),
+        create_led_b(),
+        create_timer()
+    ]
+    behavior = create_hello_world()
+    assert not check_valid(components, behavior, HELLO_WORLD_TRIGGERS)
+
+#test_hello_world()

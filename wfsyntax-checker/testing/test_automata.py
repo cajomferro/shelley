@@ -1,7 +1,7 @@
 import unittest
 
 from dfaapp import app
-from dfaapp.automaton import NFA
+from dfaapp.automaton import NFA, DFA
 from dfaapp.regex import nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, op_and as And
 from dfaapp.checker import check_valid, replace
 
@@ -220,6 +220,31 @@ def test_hello_world():
     behavior = create_hello_world()
     assert check_valid(components, behavior, HELLO_WORLD_TRIGGERS)
 
+def test_minimize():
+    """
+    (0) --> LA_ON ---> (1)
+    (1) --> LA_OFF --> (2)
+    (2) --> LA_ON --> (3)
+    (3) --> LA_OFF --> (0)
+    """
+    example = DFA(
+        alphabet=[LA_ON, LA_OFF],
+        transition_func=DFA.transition_table({
+            (0,LA_ON): 1,
+            (1,LA_OFF): 2,
+            (2,LA_ON): 3,
+            (3,LA_OFF): 0,
+        }, sink=99),
+        start_state=0,
+        accepted_states=[0, 1, 2, 3],
+    )
+    # The above DFA has 5 states
+    assert len(list(example.states)) == 5
+    # Minimizing should yield only 3 states
+    assert len(list(example.flatten(minimize=True).states)) == 3
+
+
+
 def test_fail_hello_world():
     HELLO_WORLD_TRIGGERS = {
         LEVEL1:
@@ -247,3 +272,6 @@ def test_fail_hello_world():
     ]
     behavior = create_hello_world()
     assert not check_valid(components, behavior, HELLO_WORLD_TRIGGERS)
+
+#test_minimize()
+test_hello_world()

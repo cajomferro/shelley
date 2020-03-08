@@ -47,7 +47,7 @@ def decode_triggers(behavior: NFA, triggers: Dict[str, Regex]) -> Regex:
     return replace(behavior_regex, triggers)
 
 
-def check_valid(components: List[NFA], behavior: NFA, triggers: Dict[str, Regex], minimize=False) -> bool:
+def check_valid(components: List[NFA], behavior: NFA, triggers: Dict[str, Regex], minimize=False, flatten=False) -> bool:
     # Get all tokens:
     alphabet = set()
     for c in components:
@@ -57,12 +57,16 @@ def check_valid(components: List[NFA], behavior: NFA, triggers: Dict[str, Regex]
     for d in components:
         dev = dev.shuffle(d)
     # Convert the given NFA into a minimized DFA
-    dev = dev.convert_to_dfa().flatten(minimize=minimize)
+    dev = dev.convert_to_dfa()
+    if flatten:
+        dev = dev.flatten(minimize=minimize)
 
     # Decode the triggers according to the decoder-map
     decoded_behavior = decode_triggers(behavior, triggers)
     decoded_behavior = regex_to_nfa(decoded_behavior, alphabet)
     # Convert into a minimized DFA
-    decoded_behavior = decoded_behavior.convert_to_dfa().flatten(minimize=minimize)
+    decoded_behavior = decoded_behavior.convert_to_dfa()
+    if flatten:
+        decoded_behavior = decoded_behavior.flatten(minimize=minimize)
     # Ensure that the all possible behaviors in dev contain the decoded behavior
     return dev.contains(decoded_behavior)

@@ -19,7 +19,7 @@ def powerset(iterable):
 def tag(st, iterable):
     return map(lambda x: (st, x), iterable)
 
-def minimize(alphabet, state_count, accepted_states, transitions):
+def minimize_transitions(alphabet, state_count, accepted_states, transitions):
     # https://www.cs.cornell.edu/courses/cs2800/2013fa/Handouts/minimization.pdf
     # marked as soon as a reason is discovered why p and q are not equivalent
     # Note: the table is symmetric, so we only store smaller-larger pairs
@@ -31,35 +31,33 @@ def minimize(alphabet, state_count, accepted_states, transitions):
             for dst in range(src + 1, state_count)
     ]
     # Step 2: Mark{p,q} if 'p in F' XOR 'q in F'
-    for p_q in edges:
-        src, dst = p_q
-        marked = (src in accepted_states) ^ (dst in accepted_states)
-        # Unmarked entries are the ones where p in F <-> q in F
-        # Aka, Mark {p,q} == false
-        if not marked:
-            unmarked.add(p_q)
-
+    def is_unmarked(pq):
+        p, q = pq
+        return (p in accepted_states) == (q in accepted_states)
+    # Unmarked entries are the ones where p in F <-> q in F
+    # Aka, Mark {p,q} == false
+    unmarked = set(filter(is_unmarked, edges))
     # next_to_mark:
     # there exists an un-marked pair{p,q} such that
     # {tsx(p,a),tsx(q,a)} is marked for some a in alphabet
     def next_to_mark(edges):
         # if there exists an un-marked pair{p,q}
-        for p_q in unmarked:
+        for pq in unmarked:
+            p, q = pq
             # for some a in alphabet
             for char in alphabet:
                 # {tsx(p,a),tsx(q,a)} is marked
                 # new_src, new_dst = {tsx(p,a),tsx(q,a)}
                 # We sort the tuple because of symmetry
-                new_pq = tuple(sorted(
-                    transitions[(p_q[0], char)],
-                    transitions[(p_q[1], char)]
-                ))
-                # new_pq is marked
-                if new_pq not in unmarked:
-                    return p_q
+                next_pq = tuple(sorted((
+                    transitions[(p, char)],
+                    transitions[(q, char)]
+                )))
+                # next_pq is marked
+                if next_pq[0] != next_pq[1] and next_pq not in unmarked:
+                    return pq
         # No pair was found
         return None
-
     # Step 3. Repeat the following until no more changes occur: if there exists
     # a pair{p,q} in next_to_mark then mark{p,q}.
     running = True
@@ -69,7 +67,6 @@ def minimize(alphabet, state_count, accepted_states, transitions):
         if pair is not None:
             unmarked.remove(pair)
             running = True
-
     # Finally we are ready to create the new automaton
     # p = q iff {p,q} unmarked
     # Unmarked means equivalent, if there are no equivalence classes
@@ -83,8 +80,7 @@ def minimize(alphabet, state_count, accepted_states, transitions):
     for pq in edges:
         pq_same = pq in unmarked
         if pq_same:
-            (p, q) = pq
-            small, big = lex_order(p, q)
+            small, big = sorted(pq)
             states[big] = small
     # Given a state, returns the unique ancestor of each state
     def get_state(st):
@@ -211,7 +207,8 @@ class DFA:
                 dst_id = get_state_id(dst)
                 transitions[(src_id, char)] = dst_id
         if minimize:
-            transitions = minimize(self.alphabet,
+            transitions = minimize_transitions(
+                self.alphabet,
                 len(state_to_id),
                 accepted_states,
                 transitions

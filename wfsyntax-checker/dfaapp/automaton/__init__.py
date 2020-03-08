@@ -19,6 +19,91 @@ def powerset(iterable):
 def tag(st, iterable):
     return map(lambda x: (st, x), iterable)
 
+def minimize(alphabet, state_count, accepted_states, transitions):
+    # https://www.cs.cornell.edu/courses/cs2800/2013fa/Handouts/minimization.pdf
+    # marked as soon as a reason is discovered why p and q are not equivalent
+    # Note: the table is symmetric, so we only store smaller-larger pairs
+    accepted_states = set(accepted_states)
+    unmarked = set()
+    edges = [
+        (src, dst)
+        for src in range(state_count)
+            for dst in range(src + 1, state_count)
+    ]
+    # Step 2: Mark{p,q} if 'p in F' XOR 'q in F'
+    for p_q in edges:
+        src, dst = p_q
+        marked = (src in accepted_states) ^ (dst in accepted_states)
+        # Unmarked entries are the ones where p in F <-> q in F
+        # Aka, Mark {p,q} == false
+        if not marked:
+            unmarked.add(p_q)
+
+    # next_to_mark:
+    # there exists an un-marked pair{p,q} such that
+    # {tsx(p,a),tsx(q,a)} is marked for some a in alphabet
+    def next_to_mark(edges):
+        # if there exists an un-marked pair{p,q}
+        for p_q in unmarked:
+            # for some a in alphabet
+            for char in alphabet:
+                # {tsx(p,a),tsx(q,a)} is marked
+                # new_src, new_dst = {tsx(p,a),tsx(q,a)}
+                # We sort the tuple because of symmetry
+                new_pq = tuple(sorted(
+                    transitions[(p_q[0], char)],
+                    transitions[(p_q[1], char)]
+                ))
+                # new_pq is marked
+                if new_pq not in unmarked:
+                    return p_q
+        # No pair was found
+        return None
+
+    # Step 3. Repeat the following until no more changes occur: if there exists
+    # a pair{p,q} in next_to_mark then mark{p,q}.
+    running = True
+    while running:
+        running = False
+        pair = next_to_mark(unmarked)
+        if pair is not None:
+            unmarked.remove(pair)
+            running = True
+
+    # Finally we are ready to create the new automaton
+    # p = q iff {p,q} unmarked
+    # Unmarked means equivalent, if there are no equivalence classes
+    # Then, there is nothing to minimize
+    if len(unmarked) == 0:
+        return transitions
+    # Now we know which states are different
+    # We build an array, such that for each state we know its
+    # equivalent ancestor (self-loop means no other is same)
+    states = list(range(state_count))
+    for pq in edges:
+        pq_same = pq in unmarked
+        if pq_same:
+            (p, q) = pq
+            small, big = lex_order(p, q)
+            states[big] = small
+    # Given a state, returns the unique ancestor of each state
+    def get_state(st):
+        # XXX: We can improve performance by caching this step, but we are
+        # XXX: already tight in memory.
+
+        # Jump through list to get ancestor
+        while states[st] != st:
+            st = states[st]
+        return st
+
+    new_transitions = {}
+    for (src,char), dst in transitions.items():
+        # For each transition, only store the canonical state
+        src = get_state(src)
+        dst = get_state(dst)
+        new_transitions[(src,char)] = dst
+    return new_transitions
+
 
 class DFA:
     def __init__(self, alphabet, transition_func, start_state,
@@ -103,7 +188,7 @@ class DFA:
                 to_visit.append(dst)
             yield (src, outgoing)
 
-    def flatten(self) -> "DFA":
+    def flatten(self, minimize=False) -> "DFA":
         """
         Flatten returns a new DFA that caches all of its transitions,
         essentially improving time but reducing space.
@@ -125,7 +210,12 @@ class DFA:
             for (char, dst) in out:
                 dst_id = get_state_id(dst)
                 transitions[(src_id, char)] = dst_id
-
+        if minimize:
+            transitions = minimize(self.alphabet,
+                len(state_to_id),
+                accepted_states,
+                transitions
+            )
         return DFA(
             alphabet=self.alphabet,
             transition_func=lambda src, char: transitions[(src, char)],

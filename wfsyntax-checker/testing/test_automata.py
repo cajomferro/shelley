@@ -247,5 +247,3 @@ def test_fail_hello_world():
     ]
     behavior = create_hello_world()
     assert not check_valid(components, behavior, HELLO_WORLD_TRIGGERS)
-
-#test_hello_world()

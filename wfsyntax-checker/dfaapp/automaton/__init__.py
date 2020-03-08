@@ -127,7 +127,8 @@ class DFA:
 
     def get_minimized_graph(dfa):
         visited_nodes = set()
-        for src, outs in self.transitions():
+        edges = {}
+        for src, outs in dfa.transitions():
             visited_nodes.add(src)
             for (char, dst) in outs:
                 chars = edges.get((src, dst), set())

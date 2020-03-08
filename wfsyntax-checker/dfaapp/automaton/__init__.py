@@ -88,8 +88,19 @@ def minimize_transitions(alphabet, state_count, accepted_states, transitions):
         # XXX: already tight in memory.
 
         # Jump through list to get ancestor
+        # Keep around the original state, so that we can backtrack and update
+        # The root ancestor for all
+        old_st = st
         while states[st] != st:
             st = states[st]
+        # Cache the new root ancestor
+        parent_st = states[old_st]
+        while parent_st != old_st:
+            if parent_st == st:
+                break
+            states[old_st] = st
+            old_st = parent_st
+            parent_st = states[old_st]
         return st
 
     new_transitions = {}

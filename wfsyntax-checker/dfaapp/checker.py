@@ -56,11 +56,13 @@ def check_valid(components: List[NFA], behavior: NFA, triggers: Dict[str, Regex]
     dev = components.pop()
     for d in components:
         dev = dev.shuffle(d)
+    # Convert the given NFA into a minimized DFA
+    dev = dev.convert_to_dfa().flatten()
 
     # Decode the triggers according to the decoder-map
     decoded_behavior = decode_triggers(behavior, triggers)
     decoded_behavior = regex_to_nfa(decoded_behavior, alphabet)
-    # Get the DFA
-    decoded_behavior = decoded_behavior.convert_to_dfa()
+    # Convert into a minimized DFA
+    decoded_behavior = decoded_behavior.convert_to_dfa().flatten()
     # Ensure that the all possible behaviors in dev contain the decoded behavior
-    return dev.convert_to_dfa().contains(decoded_behavior)
+    return dev.contains(decoded_behavior)

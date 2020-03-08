@@ -103,6 +103,37 @@ class DFA:
                 to_visit.append(dst)
             yield (src, outgoing)
 
+    def flatten(self) -> "DFA":
+        """
+        Flatten returns a new DFA that caches all of its transitions,
+        essentially improving time but reducing space.
+        """
+        state_to_id = {}
+        def get_state_id(st):
+            st_id = state_to_id.get(st, None)
+            if st_id is None:
+                st_id = len(state_to_id)
+                state_to_id[st] = st_id
+            return st_id
+
+        transitions = {}
+        accepted_states = []
+        for (src, out) in self.transitions():
+            src_id = get_state_id(src)
+            if self.accepted_states(src):
+                accepted_states.append(src_id)
+            for (char, dst) in out:
+                dst_id = get_state_id(dst)
+                transitions[(src_id, char)] = dst_id
+
+        return DFA(
+            alphabet=self.alphabet,
+            transition_func=lambda src, char: transitions[(src, char)],
+            start_state=state_to_id[self.start_state],
+            accepted_states=accepted_states.__contains__
+        )
+
+
     @property
     def states(self):
         for src, _ in self.transitions():

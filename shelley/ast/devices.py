@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class Device(Node):
     name = None  # type: str
-    actions = None  # type: List[Action]
+    actions = None  # type: Set[Action]
     internal_events = None  # type: List[IEvent]
     external_events = None  # type: List[EEvent]
     behaviours = None  # type: List[Behaviour]

@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import List, TYPE_CHECKING
+import uuid
 
 from .node import Node
 
@@ -8,6 +9,7 @@ if TYPE_CHECKING:
 
 
 class Action(Node):
+    uuid = uuid.uuid1()
     name = None  # type: str
 
     def __init__(self, name: str):
@@ -35,7 +37,7 @@ class Action(Node):
     # https://stackoverflow.com/questions/1608842/types-that-define-eq-are-unhashable
     # https://stackoverflow.com/questions/8705378/pythons-in-set-operator
     def __hash__(self):
-        return id(self.name)
+        return id(self.uuid)
 
 
 class ActionsListEmptyError(Exception):

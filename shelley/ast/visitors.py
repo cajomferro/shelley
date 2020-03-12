@@ -106,6 +106,7 @@ class CheckWFSyntaxVisitor(Visitor):
         for c in element.components:
             c.accept(self)
         for trigger_event in element.triggers.keys():
+            # TODO: check if event is declared
             rule = element.triggers[trigger_event]
             rule.accept(self)
 
@@ -124,7 +125,7 @@ class PrettyPrintVisitor(Visitor):
         self.result += "fired"
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
-        self.result += "{0}.{1} ".format(element.component, element.component_event)
+        self.result += "{0}.{1} ".format(element.component, element.event)
 
     def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
         self.result += "( "

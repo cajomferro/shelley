@@ -1,4 +1,4 @@
-from shelley.ast.events import EEvent
+from shelley.ast.events import EEvent, IEvent
 from shelley.parser.events import parse as parse_events
 from shelley.parser.actions import parse as parse_actions
 from shelley.parser.behaviours import parse as parse_behaviours
@@ -53,62 +53,62 @@ class DDeskLamp(Device):
         #   ((b.pressed; b.released; t.canceled) xor t.timeout); (ledB.off and ledA.off)
 
         t_begin_rules = TriggerRuleSequence(
-            TriggerRuleEvent(component_b, "begin"),
+            TriggerRuleEvent(component_b, EEvent('begin')),
             TriggerRuleSequence(
-                TriggerRuleEvent(component_ledA, "begin"),
+                TriggerRuleEvent(component_ledA, EEvent('begin')),
                 TriggerRuleSequence(
-                    TriggerRuleEvent(component_ledB, "begin"),
-                    TriggerRuleEvent(component_t, "begin"))))
+                    TriggerRuleEvent(component_ledB, EEvent('begin')),
+                    TriggerRuleEvent(component_t, EEvent('begin')))))
 
         t_level1_rules = TriggerRuleSequence(
-            TriggerRuleEvent(component_b, "pressed"),
+            TriggerRuleEvent(component_b, EEvent('pressed')),
             TriggerRuleSequence(
-                TriggerRuleEvent(component_b, "released"),
+                TriggerRuleEvent(component_b, EEvent('released')),
                 TriggerRuleSequence(
-                    TriggerRuleEvent(component_ledA, "on"),
-                    TriggerRuleEvent(component_t, "started"))))
+                    TriggerRuleEvent(component_ledA, IEvent('on')),
+                    TriggerRuleEvent(component_t, IEvent('started')))))
 
         t_level2_rules = TriggerRuleSequence(
-            TriggerRuleEvent(component_b, "pressed"),
+            TriggerRuleEvent(component_b, EEvent('pressed')),
             TriggerRuleSequence(
-                TriggerRuleEvent(component_b, "released"),
+                TriggerRuleEvent(component_b, EEvent('released')),
                 TriggerRuleSequence(
                     TriggerRuleChoice(
                         TriggerRuleSequence(
-                            TriggerRuleEvent(component_t, "canceled"),
-                            TriggerRuleEvent(component_ledB, "on")
+                            TriggerRuleEvent(component_t, IEvent('canceled')),
+                            TriggerRuleEvent(component_ledB, IEvent('on'))
                         ),
                         TriggerRuleSequence(
-                            TriggerRuleEvent(component_ledB, "on"),
-                            TriggerRuleEvent(component_t, "canceled")
+                            TriggerRuleEvent(component_ledB, IEvent('on')),
+                            TriggerRuleEvent(component_t, IEvent('canceled'))
                         )
                     ),
-                    TriggerRuleEvent(component_t, "started")
+                    TriggerRuleEvent(component_t, IEvent('started'))
                 )
             )
         )
 
         t_standby1_rules = TriggerRuleSequence(
-            TriggerRuleEvent(component_t, "timeout"),
-            TriggerRuleEvent(component_ledB, "off"))
+            TriggerRuleEvent(component_t, EEvent('timeout')),
+            TriggerRuleEvent(component_ledB, IEvent('off')))
 
         t_standby2_rules = TriggerRuleSequence(
             TriggerRuleChoice(
                 TriggerRuleSequence(
-                    TriggerRuleEvent(component_b, "pressed"),
+                    TriggerRuleEvent(component_b, EEvent('pressed')),
                     TriggerRuleSequence(
-                        TriggerRuleEvent(component_b, "released"),
-                        TriggerRuleEvent(component_t, "canceled"))),
-                TriggerRuleEvent(component_t, "timeout")),
+                        TriggerRuleEvent(component_b, EEvent('released')),
+                        TriggerRuleEvent(component_t, IEvent('canceled')))),
+                TriggerRuleEvent(component_t, EEvent('timeout'))),
 
             TriggerRuleChoice(
                 TriggerRuleSequence(
-                    TriggerRuleEvent(component_ledB, "off"),
-                    TriggerRuleEvent(component_ledA, "off")
+                    TriggerRuleEvent(component_ledB, IEvent('off')),
+                    TriggerRuleEvent(component_ledA, IEvent('off'))
                 ),
                 TriggerRuleSequence(
-                    TriggerRuleEvent(component_ledA, "off"),
-                    TriggerRuleEvent(component_ledB, "off")
+                    TriggerRuleEvent(component_ledA, IEvent('off')),
+                    TriggerRuleEvent(component_ledB, IEvent('off'))
                 )))
 
         triggers = dict()

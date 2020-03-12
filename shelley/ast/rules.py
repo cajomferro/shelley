@@ -26,12 +26,12 @@ class TriggerRuleFired(TriggerRule):
 
 class TriggerRuleEvent(TriggerRule):
     component = None  # type: Component
-    component_event = None  # type: str # TODO: this should be GenericEvent
+    event = None  # type: GenericEvent
 
-    def __init__(self, component: Component, component_event: str):
-        assert (component.name is not None and component_event is not None)
+    def __init__(self, component: Component, event: GenericEvent):
+        assert (component.name is not None and event is not None)
         self.component = component
-        self.component_event = component_event
+        self.event = event
 
     def accept(self, visitor: Visitor) -> None:
         """
@@ -61,9 +61,9 @@ class TriggerRuleEvent(TriggerRule):
             raise TriggerRuleDeviceNotDeclaredError(
                 "Reference for device type '{0}' is None!".format(self.component.name))
 
-        if GenericEvent(self.component_event) not in device.get_all_events():
+        if self.event not in device.get_all_events():
             raise TriggerRuleEventNotDeclaredError(
-                "Event '{0}' not declared for device {1}!".format(self.component_event,
+                "Event '{0}' not declared for device {1}!".format(self.event.name,
                                                                   self.component.name))
 
     def __eq__(self, other):
@@ -71,10 +71,10 @@ class TriggerRuleEvent(TriggerRule):
             # don't attempt to compare against unrelated types
             raise Exception("Instance is not of TriggerRuleEvent type")
 
-        return self.component.name == other.component.name and self.component_event == other.component_event
+        return self.component.name == other.component.name and self.event.name == other.event.name
 
     def __str__(self):
-        return "{0}.{1}".format(self.component.name, self.component_event)
+        return "{0}.{1}".format(self.component.name, self.event.name)
 
 
 class TriggerRuleSequence(TriggerRule):

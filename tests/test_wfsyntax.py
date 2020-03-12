@@ -4,6 +4,7 @@ from .creator.correct import create_device_led, create_device_button, create_dev
 from .creator.correct import DTimer, DButton, DLed
 from shelley.ast.visitors import CheckWFSyntaxVisitor
 from shelley.ast.components import Component
+from shelley.ast.actions import Action
 
 declared_devices = {}
 
@@ -44,3 +45,10 @@ def test_create_components():
     }
 
     assert (Component("ledA") in components)
+
+
+def test_create_action():
+    action1 = Action("turnOn")
+    action2 = Action("turnOn")
+
+    assert (action1 is action2)

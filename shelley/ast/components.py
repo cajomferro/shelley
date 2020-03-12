@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, Set
-import uuid
 
 from .node import Node
+from . import components, find_instance_by_name
 
 # https://stackoverflow.com/questions/39740632/python-type-hinting-without-cyclic-imports
 if TYPE_CHECKING:
@@ -11,11 +11,17 @@ if TYPE_CHECKING:
 
 
 class Component(Node):
-    uuid = uuid.uuid1()
     name = None  # type: str
 
     def __init__(self, name: str):
         self.name = name
+
+    def __new__(cls, name: str):
+        instance = find_instance_by_name(name, components)
+        if instance is None:
+            instance = super(Component, cls).__new__(cls)
+            components.append(instance)
+        return instance
 
     def accept(self, visitor: Visitor) -> None:
         """
@@ -39,15 +45,15 @@ class Component(Node):
         if device_name not in devices:
             raise ComponentsDeviceNotUsedError("Device type '{0}' must be in uses list!".format(device_name))
 
-    def __eq__(self, other):
-        if not isinstance(other, Component):
-            # don't attempt to compare against unrelated types
-            raise Exception("Instance is not of Component type")
-
-        return self.name == other.name
-
-    def __hash__(self):
-        return id(self.uuid)
+    # def __eq__(self, other):
+    #     if not isinstance(other, Component):
+    #         # don't attempt to compare against unrelated types
+    #         raise Exception("Instance is not of Component type")
+    #
+    #     return self.name == other.name
+    #
+    # def __hash__(self):
+    #     return id(self.uuid)
 
 
 class ComponentsListEmptyError(Exception):

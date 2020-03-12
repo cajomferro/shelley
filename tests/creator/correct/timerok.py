@@ -1,4 +1,4 @@
-from shelley.parser.events import GenericEvent, parse as parse_events
+from shelley.parser.events import IEvent, EEvent, parse as parse_events
 from shelley.parser.actions import parse as parse_actions
 from shelley.parser.behaviours import parse as parse_behaviours
 from shelley.ast.devices import Device
@@ -20,9 +20,9 @@ class DTimer(Device):
         behaviours = parse_behaviours(behaviours_str, i_events.union(e_events), actions)
 
         triggers = dict()
-        triggers[GenericEvent("started")] = TriggerRuleFired()
-        triggers[GenericEvent("canceled")] = TriggerRuleFired()
-        triggers[GenericEvent("timeout")] = TriggerRuleFired()
+        triggers[IEvent("started")] = TriggerRuleFired()
+        triggers[IEvent("canceled")] = TriggerRuleFired()
+        triggers[EEvent("timeout")] = TriggerRuleFired()
 
         super().__init__(self.name, actions, i_events, e_events, behaviours, triggers)
 

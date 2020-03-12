@@ -25,12 +25,12 @@ class TriggerRuleFired(TriggerRule):
 
 
 class TriggerRuleEvent(TriggerRule):
-    component_name = None  # type: str  # TODO: this should be Component
+    component = None  # type: Component
     component_event = None  # type: str # TODO: this should be GenericEvent
 
-    def __init__(self, component_name: str, component_event: str):
-        assert (component_name is not None and component_event is not None)
-        self.component_name = component_name
+    def __init__(self, component: Component, component_event: str):
+        assert (component.name is not None and component_event is not None)
+        self.component = component
         self.component_event = component_event
 
     def accept(self, visitor: Visitor) -> None:
@@ -49,32 +49,32 @@ class TriggerRuleEvent(TriggerRule):
         since it's aware of the component's concrete class.
         """
 
-        device_name = components[Component(self.component_name)]  # TODO: this should be self.component
+        device_name = components[self.component]
 
         if device_name not in devices:
             raise TriggerRuleDeviceNotDeclaredError(
-                "Device type '{0}' has not been declared!".format(self.component_name))
+                "Device type '{0}' has not been declared!".format(self.component.name))
 
         device = devices[device_name]
 
         if device is None:
             raise TriggerRuleDeviceNotDeclaredError(
-                "Reference for device type '{0}' is None!".format(self.component_name))
+                "Reference for device type '{0}' is None!".format(self.component.name))
 
         if GenericEvent(self.component_event) not in device.get_all_events():
             raise TriggerRuleEventNotDeclaredError(
                 "Event '{0}' not declared for device {1}!".format(self.component_event,
-                                                                  self.component_name))
+                                                                  self.component.name))
 
     def __eq__(self, other):
         if not isinstance(other, TriggerRuleEvent):
             # don't attempt to compare against unrelated types
             raise Exception("Instance is not of TriggerRuleEvent type")
 
-        return self.component_name == other.component_name and self.component_event == other.component_event
+        return self.component.name == other.component.name and self.component_event == other.component_event
 
     def __str__(self):
-        return "{0}.{1}".format(self.component_name, self.component_event)
+        return "{0}.{1}".format(self.component.name, self.component_event)
 
 
 class TriggerRuleSequence(TriggerRule):

@@ -104,9 +104,13 @@ class CheckWFSyntaxVisitor(Visitor):
 
 
 class PrettyPrintVisitor(Visitor):
+    declared_devices = None  # type: Dict[str, Device]
+    components = None  # type: Dict[Component, str]
     result = None
 
-    def __init__(self):
+    def __init__(self, components: Dict[Component, str] = None, declared_devices: Dict[str, Device] = None):
+        self.components = components
+        self.declared_devices = declared_devices
         self.result = ""
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
@@ -127,7 +131,9 @@ class PrettyPrintVisitor(Visitor):
         self.result += ")"
 
     def visit_component(self, element: Component) -> None:
-        self.result += "{0} {1}, ".format(element.device.name, element.name)
+        device_name = self.components[element]
+        device = self.declared_devices[device_name]
+        self.result += "{0} {1}, ".format(device.name, element.name)
 
     def visit_behaviour(self, element: Behaviour) -> None:
         self.result += "    {0} -> {1}\n".format(element.e1, element.e2)
@@ -142,30 +148,48 @@ class PrettyPrintVisitor(Visitor):
         self.result += "{0}, ".format(element.name)
 
     def visit_device(self, element: Device) -> None:
-        uses_str = ""
-        for device_name in element.uses:
-            uses_str += (device_name + ", ")
-        self.result += "Device {0} uses {1}:\n".format(element.name, uses_str)
+        self.result = "\n"
+        if element.uses is not None:
+            uses_str = ""
+            for device_name in element.uses:
+                uses_str += (device_name + ", ")
+            self.result += "Device {0} uses {1}:\n".format(element.name, uses_str)
+        else:
+            self.result += "Device {0}:\n".format(element.name)
+
         if len(element.actions) > 0:
-            self.result += "actions:\n    ".format(element.name)
+            self.result += "  actions:\n    ".format(element.name)
             for action in element.actions:
                 action.accept(self)
             self.result += "\n"
-        self.result += "  events:\n    ".format(element.name)
-        for event in element.get_all_events():
-            event.accept(self)
-        self.result += "\n"
+
+        if element.internal_events is not None:
+            self.result += "  internal events:\n    ".format(element.name)
+            for event in element.internal_events:
+                event.accept(self)
+            self.result += "\n"
+
+        if element.external_events is not None:
+            self.result += "  external events:\n    ".format(element.name)
+            for event in element.external_events:
+                event.accept(self)
+            self.result += "\n"
+
         self.result += "  behaviours:\n".format(element.name)
         for behaviour in element.behaviours:
             behaviour.accept(self)
-        self.result += "  components:\n    ".format(element.name)
-        for component in element.components:
-            component.accept(self)
-        self.result += "\n"
-        self.result += "  triggers:\n".format(element.name)
-        for trigger in element.triggers:
-            trigger.accept(self)
-        self.result += "\n"
+
+        if element.components is not None:
+            self.result += "  components:\n    ".format(element.name)
+            for component in element.components:
+                component.accept(self)
+            self.result += "\n"
+
+        if element.triggers is not None:
+            self.result += "  triggers:\n".format(element.name)
+            for trigger in element.triggers:
+                trigger.accept(self)
+            self.result += "\n"
 
     def __str__(self):
         return self.result

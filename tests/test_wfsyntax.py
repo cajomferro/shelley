@@ -1,9 +1,9 @@
 from .context import shelley
 
-from .creator import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
+from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
+from .creator.correct import DTimer, DButton, DLed
 from shelley.ast.visitors import CheckWFSyntaxVisitor
 from shelley.ast.components import Component
-from .creator import DDeskLamp, DTimer, DButton, DLed
 
 declared_devices = {}
 
@@ -43,4 +43,4 @@ def test_create_components():
         Component("t"): DTimer.name
     }
 
-    assert(Component("ledA") in components)
+    assert (Component("ledA") in components)

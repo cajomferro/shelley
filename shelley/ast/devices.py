@@ -31,9 +31,9 @@ class Device(Node):
                  internal_events: Set[IEvent],
                  external_events: Set[EEvent],
                  behaviours: Set[Behaviour],
+                 triggers: Dict[GenericEvent, TriggerRule],
                  uses: Set[str] = None,
-                 components: Dict[Component, str] = None,
-                 triggers: Dict[GenericEvent, TriggerRule] = None):
+                 components: Dict[Component, str] = None):
 
         self.name = name
         self.actions = actions

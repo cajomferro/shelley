@@ -13,6 +13,17 @@ class TriggerRule(Node):
     pass
 
 
+class TriggerRuleFired(TriggerRule):
+    def accept(self, visitor: Visitor) -> None:
+        """
+        Note that we're calling `visitConcreteComponentA`, which matches the
+        current class name. This way we let the visitor know the class of the
+        component it works with.
+        """
+
+        visitor.visit_trigger_rule_fired(self)
+
+
 class TriggerRuleEvent(TriggerRule):
     component_name = None  # type: str  # TODO: this should be Component
     component_event = None  # type: str # TODO: this should be GenericEvent

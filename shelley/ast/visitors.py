@@ -7,7 +7,7 @@ from .actions import Action
 from .events import GenericEvent, EEvent, IEvent
 from .behaviours import Behaviour
 from .components import Component
-from .rules import TriggerRule, TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent
+from .rules import TriggerRule, TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
 
 
 class Visitor(ABC):
@@ -16,6 +16,10 @@ class Visitor(ABC):
     component classes. The signature of a visiting method allows the visitor to
     identify the exact class of the component that it's dealing with.
     """
+
+    @abstractmethod
+    def visit_trigger_rule_fired(self, element: TriggerRuleFired) -> None:
+        pass
 
     @abstractmethod
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
@@ -61,6 +65,9 @@ class CheckWFSyntaxVisitor(Visitor):
     def __init__(self, device: Device, declared_devices: Dict[str, Device]):
         self.device = device
         self.declared_devices = declared_devices
+
+    def visit_trigger_rule_fired(self, element: TriggerRuleFired) -> None:
+        pass
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
         element.check_wf_syntax(self.declared_devices, self.device.components)
@@ -113,18 +120,21 @@ class PrettyPrintVisitor(Visitor):
         self.declared_devices = declared_devices
         self.result = ""
 
+    def visit_trigger_rule_fired(self, element: TriggerRuleFired) -> None:
+        self.result += "fired"
+
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
         self.result += "{0}.{1} ".format(element.component_name, element.component_event)
 
     def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
-        self.result += "("
+        self.result += "( "
         element.left_trigger_rule.accept(self)
         self.result += " ; "
         element.right_trigger_rule.accept(self)
         self.result += ")"
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
-        self.result += "("
+        self.result += "( "
         element.left_trigger_rule.accept(self)
         self.result += " xor "
         element.right_trigger_rule.accept(self)
@@ -136,7 +146,10 @@ class PrettyPrintVisitor(Visitor):
         self.result += "{0} {1}, ".format(device.name, element.name)
 
     def visit_behaviour(self, element: Behaviour) -> None:
-        self.result += "    {0} -> {1}\n".format(element.e1, element.e2)
+        if element.action is not None:
+            self.result += "    {0} -> {1}() {2}\n".format(element.e1, element.action.name, element.e2)
+        else:
+            self.result += "    {0} -> {1}\n".format(element.e1, element.e2)
 
     def visit_action(self, element: Action) -> None:
         self.result += "{0}, ".format(element.name)
@@ -163,13 +176,13 @@ class PrettyPrintVisitor(Visitor):
                 action.accept(self)
             self.result += "\n"
 
-        if element.internal_events is not None:
+        if element.internal_events is not None and len(element.internal_events) > 0:
             self.result += "  internal events:\n    ".format(element.name)
             for event in element.internal_events:
                 event.accept(self)
             self.result += "\n"
 
-        if element.external_events is not None:
+        if element.external_events is not None and len(element.external_events) > 0:
             self.result += "  external events:\n    ".format(element.name)
             for event in element.external_events:
                 event.accept(self)
@@ -185,11 +198,13 @@ class PrettyPrintVisitor(Visitor):
                 component.accept(self)
             self.result += "\n"
 
-        if element.triggers is not None:
-            self.result += "  triggers:\n".format(element.name)
-            for trigger in element.triggers:
-                trigger.accept(self)
+        self.result += "  triggers:\n".format(element.name)
+
+        for trigger_event in element.triggers:
+            self.result += "    {0}: ".format(trigger_event)
+            element.triggers[trigger_event].accept(self)
             self.result += "\n"
+        self.result += "\n"
 
     def __str__(self):
         return self.result

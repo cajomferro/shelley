@@ -69,12 +69,20 @@ class DDeskLamp(Device):
             TriggerRuleSequence(
                 TriggerRuleEvent("b", "released"),
                 TriggerRuleSequence(
-                    TriggerRuleEvent("t", "canceled"),  # TODO: AND? or GROUP? is not working for valid reduction!!!
-                    #                    TriggerRuleGroup(
-                    #                        TriggerRuleAnd(
-                    #                            TriggerRuleEvent("t", "canceled"),
-                    #                            TriggerRuleEvent("ledB", "on"))),
-                    TriggerRuleEvent("t", "started"))))
+                    TriggerRuleChoice(
+                        TriggerRuleSequence(
+                            TriggerRuleEvent("t", "canceled"),
+                            TriggerRuleEvent("ledB", "on")
+                        ),
+                        TriggerRuleSequence(
+                            TriggerRuleEvent("ledB", "on"),
+                            TriggerRuleEvent("t", "canceled")
+                        )
+                    ),
+                    TriggerRuleEvent("t", "started")
+                )
+            )
+        )
 
         t_standby1_rules = TriggerRuleSequence(
             TriggerRuleEvent("t", "timeout"),
@@ -101,12 +109,12 @@ class DDeskLamp(Device):
 
         triggers = dict()
         triggers[EEvent("begin")] = t_begin_rules
-        triggers[EEvent("level1")]: t_level1_rules
-        triggers[EEvent("level2")]: t_level2_rules
-        triggers[EEvent("standby1")]: t_standby1_rules
-        triggers[EEvent("standby2")]: t_standby2_rules
+        triggers[EEvent("level1")] = t_level1_rules
+        triggers[EEvent("level2")] = t_level2_rules
+        triggers[EEvent("standby1")] = t_standby1_rules
+        triggers[EEvent("standby2")] = t_standby2_rules
 
-        super().__init__(self.name, actions, i_events, e_events, behaviours, uses, components, triggers)
+        super().__init__(self.name, actions, i_events, e_events, behaviours, triggers, uses, components)
 
 
 def create_device_desk_lamp(d_led_a: Device, d_button: Device, d_timer: Device):

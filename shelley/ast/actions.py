@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
+from typing import Set, TYPE_CHECKING
 import uuid
 
 from .node import Node
@@ -18,13 +18,13 @@ class Action(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_action(self)
 
-    def check(self, actions: List[Action]):
-        self.check_is_duplicated(actions)
-        actions.append(self)
-
-    def check_is_duplicated(self, actions: List[Action]):
-        if self in actions:
-            raise ActionsListDuplicatedError("Duplicated action: {0}".format(self.name))
+    # def check(self, actions: Set[Action]):
+    #     self.check_is_duplicated(actions)
+    #     actions.append(self)
+    #
+    # def check_is_duplicated(self, actions: Set[Action]):
+    #     if self in actions:
+    #         raise ActionsListDuplicatedError("Duplicated action: {0}".format(self.name))
 
     def __eq__(self, other):
         if not isinstance(other, Action):

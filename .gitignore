@@ -4,3 +4,4 @@
 *.pyc
 _local
 *.dot
+/.python-version

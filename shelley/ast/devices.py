@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Dict, Set, TYPE_CHECKING
+from typing import Dict, Set, TYPE_CHECKING
 
 from .node import Node
 from .actions import Action
@@ -14,24 +14,26 @@ if TYPE_CHECKING:
 
 
 class Device(Node):
+    """
+    \\hard{D} -> categoria sintática
+    """
     name = None  # type: str
     actions = None  # type: Set[Action]
-    internal_events = None  # type: List[IEvent]
-    external_events = None  # type: List[EEvent]
-    behaviours = None  # type: List[Behaviour]
+    internal_events = None  # type: Set[IEvent]
+    external_events = None  # type: Set[EEvent]
+    behaviours = None  # type: Dict[Behaviour]
     uses = None  # type: Set[str]
-    components = None  # type: List[Component]
-    triggers = None  # type: List[Trigger]
+    components = None  # type: Dict[Component, str]
+    triggers = None  # type: Dict[GenericEvent, TriggerRule]
 
     def __init__(self, name: str,
-                 actions: List[Action],
-                 internal_events: List[IEvent],
-                 external_events: List[EEvent],
-                 behaviours: List[Behaviour],
-                 uses: List[str] = None,
-                 components=None,  # type: List[Component] (cyclic)
-                 triggers: List[Trigger] = None):
-        assert (name is not None and len(name) > 0), "Device must have a name"
+                 actions: Set[Action],
+                 internal_events: Set[IEvent],
+                 external_events: Set[EEvent],
+                 behaviours: Set[Behaviour],
+                 uses: Set[str] = None,
+                 components: Dict[Component, str] = None,
+                 triggers: Dict[GenericEvent, TriggerRule] = None):
 
         self.name = name
         self.actions = actions
@@ -51,7 +53,7 @@ class Device(Node):
 
         visitor.visit_device(self)
 
-    def check_is_duplicated(self, devices: List[Device]):
+    def check_is_duplicated(self, devices: Set[Device]):
         if self in devices:
             raise DevicesListDuplicatedError(
                 "Duplicated device with name '{0}'".format(self.name))
@@ -75,22 +77,22 @@ class Device(Node):
             raise Exception("Behaviour not found!")
         return result[0]
 
-    def get_all_events(self) -> List[GenericEvent]:
-        return self.internal_events + self.external_events
+    def get_all_events(self) -> Set[GenericEvent]:
+        return self.internal_events.union(self.external_events)
 
     @staticmethod
-    def behaviours_as_event_tuple(behaviours: List[Behaviour]):
+    def behaviours_as_event_tuple(behaviours: Set[Behaviour]):
         return [(behaviour.e1, behaviour.e2) for behaviour in behaviours]
 
     @staticmethod
-    def components_as_dict(components_list: List[Component]):
+    def components_as_dict(components_list: Set[Component]):
         components_dict = {}
         for component in components_list:
             components_dict[component.name] = component.device
         return components_dict
 
     @staticmethod
-    def triggers_as_dict(triggers_list: List[Trigger]) -> Dict[GenericEvent, TriggerRule]:
+    def triggers_as_dict(triggers_list: Set[Trigger]) -> Dict[GenericEvent, TriggerRule]:
         triggers_dict = {}
         for trigger in triggers_list:
             triggers_dict[trigger.event] = trigger.trigger_rule

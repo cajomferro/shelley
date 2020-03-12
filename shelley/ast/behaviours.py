@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
+from typing import List, Set, TYPE_CHECKING
+import uuid
 
 from .node import Node
 from .events import GenericEvent, EEvent, IEvent
@@ -10,6 +11,7 @@ if TYPE_CHECKING:
 
 
 class Behaviour(Node):
+    uuid = uuid.uuid1()
     e1 = None  # type: GenericEvent
     e2 = None  # type: GenericEvent
     action = None  # type: Action
@@ -26,19 +28,19 @@ class Behaviour(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_behaviour(self)
 
-    def check(self, actions: List[Action], events: List[GenericEvent], behaviours: List[Behaviour]):
+    def check(self, actions: Set[Action], events: Set[GenericEvent], behaviours: List[Behaviour]):
         self.check_action_is_declared(actions)
         self.check_event_is_declared(events)
         self.check_is_duplicated(behaviours)
         behaviours.append(self)
 
-    def check_action_is_declared(self, actions: List[Action]):
+    def check_action_is_declared(self, actions: Set[Action]):
         if isinstance(self.e2, IEvent) and self.action not in actions:
             raise BehaviourActionForInternalEventUndeclared(
                 "Action '{0}' not declared for internal event '{1}'".format(self.action.name,
                                                                             self.e2.name))
 
-    def check_event_is_declared(self, events: List[GenericEvent]):
+    def check_event_is_declared(self, events: Set[GenericEvent]):
 
         if self.e1 not in events:
             raise BehaviourEventUndeclared(
@@ -59,6 +61,9 @@ class Behaviour(Node):
             raise Exception("Instance is not of Behaviour type")
 
         return self.e1.name == other.e1.name and self.e2.name == other.e2.name
+
+    def __hash__(self):
+        return id(self.uuid)
 
 
 class BehaviourMissingActionForInternalEvent(Exception):

@@ -1,9 +1,9 @@
-from typing import List
+from typing import Set
 from shelley.ast.events import GenericEvent, EEvent, IEvent
 import re
 
 
-def parse_internal_events(input: str) -> List[IEvent]:
+def parse_internal_events(input: str) -> Set[IEvent]:
     """
     :param events:
     :return:
@@ -12,14 +12,14 @@ def parse_internal_events(input: str) -> List[IEvent]:
 
     matches = re.finditer(regex, input, re.MULTILINE)
 
-    events = []  # type: List[IEvent]
+    events = set()  # type: Set[IEvent]
     for match in matches:
-        events.append(IEvent(match.group(2).strip()))
+        events.add(IEvent(match.group(2).strip()))
 
     return events
 
 
-def parse_external_events(input: str) -> List[EEvent]:
+def parse_external_events(input: str) -> Set[EEvent]:
     """
     :param events:
     :return:
@@ -28,20 +28,20 @@ def parse_external_events(input: str) -> List[EEvent]:
 
     matches = re.finditer(regex, input, re.MULTILINE)
 
-    events = []  # type: List[EEvent]
+    events = set()  # type: Set[EEvent]
     for match in matches:
-        events.append(EEvent(match.group(2).strip()))
+        events.add(EEvent(match.group(2).strip()))
 
     return events
 
 
-def parse(input: str) -> (List[GenericEvent], List[GenericEvent]):
+def parse(input: str) -> (Set[GenericEvent], Set[GenericEvent]):
     ievents = parse_internal_events(input)
     eevents = parse_external_events(input)
     return ievents, eevents
 
 
-if __name__ == "__main__":
+def test_parse():
     input_str = "internal started, internal canceled, external timeout"
     ievents, eevents = parse(input_str)
     print([elem.name for elem in ievents])

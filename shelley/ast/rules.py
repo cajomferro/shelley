@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict
 from .node import Node
 from .events import GenericEvent
+from .components import Component
 
 if TYPE_CHECKING:
     from .visitors import Visitor
@@ -30,25 +31,26 @@ class TriggerRuleEvent(TriggerRule):
 
         visitor.visit_trigger_rule_event(self)
 
-    def check_wf_syntax(self, declared_components: Dict[str, Device]) -> None:
+    def check_wf_syntax(self, devices: Dict[str, Device], components: Dict[Component, str]) -> None:
         """
         Concrete Components may have special methods that don't exist in their
         base class or interface. The Visitor is still able to use these methods
         since it's aware of the component's concrete class.
         """
 
-        try:
-            component_device = declared_components[self.component_name]
-        except KeyError as error:
+        device_name = components[self.component_name]
+
+        if device_name not in devices:
             raise TriggerRuleDeviceNotDeclaredError(
                 "Device type '{0}' has not been declared!".format(self.component_name))
 
-        if component_device is None:
+        device = devices[device_name]
+
+        if device is None:
             raise TriggerRuleDeviceNotDeclaredError(
                 "Reference for device type '{0}' is None!".format(self.component_name))
 
-        # TODO: I had to create a dummy generic event here because I cannot compare strings with events
-        if GenericEvent(self.component_event) not in component_device.get_all_events():
+        if GenericEvent(self.component_event) not in device.get_all_events():
             raise TriggerRuleEventNotDeclaredError(
                 "Event '{0}' not declared for device {1}!".format(self.component_event,
                                                                   self.component_name))

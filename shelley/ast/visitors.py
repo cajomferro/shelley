@@ -1,14 +1,13 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Dict
+from typing import TYPE_CHECKING, List, Dict, Set
 
 from .devices import Device
-from .triggers import Trigger
 from .actions import Action
-from .events import EEvent, IEvent
+from .events import GenericEvent, EEvent, IEvent
 from .behaviours import Behaviour
 from .components import Component
-from .rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent
+from .rules import TriggerRule, TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent
 
 
 class Visitor(ABC):
@@ -28,10 +27,6 @@ class Visitor(ABC):
 
     @abstractmethod
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
-        pass
-
-    @abstractmethod
-    def visit_trigger(self, element: Trigger) -> None:
         pass
 
     @abstractmethod
@@ -60,27 +55,15 @@ class Visitor(ABC):
 
 
 class CheckWFSyntaxVisitor(Visitor):
-    actions = None  # type: List[Action]
-    ievents = None  # type: List[IEvent]
-    eevents = None  # type: List[EEvent]
-    behaviours = None  # type: List[Behaviour]
-    components = None  # type: List[Component]
-    triggers = None  # type: List[Trigger]
+    device = None  # type: Device
     declared_devices = None  # type: Dict[str, Device]
-    declared_uses = None  # type: List[str]
 
-    def __init__(self, declared_uses: List[str], declared_devices: Dict[str, Device]):
-        self.actions = []
-        self.ievents = []
-        self.eevents = []
-        self.behaviours = []
-        self.components = []
-        self.triggers = []
+    def __init__(self, device: Device, declared_devices: Dict[str, Device]):
+        self.device = device
         self.declared_devices = declared_devices
-        self.declared_uses = declared_uses
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
-        element.check_wf_syntax(Device.components_as_dict(self.components))
+        element.check_wf_syntax(self.declared_devices, self.device.components)
 
     def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
         element.left_trigger_rule.accept(self)
@@ -90,24 +73,21 @@ class CheckWFSyntaxVisitor(Visitor):
         element.left_trigger_rule.accept(self)
         element.right_trigger_rule.accept(self)
 
-    def visit_trigger(self, element: Trigger) -> None:
-        element.check(self.eevents, self.triggers)
-        element.trigger_rule.accept(self)
-
     def visit_component(self, element: Component) -> None:
-        element.check(self.declared_uses, self.declared_devices, self.components)
+        element.check(self.device.uses, self.declared_devices, self.device.components[element])
 
     def visit_behaviour(self, element: Behaviour) -> None:
-        element.check(self.actions, self.ievents + self.eevents, self.behaviours)
+        pass
+        # element.check(self.actions, self.ievents + self.eevents, self.behaviours)
 
     def visit_action(self, element: Action) -> None:
-        element.check(self.actions)
+        pass
 
     def visit_ievent(self, element: IEvent) -> None:
-        element.check(self.ievents)
+        pass
 
     def visit_eevent(self, element: EEvent) -> None:
-        element.check(self.eevents)
+        pass
 
     def visit_device(self, element: Device) -> None:
         for a in element.actions:
@@ -144,11 +124,6 @@ class PrettyPrintVisitor(Visitor):
         self.result += " xor "
         element.right_trigger_rule.accept(self)
         self.result += ")"
-
-    def visit_trigger(self, element: Trigger) -> None:
-        self.result += "    {0} <- ".format(element.event.name)
-        element.trigger_rule.accept(self)
-        self.result += "\n"
 
     def visit_component(self, element: Component) -> None:
         self.result += "{0} {1}, ".format(element.device.name, element.name)

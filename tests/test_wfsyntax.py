@@ -17,8 +17,16 @@ declared_devices[d_timer.name] = d_timer
 d_desk_lamp = create_device_desk_lamp(d_led, d_button, d_timer)
 
 
+def test_triggers():
+    visitor = CheckWFSyntaxVisitor(d_desk_lamp, declared_devices)
+
+    for trigger_event in d_desk_lamp.triggers.keys():
+        rule = d_desk_lamp.triggers[trigger_event]
+        rule.accept(visitor)
+
+
 def test_check_wf_syntax():
-    visitor = CheckWFSyntaxVisitor(d_desk_lamp.uses, declared_devices)
+    visitor = CheckWFSyntaxVisitor(d_desk_lamp, declared_devices)
     for device in [d_desk_lamp]:
         device.accept(visitor)
 

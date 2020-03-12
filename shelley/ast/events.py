@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
+from typing import Set, TYPE_CHECKING
+import uuid
 from .node import Node
 
 if TYPE_CHECKING:
@@ -7,6 +8,7 @@ if TYPE_CHECKING:
 
 
 class GenericEvent(Node):
+    uuid = uuid.uuid1()
     name = None  # type: str
 
     def __init__(self, name: str):
@@ -16,13 +18,13 @@ class GenericEvent(Node):
     def accept(self, visitor: Visitor) -> None:
         pass
 
-    def check(self, events: List[GenericEvent]):
-        self.check_is_duplicated(events)
-        events.append(self)
-
-    def check_is_duplicated(self, events: List[GenericEvent]):
-        if self in events:
-            raise EventsListDuplicatedError("Duplicated event: {0}".format(self.name))
+    # def check(self, events: Set[GenericEvent]):
+    #     self.check_is_duplicated(events)
+    #     events.add(self)
+    #
+    # def check_is_duplicated(self, events: Set[GenericEvent]):
+    #     if self in events:
+    #         raise EventsListDuplicatedError("Duplicated event: {0}".format(self.name))
 
     def __eq__(self, other):
         if not isinstance(other, GenericEvent):
@@ -35,7 +37,7 @@ class GenericEvent(Node):
         return self.name
 
     def __hash__(self):
-        return id(self.name)
+        return id(self.uuid)
 
 
 class IEvent(GenericEvent):

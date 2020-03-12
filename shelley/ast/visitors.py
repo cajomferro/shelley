@@ -98,8 +98,9 @@ class CheckWFSyntaxVisitor(Visitor):
             b.accept(self)
         for c in element.components:
             c.accept(self)
-        for t in element.triggers:
-            t.accept(self)
+        for trigger_event in element.triggers.keys():
+            rule = element.triggers[trigger_event]
+            rule.accept(self)
 
 
 class PrettyPrintVisitor(Visitor):

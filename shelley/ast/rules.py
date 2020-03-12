@@ -14,8 +14,8 @@ class TriggerRule(Node):
 
 
 class TriggerRuleEvent(TriggerRule):
-    component_name = None  # type: str
-    component_event = None  # type: str
+    component_name = None  # type: str  # TODO: this should be Component
+    component_event = None  # type: str # TODO: this should be GenericEvent
 
     def __init__(self, component_name: str, component_event: str):
         assert (component_name is not None and component_event is not None)
@@ -38,7 +38,7 @@ class TriggerRuleEvent(TriggerRule):
         since it's aware of the component's concrete class.
         """
 
-        device_name = components[self.component_name]
+        device_name = components[Component(self.component_name)]  # TODO: this should be self.component
 
         if device_name not in devices:
             raise TriggerRuleDeviceNotDeclaredError(

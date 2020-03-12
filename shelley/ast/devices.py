@@ -21,7 +21,7 @@ class Device(Node):
     actions = None  # type: Set[Action]
     internal_events = None  # type: Set[IEvent]
     external_events = None  # type: Set[EEvent]
-    behaviours = None  # type: Dict[Behaviour]
+    behaviours = None  # type: Set[Behaviour]
     uses = None  # type: Set[str]
     components = None  # type: Dict[Component, str]
     triggers = None  # type: Dict[GenericEvent, TriggerRule]
@@ -83,13 +83,6 @@ class Device(Node):
     @staticmethod
     def behaviours_as_event_tuple(behaviours: Set[Behaviour]):
         return [(behaviour.e1, behaviour.e2) for behaviour in behaviours]
-
-    @staticmethod
-    def components_as_dict(components_list: Set[Component]):
-        components_dict = {}
-        for component in components_list:
-            components_dict[component.name] = component.device
-        return components_dict
 
     @staticmethod
     def triggers_as_dict(triggers_list: Set[Trigger]) -> Dict[GenericEvent, TriggerRule]:

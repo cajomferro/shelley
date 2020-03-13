@@ -1,0 +1,87 @@
+from .context import shelley
+
+from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
+from shelley.ast.visitors.nfa import CreateNFAVisitor, CountStatesVisitor
+
+declared_devices = {}
+
+d_led = create_device_led()
+declared_devices[d_led.name] = d_led
+
+d_button = create_device_button()
+declared_devices[d_button.name] = d_button
+
+d_timer = create_device_timer()
+declared_devices[d_timer.name] = d_timer
+
+d_desk_lamp = create_device_desk_lamp(d_led, d_button, d_timer)
+
+
+def test_pprint_led():
+    visitor = CreateNFAVisitor()
+    d_led.accept(visitor)
+    expected_str = \
+        """\nDevice LED:
+  actions:
+    turnOn, turnOff, 
+  internal events:
+    on, off, 
+  external events:
+    begin, 
+  behaviours:
+    begin -> on
+    on -> off
+    off -> on
+  triggers:
+"""
+    print(visitor.result)
+    # assert (visitor.result == expected_str) # this can be wrong because Set doesn't guarantee elements ordering
+
+
+def test_count_states():
+    visitor = CountStatesVisitor()
+    d_button.accept(visitor)
+    print(visitor.visited_events)
+    print(visitor.state_names)
+
+
+def test_pprint_button():
+    visitor = CreateNFAVisitor("b")
+    d_button.accept(visitor)
+    print(visitor.nfa.alphabet)
+
+
+def test_pprint_timer():
+    visitor = PrettyPrintVisitor()
+    d_timer.accept(visitor)
+    print(visitor.result)
+
+
+def test_pprint_desklamp():
+    visitor = PrettyPrintVisitor(components=d_desk_lamp.components, declared_devices=declared_devices)
+    d_desk_lamp.accept(visitor)
+    print(visitor.result)
+
+    expected_str = """
+Device DeskLamp uses LED, Button, Timer, :
+  external events:
+    begin, level1, standby2, standby1, level2, 
+  behaviours:
+    begin -> level1
+    level2 -> standby2
+    level1 -> level2
+    level1 -> standby1
+    standby1 -> level1
+    standby2 -> level1
+  components:
+    LED ledA, LED ledB, Button b, Timer t, 
+  triggers:
+    begin: ( b.begin  ; ( ledA.begin  ; ( ledB.begin  ; t.begin )))
+    level1: ( b.pressed  ; ( b.released  ; ( ledA.on  ; t.started )))
+    level2: ( b.pressed  ; ( b.released  ; ( ( ( t.canceled  ; ledB.on ) xor ( ledB.on  ; t.canceled )) ; t.started )))
+    standby1: ( t.timeout  ; ledB.off )
+    standby2: ( ( ( b.pressed  ; ( b.released  ; t.canceled )) xor t.timeout ) ; ( ( ledB.off  ; ledA.off ) xor ( ledA.off  ; ledB.off )))
+
+"""
+
+    # assert (visitor.result == expected_str)  # this can be wrong because Set doesn't guarantee elements ordering

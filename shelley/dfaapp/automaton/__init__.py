@@ -1,5 +1,5 @@
 from itertools import combinations
-from typing import List, Callable, Tuple
+from typing import List, Callable, Tuple, Any
 
 
 def wrap_accepted_states(accepted_states):
@@ -347,8 +347,8 @@ class DFA:
 
 
 class NFA:
-    def __init__(self, alphabet: List[str], transition_func: Callable, start_state: int,
-                 accepted_states: List[int]):
+    def __init__(self, alphabet: List[Any], transition_func: Callable, start_state: Any,
+                 accepted_states: List[Any]):
         """
 
         :param alphabet: the possible strings accepted by the NFA
@@ -598,8 +598,6 @@ class NFA:
 
     @classmethod
     def from_transition_edges(cls, edges, **kwargs):
-        if "states" not in kwargs:
-            kwargs["states"] = set(k for (x, _, y) in edges for k in (x, y))
         if "alphabet" not in kwargs:
             kwargs["alphabet"] = set(k for (_, elems, _) in edges
                                      for k in elems)

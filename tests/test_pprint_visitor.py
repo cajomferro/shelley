@@ -1,7 +1,7 @@
 from .context import shelley
 
 from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
-from shelley.ast.visitors import PrettyPrintVisitor
+from shelley.ast.visitors.pprint import PrettyPrintVisitor
 
 declared_devices = {}
 

@@ -1,4 +1,5 @@
-from itertools import combinations, chain, product
+from itertools import combinations
+from typing import List, Callable, Tuple
 
 
 def wrap_accepted_states(accepted_states):
@@ -19,6 +20,7 @@ def powerset(iterable):
 def tag(st, iterable):
     return map(lambda x: (st, x), iterable)
 
+
 def minimize_transitions(alphabet, state_count, accepted_states, transitions):
     # https://www.cs.cornell.edu/courses/cs2800/2013fa/Handouts/minimization.pdf
     # marked as soon as a reason is discovered why p and q are not equivalent
@@ -28,15 +30,18 @@ def minimize_transitions(alphabet, state_count, accepted_states, transitions):
     edges = [
         (src, dst)
         for src in range(state_count)
-            for dst in range(src + 1, state_count)
+        for dst in range(src + 1, state_count)
     ]
+
     # Step 2: Mark{p,q} if 'p in F' XOR 'q in F'
     def is_unmarked(pq):
         p, q = pq
         return (p in accepted_states) == (q in accepted_states)
+
     # Unmarked entries are the ones where p in F <-> q in F
     # Aka, Mark {p,q} == false
     unmarked = set(filter(is_unmarked, edges))
+
     # next_to_mark:
     # there exists an un-marked pair{p,q} such that
     # {tsx(p,a),tsx(q,a)} is marked for some a in alphabet
@@ -58,6 +63,7 @@ def minimize_transitions(alphabet, state_count, accepted_states, transitions):
                     return pq
         # No pair was found
         return None
+
     # Step 3. Repeat the following until no more changes occur: if there exists
     # a pair{p,q} in next_to_mark then mark{p,q}.
     running = True
@@ -82,6 +88,7 @@ def minimize_transitions(alphabet, state_count, accepted_states, transitions):
         if pq_same:
             small, big = sorted(pq)
             states[big] = small
+
     # Given a state, returns the unique ancestor of each state
     def get_state(st):
         # XXX: We can improve performance by caching this step, but we are
@@ -104,11 +111,11 @@ def minimize_transitions(alphabet, state_count, accepted_states, transitions):
         return st
 
     new_transitions = {}
-    for (src,char), dst in transitions.items():
+    for (src, char), dst in transitions.items():
         # For each transition, only store the canonical state
         src = get_state(src)
         dst = get_state(dst)
-        new_transitions[(src,char)] = dst
+        new_transitions[(src, char)] = dst
     return new_transitions
 
 
@@ -159,10 +166,10 @@ class DFA:
     def complement(dfa):
         is_final = dfa.accepted_states
         return DFA(
-            alphabet = dfa.alphabet,
-            transition_func = dfa.transition_func,
-            start_state = dfa.start_state,
-            accepted_states = lambda x: not is_final(x)
+            alphabet=dfa.alphabet,
+            transition_func=dfa.transition_func,
+            start_state=dfa.start_state,
+            accepted_states=lambda x: not is_final(x)
         )
 
     def convert_to_nfa(dfa):
@@ -201,6 +208,7 @@ class DFA:
         essentially improving time but reducing space.
         """
         state_to_id = {}
+
         def get_state_id(st):
             st_id = state_to_id.get(st, None)
             if st_id is None:
@@ -230,7 +238,6 @@ class DFA:
             start_state=state_to_id[self.start_state],
             accepted_states=accepted_states.__contains__
         )
-
 
     @property
     def states(self):
@@ -301,7 +308,7 @@ class DFA:
         return f'DFA({data})'
 
     @staticmethod
-    def transition_table(table, sink=None):
+    def transition_table(table, sink=None) -> Callable:
         if sink is None:
 
             def func(old_st, i):
@@ -340,8 +347,15 @@ class DFA:
 
 
 class NFA:
-    def __init__(self, alphabet, transition_func, start_state,
-                 accepted_states):
+    def __init__(self, alphabet: List[str], transition_func: Callable, start_state: int,
+                 accepted_states: List[int]):
+        """
+
+        :param alphabet: the possible strings accepted by the NFA
+        :param transition_func:
+        :param start_state:
+        :param accepted_states:
+        """
         self.alphabet = alphabet
         self.transition_func = transition_func
         self.start_state = start_state
@@ -350,12 +364,12 @@ class NFA:
     def multi_transition(self, states, input):
         new_states = set()
         for st in states:
-            #assert st in self.states, f"{st} in {self.states}"
+            # assert st in self.states, f"{st} in {self.states}"
             new_states.update(self.transition_func(st, input))
         return frozenset(new_states)
 
     def epsilon(self, states):
-        #for idx, st in enumerate(states, 1):
+        # for idx, st in enumerate(states, 1):
         #    if st not in self.states:
         #        raise ValueError(
         #            f"Error at state #{idx}={repr(st)} not in states={self.states}"
@@ -528,7 +542,7 @@ class NFA:
 
     @property
     def states(self):
-        for src,_ in self.get_states():
+        for src, _ in self.get_states():
             yield src
 
     def as_graph(nfa):
@@ -561,7 +575,12 @@ class NFA:
                    accepted_states=lambda x: x == Q1)
 
     @staticmethod
-    def transition_edges(edges):
+    def transition_edges(edges: List[Tuple[int, List[str], int]]) -> Callable:
+        """
+
+        :param edges: source, chars, destination
+        :return:
+        """
         tsx = dict()
         for (src, chars, dst) in edges:
             for char in chars:

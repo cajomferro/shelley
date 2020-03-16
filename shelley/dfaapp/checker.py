@@ -1,7 +1,7 @@
-from typing import List, Dict
+from typing import List, Dict, Iterable, Tuple
 from shelley.dfaapp.automaton import NFA
 from shelley.dfaapp.regex import nfa_to_regex, regex_to_nfa, Union, Char, Empty, Nil, Concat, Star, Regex
-
+from dataclasses import dataclass
 
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     if r is Nil:
@@ -46,6 +46,52 @@ def decode_triggers(behavior: NFA, triggers: Dict[str, Regex]) -> Regex:
     # Replace tokens by REGEX in decoder
     return replace(behavior_regex, triggers)
 
+def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA:
+    states = ["begin_post"]
+    for evt in events:
+        states.append(evt + "_pre")
+        states.append(evt + "_post")
+    edges = []
+    for (src, dst) in behavior:
+        edges.add[(src + "_post", None, dst + "_pre")]
+    for evt in events:
+        edges.add[(evt + "_pre", evt, evt + "_post")]
+    tsx = {}
+    for (src, char, dst) in edges:
+        out = tsx.get((src, char), None)
+        if out is None:
+            out = set()
+            tsx[(src, char)] = out
+        out.add(dst)
+
+    return NFA(alphabet=frozenset(events),
+        transition_func=lambda x,y: tsx[(x,y)],
+        start_state="begin_post",
+        accepted_states = list(evt + "_post" for evt in events))
+
+def prefix_nfa(nfa:NFA, prefix:str) -> NFA:
+    return NFA(alphabet=set(prefix + x for x in nfa.alphabet),
+        transition_func=lambda src, char: nfa.transition_func(src, prefix + char),
+        start_state=nfa.start_state, accepted_states=nfa.accepted_states)
+
+def build_components(components:Dict[str, str], known_devices:Dict[str, NFA]) -> List[NFA]:
+    result = []
+    for (name, ty) in components.items():
+        result.append(prefix_nfa(known_devices[ty], name + "."))
+    return result
+
+@dataclass
+class Device:
+    events:List[str]
+    behavior:List[Tuple[str,str]]
+    components:Dict[str, str]
+    triggers:Dict[str,Regex]
+    known_devices:Dict[str,NFA]
+
+def check_valid_device(dev:Device):
+    components = build_components(dev.components, dev.known_devices)
+    behavior = build_behavior(dev.behavior, dev.events)
+    check_valid(components, behavior, dev.triggers)
 
 def check_valid(components: List[NFA], behavior: NFA, triggers: Dict[str, Regex], minimize=False,
                 flatten=False) -> bool:

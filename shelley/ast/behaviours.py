@@ -9,6 +9,8 @@ from .actions import Action
 if TYPE_CHECKING:
     from ast.visitors import Visitor
 
+class Behaviours(Node):
+    pass
 
 class Behaviour(Node):
     uuid = uuid.uuid1()

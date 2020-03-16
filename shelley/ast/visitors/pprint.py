@@ -89,7 +89,7 @@ class PrettyPrintVisitor(Visitor):
             self.result += "\n"
 
         self.result += "  behaviours:\n".format(element.name)
-        for behaviour in element.behaviours:
+        for behaviour in sorted(element.behaviours):
             behaviour.accept(self)
 
         if element.components is not None:

@@ -1,6 +1,5 @@
 from typing import List, Dict, Iterable, Tuple
-from shelley.dfaapp.automaton import NFA
-from shelley.dfaapp.regex import nfa_to_regex, regex_to_nfa, Union, Char, Empty, Nil, Concat, Star, Regex
+from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Void, Nil, Concat, Star, Regex, nfa_to_dfa
 from dataclasses import dataclass
 
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
@@ -104,7 +103,7 @@ def check_valid(components: List[NFA], behavior: NFA, triggers: Dict[str, Regex]
     for d in components:
         dev = dev.shuffle(d)
     # Convert the given NFA into a minimized DFA
-    dev = dev.convert_to_dfa()
+    dev = nfa_to_dfa(dev)
     if flatten:
         dev = dev.flatten(minimize=minimize)
 
@@ -112,7 +111,7 @@ def check_valid(components: List[NFA], behavior: NFA, triggers: Dict[str, Regex]
     decoded_behavior = decode_triggers(behavior, triggers)
     decoded_behavior = regex_to_nfa(decoded_behavior, alphabet)
     # Convert into a minimized DFA
-    decoded_behavior = decoded_behavior.convert_to_dfa()
+    decoded_behavior = nfa_to_dfa(decoded_behavior)
     if flatten:
         decoded_behavior = decoded_behavior.flatten(minimize=minimize)
     # Ensure that the all possible behaviors in dev contain the decoded behavior

@@ -1,29 +1,7 @@
-from .context import shelley
+#from .context import shelley
 
-from shelley.dfaapp.automaton import NFA, DFA
-from shelley.dfaapp.regex import nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, op_and as And
-from shelley.dfaapp.checker import check_valid, replace
-
-
-def render_state_name(st):
-    elems = []
-    to_proc = [st]
-    while len(to_proc) > 0:
-        st = to_proc.pop()
-        if isinstance(st, int):
-            elems.append(st)
-        elif isinstance(st, str):
-            elems.append(st)
-        else:
-            to_proc.extend(st)
-
-    def on_elem(x):
-        if isinstance(x, int):
-            return "q_{" + str(x) + "}"
-        return str(x)
-
-    return "\\{" + ",".join(map(on_elem, elems)) + "\\}"
-
+from karakuri.regular import NFA, DFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, nfa_to_dfa
+from shelley.automata import check_valid, replace
 
 B_P = "b.pressed"
 B_R = "b.release"
@@ -162,28 +140,6 @@ def test_button():
     assert not button.accepts([B_R])
 
 
-def test_convert_dfa():
-    button = create_button()
-    button = button.convert_to_dfa()
-    assert button.accepts([])
-    assert button.accepts([B_P, B_R])
-    assert button.accepts([B_P])
-    assert not button.accepts([B_R])
-
-
-def test_complement():
-    """
-    A simple test on the complement of a DFA
-    """
-    button = create_button()
-    button = button.convert_to_dfa()
-    button = button.complement()
-    assert not button.accepts([])
-    assert not button.accepts([B_P, B_R])
-    assert not button.accepts([B_P])
-    assert button.accepts([B_R])
-
-
 def test_shuffle():
     button = create_button()
     led_a = create_led_a()
@@ -225,7 +181,7 @@ def test_contains():
     led_a = create_led_a()
     both = button.shuffle(led_a)
     behavior = create_led_and_button()
-    assert both.convert_to_dfa().contains(behavior.convert_to_dfa())
+    assert nfa_to_dfa(both).contains(nfa_to_dfa(behavior))
 
 
 def test_hello_world():
@@ -237,30 +193,6 @@ def test_hello_world():
     ]
     behavior = create_hello_world()
     assert check_valid(components, behavior, HELLO_WORLD_TRIGGERS)
-
-
-def test_minimize():
-    """
-    (0) --> LA_ON ---> (1)
-    (1) --> LA_OFF --> (2)
-    (2) --> LA_ON --> (3)
-    (3) --> LA_OFF --> (0)
-    """
-    example = DFA(
-        alphabet=[LA_ON, LA_OFF],
-        transition_func=DFA.transition_table({
-            (0, LA_ON): 1,
-            (1, LA_OFF): 2,
-            (2, LA_ON): 3,
-            (3, LA_OFF): 0,
-        }, sink=99),
-        start_state=0,
-        accepted_states=[0, 1, 2, 3],
-    )
-    # The above DFA has 5 states
-    assert len(list(example.states)) == 5
-    # Minimizing should yield only 3 states
-    assert len(list(example.flatten(minimize=True).states)) == 3
 
 
 def test_fail_hello_world():

@@ -1,9 +1,8 @@
-from typing import Set
-from shelley.ast.actions import Action
+from shelley.ast.actions import Action, Actions
 import re
 
 
-def parse(events: str) -> Set[Action]:
+def parse(events: str) -> Actions:
     """
     :param events:
     :return:
@@ -12,9 +11,10 @@ def parse(events: str) -> Set[Action]:
 
     matches = re.finditer(regex, events, re.MULTILINE)
 
-    result = set()  # type: Set[Action]
+    result = Actions()  # type: Actions
     for match in matches:
-        result.add(Action(match.group(1).strip()))
+        action_name = match.group(1).strip()
+        result.create(action_name)
 
     return result
 
@@ -22,13 +22,5 @@ def parse(events: str) -> Set[Action]:
 def test_parse():
     input = "start, cancel"
     actions = parse(input)
-    print([elem.name for elem in actions])
-    assert len(actions) == 2
-
-
-def test_duplicates():
-    input = "start, start"
-    actions = parse(input)
-    print([elem.name for elem in actions])
-    print(actions)
-    assert len(actions) == 1
+    print([elem.name for elem in actions._data])
+    assert actions.count() == 2

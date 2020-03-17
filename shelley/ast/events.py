@@ -1,24 +1,25 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from abc import ABC
+from typing import TYPE_CHECKING, TypeVar
 from .node import Node
-from . import events, find_instance_by_name
+from .util import MyCollection
+# from . import events, find_instance_by_name
+from dataclasses import dataclass
 
 if TYPE_CHECKING:
     from .visitors import Visitor
 
 
+@dataclass(order=True)
 class GenericEvent(Node):
-    name = None  # type: str
+    name: str
 
-    def __init__(self, name: str):
-        self.name = name
-
-    def __new__(cls, name: str):
-        instance = find_instance_by_name(name, events)
-        if instance is None:
-            instance = super(GenericEvent, cls).__new__(cls)
-            events.append(instance)
-        return instance
+    # def __new__(cls, name: str):
+    #     instance = find_instance_by_name(name, events)
+    #     if instance is None:
+    #         instance = super(GenericEvent, cls).__new__(cls)
+    #         events.append(instance)
+    #     return instance
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_ievent(self)
@@ -35,8 +36,8 @@ class GenericEvent(Node):
     #     if self in events:
     #         raise EventsListDuplicatedError("Duplicated event: {0}".format(self.name))
 
-    def __str__(self):
-        return self.name
+    # def __str__(self):
+    #     return self.name
 
     # def __eq__(self, other):
     #     if not isinstance(other, GenericEvent):
@@ -51,12 +52,12 @@ class GenericEvent(Node):
 
 class IEvent(GenericEvent):
 
-    def __new__(cls, name: str):
-        instance = find_instance_by_name(name, events)
-        if instance is None:
-            instance = super(IEvent, cls).__new__(cls, name)
-            events.append(instance)
-        return instance
+    # def __new__(cls, name: str):
+    #     instance = find_instance_by_name(name, events)
+    #     if instance is None:
+    #         instance = super(IEvent, cls).__new__(cls, name)
+    #         events.append(instance)
+    #     return instance
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_ievent(self)
@@ -64,15 +65,60 @@ class IEvent(GenericEvent):
 
 class EEvent(GenericEvent):
 
-    def __new__(cls, name: str):
-        instance = find_instance_by_name(name, events)
-        if instance is None:
-            instance = super(EEvent, cls).__new__(cls, name)
-            events.append(instance)
-        return instance
+    # def __new__(cls, name: str):
+    #     instance = find_instance_by_name(name, events)
+    #     if instance is None:
+    #         instance = super(EEvent, cls).__new__(cls, name)
+    #         events.append(instance)
+    #     return instance
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_eevent(self)
+
+
+T = TypeVar('T', IEvent, EEvent, GenericEvent)
+
+
+class Events(ABC, MyCollection[T]):
+
+    def find_by_name(self, name: str) -> GenericEvent:
+        re = None
+        try:
+            re = next(x for x in self._data if x.name == name)
+        except StopIteration:
+            pass
+        return re
+
+    def merge(self, events: Events) -> Events:
+        merged_events = Events()
+        merged_events._data = self._data + events._data
+        return merged_events
+
+
+class IEvents(Node, Events):
+    def accept(self, visitor: Visitor) -> None:
+        visitor.visit_ievents(self)
+
+    def create(self, name: str) -> IEvent:
+        event = IEvent(name)
+        if event not in self._data:
+            self._data.append(event)
+        else:
+            raise EventsListDuplicatedError()
+        return event
+
+
+class EEvents(Node, Events):
+    def accept(self, visitor: Visitor) -> None:
+        visitor.visit_eevents(self)
+
+    def create(self, name: str) -> EEvent:
+        event = EEvent(name)
+        if event not in self._data:
+            self._data.append(event)
+        else:
+            raise EventsListDuplicatedError()
+        return event
 
 
 class EventsListEmptyError(Exception):

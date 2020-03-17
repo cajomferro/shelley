@@ -7,7 +7,7 @@ from .behaviours import Behaviour, Behaviors
 from .components import Component, Components
 from .triggers import Trigger, Triggers
 from .rules import TriggerRule
-from .events import GenericEvent, IEvent, EEvent, IEvents, EEvents
+from .events import GenericEvent, IEvent, EEvent, IEvents, EEvents, Events
 
 if TYPE_CHECKING:
     from .visitors import Visitor
@@ -77,8 +77,8 @@ class Device(Node):
     #         raise Exception("Behaviour not found!")
     #     return result[0]
     #
-    # def get_all_events(self) -> Set[GenericEvent]:
-    #     return self.internal_events.union(self.external_events)
+    def get_all_events(self) -> Events:
+        return self.internal_events.merge(self.external_events)
     #
     # @staticmethod
     # def behaviours_as_event_tuple(behaviours: Set[Behaviour]):

@@ -34,31 +34,50 @@ class CheckWFSyntaxVisitor(Visitor):
         element.right_trigger_rule.accept(self)
 
     def visit_component(self, element: Component) -> None:
-        element.check(self.device.uses, self.declared_devices, self.device.components[element])
+        element.check(self.device.uses, self.declared_devices, self.device.components.get_device_name(element.name))
+
+    def visit_trigger(self, element: Trigger) -> None:
+        # TODO: check if trigger event is declared
+        element.trigger_rule.accept(self)
+
+    def visit_triggers(self, element: Triggers) -> None:
+        for e in element._data:
+            e.accept(self)
+
+    def visit_components(self, element: Components) -> None:
+        for e in element._data:
+            e.accept(self)
 
     def visit_behaviour(self, element: Behaviour) -> None:
         pass
-        # element.check(self.actions, self.ievents + self.eevents, self.behaviours)
+
+    def visit_behaviors(self, element: Behaviors) -> None:
+        for e in element._data:
+            e.accept(self)
 
     def visit_action(self, element: Action) -> None:
         pass
 
+    def visit_actions(self, element: Actions) -> None:
+        for e in element._data:
+            e.accept(self)
+
     def visit_ievent(self, element: IEvent) -> None:
+        pass
+
+    def visit_ievents(self, element: IEvents) -> None:
         pass
 
     def visit_eevent(self, element: EEvent) -> None:
         pass
 
+    def visit_eevents(self, element: EEvents) -> None:
+        pass
+
     def visit_device(self, element: Device) -> None:
-        for a in element.actions:
-            a.accept(self)
-        for e in element.get_all_events():
-            e.accept(self)
-        for b in element.behaviours:
-            b.accept(self)
-        for c in element.components:
-            c.accept(self)
-        for trigger_event in element.triggers.keys():
-            # TODO: check if event is declared
-            rule = element.triggers[trigger_event]
-            rule.accept(self)
+        element.actions.accept(self)
+        element.internal_events.accept(self)
+        element.external_events.accept(self)
+        element.behaviours.accept(self)
+        element.components.accept(self)
+        element.triggers.accept(self)

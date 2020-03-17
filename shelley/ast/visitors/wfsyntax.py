@@ -3,10 +3,11 @@ from typing import Dict, Set
 
 from . import Visitor
 from shelley.ast.devices import Device
-from shelley.ast.actions import Action
-from shelley.ast.events import EEvent, IEvent
-from shelley.ast.behaviours import Behaviour
-from shelley.ast.components import Component
+from shelley.ast.actions import Action, Actions
+from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
+from shelley.ast.behaviours import Behaviour, Behaviors
+from shelley.ast.components import Component, Components
+from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
 
 

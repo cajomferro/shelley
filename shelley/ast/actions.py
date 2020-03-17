@@ -13,13 +13,6 @@ if TYPE_CHECKING:
 class Action(Node):
     name: str
 
-    # def __new__(cls, name: str):
-    #     instance = find_instance_by_name(name, actions)
-    #     if instance is None:
-    #         instance = super(Action, cls).__new__(cls)
-    #         actions.append(instance)
-    #     return instance
-
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_action(self)
 
@@ -27,9 +20,16 @@ class Action(Node):
         self.check_is_duplicated(actions)
         actions.append(self)
 
-    def check_is_duplicated(self, actions: Set[Action]):
-        if self in actions:
-            raise ActionsListDuplicatedError("Duplicated action: {0}".format(self.name))
+    # def check_is_duplicated(self, actions: Set[Action]):
+    #     if self in actions:
+    #         raise ActionsListDuplicatedError("Duplicated action: {0}".format(self.name))
+
+    # def __new__(cls, name: str):
+    #     instance = find_instance_by_name(name, actions)
+    #     if instance is None:
+    #         instance = super(Action, cls).__new__(cls)
+    #         actions.append(instance)
+    #     return instance
 
     # def __eq__(self, other):
     #     if not isinstance(other, Action):
@@ -55,8 +55,16 @@ class ActionsListDuplicatedError(Exception):
 
 class Actions(Node, MyCollection[Action]):
 
-    def find_by_name(self, name: str):
-        re = None
+    def create(self, action_name: str) -> Action:
+        action = Action(action_name)
+        if action not in self._data:
+            self._data.append(action)
+        else:
+            raise ActionsListDuplicatedError()
+        return action
+
+    def find_by_name(self, name: str) -> Action:
+        re = None  # type: Action
         try:
             re = next(x for x in self._data if x.name == name)
         except StopIteration:

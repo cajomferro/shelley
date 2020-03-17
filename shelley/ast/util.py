@@ -13,6 +13,8 @@ class MyCollection(Generic[T]):
     def add(self, elem: T):
         if elem not in self._data:
             self._data.append(elem)
+        else:
+            raise ListDuplicatedError()
 
     def contains(self, elem: T):
         re = False
@@ -25,3 +27,7 @@ class MyCollection(Generic[T]):
 
     def count(self):
         return len(self._data)
+
+
+class ListDuplicatedError(Exception):
+    pass

@@ -21,7 +21,7 @@ def test_pprint_led():
     visitor = PrettyPrintVisitor()
     d_led.accept(visitor)
     expected_str = \
-        """\nDevice LED:
+        """\nDevice Led:
   actions:
     turnOn, turnOff, 
   internal events:
@@ -29,13 +29,17 @@ def test_pprint_led():
   external events:
     begin, 
   behaviours:
-    begin -> on
-    on -> off
-    off -> on
+    begin -> turnOn() on
+    on -> turnOff() off
+    off -> turnOn() on
   triggers:
+    begin: fired
+    on: fired
+    off: fired
+
 """
     print(visitor.result)
-    # assert (visitor.result == expected_str) # this can be wrong because Set doesn't guarantee elements ordering
+    assert (visitor.result == expected_str) # this can be wrong because Set doesn't guarantee elements ordering
 
 
 def test_pprint_button():
@@ -56,18 +60,18 @@ def test_pprint_desklamp():
     print(visitor.result)
 
     expected_str = """
-Device DeskLamp uses LED, Button, Timer, :
+Device DeskLamp uses Led, Button, Timer, :
   external events:
-    begin, level1, standby2, standby1, level2, 
+    begin, level1, level2, standby1, standby2, 
   behaviours:
     begin -> level1
-    level2 -> standby2
-    level1 -> level2
     level1 -> standby1
+    level1 -> level2
+    level2 -> standby2
     standby1 -> level1
     standby2 -> level1
   components:
-    LED ledA, LED ledB, Button b, Timer t, 
+    Led ledA, Led ledB, Button b, Timer t, 
   triggers:
     begin: ( b.begin  ; ( ledA.begin  ; ( ledB.begin  ; t.begin )))
     level1: ( b.pressed  ; ( b.released  ; ( ledA.on  ; t.started )))
@@ -77,4 +81,4 @@ Device DeskLamp uses LED, Button, Timer, :
 
 """
 
-    #assert (visitor.result == expected_str)  # this can be wrong because Set doesn't guarantee elements ordering
+    assert (visitor.result == expected_str)  # this can be wrong because Set doesn't guarantee elements ordering

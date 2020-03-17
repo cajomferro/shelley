@@ -1,9 +1,7 @@
 from __future__ import annotations
 from typing import List, Set, TYPE_CHECKING
-import uuid
 from dataclasses import dataclass
 
-from .util import MyCollection
 from .node import Node
 from .events import GenericEvent, EEvent, IEvent
 from .actions import Action
@@ -12,21 +10,11 @@ if TYPE_CHECKING:
     from ast.visitors import Visitor
 
 
-@dataclass
+@dataclass(order=True)
 class Behaviour(Node):
-    uuid = uuid.uuid1()
-    e1 = None  # type: GenericEvent
-    e2 = None  # type: GenericEvent
-    action = None  # type: Action
-
-    def __init__(self, e1: GenericEvent, e2: GenericEvent, action: Action = None):
-        self.e1 = e1
-        self.e2 = e2
-        self.action = action
-        if isinstance(self.e2, IEvent) and self.action is None:
-            raise BehaviourMissingActionForInternalEvent("Behaviour with internal event must specify an action")
-        if isinstance(self.e2, EEvent) and self.action is not None:
-            raise BehaviourUnexpectedActionForExternalEvent("Behaviour with external event does not require an action")
+    e1: GenericEvent
+    e2: GenericEvent
+    action: Action
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_behaviour(self)
@@ -58,15 +46,24 @@ class Behaviour(Node):
             raise BehavioursListDuplicatedError(
                 "Duplicated behaviour: {0} -> {1}".format(self.e1.name, self.e2.name))
 
-    def __eq__(self, other):
-        if not isinstance(other, Behaviour):
-            # don't attempt to compare against unrelated types
-            raise Exception("Instance is not of Behaviour type")
-
-        return self.e1.name == other.e1.name and self.e2.name == other.e2.name
-
-    def __hash__(self):
-        return id(self.uuid)
+    # def __init__(self, e1: GenericEvent, e2: GenericEvent, action: Action = None):
+    #     self.e1 = e1
+    #     self.e2 = e2
+    #     self.action = action
+    #     if isinstance(self.e2, IEvent) and self.action is None:
+    #         raise BehaviourMissingActionForInternalEvent("Behaviour with internal event must specify an action")
+    #     if isinstance(self.e2, EEvent) and self.action is not None:
+    #         raise BehaviourUnexpectedActionForExternalEvent("Behaviour with external event does not require an action")
+    #
+    # def __eq__(self, other):
+    #     if not isinstance(other, Behaviour):
+    #         # don't attempt to compare against unrelated types
+    #         raise Exception("Instance is not of Behaviour type")
+    #
+    #     return self.e1.name == other.e1.name and self.e2.name == other.e2.name
+    #
+    # def __hash__(self):
+    #     return id(self.uuid)
 
 
 class BehaviourMissingActionForInternalEvent(Exception):
@@ -97,15 +94,42 @@ class BehavioursMissingBegin(Exception):
     pass
 
 
-class Behaviours(Node, MyCollection[Behaviour]):
+class Behaviors(Node):
+    _data = None  # type: List[Behaviour]
 
-    def find_by_pair(self, e1: GenericEvent, e2: GenericEvent):
+    def __init__(self):
+        self._data = list()
+
+    def create(self, e1: GenericEvent, e2: GenericEvent, a: Action = None) -> Behaviour:
+        behavior = Behaviour(e1, e2, a)
+        if behavior not in self._data:
+            self._data.append(behavior)
+        else:
+            raise BehavioursListDuplicatedError()
+        return behavior
+
+    def contains_events_pair(self, e1_name: str, e2_name: str) -> bool:
+        return False if self.find_by_event_pair(e1_name, e2_name) is None else True
+
+    def contains(self, behavior: Behaviour) -> bool:
+        re = False
+        try:
+            next(x for x in self._data if x == behavior)
+            re = True
+        except StopIteration:
+            pass
+        return re
+
+    def find_by_event_pair(self, e1_name: str, e2_name: str) -> Behaviour:
         re = None
         try:
-            re = next(x for x in self._data if x.e1 == e1 and x.e2 == e2)
+            re = next(x for x in self._data if x.e1.name == e1_name and x.e2.name == e2_name)
         except StopIteration:
             pass
         return re
 
     def accept(self, visitor: Visitor) -> None:
-        visitor.visit_actions(self)
+        visitor.visit_behaviors(self)
+
+    def count(self) -> int:
+        return len(self._data)

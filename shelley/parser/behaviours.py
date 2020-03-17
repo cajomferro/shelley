@@ -1,27 +1,13 @@
 from typing import Set
-from shelley.ast.behaviours import Behaviour
-from shelley.ast.events import GenericEvent
-from shelley.ast.actions import Action
+from shelley.ast.behaviours import Behaviour, Behaviors
+from shelley.ast.events import GenericEvent, Events
+from shelley.ast.actions import Action, Actions
 from .events import parse as parse_events
 from .actions import parse as parse_actions
 import re
 
 
-def find_action(name: str, actions: Set[Action]):
-    result = [elem for elem in actions if elem.name == name]
-    if len(result) == 0:
-        raise Exception("Action {0} not found!".format(name))
-    return result[0]
-
-
-def find_event(name: str, events: Set[GenericEvent]):
-    result = [elem for elem in events if elem.name == name]
-    if len(result) == 0:
-        raise Exception("Event {0} not found!".format(name))
-    return result[0]
-
-
-def parse(input: str, events: Set[GenericEvent], actions: Set[Action]) -> Set[Behaviour]:
+def parse(input: str, events: Events, actions: Actions) -> Behaviors:
     """
 
     """
@@ -29,17 +15,19 @@ def parse(input: str, events: Set[GenericEvent], actions: Set[Action]) -> Set[Be
 
     matches = re.finditer(regex, input, re.MULTILINE)
 
-    result = set()  # type: Set[Behaviour]
+    behaviors = Behaviors()
     for match in matches:
         if match.group(4) is not None:
-            result.add(
-                Behaviour(find_event(match.group(1).strip(), events), find_event(match.group(4).strip(), events)))
+            e1 = events.find_by_name(match.group(1).strip())
+            e2 = events.find_by_name(match.group(4).strip())
+            behaviors.create(e1, e2)
         else:
-            result.add(
-                Behaviour(find_event(match.group(1).strip(), events), find_event(match.group(3).strip(), events),
-                          find_action(match.group(2).strip(),
-                                      actions)))
-    return result
+            e1 = events.find_by_name(match.group(1).strip())
+            e2 = events.find_by_name(match.group(3).strip())
+            a = actions.find_by_name(match.group(2).strip())
+            behaviors.create(e1, e2, a)
+
+    return behaviors
 
 
 def test_parse():
@@ -52,4 +40,6 @@ started -> cancel() canceled
 started -> timeout
 canceled -> start() started
 timeout -> start() started"""
-    print([(elem.e1.name, elem.e2.name, elem.action) for elem in parse(input_str, i_events.union(e_events), actions)])
+
+    behaviors = parse(input_str, i_events.merge(e_events), actions)
+    print([(elem.e1.name, elem.e2.name, elem.action) for elem in behaviors._data])

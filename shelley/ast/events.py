@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from abc import ABC
+from typing import TYPE_CHECKING, TypeVar
 from .node import Node
 from .util import MyCollection
 # from . import events, find_instance_by_name
@@ -75,9 +76,12 @@ class EEvent(GenericEvent):
         visitor.visit_eevent(self)
 
 
-class Events(Node, MyCollection[GenericEvent]):
+T = TypeVar('T', IEvent, EEvent, GenericEvent)
 
-    def find_by_name(self, name: str):
+
+class Events(ABC, MyCollection[T]):
+
+    def find_by_name(self, name: str) -> GenericEvent:
         re = None
         try:
             re = next(x for x in self._data if x.name == name)
@@ -85,8 +89,36 @@ class Events(Node, MyCollection[GenericEvent]):
             pass
         return re
 
+    def merge(self, events: Events) -> Events:
+        merged_events = Events()
+        merged_events._data = self._data + events._data
+        return merged_events
+
+
+class IEvents(Node, Events):
     def accept(self, visitor: Visitor) -> None:
-        visitor.visit_events(self)
+        visitor.visit_ievents(self)
+
+    def create(self, name: str) -> IEvent:
+        event = IEvent(name)
+        if event not in self._data:
+            self._data.append(event)
+        else:
+            raise EventsListDuplicatedError()
+        return event
+
+
+class EEvents(Node, Events):
+    def accept(self, visitor: Visitor) -> None:
+        visitor.visit_eevents(self)
+
+    def create(self, name: str) -> EEvent:
+        event = EEvent(name)
+        if event not in self._data:
+            self._data.append(event)
+        else:
+            raise EventsListDuplicatedError()
+        return event
 
 
 class EventsListEmptyError(Exception):

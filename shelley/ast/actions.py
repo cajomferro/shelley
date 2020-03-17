@@ -1,25 +1,24 @@
 from __future__ import annotations
 from typing import Set, TYPE_CHECKING
+from dataclasses import dataclass
 
+from .util import MyCollection
 from .node import Node
-from . import actions, find_instance_by_name
 
 if TYPE_CHECKING:
     from ast.visitors import Visitor
 
 
+@dataclass(order=True)
 class Action(Node):
-    name = None  # type: str
+    name: str
 
-    def __init__(self, name: str):
-        self.name = name
-
-    def __new__(cls, name: str):
-        instance = find_instance_by_name(name, actions)
-        if instance is None:
-            instance = super(Action, cls).__new__(cls)
-            actions.append(instance)
-        return instance
+    # def __new__(cls, name: str):
+    #     instance = find_instance_by_name(name, actions)
+    #     if instance is None:
+    #         instance = super(Action, cls).__new__(cls)
+    #         actions.append(instance)
+    #     return instance
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_action(self)
@@ -52,3 +51,17 @@ class ActionsListEmptyError(Exception):
 
 class ActionsListDuplicatedError(Exception):
     pass
+
+
+class Actions(Node, MyCollection[Action]):
+
+    def find_by_name(self, name: str):
+        re = None
+        try:
+            re = next(x for x in self._data if x.name == name)
+        except StopIteration:
+            pass
+        return re
+
+    def accept(self, visitor: Visitor) -> None:
+        visitor.visit_actions(self)

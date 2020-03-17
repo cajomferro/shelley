@@ -1,7 +1,9 @@
 from __future__ import annotations
 from typing import List, Set, TYPE_CHECKING
 import uuid
+from dataclasses import dataclass
 
+from .util import MyCollection
 from .node import Node
 from .events import GenericEvent, EEvent, IEvent
 from .actions import Action
@@ -9,9 +11,8 @@ from .actions import Action
 if TYPE_CHECKING:
     from ast.visitors import Visitor
 
-class Behaviours(Node):
-    pass
 
+@dataclass
 class Behaviour(Node):
     uuid = uuid.uuid1()
     e1 = None  # type: GenericEvent
@@ -94,3 +95,17 @@ class BehavioursListDuplicatedError(Exception):
 
 class BehavioursMissingBegin(Exception):
     pass
+
+
+class Behaviours(Node, MyCollection[Behaviour]):
+
+    def find_by_pair(self, e1: GenericEvent, e2: GenericEvent):
+        re = None
+        try:
+            re = next(x for x in self._data if x.e1 == e1 and x.e2 == e2)
+        except StopIteration:
+            pass
+        return re
+
+    def accept(self, visitor: Visitor) -> None:
+        visitor.visit_actions(self)

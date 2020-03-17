@@ -2,8 +2,8 @@ from .context import shelley
 
 from .creator.correct import DTimer, DButton, DLed
 from shelley.ast.components import Component
-from shelley.ast.actions import Action
-from shelley.ast.events import GenericEvent, IEvent, EEvent
+from shelley.ast.actions import Action, Actions
+from shelley.ast.events import GenericEvent, IEvent, EEvent, Events
 
 
 def test_create_components():
@@ -24,20 +24,26 @@ def test_create_action():
     action1 = Action("turnOn")
     action2 = Action("turnOn")
     action3 = Action("turnOff")
+    action4 = Action("nowhere")
 
-    assert (action1 is action2)
+    # assert (action1 is action2)
     assert (action1 == action2)
-    assert (action1 is not action3)
+    assert (action1 != action3)
 
-    actions = set()
+    actions = Actions()
     actions.add(action1)
     actions.add(action2)
-    assert (len(actions) == 1)
+    assert (actions.count() == 1)
     actions.add(action3)
-    assert (len(actions) == 2)
+    assert (actions.count() == 2)
 
-    assert (action1 in actions)
-    assert (action2 in actions)
+    assert (actions.contains(action1) is True)
+    assert (actions.contains(action2) is True)
+    assert (actions.contains(action4) is False)
+
+    assert (actions.find_by_name(action1.name) == action1)
+    assert (actions.find_by_name(action2.name) == action2)
+    assert (actions.find_by_name(action4.name) is None)
 
 
 def test_create_ievents():
@@ -45,19 +51,19 @@ def test_create_ievents():
     ievent2 = IEvent("on")
     ievent3 = IEvent("off")
 
-    assert (ievent1 is ievent2)
+    assert (ievent1 == ievent2)
     assert (ievent1 == ievent2)
     assert (ievent1 is not ievent3)
 
-    events = set()
+    events = Events()
     events.add(ievent1)
     events.add(ievent2)
-    assert (len(events) == 1)
+    assert (len(events._data) == 1)
     events.add(ievent3)
-    assert (len(events) == 2)
+    assert (len(events._data) == 2)
 
-    assert (ievent1 in events)
-    assert (ievent2 in events)
+    assert (ievent1 in events._data)
+    assert (ievent2 in events._data)
 
 
 def test_create_eevents():

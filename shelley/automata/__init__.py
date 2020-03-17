@@ -1,11 +1,9 @@
-from typing import List, Dict, Iterable, Tuple
-from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Void, Nil, Concat, Star, Regex, nfa_to_dfa
+from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection
+from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Void, Nil, Concat, Star, Regex, nfa_to_dfa, DFA
 from dataclasses import dataclass
 
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
-    if r is Nil:
-        return r
-    elif r is Empty:
+    if r is Void or r is Nil:
         return r
     elif isinstance(r, Char):
         return rules.get(r.char, r)
@@ -35,16 +33,6 @@ def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     return r
 
 
-def decode_triggers(behavior: NFA, triggers: Dict[str, Regex]) -> Regex:
-    """
-    Given an NFA and a map of decoders, returns a REGEX with all the
-    substitutions performed.
-    """
-    # Convert the given triggers into a regex
-    behavior_regex = nfa_to_regex(behavior)
-    # Replace tokens by REGEX in decoder
-    return replace(behavior_regex, triggers)
-
 def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA:
     states = ["begin_post"]
     for evt in events:
@@ -52,9 +40,9 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA
         states.append(evt + "_post")
     edges = []
     for (src, dst) in behavior:
-        edges.add[(src + "_post", None, dst + "_pre")]
+        edges.append((src + "_post", None, dst + "_pre"))
     for evt in events:
-        edges.add[(evt + "_pre", evt, evt + "_post")]
+        edges.append((evt + "_pre", evt, evt + "_post"))
     tsx = {}
     for (src, char, dst) in edges:
         out = tsx.get((src, char), None)
@@ -92,27 +80,34 @@ def check_valid_device(dev:Device):
     behavior = build_behavior(dev.behavior, dev.events)
     check_valid(components, behavior, dev.triggers)
 
-def check_valid(components: List[NFA], behavior: NFA, triggers: Dict[str, Regex], minimize=False,
-                flatten=False) -> bool:
-    # Get all tokens:
-    alphabet = set()
-    for c in components:
-        alphabet.update(c.alphabet)
+def merge_components(components:Iterable[NFA[Any,str]], flatten:bool=False, minimize:bool=False) -> DFA[Any,str]:
+    # Get the first component
+    dev, *rst = components
     # Shuffle all devices:
-    dev = components.pop()
-    for d in components:
+    for d in rst:
         dev = dev.shuffle(d)
     # Convert the given NFA into a minimized DFA
-    dev = nfa_to_dfa(dev)
+    dev_dfa = nfa_to_dfa(dev)
     if flatten:
-        dev = dev.flatten(minimize=minimize)
+        dev_dfa = dev_dfa.flatten(minimize=minimize)
+    return dev_dfa
 
-    # Decode the triggers according to the decoder-map
-    decoded_behavior = decode_triggers(behavior, triggers)
-    decoded_behavior = regex_to_nfa(decoded_behavior, alphabet)
+def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
+                alphabet:Optional[Collection[str]]=None,
+                minimize:bool=False, flatten:bool=False) -> DFA[Any,str]:
+    # Replace tokens by REGEX in decoder
+    decoded_regex = replace(behavior, triggers)
+    decoded_behavior = regex_to_nfa(decoded_regex, alphabet)
     # Convert into a minimized DFA
     decoded_behavior = nfa_to_dfa(decoded_behavior)
     if flatten:
         decoded_behavior = decoded_behavior.flatten(minimize=minimize)
+    return decoded_behavior
+
+
+def check_valid(components: List[NFA[Any,str]], behavior: Regex[str], triggers: Dict[str, Regex[str]], minimize=False,
+                flatten=False) -> bool:
+    all_possible = merge_components(components, flatten, minimize)
+    decoded_behavior = decode_behavior(behavior, triggers, all_possible.alphabet, minimize, flatten)
     # Ensure that the all possible behaviors in dev contain the decoded behavior
-    return dev.contains(decoded_behavior)
+    return all_possible.contains(decoded_behavior)

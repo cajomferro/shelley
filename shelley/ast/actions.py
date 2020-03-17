@@ -1,25 +1,17 @@
 from __future__ import annotations
 from typing import Set, TYPE_CHECKING
+from dataclasses import dataclass
 
+from .util import MyCollection
 from .node import Node
-from . import actions, find_instance_by_name
 
 if TYPE_CHECKING:
     from ast.visitors import Visitor
 
 
+@dataclass(order=True)
 class Action(Node):
-    name = None  # type: str
-
-    def __init__(self, name: str):
-        self.name = name
-
-    def __new__(cls, name: str):
-        instance = find_instance_by_name(name, actions)
-        if instance is None:
-            instance = super(Action, cls).__new__(cls)
-            actions.append(instance)
-        return instance
+    name: str
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_action(self)
@@ -28,9 +20,16 @@ class Action(Node):
         self.check_is_duplicated(actions)
         actions.append(self)
 
-    def check_is_duplicated(self, actions: Set[Action]):
-        if self in actions:
-            raise ActionsListDuplicatedError("Duplicated action: {0}".format(self.name))
+    # def check_is_duplicated(self, actions: Set[Action]):
+    #     if self in actions:
+    #         raise ActionsListDuplicatedError("Duplicated action: {0}".format(self.name))
+
+    # def __new__(cls, name: str):
+    #     instance = find_instance_by_name(name, actions)
+    #     if instance is None:
+    #         instance = super(Action, cls).__new__(cls)
+    #         actions.append(instance)
+    #     return instance
 
     # def __eq__(self, other):
     #     if not isinstance(other, Action):
@@ -52,3 +51,25 @@ class ActionsListEmptyError(Exception):
 
 class ActionsListDuplicatedError(Exception):
     pass
+
+
+class Actions(Node, MyCollection[Action]):
+
+    def create(self, action_name: str) -> Action:
+        action = Action(action_name)
+        if action not in self._data:
+            self._data.append(action)
+        else:
+            raise ActionsListDuplicatedError()
+        return action
+
+    def find_by_name(self, name: str) -> Action:
+        re = None  # type: Action
+        try:
+            re = next(x for x in self._data if x.name == name)
+        except StopIteration:
+            pass
+        return re
+
+    def accept(self, visitor: Visitor) -> None:
+        visitor.visit_actions(self)

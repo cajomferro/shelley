@@ -1,8 +1,10 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict
+from dataclasses import dataclass
+
 from .node import Node
 from .events import GenericEvent
-from .components import Component
+from .components import Component, Components
 
 if TYPE_CHECKING:
     from .visitors import Visitor
@@ -24,14 +26,10 @@ class TriggerRuleFired(TriggerRule):
         visitor.visit_trigger_rule_fired(self)
 
 
+@dataclass(order=True)
 class TriggerRuleEvent(TriggerRule):
-    component = None  # type: Component
-    event = None  # type: GenericEvent
-
-    def __init__(self, component: Component, event: GenericEvent):
-        assert (component.name is not None and event is not None)
-        self.component = component
-        self.event = event
+    component: Component
+    event: GenericEvent
 
     def accept(self, visitor: Visitor) -> None:
         """
@@ -42,14 +40,14 @@ class TriggerRuleEvent(TriggerRule):
 
         visitor.visit_trigger_rule_event(self)
 
-    def check_wf_syntax(self, devices: Dict[str, Device], components: Dict[Component, str]) -> None:
+    def check_wf_syntax(self, devices: Dict[str, Device], components: Components) -> None:
         """
         Concrete Components may have special methods that don't exist in their
         base class or interface. The Visitor is still able to use these methods
         since it's aware of the component's concrete class.
         """
 
-        device_name = components[self.component]
+        device_name = components.get_device_name(self.component.name)
 
         if device_name not in devices:
             raise TriggerRuleDeviceNotDeclaredError(
@@ -61,26 +59,32 @@ class TriggerRuleEvent(TriggerRule):
             raise TriggerRuleDeviceNotDeclaredError(
                 "Reference for device type '{0}' is None!".format(self.component.name))
 
-        if self.event not in device.get_all_events():
+        if self.event not in device.get_all_events()._data:
             raise TriggerRuleEventNotDeclaredError(
                 "Event '{0}' not declared for device {1}!".format(self.event.name,
                                                                   self.component.name))
 
-    def __eq__(self, other):
-        if not isinstance(other, TriggerRuleEvent):
-            # don't attempt to compare against unrelated types
-            raise Exception("Instance is not of TriggerRuleEvent type")
-
-        return self.component.name == other.component.name and self.event.name == other.event.name
+    # def __init__(self, component: Component, event: GenericEvent):
+    #     assert (component.name is not None and event is not None)
+    #     self.component = component
+    #     self.event = event
+    #
+    # def __eq__(self, other):
+    #     if not isinstance(other, TriggerRuleEvent):
+    #         # don't attempt to compare against unrelated types
+    #         raise Exception("Instance is not of TriggerRuleEvent type")
+    #
+    #     return self.component.name == other.component.name and self.event.name == other.event.name
+    #
 
     def __str__(self):
         return "{0}.{1}".format(self.component.name, self.event.name)
 
 
+@dataclass(order=True)
 class TriggerRuleSequence(TriggerRule):
-    def __init__(self, left_trigger_rule: TriggerRule, right_trigger_rule: TriggerRule):
-        self.left_trigger_rule = left_trigger_rule
-        self.right_trigger_rule = right_trigger_rule
+    left_trigger_rule: TriggerRule
+    right_trigger_rule: TriggerRule
 
     def accept(self, visitor: Visitor) -> None:
         """
@@ -91,18 +95,22 @@ class TriggerRuleSequence(TriggerRule):
 
         visitor.visit_trigger_rule_sequence(self)
 
-    def __eq__(self, other):
-        if not isinstance(other, TriggerRuleSequence):
-            # don't attempt to compare against unrelated types
-            raise Exception("Instance is not of TriggerRuleSequence type")
+    # def __init__(self, left_trigger_rule: TriggerRule, right_trigger_rule: TriggerRule):
+    #     self.left_trigger_rule = left_trigger_rule
+    #     self.right_trigger_rule = right_trigger_rule
+    #
+    # def __eq__(self, other):
+    #     if not isinstance(other, TriggerRuleSequence):
+    #         # don't attempt to compare against unrelated types
+    #         raise Exception("Instance is not of TriggerRuleSequence type")
+    #
+    #     return self.left_trigger_rule == other.left_trigger_rule and self.right_trigger_rule == other.right_trigger_rule
 
-        return self.left_trigger_rule == other.left_trigger_rule and self.right_trigger_rule == other.right_trigger_rule
 
-
+@dataclass(order=True)
 class TriggerRuleChoice(TriggerRule):
-    def __init__(self, left_trigger_rule: TriggerRule, right_trigger_rule: TriggerRule):
-        self.left_trigger_rule = left_trigger_rule
-        self.right_trigger_rule = right_trigger_rule
+    left_trigger_rule: TriggerRule
+    right_trigger_rule: TriggerRule
 
     def accept(self, visitor: Visitor) -> None:
         """
@@ -113,12 +121,17 @@ class TriggerRuleChoice(TriggerRule):
 
         visitor.visit_trigger_rule_choice(self)
 
-    def __eq__(self, other):
-        if not isinstance(other, TriggerRuleChoice):
-            # don't attempt to compare against unrelated types
-            raise Exception("Instance is not of TriggerRuleChoice type")
-
-        return self.left_trigger_rule == other.left_trigger_rule and self.right_trigger_rule == other.right_trigger_rule
+    # def __init__(self, left_trigger_rule: TriggerRule, right_trigger_rule: TriggerRule):
+    #     self.left_trigger_rule = left_trigger_rule
+    #     self.right_trigger_rule = right_trigger_rule
+    #
+    # def __eq__(self, other):
+    #     if not isinstance(other, TriggerRuleChoice):
+    #         # don't attempt to compare against unrelated types
+    #         raise Exception("Instance is not of TriggerRuleChoice type")
+    #
+    #     return self.left_trigger_rule == other.left_trigger_rule and self.right_trigger_rule == other.right_trigger_rule
+    #
 
 
 class TriggerRuleDeviceNotDeclaredError(Exception):

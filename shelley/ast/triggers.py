@@ -1,21 +1,19 @@
 from __future__ import annotations
 from typing import List, TYPE_CHECKING
+from dataclasses import dataclass
 
 from .node import Node
 from .rules import TriggerRule
-from .events import EEvent
+from .events import EEvent, GenericEvent
 
 if TYPE_CHECKING:
     from .visitors import Visitor
 
 
+@dataclass(order=True)
 class Trigger(Node):
-    event = None  # type: EEvent
-    trigger_rule = None  # type: TriggerRule
-
-    def __init__(self, event: EEvent, trigger_rule: TriggerRule):
-        self.event = event
-        self.trigger_rule = trigger_rule
+    event: GenericEvent
+    trigger_rule: TriggerRule
 
     def accept(self, visitor: Visitor) -> None:
         """
@@ -41,12 +39,16 @@ class Trigger(Node):
             raise TriggersListDuplicatedError(
                 "Duplicated trigger with event '{0}'".format(self.event.name))
 
-    def __eq__(self, other):
-        if not isinstance(other, Trigger):
-            # don't attempt to compare against unrelated types
-            raise Exception("Instance is not of Trigger type")
-
-        return self.event == other.event  # and self.device_name == other.device_name
+    # def __init__(self, event: EEvent, trigger_rule: TriggerRule):
+    #     self.event = event
+    #     self.trigger_rule = trigger_rule
+    #
+    # def __eq__(self, other):
+    #     if not isinstance(other, Trigger):
+    #         # don't attempt to compare against unrelated types
+    #         raise Exception("Instance is not of Trigger type")
+    #
+    #     return self.event == other.event  # and self.device_name == other.device_name
 
 
 class TriggersListEmptyError(Exception):
@@ -63,3 +65,44 @@ class TriggersEventUndeclaredError(Exception):
 
 class TriggerRulesListEmptyError(Exception):
     pass
+
+
+class Triggers(Node):
+    _data = None  # type: List[Trigger]
+
+    def __init__(self):
+        self._data = list()
+
+    def create(self, event: GenericEvent, rule: TriggerRule) -> Trigger:
+        trigger = Trigger(event, rule)
+        if trigger not in self._data:
+            self._data.append(trigger)
+        else:
+            raise TriggersListDuplicatedError()
+        return trigger
+
+    def contains(self, elem: Trigger) -> bool:
+        re = False
+        try:
+            next(x for x in self._data if x == elem)
+            re = True
+        except StopIteration:
+            pass
+        return re
+
+    def get_rule(self, event_name) -> TriggerRule:
+        return self.find_by_event(event_name).trigger_rule
+
+    def find_by_event(self, event_name: str) -> Trigger:
+        re = None
+        try:
+            re = next(x for x in self._data if x.event.name == event_name)
+        except StopIteration:
+            pass
+        return re
+
+    def accept(self, visitor: Visitor) -> None:
+        visitor.visit_triggers(self)
+
+    def count(self) -> int:
+        return len(self._data)

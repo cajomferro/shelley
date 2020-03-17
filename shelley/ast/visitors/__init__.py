@@ -2,10 +2,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 
 from shelley.ast.devices import Device
-from shelley.ast.actions import Action
-from shelley.ast.events import EEvent, IEvent
-from shelley.ast.behaviours import Behaviour
-from shelley.ast.components import Component
+from shelley.ast.actions import Action, Actions
+from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
+from shelley.ast.behaviours import Behaviour, Behaviors
+from shelley.ast.components import Component, Components
+from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
 
 
@@ -33,7 +34,19 @@ class Visitor(ABC):
         pass
 
     @abstractmethod
+    def visit_trigger(self, element: Trigger) -> None:
+        pass
+
+    @abstractmethod
+    def visit_triggers(self, element: Triggers) -> None:
+        pass
+
+    @abstractmethod
     def visit_component(self, element: Component) -> None:
+        pass
+
+    @abstractmethod
+    def visit_components(self, element: Components) -> None:
         pass
 
     @abstractmethod
@@ -41,7 +54,15 @@ class Visitor(ABC):
         pass
 
     @abstractmethod
+    def visit_behaviors(self, element: Behaviors) -> None:
+        pass
+
+    @abstractmethod
     def visit_action(self, element: Action) -> None:
+        pass
+
+    @abstractmethod
+    def visit_actions(self, element: Actions) -> None:
         pass
 
     @abstractmethod
@@ -49,7 +70,15 @@ class Visitor(ABC):
         pass
 
     @abstractmethod
+    def visit_ievents(self, element: IEvents) -> None:
+        pass
+
+    @abstractmethod
     def visit_eevent(self, element: EEvent) -> None:
+        pass
+
+    @abstractmethod
+    def visit_eevents(self, element: EEvents) -> None:
         pass
 
     @abstractmethod

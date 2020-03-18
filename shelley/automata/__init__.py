@@ -2,6 +2,7 @@ from typing import List, Dict, Iterable, Tuple
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Void, Nil, Concat, Star, Regex, nfa_to_dfa
 from dataclasses import dataclass
 
+
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     if r is Nil:
         return r
@@ -45,7 +46,8 @@ def decode_triggers(behavior: NFA, triggers: Dict[str, Regex]) -> Regex:
     # Replace tokens by REGEX in decoder
     return replace(behavior_regex, triggers)
 
-def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA:
+
+def build_behavior(behavior: Iterable[Tuple[str, str]], events: List[str]) -> NFA:
     states = ["begin_post"]
     for evt in events:
         states.append(evt + "_pre")
@@ -64,33 +66,38 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA
         out.add(dst)
 
     return NFA(alphabet=frozenset(events),
-        transition_func=lambda x,y: tsx[(x,y)],
-        start_state="begin_post",
-        accepted_states = list(evt + "_post" for evt in events))
+               transition_func=lambda x, y: tsx[(x, y)],
+               start_state="begin_post",
+               accepted_states=list(evt + "_post" for evt in events))
 
-def prefix_nfa(nfa:NFA, prefix:str) -> NFA:
+
+def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
     return NFA(alphabet=set(prefix + x for x in nfa.alphabet),
-        transition_func=lambda src, char: nfa.transition_func(src, prefix + char),
-        start_state=nfa.start_state, accepted_states=nfa.accepted_states)
+               transition_func=lambda src, char: nfa.transition_func(src, prefix + char),
+               start_state=nfa.start_state, accepted_states=nfa.accepted_states)
 
-def build_components(components:Dict[str, str], known_devices:Dict[str, NFA]) -> List[NFA]:
+
+def build_components(components: Dict[str, str], known_devices: Dict[str, NFA]) -> List[NFA]:
     result = []
     for (name, ty) in components.items():
         result.append(prefix_nfa(known_devices[ty], name + "."))
     return result
 
+
 @dataclass
 class Device:
-    events:List[str]
-    behavior:List[Tuple[str,str]]
-    components:Dict[str, str]
-    triggers:Dict[str,Regex]
-    known_devices:Dict[str,NFA]
+    events: List[str]
+    behavior: List[Tuple[str, str]]
+    components: Dict[str, str]
+    triggers: Dict[str, Regex]
+    known_devices: Dict[str, NFA]
 
-def check_valid_device(dev:Device):
+
+def check_valid_device(dev: Device):
     components = build_components(dev.components, dev.known_devices)
     behavior = build_behavior(dev.behavior, dev.events)
     check_valid(components, behavior, dev.triggers)
+
 
 def check_valid(components: List[NFA], behavior: NFA, triggers: Dict[str, Regex], minimize=False,
                 flatten=False) -> bool:

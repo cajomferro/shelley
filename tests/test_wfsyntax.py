@@ -1,10 +1,7 @@
 from .context import shelley
 
 from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
-from .creator.correct import DTimer, DButton, DLed
 from shelley.ast.visitors.wfsyntax import CheckWFSyntaxVisitor
-from shelley.ast.components import Component
-from shelley.ast.actions import Action
 
 declared_devices = {}
 

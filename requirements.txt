@@ -1,2 +1,2 @@
-graphviz
 pytest
+git+http://gitlab.com/cogumbreiro/karukuri.git

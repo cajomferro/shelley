@@ -5,7 +5,7 @@ from . import Visitor
 from shelley.ast.devices import Device
 from shelley.ast.actions import Action
 from shelley.ast.events import EEvent, IEvent
-from shelley.ast.behaviours import Behaviour
+from shelley.ast.behaviors import Behavior
 from shelley.ast.components import Component
 from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
 from shelley.dfaapp.automaton import NFA
@@ -37,7 +37,7 @@ class CountStatesVisitor(Visitor):
     def visit_component(self, element: Component) -> None:
         pass
 
-    def visit_behaviour(self, element: Behaviour) -> None:
+    def visit_behaviour(self, element: Behavior) -> None:
         if element.e1.name not in self.visited_events and element.e2.name not in self.visited_events:
             self.visited_events.append(element.e1.name)
             self.visited_events.append(element.e2.name)
@@ -57,7 +57,7 @@ class CountStatesVisitor(Visitor):
         pass
 
     def visit_device(self, element: Device) -> None:
-        for b in element.behaviours:
+        for b in element.behaviors:
             b.accept(self)
 
 
@@ -92,7 +92,7 @@ class CreateNFAVisitor(Visitor):
     def visit_component(self, element: Component) -> None:
         element.check(self.device.uses, self.declared_devices, self.device.components[element])
 
-    def visit_behaviour(self, element: Behaviour) -> None:
+    def visit_behaviour(self, element: Behavior) -> None:
         pass
         # element.check(self.actions, self.ievents + self.eevents, self.behaviours)
 
@@ -111,7 +111,7 @@ class CreateNFAVisitor(Visitor):
         for e in element.get_all_events():
             if e.name != 'begin':
                 alphabet.append("{0}.{1}".format(self.device_label, e.name))
-        for b in element.behaviours:
+        for b in element.behaviors:
             b.accept(self)
         # for c in element.components:
         #     c.accept(self)

@@ -3,7 +3,7 @@ from typing import Dict, List, TYPE_CHECKING
 
 from .node import Node
 from .actions import Action, Actions
-from .behaviours import Behaviour, Behaviors
+from .behaviors import Behavior, Behaviors
 from .components import Component, Components
 from .triggers import Trigger, Triggers
 from .rules import TriggerRule
@@ -21,7 +21,7 @@ class Device(Node):
     actions = None  # type: Actions
     internal_events = None  # type: IEvents
     external_events = None  # type: EEvents
-    behaviours = None  # type: Behaviors
+    behaviors = None  # type: Behaviors
     uses = None  # type: List[str]
     components = None  # type: Components
     triggers = None  # type: Triggers
@@ -30,7 +30,7 @@ class Device(Node):
                  actions: Actions,
                  internal_events: IEvents,
                  external_events: EEvents,
-                 behaviours: Behaviors,
+                 behaviors: Behaviors,
                  triggers: Triggers,
                  uses: List[str] = list(),
                  components=Components()):
@@ -39,7 +39,7 @@ class Device(Node):
         self.actions = actions
         self.internal_events = internal_events
         self.external_events = external_events
-        self.behaviours = behaviours
+        self.behaviors = behaviors
         self.uses = uses
         self.components = components
         self.triggers = triggers

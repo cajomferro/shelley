@@ -5,7 +5,7 @@ from . import Visitor
 from shelley.ast.devices import Device
 from shelley.ast.actions import Action, Actions
 from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
-from shelley.ast.behaviours import Behaviour, Behaviors
+from shelley.ast.behaviors import Behavior, Behaviors
 from shelley.ast.components import Component, Components
 from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
@@ -47,7 +47,7 @@ class PrettyPrintVisitor(Visitor):
         self.result += "\n"
 
     def visit_triggers(self, element: Triggers) -> None:
-        for trigger in element._data:
+        for trigger in element.list():
             trigger.accept(self)
         self.result += "\n"
 
@@ -58,18 +58,18 @@ class PrettyPrintVisitor(Visitor):
 
     def visit_components(self, element: Components) -> None:
         self.result += "  components:\n    "
-        for component in element._data:
+        for component in element.list():
             component.accept(self)
         self.result += "\n"
 
-    def visit_behaviour(self, element: Behaviour) -> None:
+    def visit_behaviour(self, element: Behavior) -> None:
         if element.action is not None:
             self.result += "    {0} -> {1}() {2}\n".format(element.e1.name, element.action.name, element.e2.name)
         else:
             self.result += "    {0} -> {1}\n".format(element.e1.name, element.e2.name)
 
     def visit_behaviors(self, element: Behaviors) -> None:
-        for behaviour in element._data:
+        for behaviour in element.list():
             behaviour.accept(self)
 
     def visit_action(self, element: Action) -> None:
@@ -77,7 +77,7 @@ class PrettyPrintVisitor(Visitor):
 
     def visit_actions(self, element: Actions) -> None:
         self.result += "  actions:\n    "
-        for action in element._data:
+        for action in element.list():
             action.accept(self)
         self.result += "\n"
 
@@ -86,7 +86,7 @@ class PrettyPrintVisitor(Visitor):
 
     def visit_ievents(self, element: IEvents) -> None:
         self.result += "  internal events:\n    "
-        for event in element._data:
+        for event in element.list():
             event.accept(self)
         self.result += "\n"
 
@@ -95,7 +95,7 @@ class PrettyPrintVisitor(Visitor):
 
     def visit_eevents(self, element: EEvents) -> None:
         self.result += "  external events:\n    "
-        for event in element._data:
+        for event in element.list():
             event.accept(self)
         self.result += "\n"
 
@@ -119,7 +119,7 @@ class PrettyPrintVisitor(Visitor):
             element.external_events.accept(self)
 
         self.result += "  behaviours:\n"
-        element.behaviours.accept(self)
+        element.behaviors.accept(self)
 
         if element.components.count() > 0:
             element.components.accept(self)

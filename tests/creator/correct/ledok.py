@@ -1,6 +1,6 @@
 from shelley.parser.events import EEvent, parse as parse_events
 from shelley.parser.actions import parse as parse_actions
-from shelley.parser.behaviours import parse as parse_behaviours
+from shelley.parser.behaviors import parse as parse_behaviours
 from shelley.ast.devices import Device
 from shelley.ast.rules import TriggerRuleFired
 from shelley.ast.triggers import Triggers

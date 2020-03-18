@@ -1,5 +1,4 @@
-from typing import Set
-from shelley.ast.behaviours import Behaviour, Behaviors
+from shelley.ast.behaviors import Behavior, Behaviors
 from shelley.ast.events import GenericEvent, Events
 from shelley.ast.actions import Action, Actions
 from .events import parse as parse_events

@@ -28,6 +28,9 @@ class MyCollection(Generic[T]):
     def count(self):
         return len(self._data)
 
+    def list(self):
+        return self._data
+
 
 class ListDuplicatedError(Exception):
     pass

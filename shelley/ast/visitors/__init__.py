@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from shelley.ast.devices import Device
 from shelley.ast.actions import Action, Actions
 from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
-from shelley.ast.behaviours import Behaviour, Behaviors
+from shelley.ast.behaviors import Behavior, Behaviors
 from shelley.ast.components import Component, Components
 from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
@@ -50,7 +50,7 @@ class Visitor(ABC):
         pass
 
     @abstractmethod
-    def visit_behaviour(self, element: Behaviour) -> None:
+    def visit_behaviour(self, element: Behavior) -> None:
         pass
 
     @abstractmethod

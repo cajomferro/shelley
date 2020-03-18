@@ -23,9 +23,8 @@ d_desk_lamp = create_device_desk_lamp(d_led, d_button, d_timer)
 def test_triggers():
     visitor = CheckWFSyntaxVisitor(d_desk_lamp, declared_devices)
 
-    for trigger_event in d_desk_lamp.triggers.keys():
-        rule = d_desk_lamp.triggers[trigger_event]
-        rule.accept(visitor)
+    for trigger in d_desk_lamp.triggers.list():
+        trigger.trigger_rule.accept(visitor)
 
 
 def test_check_wf_syntax():
@@ -34,21 +33,3 @@ def test_check_wf_syntax():
         device.accept(visitor)
 
     # assertEqual("((b.released  xor (ledA.on  xor t.canceled )) ; ledB.on )", visitor.rule)
-
-
-def test_create_components():
-    components = {
-        Component("ledA"): DLed.name,
-        Component("ledB"): DLed.name,
-        Component("b"): DButton.name,
-        Component("t"): DTimer.name
-    }
-
-    assert (Component("ledA") in components)
-
-
-def test_create_action():
-    action1 = Action("turnOn")
-    action2 = Action("turnOn")
-
-    assert (action1 is action2)

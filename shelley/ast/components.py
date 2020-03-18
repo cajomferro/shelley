@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List
 
+from .util import MyCollection
 from .node import Node
 # from . import components, find_instance_by_name
 from dataclasses import dataclass
@@ -74,7 +75,7 @@ class ComponentsDeviceNotDeclaredError(Exception):
     pass
 
 
-class Components(Node):
+class Components(Node, MyCollection[Component]):
     components_to_devices = None  # type: Dict[str, str]
     _data = None  # type: List[Component]
 
@@ -91,9 +92,6 @@ class Components(Node):
             raise ComponentsListDuplicatedError()
         return component
 
-    def contains(self, component_name: str) -> bool:
-        return False if self.find_by_name(component_name) is None else True
-
     def get_device_name(self, component_name) -> str:
         return self.components_to_devices[component_name]
 
@@ -107,6 +105,3 @@ class Components(Node):
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_components(self)
-
-    def count(self) -> int:
-        return len(self._data)

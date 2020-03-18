@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import List, Set, TYPE_CHECKING
 from dataclasses import dataclass
 
+from .util import MyCollection
 from .node import Node
 from .events import GenericEvent, EEvent, IEvent
 from .actions import Action
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
 
 
 @dataclass(order=True)
-class Behaviour(Node):
+class Behavior(Node):
     e1: GenericEvent
     e2: GenericEvent
     action: Action
@@ -19,7 +20,7 @@ class Behaviour(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_behaviour(self)
 
-    def check(self, actions: Set[Action], events: Set[GenericEvent], behaviours: List[Behaviour]):
+    def check(self, actions: Set[Action], events: Set[GenericEvent], behaviours: List[Behavior]):
         self.check_action_is_declared(actions)
         self.check_event_is_declared(events)
         self.check_is_duplicated(behaviours)
@@ -27,23 +28,23 @@ class Behaviour(Node):
 
     def check_action_is_declared(self, actions: Set[Action]):
         if isinstance(self.e2, IEvent) and self.action not in actions:
-            raise BehaviourActionForInternalEventUndeclared(
+            raise BehaviorActionForInternalEventUndeclared(
                 "Action '{0}' not declared for internal event '{1}'".format(self.action.name,
                                                                             self.e2.name))
 
     def check_event_is_declared(self, events: Set[GenericEvent]):
 
         if self.e1 not in events:
-            raise BehaviourEventUndeclared(
+            raise BehaviorEventUndeclared(
                 "Left event '{0}' was not declared".format(self.e2.name))
 
         if self.e2 not in events:
-            raise BehaviourEventUndeclared(
+            raise BehaviorEventUndeclared(
                 "Right event '{0}' was not declared".format(self.e2.name))
 
-    def check_is_duplicated(self, behaviours: List[Behaviour]):
+    def check_is_duplicated(self, behaviours: List[Behavior]):
         if self in behaviours:
-            raise BehavioursListDuplicatedError(
+            raise BehaviorsListDuplicatedError(
                 "Duplicated behaviour: {0} -> {1}".format(self.e1.name, self.e2.name))
 
     # def __init__(self, e1: GenericEvent, e2: GenericEvent, action: Action = None):
@@ -66,61 +67,52 @@ class Behaviour(Node):
     #     return id(self.uuid)
 
 
-class BehaviourMissingActionForInternalEvent(Exception):
+class BehaviorMissingActionForInternalEvent(Exception):
     pass
 
 
-class BehaviourUnexpectedActionForExternalEvent(Exception):
+class BehaviorUnexpectedActionForExternalEvent(Exception):
     pass
 
 
-class BehavioursListEmptyError(Exception):
+class BehaviorsListEmptyError(Exception):
     pass
 
 
-class BehaviourEventUndeclared(Exception):
+class BehaviorEventUndeclared(Exception):
     pass
 
 
-class BehaviourActionForInternalEventUndeclared(Exception):
+class BehaviorActionForInternalEventUndeclared(Exception):
     pass
 
 
-class BehavioursListDuplicatedError(Exception):
+class BehaviorsListDuplicatedError(Exception):
     pass
 
 
-class BehavioursMissingBegin(Exception):
+class BehaviorsMissingBegin(Exception):
     pass
 
 
-class Behaviors(Node):
-    _data = None  # type: List[Behaviour]
+class Behaviors(Node, MyCollection[Behavior]):
+    _data = None  # type: List[Behavior]
 
     def __init__(self):
         self._data = list()
 
-    def create(self, e1: GenericEvent, e2: GenericEvent, a: Action = None) -> Behaviour:
-        behavior = Behaviour(e1, e2, a)
+    def create(self, e1: GenericEvent, e2: GenericEvent, a: Action = None) -> Behavior:
+        behavior = Behavior(e1, e2, a)
         if behavior not in self._data:
             self._data.append(behavior)
         else:
-            raise BehavioursListDuplicatedError()
+            raise BehaviorsListDuplicatedError()
         return behavior
 
     def contains_events_pair(self, e1_name: str, e2_name: str) -> bool:
         return False if self.find_by_event_pair(e1_name, e2_name) is None else True
 
-    def contains(self, behavior: Behaviour) -> bool:
-        re = False
-        try:
-            next(x for x in self._data if x == behavior)
-            re = True
-        except StopIteration:
-            pass
-        return re
-
-    def find_by_event_pair(self, e1_name: str, e2_name: str) -> Behaviour:
+    def find_by_event_pair(self, e1_name: str, e2_name: str) -> Behavior:
         re = None
         try:
             re = next(x for x in self._data if x.e1.name == e1_name and x.e2.name == e2_name)
@@ -130,6 +122,3 @@ class Behaviors(Node):
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_behaviors(self)
-
-    def count(self) -> int:
-        return len(self._data)

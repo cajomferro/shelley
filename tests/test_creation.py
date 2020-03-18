@@ -2,9 +2,27 @@ from .context import shelley
 import pytest
 
 from .creator.correct import DTimer, DButton, DLed
-from shelley.ast.components import Component, Components
+from shelley.ast.components import Component, Components, ComponentsListDuplicatedError
 from shelley.ast.actions import Action, Actions, ActionsListDuplicatedError
 from shelley.ast.events import GenericEvent, IEvent, EEvent, EEvents, IEvents, EventsListDuplicatedError
+from shelley.ast.triggers import Trigger, Triggers, TriggersListDuplicatedError
+from shelley.ast.rules import TriggerRuleFired
+
+
+def test_create_triggers():
+    event_a = GenericEvent("a")
+    event_b = GenericEvent("a")
+    triggers = Triggers()
+    triggers.create(event_a, TriggerRuleFired())
+    assert triggers.count() == 1
+
+    with pytest.raises(TriggersListDuplicatedError):
+        triggers.create(event_a, TriggerRuleFired())
+
+    with pytest.raises(TriggersListDuplicatedError):
+        triggers.create(event_b, TriggerRuleFired())
+
+    assert triggers.count() == 1
 
 
 def test_create_components():
@@ -16,8 +34,11 @@ def test_create_components():
 
     assert ([component.name for component in components._data] == ['ledA', 'ledB', 'b', 't'])
     assert (components.count() == 4)
-    assert (components.get_device_name(component_ledA.name) == 'LED')
+    assert (components.get_device_name(component_ledA.name) == 'Led')
     assert (component_ledA in components._data)
+
+    with pytest.raises(ComponentsListDuplicatedError):
+        component_dup = components.create("ledA", DLed.name)
 
 
 def test_create_action():

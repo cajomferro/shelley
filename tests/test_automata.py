@@ -240,23 +240,8 @@ def test_ok_1():
     }
     assert check_valid([create_button()], behavior, triggers)
 
-def test_hello_world_not_empty():
-    hw = create_hello_world()
-    hw_d = nfa_to_dfa(hw)
-    hw_s = hw_d.flatten(minimize=True)
-    hw_r = nfa_to_regex(hw)
-    assert not hw.is_empty()
-    assert not hw_d.is_empty()
-    assert not hw_s.is_empty()
-    print(hw_s)
-    # We know that it should not be Nil, it should accept more
-    assert nfa_to_regex(hw) != Nil
-    assert nfa_to_regex(hw) != Void
-
 def test_fail_hello_world():
     behavior = nfa_to_regex(create_hello_world())
-    assert not behavior.is_empty()
-    print(behavior)
     triggers = {
         LEVEL1:
             Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),

@@ -1,7 +1,7 @@
 #from .context import shelley
 
-from karakuri.regular import NFA, DFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, nfa_to_dfa
-from shelley.automata import check_valid, replace
+from karakuri.regular import NFA, DFA, Nil, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, nfa_to_dfa, Star
+from shelley.automata import check_valid, replace, decode_behavior
 
 B_P = "b.pressed"
 B_R = "b.release"
@@ -76,29 +76,10 @@ LEVEL1 = "l1"
 LEVEL2 = "l2"
 STANDBY1 = "s1"
 STANDBY2 = "s2"
-HELLO_WORLD_TRIGGERS = {
-    LEVEL1:
-        Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
-    LEVEL2:
-        Concat.from_list([
-            Char(B_P),
-            Char(B_R),
-            And(Char(T_C), Char(LB_ON)),
-            Char(T_S),
-        ]),
-    STANDBY1:
-        concat(Char(T_T), Char(LA_OFF)),
-    STANDBY2:
-        concat(
-            Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
-            And(Char(LB_OFF), Char(LA_OFF)),
-        ),
-}
 
 
 def create_hello_world():
     return NFA(
-        # states=[0, 1, 2],
         alphabet=[LEVEL1, LEVEL2, STANDBY1, STANDBY2],
         transition_func=NFA.transition_edges([
             (0, [LEVEL1], 1),
@@ -185,24 +166,13 @@ def test_contains():
 
 
 def test_hello_world():
-    components = [
-        create_button(),
-        create_led_a(),
-        create_led_b(),
-        create_timer()
-    ]
-    behavior = create_hello_world()
-    assert check_valid(components, behavior, HELLO_WORLD_TRIGGERS)
-
-
-def test_fail_hello_world():
     HELLO_WORLD_TRIGGERS = {
         LEVEL1:
             Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
         LEVEL2:
             Concat.from_list([
                 Char(B_P),
-                # Char(B_R),
+                Char(B_R),
                 And(Char(T_C), Char(LB_ON)),
                 Char(T_S),
             ]),
@@ -221,8 +191,79 @@ def test_fail_hello_world():
         create_timer()
     ]
     behavior = create_hello_world()
-    assert not check_valid(components, behavior, HELLO_WORLD_TRIGGERS)
+    assert check_valid(components, nfa_to_regex(behavior), HELLO_WORLD_TRIGGERS)
 
+def test_decode_1():
+    behavior = Union(
+        Char(LEVEL1),
+        Star(Concat(Char(LEVEL1), Char(LEVEL2)))
+    )
+    triggers = {
+        LEVEL1: Char(B_P),
+        LEVEL2: Char(B_P),
+    }
+    be = decode_behavior(behavior, triggers, flatten=True, minimize=True)
+    expected = nfa_to_dfa(regex_to_nfa(Star(Char(B_P)))).flatten(minimize=True)
+    assert expected.contains(be)
+    assert be.contains(expected)
 
-# test_minimize()
-test_hello_world()
+def test_decode2():
+    behavior = Star(Concat(Char(LEVEL1), Char(LEVEL2)))
+    triggers = {
+        LEVEL1: Concat(Char(B_P),Char(B_P)),
+        LEVEL2: Nil,
+    }
+    be = decode_behavior(behavior, triggers, flatten=True, minimize=True)
+    expected = nfa_to_dfa(regex_to_nfa(Star(Concat(Char(B_P),Char(B_P))))).flatten(minimize=True)
+    assert expected.contains(be)
+    assert be.contains(expected)
+
+def test_fail_1():
+    behavior = Union(
+        Char(LEVEL1),
+        Star(Concat(Char(LEVEL1), Char(LEVEL2)))
+    )
+    triggers = {
+        LEVEL1: Char(B_P),
+        LEVEL2: Char(B_P),
+    }
+    assert not check_valid([create_button()], behavior, triggers)
+
+def test_ok_1():
+    behavior = Union(
+        Char(LEVEL1),
+        Star(Concat(Char(LEVEL1), Char(LEVEL2)))
+    )
+    triggers = {
+        LEVEL1: Char(B_P),
+        LEVEL2: Char(B_R),
+    }
+    assert check_valid([create_button()], behavior, triggers)
+
+def test_fail_hello_world():
+    behavior = nfa_to_regex(create_hello_world())
+    triggers = {
+        LEVEL1:
+            Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
+        LEVEL2:
+            Concat.from_list([
+                Char(B_R),
+                Char(B_P),
+                And(Char(T_C), Char(LB_ON)),
+                Char(T_S),
+            ]),
+        STANDBY1:
+            concat(Char(T_T), Char(LA_OFF)),
+        STANDBY2:
+            concat(
+                Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+                And(Char(LB_OFF), Char(LA_OFF)),
+            ),
+    }
+    components = [
+        create_button(),
+        create_led_a(),
+        create_led_b(),
+        create_timer()
+    ]
+    assert not check_valid(components, behavior, triggers)

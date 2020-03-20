@@ -1,7 +1,7 @@
 from .context import shelley
 
 from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
-from shelley.ast.visitors.nfa import CreateNFAVisitor, CountStatesVisitor
+from shelley.ast.visitors.trules2regex import CreateNFAVisitor, CountStatesVisitor
 
 declared_devices = {}
 

@@ -51,7 +51,15 @@ def test_button_structures():
 
 def test_desklamp_triggers():
     regex_dict = get_regex_dict(d_desk_lamp.triggers)
-    print()
+    result_str = ""
     for key in regex_dict:
-        regex = regex_dict[key]
-        print("{0}: {1}".format(key, regex.to_string()))
+        if key != 'begin':
+            regex = regex_dict[key]
+            result_str += ("{0}: {1}\n".format(key, regex.to_string()))
+
+    expected_str = """level1: b.pressed \cdot b.released \cdot ledA.on \cdot t.started
+level2: (b.pressed \cdot b.released \cdot (t.canceled \cdot ledB.on + ledB.on \cdot t.canceled)) \cdot t.started
+standby1: t.timeout \cdot ledA.off
+standby2: (b.pressed \cdot b.released \cdot t.canceled + t.timeout) \cdot (ledB.off \cdot ledA.off + ledA.off \cdot ledB.off)"""
+    print(result_str)
+    assert result_str.strip() == expected_str

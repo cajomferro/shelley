@@ -4,7 +4,7 @@ from karakuri.regular import NFA, DFA, Nil, nfa_to_regex, regex_to_nfa, Union, C
 from shelley.automata import check_valid, replace, decode_behavior
 
 B_P = "b.pressed"
-B_R = "b.release"
+B_R = "b.released"
 
 
 def create_button():
@@ -20,8 +20,8 @@ def create_button():
     )
 
 
-LA_ON = "la.on"
-LA_OFF = "la.off"
+LA_ON = "ledA.on"
+LA_OFF = "ledA.off"
 
 
 def create_led_a():
@@ -37,8 +37,8 @@ def create_led_a():
     )
 
 
-LB_ON = "lb.on"
-LB_OFF = "lb.off"
+LB_ON = "ledB.on"
+LB_OFF = "ledB.off"
 
 
 def create_led_b():
@@ -54,9 +54,9 @@ def create_led_b():
     )
 
 
-T_T = "t.t"
-T_C = "t.c"
-T_S = "t.s"
+T_T = "t.timeout"
+T_C = "t.canceled"
+T_S = "t.started"
 
 
 def create_timer():
@@ -72,10 +72,10 @@ def create_timer():
     )
 
 
-LEVEL1 = "l1"
-LEVEL2 = "l2"
-STANDBY1 = "s1"
-STANDBY2 = "s2"
+LEVEL1 = "level1"
+LEVEL2 = "level2"
+STANDBY1 = "standby1"
+STANDBY2 = "standby2"
 
 
 def create_hello_world():
@@ -184,6 +184,11 @@ def test_hello_world():
                 And(Char(LB_OFF), Char(LA_OFF)),
             ),
     }
+
+    print()
+    for key in HELLO_WORLD_TRIGGERS:
+        print("{0}: {1}".format(key, HELLO_WORLD_TRIGGERS[key].to_string()))
+
     components = [
         create_button(),
         create_led_a(),

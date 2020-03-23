@@ -83,7 +83,7 @@ class DDeskLamp(Device):
 
         t_standby1_rules = TriggerRuleSequence(
             TriggerRuleEvent(component_t, EEvent('timeout')),
-            TriggerRuleEvent(component_ledB, IEvent('off')))
+            TriggerRuleEvent(component_ledA, IEvent('off')))
 
         t_standby2_rules = TriggerRuleSequence(
             TriggerRuleChoice(

@@ -36,8 +36,7 @@ class TRules2RegexVisitor(TriggersVisitor):
 
     def visit_trigger(self, element: Trigger) -> None:
         element.trigger_rule.accept(self)
-        trigger_rule_star = Star(self.current_regex)
-        self.regex_dict[element.event.name] = trigger_rule_star
+        self.regex_dict[element.event.name] = self.current_regex
 
     def visit_triggers(self, element: Triggers) -> None:
         for trigger in element.list():

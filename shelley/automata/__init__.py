@@ -1,6 +1,17 @@
-from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection
+from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, Mapping, Set
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Void, Nil, Concat, Star, Regex, nfa_to_dfa, DFA
 from dataclasses import dataclass
+
+@dataclass
+class Device:
+    events:List[str]
+    behavior:List[Tuple[str,str]]
+    components:Dict[str, str]
+    triggers:Dict[str,Regex]
+
+@dataclass
+class CheckedDevice:
+    nfa: NFA[Any,str]
 
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     if r is Void or r is Nil:
@@ -33,17 +44,17 @@ def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     return r
 
 
-def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA:
+def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA[Any,str]:
     states = ["begin_post"]
     for evt in events:
         states.append(evt + "_pre")
         states.append(evt + "_post")
-    edges = []
+    edges:List[Tuple[str,Optional[str],str]] = []
     for (src, dst) in behavior:
         edges.append((src + "_post", None, dst + "_pre"))
     for evt in events:
         edges.append((evt + "_pre", evt, evt + "_post"))
-    tsx = {}
+    tsx:Dict[Tuple[str,Optional[str]], Set[str]] = {}
     for (src, char, dst) in edges:
         out = tsx.get((src, char), None)
         if out is None:
@@ -57,28 +68,26 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA
         accepted_states = list(evt + "_post" for evt in events))
 
 def prefix_nfa(nfa:NFA, prefix:str) -> NFA:
-    return NFA(alphabet=set(prefix + x for x in nfa.alphabet),
-        transition_func=lambda src, char: nfa.transition_func(src, prefix + char),
-        start_state=nfa.start_state, accepted_states=nfa.accepted_states)
+    return NFA(
+        alphabet=set(prefix + x for x in nfa.alphabet),
+        transition_func=(lambda src, char: nfa.transition_func(src, None if char is None else prefix + char)),
+        start_state=nfa.start_state, accepted_states=nfa.accepted_states
+    )
 
-def build_components(components:Dict[str, str], known_devices:Dict[str, NFA]) -> List[NFA]:
+
+def build_components(components:Dict[str, str], known_devices:Mapping[str, CheckedDevice]) -> List[NFA]:
     result = []
     for (name, ty) in components.items():
-        result.append(prefix_nfa(known_devices[ty], name + "."))
+        result.append(prefix_nfa(known_devices[ty].nfa, name + "."))
     return result
 
-@dataclass
-class Device:
-    events:List[str]
-    behavior:List[Tuple[str,str]]
-    components:Dict[str, str]
-    triggers:Dict[str,Regex]
-    known_devices:Dict[str,NFA]
-
-def check_valid_device(dev:Device):
-    components = build_components(dev.components, dev.known_devices)
+def check_valid_device(dev:Device, known_devices:Mapping[str, CheckedDevice]) -> Optional[CheckedDevice]:
+    components = build_components(dev.components, known_devices)
     behavior = build_behavior(dev.behavior, dev.events)
-    check_valid(components, behavior, dev.triggers)
+    if check_valid(components, nfa_to_regex(behavior), dev.triggers):
+        return CheckedDevice(behavior)
+    else:
+        return None
 
 def merge_components(components:Iterable[NFA[Any,str]], flatten:bool=False, minimize:bool=False) -> DFA[Any,str]:
     # Get the first component
@@ -89,7 +98,7 @@ def merge_components(components:Iterable[NFA[Any,str]], flatten:bool=False, mini
     # Convert the given NFA into a minimized DFA
     dev_dfa = nfa_to_dfa(dev)
     if flatten:
-        dev_dfa = dev_dfa.flatten(minimize=minimize)
+        return dev_dfa.flatten(minimize=minimize)
     return dev_dfa
 
 def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
@@ -99,10 +108,10 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
     decoded_regex = replace(behavior, triggers)
     decoded_behavior = regex_to_nfa(decoded_regex, alphabet)
     # Convert into a minimized DFA
-    decoded_behavior = nfa_to_dfa(decoded_behavior)
+    decoded_behavior_dfa = nfa_to_dfa(decoded_behavior)
     if flatten:
-        decoded_behavior = decoded_behavior.flatten(minimize=minimize)
-    return decoded_behavior
+        return decoded_behavior_dfa.flatten(minimize=minimize)
+    return decoded_behavior_dfa
 
 
 def check_valid(components: List[NFA[Any,str]], behavior: Regex[str], triggers: Dict[str, Regex[str]], minimize=False,

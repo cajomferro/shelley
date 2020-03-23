@@ -20,6 +20,9 @@ class Action(Node):
         self.check_is_duplicated(actions)
         actions.append(self)
 
+    def __str__(self):
+        return self.name
+
     # def check_is_duplicated(self, actions: Set[Action]):
     #     if self in actions:
     #         raise ActionsListDuplicatedError("Duplicated action: {0}".format(self.name))

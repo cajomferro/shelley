@@ -185,10 +185,6 @@ def test_hello_world():
             ),
     }
 
-    print()
-    for key in HELLO_WORLD_TRIGGERS:
-        print("{0}: {1}".format(key, HELLO_WORLD_TRIGGERS[key].to_string()))
-
     components = [
         create_button(),
         create_led_a(),

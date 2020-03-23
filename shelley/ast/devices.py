@@ -78,7 +78,7 @@ class Device(Node):
     #     return result[0]
     #
     def get_all_events(self) -> Events:
-        return self.internal_events.merge(self.external_events)
+        return self.external_events.merge(self.internal_events)
     #
     # @staticmethod
     # def behaviours_as_event_tuple(behaviours: Set[Behaviour]):

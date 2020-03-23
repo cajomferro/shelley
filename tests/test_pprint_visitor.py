@@ -14,7 +14,7 @@ declared_devices[d_button.name] = d_button
 d_timer = create_device_timer()
 declared_devices[d_timer.name] = d_timer
 
-d_desk_lamp = create_device_desk_lamp(d_led, d_button, d_timer)
+d_desk_lamp = create_device_desk_lamp()
 
 
 def test_pprint_led():
@@ -76,7 +76,7 @@ Device DeskLamp uses Led, Button, Timer, :
     begin: ( b.begin  ; ( ledA.begin  ; ( ledB.begin  ; t.begin )))
     level1: ( b.pressed  ; ( b.released  ; ( ledA.on  ; t.started )))
     level2: ( b.pressed  ; ( b.released  ; ( ( ( t.canceled  ; ledB.on ) xor ( ledB.on  ; t.canceled )) ; t.started )))
-    standby1: ( t.timeout  ; ledB.off )
+    standby1: ( t.timeout  ; ledA.off )
     standby2: ( ( ( b.pressed  ; ( b.released  ; t.canceled )) xor t.timeout ) ; ( ( ledB.off  ; ledA.off ) xor ( ledA.off  ; ledB.off )))
 
 """

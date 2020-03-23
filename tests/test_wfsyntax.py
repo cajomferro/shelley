@@ -14,7 +14,7 @@ declared_devices[d_button.name] = d_button
 d_timer = create_device_timer()
 declared_devices[d_timer.name] = d_timer
 
-d_desk_lamp = create_device_desk_lamp(d_led, d_button, d_timer)
+d_desk_lamp = create_device_desk_lamp()
 
 
 def test_triggers():

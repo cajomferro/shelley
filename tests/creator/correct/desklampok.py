@@ -14,7 +14,7 @@ from .timerok import DTimer
 class DDeskLamp(Device):
     name = 'DeskLamp'
 
-    def __init__(self, led: DLed, button: DButton, timer: DTimer):
+    def __init__(self):
         i_events, e_events = parse_events(
             "external begin, external level1, external level2, external standby1, external standby2")
         actions = parse_actions("")
@@ -41,7 +41,7 @@ class DDeskLamp(Device):
         # Trigger rules for Desk Lamp
         # level1 <- b.pressed; b.released; ledA.on; t.started
         # level2 <- b.pressed; b.released; (t.canceled and ledB.on); t.started
-        # standby1 <- t.timeout; ledB.off
+        # standby1 <- t.timeout; ledA.off
         # standby2 <-
         #   ((b.pressed; b.released; t.canceled) xor t.timeout); (ledB.off and ledA.off)
 
@@ -114,5 +114,5 @@ class DDeskLamp(Device):
         super().__init__(self.name, actions, i_events, e_events, behaviours, triggers, uses, components)
 
 
-def create_device_desk_lamp(d_led_a: DLed, d_button: DButton, d_timer: DTimer):
-    return DDeskLamp(d_led_a, d_button, d_timer)
+def create_device_desk_lamp():
+    return DDeskLamp()

@@ -101,7 +101,7 @@ def test_timer_automata():
         regex = automata_timer.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
     # print(result_str)
-    assert result_str.strip() == """begin: {}
+    assert result_str.strip() == """begin: []
 started: []
 canceled: []
 timeout: []"""
@@ -130,10 +130,9 @@ standby2: (b.pressed \cdot b.released \cdot t.canceled + t.timeout) \cdot (ledB.
     print(result_str)
     assert result_str.strip() == expected_str
 
-    known_devices = {'ledA': check_valid_device(create_automata_led(), {}),
-                     'ledB': check_valid_device(create_automata_led(), {}),
-                     'b': check_valid_device(create_automata_button(), {}),
-                     'timer': check_valid_device(create_automata_timer(), {})}
+    known_devices = {'Led': check_valid_device(create_automata_led(), {}),
+                     'Button': check_valid_device(create_automata_button(), {}),
+                     'Timer': check_valid_device(create_automata_timer(), {})}
 
     checked_desklamp = check_valid_device(automata_desklamp, known_devices)
     assert checked_desklamp is not None

@@ -67,7 +67,7 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], events: List[str]) -> NF
         out.add(dst)
 
     return NFA(alphabet=frozenset(events),
-               transition_func=lambda x, y: tsx[(x, y)],
+               transition_func=NFA.transition_table(tsx),
                start_state="begin_post",
                accepted_states=list(evt + "_post" for evt in events))
 

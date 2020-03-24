@@ -1,4 +1,5 @@
 from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, Mapping, Set
+import typing
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Void, Nil, Concat, Star, Regex, nfa_to_dfa, \
     DFA
 from dataclasses import dataclass
@@ -89,17 +90,6 @@ def build_components(components: Dict[str, str], known_devices: Mapping[str, Che
         result.append(prefix_nfa(known_devices[ty].nfa, name + "."))
     return result
 
-
-def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> Optional[CheckedDevice]:
-    components = build_components(dev.components, known_devices)
-    behavior = build_behavior(dev.behavior, dev.events)
-    err_behavior = check_valid(components, nfa_to_regex(behavior), dev.triggers)
-    if err_behavior is None:
-        return CheckedDevice(behavior)
-    else:
-        return InvalidBehavior(err_behavior)
-
-
 def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False, minimize: bool = False) -> DFA[
     Any, str]:
     # Get the first component
@@ -127,7 +117,7 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
     return decoded_behavior_dfa
 
 
-def check_valid(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]], minimize=False,
+def get_invalid_behavior(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]], minimize=False,
                 flatten=False) -> Optional[NFA[Any,str]]:
     if len(components) == 0:
         return None
@@ -139,3 +129,12 @@ def check_valid(components: List[NFA[Any, str]], behavior: Regex[str], triggers:
         return None
     else:
         return invalid_behavior
+
+def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[CheckedDevice,InvalidBehavior]:
+    components = build_components(dev.components, known_devices)
+    behavior = build_behavior(dev.behavior, dev.events)
+    inv_behavior = get_invalid_behavior(components, nfa_to_regex(behavior), dev.triggers)
+    if inv_behavior is None:
+        return CheckedDevice(behavior)
+    else:
+        return InvalidBehavior(err_behavior)

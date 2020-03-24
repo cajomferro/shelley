@@ -2,7 +2,7 @@
 
 from karakuri.regular import NFA, DFA, Nil, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
     nfa_to_dfa, Star
-from shelley.automata import check_valid, replace, decode_behavior
+from shelley.automata import get_invalid_behavior, replace, decode_behavior
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -192,7 +192,7 @@ def test_hello_world():
         create_timer()
     ]
     behavior = create_hello_world()
-    assert check_valid(components, nfa_to_regex(behavior), HELLO_WORLD_TRIGGERS)
+    assert get_invalid_behavior(components, nfa_to_regex(behavior), HELLO_WORLD_TRIGGERS) is None
 
 
 def test_decode_1():
@@ -230,7 +230,7 @@ def test_fail_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
-    assert not check_valid([create_button()], behavior, triggers)
+    assert get_invalid_behavior([create_button()], behavior, triggers) is not None
 
 
 def test_ok_1():
@@ -242,7 +242,7 @@ def test_ok_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    assert check_valid([create_button()], behavior, triggers)
+    assert get_invalid_behavior([create_button()], behavior, triggers) is None
 
 
 def test_fail_hello_world():
@@ -271,4 +271,4 @@ def test_fail_hello_world():
         create_led_b(),
         create_timer()
     ]
-    assert not check_valid(components, behavior, triggers)
+    assert get_invalid_behavior(components, behavior, triggers) is not None

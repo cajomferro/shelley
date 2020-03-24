@@ -118,7 +118,7 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
 
 
 def get_invalid_behavior(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]], minimize=False,
-                flatten=False) -> Optional[NFA[Any,str]]:
+                flatten=False) -> Optional[DFA[Any,str]]:
     if len(components) == 0:
         return None
     all_possible = merge_components(components, flatten, minimize)

@@ -125,6 +125,8 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
 
 def check_valid(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]], minimize=False,
                 flatten=False) -> bool:
+    if len(components) == 0:
+        return True
     all_possible = merge_components(components, flatten, minimize)
     decoded_behavior = decode_behavior(behavior, triggers, all_possible.alphabet, minimize, flatten)
     # Ensure that the all possible behaviors in dev contain the decoded behavior

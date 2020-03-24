@@ -137,4 +137,4 @@ def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) 
     if inv_behavior is None:
         return CheckedDevice(behavior)
     else:
-        return InvalidBehavior(err_behavior)
+        return InvalidBehavior(inv_behavior)

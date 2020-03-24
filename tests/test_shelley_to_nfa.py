@@ -5,7 +5,7 @@ from .context import shelley
 from typing import Dict
 
 from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
-from shelley.automata import Device, check_valid_device
+from shelley.automata import Device, check_valid_device, CheckedDevice, InvalidBehavior
 from shelley.ast.triggers import Triggers
 from shelley.ast.visitors.trules2regex import TRules2RegexVisitor
 from karakuri.regular import Regex
@@ -60,13 +60,13 @@ def test_button_automata():
     for key in automata_button.triggers:
         regex = automata_button.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
-    # print(result_str)
+
     assert result_str.strip() == """begin: []
 pressed: []
 released: []"""
 
     checked_button = check_valid_device(automata_button, {})
-    assert checked_button is not None
+    assert isinstance(checked_button, CheckedDevice)
 
 
 def test_led_automata():
@@ -80,13 +80,13 @@ def test_led_automata():
     for key in automata_led.triggers:
         regex = automata_led.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
-    # print(result_str)
+
     assert result_str.strip() == """begin: []
 on: []
 off: []"""
 
     checked_led = check_valid_device(automata_led, {})
-    assert checked_led is not None
+    assert isinstance(checked_led, CheckedDevice)
 
 
 def test_timer_automata():
@@ -100,14 +100,14 @@ def test_timer_automata():
     for key in automata_timer.triggers:
         regex = automata_timer.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
-    # print(result_str)
+
     assert result_str.strip() == """begin: []
 started: []
 canceled: []
 timeout: []"""
 
     checked_timer = check_valid_device(automata_timer, {})
-    assert checked_timer is not None
+    assert isinstance(checked_timer, CheckedDevice)
 
 
 def test_desklamp_automata():
@@ -120,14 +120,14 @@ def test_desklamp_automata():
     result_str = ""
     for key in automata_desklamp.triggers:
         regex = automata_desklamp.triggers[key]
-        result_str += ("{0}: {1}\n".format(key, regex.to_string()))
+        result_str += ("{0}: {1}\n".format(key, regex.to_string(app_str=lambda x, y: x + " ; " + y)))
 
-    expected_str = """begin: b.begin \\cdot ledA.begin \\cdot ledB.begin \\cdot t.begin
-level1: b.pressed \cdot b.released \cdot ledA.on \cdot t.started
-level2: b.pressed \cdot (b.released \cdot ((t.canceled \cdot ledB.on + ledB.on \cdot t.canceled) \cdot t.started))
-standby1: t.timeout \cdot ledA.off
-standby2: (b.pressed \cdot b.released \cdot t.canceled + t.timeout) \cdot (ledB.off \cdot ledA.off + ledA.off \cdot ledB.off)"""
-    print(result_str)
+    expected_str = """begin: b.begin ; ledA.begin ; ledB.begin ; t.begin
+level1: b.pressed ; b.released ; ledA.on ; t.started
+level2: b.pressed ; (b.released ; ((t.canceled ; ledB.on + ledB.on ; t.canceled) ; t.started))
+standby1: t.timeout ; ledA.off
+standby2: (b.pressed ; b.released ; t.canceled + t.timeout) ; (ledB.off ; ledA.off + ledA.off ; ledB.off)"""
+
     assert result_str.strip() == expected_str
 
     known_devices = {'Led': check_valid_device(create_automata_led(), {}),
@@ -135,4 +135,4 @@ standby2: (b.pressed \cdot b.released \cdot t.canceled + t.timeout) \cdot (ledB.
                      'Timer': check_valid_device(create_automata_timer(), {})}
 
     checked_desklamp = check_valid_device(automata_desklamp, known_devices)
-    assert checked_desklamp is not None
+    assert isinstance(checked_desklamp, CheckedDevice)

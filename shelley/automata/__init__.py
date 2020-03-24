@@ -16,6 +16,9 @@ class Device:
 class CheckedDevice:
     nfa: NFA[Any, str]
 
+@dataclass
+class InvalidBehavior:
+    dfa: DFA[Any, str]
 
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     if r is Void or r is Nil:
@@ -90,10 +93,11 @@ def build_components(components: Dict[str, str], known_devices: Mapping[str, Che
 def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> Optional[CheckedDevice]:
     components = build_components(dev.components, known_devices)
     behavior = build_behavior(dev.behavior, dev.events)
-    if check_valid(components, nfa_to_regex(behavior), dev.triggers):
+    err_behavior = check_valid(components, nfa_to_regex(behavior), dev.triggers)
+    if err_behavior is None:
         return CheckedDevice(behavior)
     else:
-        return None
+        return InvalidBehavior(err_behavior)
 
 
 def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False, minimize: bool = False) -> DFA[
@@ -124,10 +128,14 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
 
 
 def check_valid(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]], minimize=False,
-                flatten=False) -> bool:
+                flatten=False) -> Optional[NFA[Any,str]]:
     if len(components) == 0:
-        return True
+        return None
     all_possible = merge_components(components, flatten, minimize)
     decoded_behavior = decode_behavior(behavior, triggers, all_possible.alphabet, minimize, flatten)
     # Ensure that the all possible behaviors in dev contain the decoded behavior
-    return all_possible.contains(decoded_behavior)
+    invalid_behavior = decoded_behavior.subtract(all_possible)
+    if invalid_behavior.is_empty():
+        return None
+    else:
+        return invalid_behavior

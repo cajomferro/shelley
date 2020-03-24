@@ -2,18 +2,13 @@
 
 from .context import shelley
 
-from typing import Dict, Tuple
+from typing import Dict
 
 from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
-from .creator.correct.timerok import DTimer
-from .creator.correct.ledok import DLed
-from .creator.correct.buttonok import DButton
-from .creator.correct.desklampok import DDeskLamp
-from shelley.automata import Device
+from shelley.automata import Device, check_valid_device
 from shelley.ast.triggers import Triggers
 from shelley.ast.visitors.trules2regex import TRules2RegexVisitor
-from shelley.automata import check_valid_device
-from karakuri.regular import Regex, NFA
+from karakuri.regular import Regex
 
 
 def create_automata_button() -> Device:
@@ -21,7 +16,7 @@ def create_automata_button() -> Device:
     return Device(events=shelley_button.get_all_events().list_str(),
                   behavior=shelley_button.behaviors.as_list_tuples(),
                   components=shelley_button.components.components_to_devices,
-                  triggers=get_regex_dict(shelley_button.triggers), known_devices={})
+                  triggers=get_regex_dict(shelley_button.triggers))
 
 
 def create_automata_led() -> Device:
@@ -29,7 +24,7 @@ def create_automata_led() -> Device:
     return Device(events=shelley_led.get_all_events().list_str(),
                   behavior=shelley_led.behaviors.as_list_tuples(),
                   components=shelley_led.components.components_to_devices,
-                  triggers=get_regex_dict(shelley_led.triggers), known_devices={})
+                  triggers=get_regex_dict(shelley_led.triggers))
 
 
 def create_automata_timer() -> Device:
@@ -37,15 +32,15 @@ def create_automata_timer() -> Device:
     return Device(events=shelley_timer.get_all_events().list_str(),
                   behavior=shelley_timer.behaviors.as_list_tuples(),
                   components=shelley_timer.components.components_to_devices,
-                  triggers=get_regex_dict(shelley_timer.triggers), known_devices={})
+                  triggers=get_regex_dict(shelley_timer.triggers))
 
 
-def create_automata_desklamp(known_devices: Dict[str, Device]) -> Device:
+def create_automata_desklamp() -> Device:
     shelley_desk_lamp = create_device_desk_lamp()
     return Device(events=shelley_desk_lamp.get_all_events().list_str(),
                   behavior=shelley_desk_lamp.behaviors.as_list_tuples(),
                   components=shelley_desk_lamp.components.components_to_devices,
-                  triggers=get_regex_dict(shelley_desk_lamp.triggers), known_devices=known_devices)
+                  triggers=get_regex_dict(shelley_desk_lamp.triggers))
 
 
 def get_regex_dict(triggers: Triggers) -> Dict[str, Regex]:
@@ -70,6 +65,9 @@ def test_button_automata():
 pressed: {}
 released: {}"""
 
+    checked_button = check_valid_device(automata_button, {})
+    assert checked_button is not None
+
 
 def test_led_automata():
     automata_led = create_automata_led()
@@ -86,6 +84,9 @@ def test_led_automata():
     assert result_str.strip() == """begin: {}
 on: {}
 off: {}"""
+
+    checked_led = check_valid_device(automata_led, {})
+    assert checked_led is not None
 
 
 def test_timer_automata():
@@ -105,14 +106,12 @@ started: {}
 canceled: {}
 timeout: {}"""
 
+    checked_timer = check_valid_device(automata_timer, {})
+    assert checked_timer is not None
+
 
 def test_desklamp_automata():
-    known_devices = dict()
-    known_devices['ledA'] = create_automata_led()
-    known_devices['ledB'] = create_automata_led()
-    known_devices['b'] = create_automata_button()
-    known_devices['timer'] = create_automata_timer()
-    automata_desklamp = create_automata_desklamp(known_devices)
+    automata_desklamp = create_automata_desklamp()
     assert automata_desklamp.events == ['begin', 'level1', 'level2', 'standby1', 'standby2']
     assert automata_desklamp.behavior == [('begin', 'level1'), ('level1', 'standby1'), ('level1', 'level2'),
                                           ('level2', 'standby2'), ('standby1', 'level1'), ('standby2', 'level1')]
@@ -131,4 +130,10 @@ standby2: (b.pressed \cdot b.released \cdot t.canceled + t.timeout) \cdot (ledB.
     print(result_str)
     assert result_str.strip() == expected_str
 
-    # assert check_valid_device(automata_desklamp)
+    known_devices = {'ledA': check_valid_device(create_automata_led(), {}),
+                     'ledB': check_valid_device(create_automata_led(), {}),
+                     'b': check_valid_device(create_automata_button(), {}),
+                     'timer': check_valid_device(create_automata_timer(), {})}
+
+    checked_desklamp = check_valid_device(automata_desklamp, known_devices)
+    assert checked_desklamp is not None

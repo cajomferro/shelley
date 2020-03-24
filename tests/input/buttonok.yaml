@@ -1,0 +1,9 @@
+#{'device': {'name': 'Button', 'events': ['pressed', 'released'],
+#                'behavior': [['pressed', 'released'], ['released', 'pressed']]}}
+
+device:
+  name: Button
+  events: [pressed , released]
+  behavior:
+    - [pressed, released]
+    - [released, pressed]

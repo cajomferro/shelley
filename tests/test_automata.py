@@ -205,7 +205,6 @@ def test_decode_1():
     be = decode_behavior(behavior, triggers, flatten=True, minimize=True)
     expected = nfa_to_dfa(regex_to_nfa(Star(Char(B_P)))).flatten(minimize=True)
     assert expected.contains(be)
-    assert be.contains(expected)
 
 def test_decode2():
     behavior = Star(Concat(Char(LEVEL1), Char(LEVEL2)))

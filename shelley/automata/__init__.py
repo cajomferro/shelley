@@ -1,17 +1,21 @@
 from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, Mapping, Set
-from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Void, Nil, Concat, Star, Regex, nfa_to_dfa, DFA
+from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Void, Nil, Concat, Star, Regex, nfa_to_dfa, \
+    DFA
 from dataclasses import dataclass
+
 
 @dataclass
 class Device:
-    events:List[str]
-    behavior:List[Tuple[str,str]]
-    components:Dict[str, str]
-    triggers:Dict[str,Regex]
+    events: List[str]
+    behavior: List[Tuple[str, str]]
+    components: Dict[str, str]
+    triggers: Dict[str, Regex]
+
 
 @dataclass
 class CheckedDevice:
-    nfa: NFA[Any,str]
+    nfa: NFA[Any, str]
+
 
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     if r is Void or r is Nil:
@@ -44,17 +48,17 @@ def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     return r
 
 
-def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA[Any,str]:
+def build_behavior(behavior: Iterable[Tuple[str, str]], events: List[str]) -> NFA[Any, str]:
     states = ["begin_post"]
     for evt in events:
         states.append(evt + "_pre")
         states.append(evt + "_post")
-    edges:List[Tuple[str,Optional[str],str]] = []
+    edges: List[Tuple[str, Optional[str], str]] = []
     for (src, dst) in behavior:
         edges.append((src + "_post", None, dst + "_pre"))
     for evt in events:
         edges.append((evt + "_pre", evt, evt + "_post"))
-    tsx:Dict[Tuple[str,Optional[str]], Set[str]] = {}
+    tsx: Dict[Tuple[str, Optional[str]], Set[str]] = {}
     for (src, char, dst) in edges:
         out = tsx.get((src, char), None)
         if out is None:
@@ -63,11 +67,12 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA
         out.add(dst)
 
     return NFA(alphabet=frozenset(events),
-        transition_func=lambda x,y: tsx[(x,y)],
-        start_state="begin_post",
-        accepted_states = list(evt + "_post" for evt in events))
+               transition_func=lambda x, y: tsx[(x, y)],
+               start_state="begin_post",
+               accepted_states=list(evt + "_post" for evt in events))
 
-def prefix_nfa(nfa:NFA, prefix:str) -> NFA:
+
+def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
     return NFA(
         alphabet=set(prefix + x for x in nfa.alphabet),
         transition_func=(lambda src, char: nfa.transition_func(src, None if char is None else prefix + char)),
@@ -75,13 +80,14 @@ def prefix_nfa(nfa:NFA, prefix:str) -> NFA:
     )
 
 
-def build_components(components:Dict[str, str], known_devices:Mapping[str, CheckedDevice]) -> List[NFA]:
+def build_components(components: Dict[str, str], known_devices: Mapping[str, CheckedDevice]) -> List[NFA]:
     result = []
     for (name, ty) in components.items():
         result.append(prefix_nfa(known_devices[ty].nfa, name + "."))
     return result
 
-def check_valid_device(dev:Device, known_devices:Mapping[str, CheckedDevice]) -> Optional[CheckedDevice]:
+
+def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> Optional[CheckedDevice]:
     components = build_components(dev.components, known_devices)
     behavior = build_behavior(dev.behavior, dev.events)
     if check_valid(components, nfa_to_regex(behavior), dev.triggers):
@@ -89,7 +95,9 @@ def check_valid_device(dev:Device, known_devices:Mapping[str, CheckedDevice]) ->
     else:
         return None
 
-def merge_components(components:Iterable[NFA[Any,str]], flatten:bool=False, minimize:bool=False) -> DFA[Any,str]:
+
+def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False, minimize: bool = False) -> DFA[
+    Any, str]:
     # Get the first component
     dev, *rst = components
     # Shuffle all devices:
@@ -101,9 +109,10 @@ def merge_components(components:Iterable[NFA[Any,str]], flatten:bool=False, mini
         return dev_dfa.flatten(minimize=minimize)
     return dev_dfa
 
+
 def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
-                alphabet:Optional[Collection[str]]=None,
-                minimize:bool=False, flatten:bool=False) -> DFA[Any,str]:
+                    alphabet: Optional[Collection[str]] = None,
+                    minimize: bool = False, flatten: bool = False) -> DFA[Any, str]:
     # Replace tokens by REGEX in decoder
     decoded_regex = replace(behavior, triggers)
     decoded_behavior = regex_to_nfa(decoded_regex, alphabet)
@@ -114,7 +123,7 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
     return decoded_behavior_dfa
 
 
-def check_valid(components: List[NFA[Any,str]], behavior: Regex[str], triggers: Dict[str, Regex[str]], minimize=False,
+def check_valid(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]], minimize=False,
                 flatten=False) -> bool:
     all_possible = merge_components(components, flatten, minimize)
     decoded_behavior = decode_behavior(behavior, triggers, all_possible.alphabet, minimize, flatten)

@@ -1,10 +1,11 @@
-#from .context import shelley
+# from .context import shelley
 
-from karakuri.regular import NFA, DFA, Nil, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, nfa_to_dfa, Star
+from karakuri.regular import NFA, DFA, Nil, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
+    nfa_to_dfa, Star
 from shelley.automata import check_valid, replace, decode_behavior
 
 B_P = "b.pressed"
-B_R = "b.release"
+B_R = "b.released"
 
 
 def create_button():
@@ -20,8 +21,8 @@ def create_button():
     )
 
 
-LA_ON = "la.on"
-LA_OFF = "la.off"
+LA_ON = "ledA.on"
+LA_OFF = "ledA.off"
 
 
 def create_led_a():
@@ -37,8 +38,8 @@ def create_led_a():
     )
 
 
-LB_ON = "lb.on"
-LB_OFF = "lb.off"
+LB_ON = "ledB.on"
+LB_OFF = "ledB.off"
 
 
 def create_led_b():
@@ -54,9 +55,9 @@ def create_led_b():
     )
 
 
-T_T = "t.t"
-T_C = "t.c"
-T_S = "t.s"
+T_T = "t.timeout"
+T_C = "t.canceled"
+T_S = "t.started"
 
 
 def create_timer():
@@ -72,10 +73,10 @@ def create_timer():
     )
 
 
-LEVEL1 = "l1"
-LEVEL2 = "l2"
-STANDBY1 = "s1"
-STANDBY2 = "s2"
+LEVEL1 = "level1"
+LEVEL2 = "level2"
+STANDBY1 = "standby1"
+STANDBY2 = "standby2"
 
 
 def create_hello_world():
@@ -193,6 +194,7 @@ def test_hello_world():
     behavior = create_hello_world()
     assert check_valid(components, nfa_to_regex(behavior), HELLO_WORLD_TRIGGERS)
 
+
 def test_decode_1():
     behavior = Union(
         Char(LEVEL1),
@@ -206,16 +208,18 @@ def test_decode_1():
     expected = nfa_to_dfa(regex_to_nfa(Star(Char(B_P)))).flatten(minimize=True)
     assert expected.contains(be)
 
+
 def test_decode2():
     behavior = Star(Concat(Char(LEVEL1), Char(LEVEL2)))
     triggers = {
-        LEVEL1: Concat(Char(B_P),Char(B_P)),
+        LEVEL1: Concat(Char(B_P), Char(B_P)),
         LEVEL2: Nil,
     }
     be = decode_behavior(behavior, triggers, flatten=True, minimize=True)
-    expected = nfa_to_dfa(regex_to_nfa(Star(Concat(Char(B_P),Char(B_P))))).flatten(minimize=True)
+    expected = nfa_to_dfa(regex_to_nfa(Star(Concat(Char(B_P), Char(B_P))))).flatten(minimize=True)
     assert expected.contains(be)
     assert be.contains(expected)
+
 
 def test_fail_1():
     behavior = Union(
@@ -228,6 +232,7 @@ def test_fail_1():
     }
     assert not check_valid([create_button()], behavior, triggers)
 
+
 def test_ok_1():
     behavior = Union(
         Char(LEVEL1),
@@ -238,6 +243,7 @@ def test_ok_1():
         LEVEL2: Char(B_R),
     }
     assert check_valid([create_button()], behavior, triggers)
+
 
 def test_fail_hello_world():
     behavior = nfa_to_regex(create_hello_world())

@@ -61,9 +61,9 @@ def test_button_automata():
         regex = automata_button.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
     # print(result_str)
-    assert result_str.strip() == """begin: {}
-pressed: {}
-released: {}"""
+    assert result_str.strip() == """begin: []
+pressed: []
+released: []"""
 
     checked_button = check_valid_device(automata_button, {})
     assert checked_button is not None
@@ -81,9 +81,9 @@ def test_led_automata():
         regex = automata_led.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
     # print(result_str)
-    assert result_str.strip() == """begin: {}
-on: {}
-off: {}"""
+    assert result_str.strip() == """begin: []
+on: []
+off: []"""
 
     checked_led = check_valid_device(automata_led, {})
     assert checked_led is not None
@@ -102,9 +102,9 @@ def test_timer_automata():
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
     # print(result_str)
     assert result_str.strip() == """begin: {}
-started: {}
-canceled: {}
-timeout: {}"""
+started: []
+canceled: []
+timeout: []"""
 
     checked_timer = check_valid_device(automata_timer, {})
     assert checked_timer is not None

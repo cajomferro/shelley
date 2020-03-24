@@ -93,7 +93,7 @@ def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) 
     if check_valid(components, nfa_to_regex(behavior), dev.triggers):
         return CheckedDevice(behavior)
     else:
-        return None
+        return None  # TODO: return invalid NFA (ErroneousBehavior class?) and show what is wrong to user
 
 
 def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False, minimize: bool = False) -> DFA[

@@ -57,12 +57,6 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], events:List[str]) -> NFA
         accepted_states = list(evt + "_post" for evt in events))
 
 def prefix_nfa(nfa:NFA, prefix:str) -> NFA:
-    """
-    Creates new NFA with prefix (instantiation)
-    :param nfa:
-    :param prefix:
-    :return:
-    """
     return NFA(alphabet=set(prefix + x for x in nfa.alphabet),
         transition_func=lambda src, char: nfa.transition_func(src, prefix + char),
         start_state=nfa.start_state, accepted_states=nfa.accepted_states)
@@ -81,10 +75,10 @@ class Device:
     triggers:Dict[str,Regex]
     known_devices:Dict[str,NFA]
 
-def check_valid_device(dev:Device) -> bool:
+def check_valid_device(dev:Device):
     components = build_components(dev.components, dev.known_devices)
     behavior = build_behavior(dev.behavior, dev.events)
-    return check_valid(components, behavior, dev.triggers)
+    check_valid(components, behavior, dev.triggers)
 
 def merge_components(components:Iterable[NFA[Any,str]], flatten:bool=False, minimize:bool=False) -> DFA[Any,str]:
     # Get the first component

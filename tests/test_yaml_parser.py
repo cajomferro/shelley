@@ -1,14 +1,18 @@
 import yaml
+from .context import shelley
+from shelley.ast.devices import Device
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
 from shelley.yaml_parser import create_device_from_yaml
 
 
-def test_button():
-    with open('input/button.yaml', 'r') as stream:
+def get_shelley_device(name: str) -> Device:
+    with open('tests/input/{0}.yaml'.format(name), 'r') as stream:
         yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
+    return create_device_from_yaml(yaml_code)
 
-    shelley_device = create_device_from_yaml(yaml_code)
 
+def test_button():
+    shelley_device = get_shelley_device('button')
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert visitor.result.strip() == """Device Button:
@@ -25,11 +29,7 @@ def test_button():
 
 
 def test_led():
-    with open('input/led.yaml', 'r') as stream:
-        yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
-
-    shelley_device = create_device_from_yaml(yaml_code)
-
+    shelley_device = get_shelley_device('led')
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert visitor.result.strip() == """Device Led:
@@ -46,11 +46,7 @@ def test_led():
 
 
 def test_timer():
-    with open('input/timer.yaml', 'r') as stream:
-        yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
-
-    shelley_device = create_device_from_yaml(yaml_code)
-
+    shelley_device = get_shelley_device('timer')
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert visitor.result.strip() == """Device Timer:
@@ -70,9 +66,7 @@ def test_timer():
 
 
 def test_sendok():
-    with open('input/sendok.yaml', 'r') as stream:
-        yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
-    shelley_device = create_device_from_yaml(yaml_code)
+    shelley_device = get_shelley_device('sendok')
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
@@ -94,9 +88,7 @@ def test_sendok():
 
 
 def test_desklamp():
-    with open('input/desklamp.yaml', 'r') as stream:
-        yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
-    shelley_device = create_device_from_yaml(yaml_code)
+    shelley_device = get_shelley_device('desklamp')
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 

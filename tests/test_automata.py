@@ -2,7 +2,7 @@
 
 from karakuri.regular import NFA, DFA, Nil, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
     nfa_to_dfa, Star
-from shelley.automata import get_invalid_behavior, replace, decode_behavior
+from shelley.karakuri import get_invalid_behavior, replace, decode_behavior
 
 B_P = "b.pressed"
 B_R = "b.released"

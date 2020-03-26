@@ -8,7 +8,7 @@ import yaml
 
 from karakuri.regular import Regex, nfa_to_regex, dfa_to_nfa
 
-from shelley.karakuri import Device as KarakuriDevice, check_valid_device, CheckedDevice, InvalidBehavior
+from shelley.automata import Device as AutomataDevice, check_valid_device, CheckedDevice, InvalidBehavior
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.ast.triggers import Triggers
 from shelley.ast.visitors.trules2regex import TRules2RegexVisitor
@@ -27,67 +27,67 @@ def get_regex_dict(triggers: Triggers) -> Dict[str, Regex]:
     return visitor.regex_dict
 
 
-def get_karakuri_device(name: str) -> KarakuriDevice:
+def get_automata_device(name: str) -> AutomataDevice:
     shelley_device = get_shelley_device(name)
-    return KarakuriDevice(events=shelley_device.get_all_events().list_str(),
+    return AutomataDevice(events=shelley_device.get_all_events().list_str(),
                           behavior=shelley_device.behaviors.as_list_tuples(),
                           components=shelley_device.components.components_to_devices,
                           triggers=get_regex_dict(shelley_device.triggers))
 
 
-def test_button_karakuri():
-    karakuri = get_karakuri_device('button')
+def test_button_automata():
+    automata = get_automata_device('button')
 
-    assert karakuri.events == ['begin', 'pressed', 'released']
-    assert karakuri.behavior == [('begin', 'pressed'), ('pressed', 'released'),
+    assert automata.events == ['begin', 'pressed', 'released']
+    assert automata.behavior == [('begin', 'pressed'), ('pressed', 'released'),
                                  ('released', 'pressed')]
-    assert karakuri.components == {}
+    assert automata.components == {}
 
     result_str = ""
-    for key in karakuri.triggers:
-        regex = karakuri.triggers[key]
+    for key in automata.triggers:
+        regex = automata.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
 
     assert result_str.strip() == """begin: []
 pressed: []
 released: []"""
 
-    checked_button = check_valid_device(karakuri, {})
+    checked_button = check_valid_device(automata, {})
     assert isinstance(checked_button, CheckedDevice)
 
 
-def test_led_karakuri():
-    karakuri = get_karakuri_device('led')
+def test_led_automata():
+    automata = get_automata_device('led')
 
-    assert karakuri.events == ['begin', 'on', 'off']
-    assert karakuri.behavior == [('begin', 'on'), ('on', 'off'),
+    assert automata.events == ['begin', 'on', 'off']
+    assert automata.behavior == [('begin', 'on'), ('on', 'off'),
                                  ('off', 'on')]
-    assert karakuri.components == {}
+    assert automata.components == {}
 
     result_str = ""
-    for key in karakuri.triggers:
-        regex = karakuri.triggers[key]
+    for key in automata.triggers:
+        regex = automata.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
 
     assert result_str.strip() == """begin: []
 on: []
 off: []"""
 
-    checked_led = check_valid_device(karakuri, {})
+    checked_led = check_valid_device(automata, {})
     assert isinstance(checked_led, CheckedDevice)
 
 
-def test_timer_karakuri():
-    karakuri = get_karakuri_device('timer')
+def test_timer_automata():
+    automata = get_automata_device('timer')
 
-    assert karakuri.events == ['begin', 'started', 'canceled', 'timeout']
-    assert karakuri.behavior == [('begin', 'started'), ('started', 'canceled'), ('started', 'timeout'),
+    assert automata.events == ['begin', 'started', 'canceled', 'timeout']
+    assert automata.behavior == [('begin', 'started'), ('started', 'canceled'), ('started', 'timeout'),
                                  ('canceled', 'started'), ('timeout', 'started')]
-    assert karakuri.components == {}
+    assert automata.components == {}
 
     result_str = ""
-    for key in karakuri.triggers:
-        regex = karakuri.triggers[key]
+    for key in automata.triggers:
+        regex = automata.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
 
     assert result_str.strip() == """begin: []
@@ -95,21 +95,21 @@ started: []
 canceled: []
 timeout: []"""
 
-    checked_timer = check_valid_device(karakuri, {})
+    checked_timer = check_valid_device(automata, {})
     assert isinstance(checked_timer, CheckedDevice)
 
 
-def test_desklamp_karakuri():
-    karakuri = get_karakuri_device('desklamp')
+def test_desklamp_automata():
+    automata = get_automata_device('desklamp')
 
-    assert karakuri.events == ['begin', 'level1', 'standby1', 'level2', 'standby2']
-    assert karakuri.behavior == [('begin', 'level1'), ('level1', 'standby1'), ('level1', 'level2'),
+    assert automata.events == ['begin', 'level1', 'standby1', 'level2', 'standby2']
+    assert automata.behavior == [('begin', 'level1'), ('level1', 'standby1'), ('level1', 'level2'),
                                  ('level2', 'standby2'), ('standby1', 'level1'), ('standby2', 'level1')]
-    assert karakuri.components == {'b': 'Button', 'ledA': 'Led', 'ledB': 'Led', 't': 'Timer'}
+    assert automata.components == {'b': 'Button', 'ledA': 'Led', 'ledB': 'Led', 't': 'Timer'}
 
     result_str = ""
-    for key in karakuri.triggers:
-        regex = karakuri.triggers[key]
+    for key in automata.triggers:
+        regex = automata.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string(app_str=lambda x, y: x + " ; " + y)))
 
     # begin: b.begin ; ledA.begin ; ledB.begin ; t.begin
@@ -120,11 +120,11 @@ standby2: (b.pressed ; b.released ; t.canceled + t.timeout) ; (ledB.off ; ledA.o
 
     assert result_str.strip() == expected_str
 
-    known_devices = {'Led': check_valid_device(get_karakuri_device('led'), {}),
-                     'Button': check_valid_device(get_karakuri_device('button'), {}),
-                     'Timer': check_valid_device(get_karakuri_device('timer'), {})}
+    known_devices = {'Led': check_valid_device(get_automata_device('led'), {}),
+                     'Button': check_valid_device(get_automata_device('button'), {}),
+                     'Timer': check_valid_device(get_automata_device('timer'), {})}
 
-    checked_desklamp = check_valid_device(karakuri, known_devices)
+    checked_desklamp = check_valid_device(automata, known_devices)
     print(nfa_to_regex(dfa_to_nfa(checked_desklamp.dfa)).to_string(app_str=lambda x, y: x + " ; " + y))
 
-    #assert isinstance(checked_desklamp, CheckedDevice)
+    # assert isinstance(checked_desklamp, CheckedDevice)

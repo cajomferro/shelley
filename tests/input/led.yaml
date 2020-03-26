@@ -1,0 +1,6 @@
+device:
+  name: Led
+  behavior:
+    - [begin, on]
+    - [on, off]
+    - [off, on]

@@ -1,0 +1,8 @@
+device:
+  name: Timer
+  behavior:
+    - [begin, started]
+    - [started, canceled]
+    - [started, timeout]
+    - [canceled, started]
+    - [timeout, started]

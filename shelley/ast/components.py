@@ -38,6 +38,9 @@ class Component(Node):
         if device_name not in devices:
             raise ComponentsDeviceNotUsedError("Device type '{0}' must be in uses list!".format(device_name))
 
+    def __str__(self):
+        return self.name
+
     # def __init__(self, name: str):
     #     self.name = name
     #

@@ -23,11 +23,11 @@ def test_pprint_led():
     expected_str = \
         """\nDevice Led:
   actions:
-    turnOn, turnOff, 
+    turnOn, turnOff
   internal events:
-    on, off, 
+    on, off
   external events:
-    begin, 
+    begin
   behaviours:
     begin -> turnOn() on
     on -> turnOff() off
@@ -55,14 +55,14 @@ def test_pprint_timer():
 
 
 def test_pprint_desklamp():
-    visitor = PrettyPrintVisitor(components=d_desk_lamp.components, declared_devices=declared_devices)
+    visitor = PrettyPrintVisitor(components=d_desk_lamp.components)
     d_desk_lamp.accept(visitor)
     print(visitor.result)
 
     expected_str = """
-Device DeskLamp uses Led, Button, Timer, :
+Device DeskLamp uses Led, Button, Timer:
   external events:
-    begin, level1, level2, standby1, standby2, 
+    begin, level1, level2, standby1, standby2
   behaviours:
     begin -> level1
     level1 -> standby1
@@ -71,7 +71,7 @@ Device DeskLamp uses Led, Button, Timer, :
     standby1 -> level1
     standby2 -> level1
   components:
-    Led ledA, Led ledB, Button b, Timer t, 
+    Led ledA, Led ledB, Button b, Timer t
   triggers:
     begin: ( b.begin  ; ( ledA.begin  ; ( ledB.begin  ; t.begin )))
     level1: ( b.pressed  ; ( b.released  ; ( ledA.on  ; t.started )))

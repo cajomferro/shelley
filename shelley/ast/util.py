@@ -32,7 +32,8 @@ class MyCollection(Generic[T]):
         return self._data
 
     def list_str(self):
-        return [str(elem) for elem in self._data]
+        res = [str(elem) for elem in self._data]
+        return res[0:-2]
 
 
 class ListDuplicatedError(Exception):

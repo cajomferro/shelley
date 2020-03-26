@@ -3,7 +3,8 @@
 
 device:
   name: Button
-  events: [pressed , released]
+  #  events: [pressed , released]
   behavior:
+    - [begin, pressed]
     - [pressed, released]
     - [released, pressed]

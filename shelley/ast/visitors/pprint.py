@@ -12,13 +12,11 @@ from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRul
 
 
 class PrettyPrintVisitor(Visitor):
-    declared_devices = None  # type: Dict[str, Device]
     components = None  # type:Components
     result = None
 
-    def __init__(self, components: Components = None, declared_devices: Dict[str, Device] = None):
+    def __init__(self, components: Components = None):
         self.components = components
-        self.declared_devices = declared_devices
         self.result = ""
 
     def visit_trigger_rule_fired(self, element: TriggerRuleFired) -> None:
@@ -53,13 +51,13 @@ class PrettyPrintVisitor(Visitor):
 
     def visit_component(self, element: Component) -> None:
         device_name = self.components.get_device_name(element.name)
-        device = self.declared_devices[device_name]
-        self.result += "{0} {1}, ".format(device.name, element.name)
+        self.result += "{0} {1}, ".format(device_name, element.name)
 
     def visit_components(self, element: Components) -> None:
         self.result += "  components:\n    "
         for component in element.list():
             component.accept(self)
+        self.result = self.result[:-2]  # remove extra ", "
         self.result += "\n"
 
     def visit_behaviour(self, element: Behavior) -> None:
@@ -79,6 +77,7 @@ class PrettyPrintVisitor(Visitor):
         self.result += "  actions:\n    "
         for action in element.list():
             action.accept(self)
+        self.result = self.result[:-2]  # remove extra ", "
         self.result += "\n"
 
     def visit_ievent(self, element: IEvent) -> None:
@@ -88,6 +87,7 @@ class PrettyPrintVisitor(Visitor):
         self.result += "  internal events:\n    "
         for event in element.list():
             event.accept(self)
+        self.result = self.result[:-2]  # remove extra ", "
         self.result += "\n"
 
     def visit_eevent(self, element: EEvent) -> None:
@@ -97,6 +97,7 @@ class PrettyPrintVisitor(Visitor):
         self.result += "  external events:\n    "
         for event in element.list():
             event.accept(self)
+        self.result = self.result[:-2]  # remove extra ", "
         self.result += "\n"
 
     def visit_device(self, element: Device) -> None:
@@ -105,7 +106,7 @@ class PrettyPrintVisitor(Visitor):
             uses_str = ""
             for device_name in element.uses:
                 uses_str += (device_name + ", ")
-            self.result += "Device {0} uses {1}:\n".format(element.name, uses_str)
+            self.result += "Device {0} uses {1}:\n".format(element.name, uses_str[0:-2])  # remove extra ", "
         else:
             self.result += "Device {0}:\n".format(element.name)
 

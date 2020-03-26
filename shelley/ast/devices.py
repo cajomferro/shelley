@@ -13,6 +13,15 @@ if TYPE_CHECKING:
     from .visitors import Visitor
 
 
+def discover_uses(components: Components) -> List[str]:
+    uses = list()
+    for component_name in components.components_to_devices:
+        device_name = components.components_to_devices[component_name]
+        if device_name not in uses:
+            uses.append(device_name)
+    return uses
+
+
 class Device(Node):
     """
     \\hard{D} -> categoria sintática
@@ -43,6 +52,10 @@ class Device(Node):
         self.uses = uses
         self.components = components
         self.triggers = triggers
+
+        # find used devices from components if not specified
+        if len(self.uses) == 0 and len(self.components.components_to_devices) != 0:
+            self.uses = discover_uses(self.components)
 
     def accept(self, visitor: Visitor) -> None:
         """
@@ -79,6 +92,7 @@ class Device(Node):
     #
     def get_all_events(self) -> Events:
         return self.external_events.merge(self.internal_events)
+
     #
     # @staticmethod
     # def behaviours_as_event_tuple(behaviours: Set[Behaviour]):

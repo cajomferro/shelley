@@ -125,6 +125,6 @@ def test_desklamp():
     Led ledA, Led ledB, Button b, Timer t
   triggers:
     level1: ( b.pressed ; ( b.released ; ( ledA.on ; t.started ) ) )
-    level2: ( ( b.pressed ; b.released ) ; ( ( ( t.canceled ; ledB.on ) xor ( ledB.on ; t.canceled ) ) ; t.started ) )
+    level2: ( b.pressed ; ( b.released ; ( ( ( t.canceled ; ledB.on ) xor ( ledB.on ; t.canceled ) ) ; t.started ) ) )
     standby1: ( t.timeout ; ledA.off )
     standby2: ( ( ( b.pressed ; ( b.released ; t.canceled ) ) xor t.timeout ) ; ( ( ledB.off ; ledA.off ) xor ( ledA.off ; ledB.off ) ) )"""

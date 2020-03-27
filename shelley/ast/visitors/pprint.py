@@ -120,6 +120,12 @@ class PrettyPrintVisitor(Visitor):
         if element.external_events.count() > 0:
             element.external_events.accept(self)
 
+        self.result += "  start events:\n    "
+        start_events_str = ""
+        for event_name in element.start_events:
+            start_events_str += (event_name + ", ")
+        self.result += "{1}\n".format(element.name, start_events_str[0:-2])  # remove extra ", "
+
         self.result += "  behaviours:\n"
         element.behaviors.accept(self)
 

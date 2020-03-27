@@ -10,12 +10,27 @@ from shelley.ast.rules import TriggerRule, TriggerRuleEvent, TriggerRuleChoice, 
 import copy
 
 
-def parse_events(input: List[str]) -> EEvents:
-    events: EEvents = EEvents()
-    for event_name in input:
-        events.add(EEvent(event_name))
-    return events
+# def parse_events(input: List[str]) -> EEvents:
+#     events: EEvents = EEvents()
+#     for event_name in input:
+#         events.add(EEvent(event_name))
+#     return events
 
+# def parse_behavior_with_events(input: List[List[str]], events: EEvents) -> Behaviors:
+#     """
+#     Old version that assumes that events must be declared previously
+#     :param input:
+#     :param events:
+#     :return:
+#     """
+#     behaviors: Behaviors = Behaviors()
+#     for beh_transition in input:
+#         left = beh_transition[0]
+#         right = beh_transition[1]
+#         e1 = events.find_by_name(left)
+#         e2 = events.find_by_name(right)
+#         behaviors.create(e1, e2)
+#     return behaviors
 
 def parse_behavior(input: List[List[str]], events: EEvents, behaviors: Behaviors) -> NoReturn:
     """
@@ -74,23 +89,6 @@ def parse_trigger_rule(input, components: Components) -> TriggerRule:
         return TriggerRuleChoice(left, right)
 
 
-def parse_behavior_with_events(input: List[List[str]], events: EEvents) -> Behaviors:
-    """
-    Old version that assumes that events must be declared previously
-    :param input:
-    :param events:
-    :return:
-    """
-    behaviors: Behaviors = Behaviors()
-    for beh_transition in input:
-        left = beh_transition[0]
-        right = beh_transition[1]
-        e1 = events.find_by_name(left)
-        e2 = events.find_by_name(right)
-        behaviors.create(e1, e2)
-    return behaviors
-
-
 def create_device_from_yaml(yaml_code) -> Device:
     try:
         device_name = yaml_code['device']['name']
@@ -101,6 +99,11 @@ def create_device_from_yaml(yaml_code) -> Device:
     #     device_events = yaml_code['device']['events']
     # except KeyError:
     #     raise Exception("Device must have events")
+
+    try:
+        device_start_events = yaml_code['device']['start_events']
+    except KeyError:
+        raise Exception("Please specify at least one start event")
 
     try:
         device_behavior = yaml_code['device']['behavior']
@@ -126,10 +129,10 @@ def create_device_from_yaml(yaml_code) -> Device:
 
     if len(device_triggers) == 0:  # auto-create triggers for simple devices
         for event in events.list():
-            if event.name != 'begin':  # TODO: should we include begin here? if yes, also include for composite devices
-                triggers.create(event, TriggerRuleFired())
+            triggers.create(event, TriggerRuleFired())
     else:
         parse_triggers(copy.deepcopy(device_triggers), events, components,
                        triggers)  # deep copy because i will consume some list elements (not really important)
 
-    return Device(device_name, Actions(), IEvents(), events, behaviors, triggers, components=components)
+    return Device(device_name, Actions(), IEvents(), events, device_start_events, behaviors, triggers,
+                  components=components)

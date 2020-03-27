@@ -17,9 +17,10 @@ def test_button():
     shelley_device.accept(visitor)
     assert visitor.result.strip() == """Device Button:
   external events:
-    begin, pressed, released
+    pressed, released
+  start events:
+    pressed
   behaviours:
-    begin -> pressed
     pressed -> released
     released -> pressed
   triggers:
@@ -33,9 +34,10 @@ def test_led():
     shelley_device.accept(visitor)
     assert visitor.result.strip() == """Device Led:
   external events:
-    begin, on, off
+    on, off
+  start events:
+    on
   behaviours:
-    begin -> on
     on -> off
     off -> on
   triggers:
@@ -49,9 +51,10 @@ def test_timer():
     shelley_device.accept(visitor)
     assert visitor.result.strip() == """Device Timer:
   external events:
-    begin, started, canceled, timeout
+    started, canceled, timeout
+  start events:
+    started
   behaviours:
-    begin -> started
     started -> canceled
     started -> timeout
     canceled -> started
@@ -69,9 +72,10 @@ def test_sendok():
 
     assert visitor.result.strip() == """Device SendOK uses Button, Led:
   external events:
-    begin, send, ok, off
+    send, ok, off
+  start events:
+    send
   behaviours:
-    begin -> send
     send -> ok
     send -> off
     ok -> send
@@ -84,15 +88,16 @@ def test_sendok():
     off: ( b2.pressed ; b2.released )"""
 
 
-def test_button_on():
-    shelley_device = get_shelley_device('buttonon')
+def test_smartbutton_1():
+    shelley_device = get_shelley_device('smartbutton1')
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
-    assert visitor.result.strip() == """Device ButtonOn uses Button:
+    assert visitor.result.strip() == """Device SmartButton1 uses Button:
   external events:
-    begin, on
+    on
+  start events:
+    on
   behaviours:
-    begin -> on
     on -> on
   components:
     Button b
@@ -107,9 +112,10 @@ def test_desklamp():
 
     assert visitor.result.strip() == """Device DeskLamp uses Led, Button, Timer:
   external events:
-    begin, level1, standby1, level2, standby2
+    level1, standby1, level2, standby2
+  start events:
+    level1
   behaviours:
-    begin -> level1
     level1 -> standby1
     level1 -> level2
     level2 -> standby2

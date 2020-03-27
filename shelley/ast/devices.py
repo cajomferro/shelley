@@ -26,10 +26,11 @@ class Device(Node):
     """
     \\hard{D} -> categoria sintática
     """
-    name = None  # type: str
-    actions = None  # type: Actions
-    internal_events = None  # type: IEvents
-    external_events = None  # type: EEvents
+    name: str = None
+    actions: Actions = None
+    internal_events: IEvents = None
+    external_events: EEvents = None
+    start_events: List[str] = None
     behaviors = None  # type: Behaviors
     uses = None  # type: List[str]
     components = None  # type: Components
@@ -39,6 +40,7 @@ class Device(Node):
                  actions: Actions,
                  internal_events: IEvents,
                  external_events: EEvents,
+                 start_events: List[str],
                  behaviors: Behaviors,
                  triggers: Triggers,
                  uses: List[str] = list(),
@@ -48,6 +50,7 @@ class Device(Node):
         self.actions = actions
         self.internal_events = internal_events
         self.external_events = external_events
+        self.start_events = start_events
         self.behaviors = behaviors
         self.uses = uses
         self.components = components

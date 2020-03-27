@@ -1,7 +1,7 @@
 device:
   name: Timer
+  start_events: [started]
   behavior:
-    - [begin, started]
     - [started, canceled]
     - [started, timeout]
     - [canceled, started]

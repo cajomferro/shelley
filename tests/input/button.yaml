@@ -1,10 +1,6 @@
-#{'device': {'name': 'Button', 'events': ['pressed', 'released'],
-#                'behavior': [['pressed', 'released'], ['released', 'pressed']]}}
-
 device:
   name: Button
-  #  events: [pressed , released]
+  start_events: [pressed]
   behavior:
-    - [begin, pressed]
     - [pressed, released]
     - [released, pressed]

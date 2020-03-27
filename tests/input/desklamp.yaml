@@ -6,8 +6,8 @@
 
 device:
   name: DeskLamp
+  start_events: [level1]
   behavior:
-    - [begin, level1]
     - [level1, standby1]
     - [level1, level2]
     - [level2, standby2]

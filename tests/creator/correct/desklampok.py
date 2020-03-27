@@ -18,6 +18,7 @@ class DDeskLamp(Device):
         i_events, e_events = parse_events(
             "external begin, external level1, external level2, external standby1, external standby2")
         actions = parse_actions("")
+        start_events = ['begin']
 
         behaviours_str = \
             """
@@ -111,7 +112,7 @@ class DDeskLamp(Device):
         triggers.create(e_events.find_by_name("standby1"), t_standby1_rules)
         triggers.create(e_events.find_by_name("standby2"), t_standby2_rules)
 
-        super().__init__(self.name, actions, i_events, e_events, behaviours, triggers, uses, components)
+        super().__init__(self.name, actions, i_events, e_events, start_events, behaviours, triggers, uses, components)
 
 
 def create_device_desk_lamp():

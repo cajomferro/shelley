@@ -28,6 +28,8 @@ def test_pprint_led():
     on, off
   external events:
     begin
+  start events:
+    begin
   behaviours:
     begin -> turnOn() on
     on -> turnOff() off
@@ -62,6 +64,8 @@ def test_pprint_desklamp():
     expected_str = """Device DeskLamp uses Led, Button, Timer:
   external events:
     begin, level1, level2, standby1, standby2
+  start events:
+    begin
   behaviours:
     begin -> level1
     level1 -> standby1

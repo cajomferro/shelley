@@ -1,7 +1,7 @@
 device:
   name: SmartButton1
+  start_events: [on]
   behavior:
-    - [begin, on]
     - [on, on]
   components:
     b: Button

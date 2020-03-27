@@ -28,7 +28,7 @@ def get_regex_dict(triggers: Triggers) -> Dict[str, Regex]:
 
 def get_automata_device(name: str) -> AutomataDevice:
     shelley_device = get_shelley_device(name)
-    return AutomataDevice(start_event='begin',
+    return AutomataDevice(start_events=shelley_device.start_events,
                           events=shelley_device.get_all_events().list_str(),
                           behavior=shelley_device.behaviors.as_list_tuples(),
                           components=shelley_device.components.components_to_devices,
@@ -37,10 +37,9 @@ def get_automata_device(name: str) -> AutomataDevice:
 
 def test_button():
     expected = AutomataDevice(
-        start_event='begin',
-        events=['begin', 'pressed', 'released'],
+        start_events=['pressed'],
+        events=['pressed', 'released'],
         behavior=[
-            ('begin', 'pressed'),
             ('pressed', 'released'),
             ('released', 'pressed'),
         ],
@@ -55,10 +54,9 @@ def test_button():
 
 def test_led():
     expected = AutomataDevice(
-        start_event='begin',
-        events=['begin', 'on', 'off'],
+        start_events=['on'],
+        events=['on', 'off'],
         behavior=[
-            ('begin', 'on'),
             ('on', 'off'),
             ('off', 'on'),
         ],
@@ -76,10 +74,9 @@ def test_led():
 
 def test_timer():
     expected = AutomataDevice(
-        start_event='begin',
-        events=['begin', 'started', 'canceled', 'timeout'],
+        start_events=['started'],
+        events=['started', 'canceled', 'timeout'],
         behavior=[
-            ('begin', 'started'),
             ('started', 'canceled'),
             ('started', 'timeout'),
             ('canceled', 'started'),
@@ -97,10 +94,9 @@ def test_timer():
 
 def test_smartbutton1():
     expected = AutomataDevice(
-        start_event='begin',
-        events=['begin', 'on'],
+        start_events=['on'],
+        events=['on'],
         behavior=[
-            ('begin', 'on'),
             ('on', 'on')
         ],
         components={'b': 'Button'},
@@ -122,31 +118,65 @@ def test_smartbutton1():
 
 
 def test_desklamp():
-    automata = get_automata_device('desklamp')
+    expected_str = """standby2: (b.pressed ; b.released ; t.canceled + t.timeout) ; (ledB.off ; ledA.off + ledA.off ; ledB.off)"""
 
-    assert automata.events == ['begin', 'level1', 'standby1', 'level2', 'standby2']
-    assert automata.behavior == [('begin', 'level1'), ('level1', 'standby1'), ('level1', 'level2'),
-                                 ('level2', 'standby2'), ('standby1', 'level1'), ('standby2', 'level1')]
-    assert automata.components == {'b': 'Button', 'ledA': 'Led', 'ledB': 'Led', 't': 'Timer'}
+    expected = AutomataDevice(
+        start_events=['level1'],
+        events=['level1', 'standby1', 'level2', 'standby2'],
+        behavior=[
+            ('level1', 'standby1'), ('level1', 'level2'),
+            ('level2', 'standby2'), ('standby1', 'level1'), ('standby2', 'level1')
+        ],
+        components={'b': 'Button', 'ledA': 'Led', 'ledB': 'Led', 't': 'Timer'},
+        triggers={
+            'level1': Concat(
+                Char('b.pressed'),
+                Concat(
+                    Char('b.released'),
+                    Concat(
+                        Char('ledA.on'),
+                        Char('t.started')))),
+            'level2': Concat(
+                Char('b.pressed'),
+                Concat(
+                    Char('b.released'),
+                    Concat(
+                        Union(
+                            Concat(Char('t.canceled'), Char('ledB.on')),
+                            Concat(Char('ledB.on'), Char('t.canceled'))
+                        ),
+                        Char('t.started')))),
+            'standby1': Concat(Char('t.timeout'), Char('ledA.off')),
+            'standby2': Concat(
+                Union(
+                    Concat(
+                        Char('b.pressed'),
+                        Concat(
+                            Char('b.released'),
+                            Char('t.canceled')
+                        )
+                    ),
+                    Char('t.timeout')
+                ),
+                Union(
+                    Concat(
+                        Char('ledB.off'),
+                        Char('ledA.off')
+                    ),
+                    Concat(
+                        Char('ledA.off'),
+                        Char('ledB.off')
+                    )
+                ))
+        },
+    )
+    assert expected == get_automata_device('desklamp')
 
-    result_str = ""
-    for key in automata.triggers:
-        regex = automata.triggers[key]
-        result_str += ("{0}: {1}\n".format(key, regex.to_string(app_str=lambda x, y: x + " ; " + y)))
-
-    # begin: b.begin ; ledA.begin ; ledB.begin ; t.begin
-    expected_str = """level1: b.pressed ; b.released ; ledA.on ; t.started
-level2: b.pressed ; b.released ; ((t.canceled ; ledB.on + ledB.on ; t.canceled) ; t.started)
-standby1: t.timeout ; ledA.off
-standby2: (b.pressed ; b.released ; t.canceled + t.timeout) ; (ledB.off ; ledA.off + ledA.off ; ledB.off)"""
-
-    assert result_str.strip() == expected_str
-
-    known_devices = {'Led': check_valid_device(get_automata_device('led'), {}),
-                     'Button': check_valid_device(get_automata_device('button'), {}),
-                     'Timer': check_valid_device(get_automata_device('timer'), {})}
-
-    checked_desklamp = check_valid_device(automata, known_devices)
-    print(nfa_to_regex(dfa_to_nfa(checked_desklamp.dfa)).to_string(app_str=lambda x, y: x + " ; " + y))
-
-    # assert isinstance(checked_desklamp, CheckedDevice)
+    # known_devices = {'Led': check_valid_device(get_automata_device('led'), {}),
+    #                  'Button': check_valid_device(get_automata_device('button'), {}),
+    #                  'Timer': check_valid_device(get_automata_device('timer'), {})}
+    #
+    # checked_desklamp = check_valid_device(automata, known_devices)
+    # print(nfa_to_regex(dfa_to_nfa(checked_desklamp.dfa)).to_string(app_str=lambda x, y: x + " ; " + y))
+    #
+    # # assert isinstance(checked_desklamp, CheckedDevice)

@@ -1,0 +1,9 @@
+device:
+  name: ButtonOn
+  behavior:
+    - [begin, on]
+    - [on, on]
+  components:
+    b: Button
+  triggers:
+    on: [ b.pressed, b.released]

@@ -99,6 +99,31 @@ timeout: []"""
     assert isinstance(checked_timer, CheckedDevice)
 
 
+def test_buttonon_automata():
+    automata = get_automata_device('buttonon')
+
+    assert automata.events == ['begin', 'on']
+    assert automata.behavior == [('begin', 'on'), ('on', 'on')]
+    assert automata.components == {'b': 'Button'}
+
+    result_str = ""
+    for key in automata.triggers:
+        regex = automata.triggers[key]
+        result_str += ("{0}: {1}\n".format(key, regex.to_string(app_str=lambda x, y: x + " ; " + y)))
+
+    # begin: b.begin ; ledA.begin ; ledB.begin ; t.begin
+    expected_str = 'on: b.pressed ; b.released'
+
+    assert result_str.strip() == expected_str
+
+    known_devices = {'Button': check_valid_device(get_automata_device('button'), {})}
+
+    checked_automata = check_valid_device(automata, known_devices)
+    print(nfa_to_regex(dfa_to_nfa(checked_automata.dfa)).to_string(app_str=lambda x, y: x + " ; " + y))
+
+    #assert isinstance(checked_automata, CheckedDevice)
+
+
 def test_desklamp_automata():
     automata = get_automata_device('desklamp')
 

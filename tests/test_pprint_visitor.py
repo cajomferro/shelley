@@ -21,7 +21,7 @@ def test_pprint_led():
     visitor = PrettyPrintVisitor()
     d_led.accept(visitor)
     expected_str = \
-        """\nDevice Led:
+        """Device Led:
   actions:
     turnOn, turnOff
   internal events:
@@ -59,8 +59,7 @@ def test_pprint_desklamp():
     d_desk_lamp.accept(visitor)
     print(visitor.result)
 
-    expected_str = """
-Device DeskLamp uses Led, Button, Timer:
+    expected_str = """Device DeskLamp uses Led, Button, Timer:
   external events:
     begin, level1, level2, standby1, standby2
   behaviours:
@@ -73,11 +72,11 @@ Device DeskLamp uses Led, Button, Timer:
   components:
     Led ledA, Led ledB, Button b, Timer t
   triggers:
-    begin: ( b.begin  ; ( ledA.begin  ; ( ledB.begin  ; t.begin )))
-    level1: ( b.pressed  ; ( b.released  ; ( ledA.on  ; t.started )))
-    level2: ( b.pressed  ; ( b.released  ; ( ( ( t.canceled  ; ledB.on ) xor ( ledB.on  ; t.canceled )) ; t.started )))
-    standby1: ( t.timeout  ; ledA.off )
-    standby2: ( ( ( b.pressed  ; ( b.released  ; t.canceled )) xor t.timeout ) ; ( ( ledB.off  ; ledA.off ) xor ( ledA.off  ; ledB.off )))
+    begin: ( b.begin ; ( ledA.begin ; ( ledB.begin ; t.begin ) ) )
+    level1: ( b.pressed ; ( b.released ; ( ledA.on ; t.started ) ) )
+    level2: ( b.pressed ; ( b.released ; ( ( ( t.canceled ; ledB.on ) xor ( ledB.on ; t.canceled ) ) ; t.started ) ) )
+    standby1: ( t.timeout ; ledA.off )
+    standby2: ( ( ( b.pressed ; ( b.released ; t.canceled ) ) xor t.timeout ) ; ( ( ledB.off ; ledA.off ) xor ( ledA.off ; ledB.off ) ) )
 
 """
 

@@ -28,20 +28,21 @@ class PrettyPrintVisitor(Visitor):
     def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
         self.result += "( "
         element.left_trigger_rule.accept(self)
-        self.result += " ; "
+        self.result += "; "
         element.right_trigger_rule.accept(self)
-        self.result += ")"
+        self.result += ") "
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
         self.result += "( "
         element.left_trigger_rule.accept(self)
-        self.result += " xor "
+        self.result += "xor "
         element.right_trigger_rule.accept(self)
-        self.result += ")"
+        self.result += ") "
 
     def visit_trigger(self, element: Trigger) -> None:
         self.result += "    {0}: ".format(element.event.name)
         element.trigger_rule.accept(self)
+        self.result = self.result.strip()
         self.result += "\n"
 
     def visit_triggers(self, element: Triggers) -> None:

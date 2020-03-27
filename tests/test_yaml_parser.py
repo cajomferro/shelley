@@ -82,9 +82,25 @@ def test_sendok():
   components:
     Button b1, Button b2, Led lgreen, Led lred
   triggers:
-    send: ( b1.pressed  ; b1.released )
-    ok: ( ( lred.on  ; lred.off ) xor ( lgreen.on  ; lgreen.off ))
-    off: ( b2.pressed  ; b2.released )"""
+    send: ( b1.pressed ; b1.released )
+    ok: ( ( lred.on ; lred.off ) xor ( lgreen.on ; lgreen.off ) )
+    off: ( b2.pressed ; b2.released )"""
+
+
+def test_button_on():
+    shelley_device = get_shelley_device('buttonon')
+    visitor = PrettyPrintVisitor(components=shelley_device.components)
+    shelley_device.accept(visitor)
+    assert visitor.result.strip() == """Device ButtonOn uses Button:
+  external events:
+    begin, on
+  behaviours:
+    begin -> on
+    on -> on
+  components:
+    Button b
+  triggers:
+    on: ( b.pressed ; b.released )"""
 
 
 def test_desklamp():
@@ -105,7 +121,7 @@ def test_desklamp():
   components:
     Led ledA, Led ledB, Button b, Timer t
   triggers:
-    level1: ( b.pressed  ; ( b.released  ; ( ledA.on  ; t.started )))
-    level2: ( ( b.pressed  ; b.released ) ; ( ( ( t.canceled  ; ledB.on ) xor ( ledB.on  ; t.canceled )) ; t.started ))
-    standby1: ( t.timeout  ; ledA.off )
-    standby2: ( ( ( b.pressed  ; ( b.released  ; t.canceled )) xor t.timeout ) ; ( ( ledB.off  ; ledA.off ) xor ( ledA.off  ; ledB.off )))"""
+    level1: ( b.pressed ; ( b.released ; ( ledA.on ; t.started ) ) )
+    level2: ( ( b.pressed ; b.released ) ; ( ( ( t.canceled ; ledB.on ) xor ( ledB.on ; t.canceled ) ) ; t.started ) )
+    standby1: ( t.timeout ; ledA.off )
+    standby2: ( ( ( b.pressed ; ( b.released ; t.canceled ) ) xor t.timeout ) ; ( ( ledB.off ; ledA.off ) xor ( ledA.off ; ledB.off ) ) )"""

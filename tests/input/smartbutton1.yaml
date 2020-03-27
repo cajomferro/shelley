@@ -1,5 +1,5 @@
 device:
-  name: ButtonOn
+  name: SmartButton1
   behavior:
     - [begin, on]
     - [on, on]

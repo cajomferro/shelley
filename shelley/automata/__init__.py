@@ -17,9 +17,11 @@ class Device:
 class CheckedDevice:
     nfa: NFA[Any, str]
 
+
 @dataclass
 class InvalidBehavior:
     dfa: DFA[Any, str]
+
 
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     if r is Void or r is Nil:
@@ -90,6 +92,7 @@ def build_components(components: Dict[str, str], known_devices: Mapping[str, Che
         result.append(prefix_nfa(known_devices[ty].nfa, name + "."))
     return result
 
+
 def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False, minimize: bool = False) -> DFA[
     Any, str]:
     # Get the first component
@@ -117,8 +120,9 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
     return decoded_behavior_dfa
 
 
-def get_invalid_behavior(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]], minimize=False,
-                flatten=False) -> Optional[DFA[Any,str]]:
+def get_invalid_behavior(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]],
+                         minimize=False,
+                         flatten=False) -> Optional[DFA[Any, str]]:
     if len(components) == 0:
         return None
     all_possible = merge_components(components, flatten, minimize)
@@ -130,7 +134,9 @@ def get_invalid_behavior(components: List[NFA[Any, str]], behavior: Regex[str], 
     else:
         return invalid_behavior
 
-def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[CheckedDevice,InvalidBehavior]:
+
+def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[
+    CheckedDevice, InvalidBehavior]:
     components = build_components(dev.components, known_devices)
     behavior = build_behavior(dev.behavior, dev.events)
     inv_behavior = get_invalid_behavior(components, nfa_to_regex(behavior), dev.triggers)

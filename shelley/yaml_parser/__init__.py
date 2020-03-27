@@ -126,7 +126,8 @@ def create_device_from_yaml(yaml_code) -> Device:
 
     if len(device_triggers) == 0:  # auto-create triggers for simple devices
         for event in events.list():
-            triggers.create(event, TriggerRuleFired())
+            if event.name != 'begin':  # TODO: should we include begin here? if yes, also include for composite devices
+                triggers.create(event, TriggerRuleFired())
     else:
         parse_triggers(copy.deepcopy(device_triggers), events, components,
                        triggers)  # deep copy because i will consume some list elements (not really important)

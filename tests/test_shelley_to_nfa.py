@@ -48,12 +48,15 @@ def test_button_automata():
         regex = automata.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
 
-    assert result_str.strip() == """begin: []
-pressed: []
-released: []"""
+    assert result_str.strip() == 'pressed: []\nreleased: []'
 
-    checked_button = check_valid_device(automata, {})
-    assert isinstance(checked_button, CheckedDevice)
+    checked_automata: CheckedDevice = check_valid_device(automata, {})
+    print()
+    print(checked_automata.nfa)
+    # NFA({'start_state': 'begin_post', 'accepted_states': ['begin_post', 'pressed_post', 'released_post'], 'transitions': {('begin_post', 'pressed_pre'): {None}, ('pressed_pre', 'pressed_post'): {'pressed'}, ('pressed_post', 'released_pre'): {None}, ('released_pre', 'released_post'): {'released'}, ('released_post', 'pressed_pre'): {None}}})
+    print(nfa_to_regex(checked_automata.nfa).to_string(app_str=lambda x, y: x + " ; " + y))
+    # (pressed ; ((released ; pressed*) ; (released ; (pressed + [])))) + pressed + [] --> ?????
+    assert isinstance(checked_automata, CheckedDevice)
 
 
 def test_led_automata():
@@ -69,9 +72,7 @@ def test_led_automata():
         regex = automata.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
 
-    assert result_str.strip() == """begin: []
-on: []
-off: []"""
+    assert result_str.strip() == 'on: []\noff: []'
 
     checked_led = check_valid_device(automata, {})
     assert isinstance(checked_led, CheckedDevice)
@@ -90,10 +91,7 @@ def test_timer_automata():
         regex = automata.triggers[key]
         result_str += ("{0}: {1}\n".format(key, regex.to_string()))
 
-    assert result_str.strip() == """begin: []
-started: []
-canceled: []
-timeout: []"""
+    assert result_str.strip() == 'started: []\ncanceled: []\ntimeout: []'
 
     checked_timer = check_valid_device(automata, {})
     assert isinstance(checked_timer, CheckedDevice)
@@ -119,6 +117,9 @@ def test_buttonon_automata():
     known_devices = {'Button': check_valid_device(get_automata_device('button'), {})}
 
     checked_automata = check_valid_device(automata, known_devices)
+    print()
+    print(checked_automata.dfa)
+    #print(dfa_to_nfa(checked_automata.dfa))
     print(nfa_to_regex(dfa_to_nfa(checked_automata.dfa)).to_string(app_str=lambda x, y: x + " ; " + y))
 
     #assert isinstance(checked_automata, CheckedDevice)

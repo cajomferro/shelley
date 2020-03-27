@@ -23,7 +23,6 @@ def test_button():
     pressed -> released
     released -> pressed
   triggers:
-    begin: fired
     pressed: fired
     released: fired"""
 
@@ -40,7 +39,6 @@ def test_led():
     on -> off
     off -> on
   triggers:
-    begin: fired
     on: fired
     off: fired"""
 
@@ -59,7 +57,6 @@ def test_timer():
     canceled -> started
     timeout -> started
   triggers:
-    begin: fired
     started: fired
     canceled: fired
     timeout: fired"""

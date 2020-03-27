@@ -146,7 +146,7 @@ def get_invalid_behavior(components: List[NFA[Any, str]], behavior: Regex[str], 
 
 def ensure_well_formed(dev: Device):
     evts = set(dev.events)
-    start_evts = set(dev.start_evts)
+    start_evts = set(dev.start_events)
     if not (start_evts <= evts):
         return ValueError("start_events must be included in events, got these extra: ", start_evts - evts)
     # Get keys

@@ -172,11 +172,10 @@ def test_desklamp():
     )
     assert expected == get_automata_device('desklamp')
 
-    # known_devices = {'Led': check_valid_device(get_automata_device('led'), {}),
-    #                  'Button': check_valid_device(get_automata_device('button'), {}),
-    #                  'Timer': check_valid_device(get_automata_device('timer'), {})}
-    #
-    # checked_desklamp = check_valid_device(automata, known_devices)
-    # print(nfa_to_regex(dfa_to_nfa(checked_desklamp.dfa)).to_string(app_str=lambda x, y: x + " ; " + y))
-    #
-    # # assert isinstance(checked_desklamp, CheckedDevice)
+
+def test_system_test():
+    dev = get_automata_device('desklamp')
+    known_devices = {'Led': check_valid_device(get_automata_device('led'), {}),
+                      'Button': check_valid_device(get_automata_device('button'), {}),
+                      'Timer': check_valid_device(get_automata_device('timer'), {})}
+    assert type(check_valid_device(dev, known_devices)) == CheckedDevice

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Device:
+    start_event: str
     events: List[str]
     behavior: List[Tuple[str, str]]
     components: Dict[str, str]

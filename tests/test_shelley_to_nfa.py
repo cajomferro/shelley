@@ -36,27 +36,18 @@ def get_automata_device(name: str) -> AutomataDevice:
 
 
 def test_button_automata():
-    automata = get_automata_device('button')
-
-    assert automata.events == ['begin', 'pressed', 'released']
-    assert automata.behavior == [('begin', 'pressed'), ('pressed', 'released'),
-                                 ('released', 'pressed')]
-    assert automata.components == {}
-
-    result_str = ""
-    for key in automata.triggers:
-        regex = automata.triggers[key]
-        result_str += ("{0}: {1}\n".format(key, regex.to_string()))
-
-    assert result_str.strip() == 'pressed: []\nreleased: []'
-
-    checked_automata: CheckedDevice = check_valid_device(automata, {})
-    print()
-    print(checked_automata.nfa)
-    # NFA({'start_state': 'begin_post', 'accepted_states': ['begin_post', 'pressed_post', 'released_post'], 'transitions': {('begin_post', 'pressed_pre'): {None}, ('pressed_pre', 'pressed_post'): {'pressed'}, ('pressed_post', 'released_pre'): {None}, ('released_pre', 'released_post'): {'released'}, ('released_post', 'pressed_pre'): {None}}})
-    print(nfa_to_regex(checked_automata.nfa).to_string(app_str=lambda x, y: x + " ; " + y))
-    # (pressed ; ((released ; pressed*) ; (released ; (pressed + [])))) + pressed + [] --> ?????
-    assert isinstance(checked_automata, CheckedDevice)
+    expected = AutomataDevice(
+        start_event = 'begin',
+        events = ['begin', 'pressed', 'released'],
+        behavior = [
+            ('begin', 'pressed'),
+            ('pressed', 'released'),
+            ('released', 'pressed'),
+        ],
+        components={},
+        triggers = {},
+    )
+    assert expected == get_automata_device('button')
 
 
 def test_led_automata():

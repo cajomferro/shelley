@@ -3,7 +3,7 @@
 from karakuri.regular import NFA, DFA, Nil, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
     nfa_to_dfa, Star
 from shelley.automata import get_invalid_behavior, replace, decode_behavior, \
-        build_components, CheckedDevice, prefix_nfa
+        build_components, CheckedDevice, prefix_nfa, build_behavior
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -312,3 +312,34 @@ def test_build_components():
     assert len(expected) == len(given)
     for (ex, giv) in zip(expected, given):
         assert ex == giv
+
+def test_build_behavior():
+    start_events = ['level1']
+    events = ['level1', 'standby1', 'level2', 'standby2']
+    behavior = [
+        ('level1', 'standby1'),
+        ('level1', 'level2'),
+        ('level2', 'standby2'),
+        ('standby1', 'level1'),
+        ('standby2', 'level1')
+    ]
+    tsx = [
+        # Start events:
+        ('start', 'level1', 'level1_post'),
+        # (level1, standby1)
+        ('level1_post', 'standby1', 'standby1_post'),
+        ('level1_post', 'level2', 'level2_post'),
+        ('level2_post', 'standby2', 'standby2_post'),
+        ('standby1_post', 'level1', 'level1_post'),
+        ('standby2_post', 'level1', 'level1_post'),
+    ]
+    accepted = set(x + "_post" for x in events)
+    accepted.add("start")
+    expected = NFA(alphabet=set(events),
+        transition_func=NFA.transition_edges_split(tsx),
+        start_state="start",
+        accepted_states=accepted,
+    )
+    assert build_behavior(behavior, start_events, events) == expected
+    # Make sure this is equivalent to HELLO WORLD
+    assert nfa_to_dfa(build_behavior(behavior, start_events, events)).is_equivalent_to(nfa_to_dfa(create_hello_world()))

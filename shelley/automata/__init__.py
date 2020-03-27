@@ -62,11 +62,11 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], 
         states.append(evt + "_post")
     edges: List[Tuple[str, Optional[str], str]] = []
     for (src, dst) in behavior:
-        edges.append((src + "_post", None, dst + "_pre"))
-    for evt in events:
-        edges.append((evt + "_pre", evt, evt + "_post"))
+        edges.append((src + "_post", dst, dst + "_post"))
+    #for evt in events:
+    #    edges.append((evt + "_pre", evt, evt + "_post"))
     for evt in start_events:
-        edges.append(("start", None, evt + "_pre"))
+        edges.append(("start", evt, evt + "_post"))
     tsx: Dict[Tuple[str, Optional[str]], Set[str]] = {}
     for (src, char, dst) in edges:
         out = tsx.get((src, char), None)
@@ -74,11 +74,13 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], 
             out = set()
             tsx[(src, char)] = out
         out.add(dst)
+    accepted = list(evt + "_post" for evt in events)
+    accepted.append("start")
 
     return NFA(alphabet=frozenset(events),
                transition_func=NFA.transition_table(tsx),
                start_state="start",
-               accepted_states=list(evt + "_post" for evt in events))
+               accepted_states=set(accepted))
 
 
 def prefix_nfa(nfa: NFA, prefix: str) -> NFA:

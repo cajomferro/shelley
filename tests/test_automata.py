@@ -2,7 +2,8 @@
 
 from karakuri.regular import NFA, DFA, Nil, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
     nfa_to_dfa, Star
-from shelley.automata import get_invalid_behavior, replace, decode_behavior
+from shelley.automata import get_invalid_behavior, replace, decode_behavior, \
+        build_components, CheckedDevice, prefix_nfa
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -272,3 +273,42 @@ def test_fail_hello_world():
         create_timer()
     ]
     assert get_invalid_behavior(components, behavior, triggers) is not None
+
+def test_prefix_nfa():
+    led = NFA(
+        alphabet=["on", "off"],
+        transition_func=NFA.transition_edges([
+            (0, ["on"], 1),
+            (1, ["off"], 0),
+        ]),
+        start_state=0,
+        accepted_states=[0, 1],
+    )
+    assert prefix_nfa(led, "ledA.") == create_led_a()
+
+def test_build_components():
+    led = NFA(
+        alphabet=["on", "off"],
+        transition_func=NFA.transition_edges([
+            (0, ["on"], 1),
+            (1, ["off"], 0),
+        ]),
+        start_state=0,
+        accepted_states=[0, 1],
+    )
+    comps = {
+        "ledA": "LED",
+        "ledB": "LED",
+    }
+    known_devs = {
+        "LED": CheckedDevice(led),
+    }
+    given = dict(build_components(comps, known_devs))
+    expected = {
+        "ledA": create_led_a(),
+        "ledB": create_led_b(),
+    }
+    assert expected == given
+    assert len(expected) == len(given)
+    for (ex, giv) in zip(expected, given):
+        assert ex == giv

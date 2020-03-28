@@ -1,9 +1,10 @@
-from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, Mapping, Set
+from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, Mapping, Set, Iterator
 import typing
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Void, Nil, Concat, Star, Regex, nfa_to_dfa, \
-    DFA
+    DFA, dfa_to_nfa
 from dataclasses import dataclass
-
+import copy
+import itertools
 
 @dataclass
 class Device:
@@ -22,9 +23,85 @@ class CheckedDevice:
 @dataclass
 class InvalidBehavior:
     dfa: DFA[Any, str]
+    def sample(self, unique=False):
+        """
+        Sample invalid sequences.
+        """
+        r = nfa_to_regex(dfa_to_nfa(self.dfa))
+        r = mut_remove_star(r)
+        result = flatten(r)
+        if result is None:
+            return
+        else:
+            if unique:
+                known = set()
+                for k in result:
+                    k = tuple(k)
+                    if k not in known:
+                        yield k
+                        known.add(k)
+            else:
+                yield from result
 
 
-def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
+def mut_remove_star(r: Regex) -> Regex:
+    if r is Void or r is Nil or isinstance(r, Char):
+        return r
+    if isinstance(r, Star):
+        return Nil
+
+    to_proc = [r]
+
+    def do_subst(r, attr):
+        child = getattr(r, attr)
+        if isinstance(child, Star):
+            setattr(r, attr, Nil)
+            return
+        elif isinstance(child, Concat) or isinstance(child, Union):
+            to_proc.append(child)
+
+    while len(to_proc) > 0:
+        elem = to_proc.pop()
+        do_subst(elem, "left")
+        do_subst(elem, "right")
+    return r
+
+def flatten_union(left, right):
+    for l, r in itertools.product(left, right):
+        yield itertools.chain(l, r)
+
+def eager_flatten(r):
+    result = flatten(r)
+    if result is None:
+        return None
+    else:
+        return list(map(list, result))
+
+def flatten(r: Regex) -> Optional[Iterator[Tuple[str]]]:
+    if r is Nil:
+        return ( () ,)
+    elif isinstance(r, Char):
+        return ( (r.char ,)   ,)
+    elif r is Void:
+        return None
+    elif isinstance(r, Star):
+        raise ValueError("Does not support star: ", r)
+    elif isinstance(r, Union):
+        left = flatten(r.left)
+        right = flatten(r.right)
+        if left is None:
+            return right
+        if right is None:
+            return left
+        return itertools.chain(left, right)
+    elif isinstance(r, Concat):
+        left = flatten(r.left)
+        right = flatten(r.right)
+        if left is None or right is None:
+            return None
+        return flatten_union(left, right)
+
+def mut_replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     if r is Void or r is Nil:
         return r
     elif isinstance(r, Char):
@@ -63,8 +140,6 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], 
     edges: List[Tuple[str, Optional[str], str]] = []
     for (src, dst) in behavior:
         edges.append((src + "_post", dst, dst + "_post"))
-    #for evt in events:
-    #    edges.append((evt + "_pre", evt, evt + "_post"))
     for evt in start_events:
         edges.append(("start", evt, evt + "_post"))
     tsx: Dict[Tuple[str, Optional[str]], Set[str]] = {}
@@ -121,7 +196,8 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
                     alphabet: Optional[Collection[str]] = None,
                     minimize: bool = False, flatten: bool = False) -> DFA[Any, str]:
     # Replace tokens by REGEX in decoder
-    decoded_regex = replace(behavior, triggers)
+    # XXX: deepcopy(behavior)
+    decoded_regex = mut_replace(behavior, triggers)
     decoded_behavior = regex_to_nfa(decoded_regex, alphabet)
     # Convert into a minimized DFA
     decoded_behavior_dfa = nfa_to_dfa(decoded_behavior)

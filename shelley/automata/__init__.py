@@ -196,8 +196,7 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
                     alphabet: Optional[Collection[str]] = None,
                     minimize: bool = False, flatten: bool = False) -> DFA[Any, str]:
     # Replace tokens by REGEX in decoder
-    # XXX: deepcopy(behavior)
-    decoded_regex = mut_replace(behavior, triggers)
+    decoded_regex = mut_replace(copy.deepcopy(behavior), triggers)
     decoded_behavior = regex_to_nfa(decoded_regex, alphabet)
     # Convert into a minimized DFA
     decoded_behavior_dfa = nfa_to_dfa(decoded_behavior)

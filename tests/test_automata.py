@@ -104,7 +104,7 @@ def create_led_and_button():
     """
     return NFA(
         # states=[0, 1, 2],
-        alphabet=[LA_ON, LA_OFF],
+        alphabet=[LA_ON, LA_OFF, B_R, B_P],
         transition_func=NFA.transition_edges([
             (0, [LA_ON], 1),
             (1, [LA_OFF], 0),

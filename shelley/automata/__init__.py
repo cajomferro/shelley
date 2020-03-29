@@ -1,7 +1,7 @@
 from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, Mapping, Set, Iterator
 import typing
-from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Void, Nil, Concat, Star, Regex, nfa_to_dfa, \
-    DFA, dfa_to_nfa
+from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, NIL, Concat, Star, Regex, nfa_to_dfa, \
+    DFA, dfa_to_nfa, Nil, Void
 from dataclasses import dataclass
 import copy
 import itertools
@@ -45,17 +45,17 @@ class InvalidBehavior:
 
 
 def mut_remove_star(r: Regex) -> Regex:
-    if r is Void or r is Nil or isinstance(r, Char):
+    if isinstance(r, Void) or isinstance(r, Nil) or isinstance(r, Char):
         return r
     if isinstance(r, Star):
-        return Nil
+        return NIL
 
     to_proc = [r]
 
     def do_subst(r, attr):
         child = getattr(r, attr)
         if isinstance(child, Star):
-            setattr(r, attr, Nil)
+            setattr(r, attr, NIL)
             return
         elif isinstance(child, Concat) or isinstance(child, Union):
             to_proc.append(child)
@@ -78,11 +78,11 @@ def eager_flatten(r):
         return list(map(list, result))
 
 def flatten(r: Regex) -> Optional[Iterator[Tuple[str]]]:
-    if r is Nil:
+    if isinstance(r, Nil):
         return ( () ,)
     elif isinstance(r, Char):
         return ( (r.char ,)   ,)
-    elif r is Void:
+    elif isinstance(r, Void):
         return None
     elif isinstance(r, Star):
         raise ValueError("Does not support star: ", r)
@@ -102,7 +102,7 @@ def flatten(r: Regex) -> Optional[Iterator[Tuple[str]]]:
         return flatten_union(left, right)
 
 def mut_replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
-    if r is Void or r is Nil:
+    if isinstance(r, Void) or isinstance(r, Nil):
         return r
     elif isinstance(r, Char):
         return rules.get(r.char, r)

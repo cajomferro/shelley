@@ -4,7 +4,7 @@ from typing import Dict, Set, Tuple, List
 from .triggers import TriggersVisitor
 from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
-from karakuri.regular import Regex, Char, Concat, Union, Nil
+from karakuri.regular import Regex, Char, Concat, Union, NIL
 
 
 class TRules2RegexVisitor(TriggersVisitor):
@@ -13,10 +13,10 @@ class TRules2RegexVisitor(TriggersVisitor):
 
     def __init__(self):
         self.regex_dict = dict()
-        self.current_regex = Nil
+        self.current_regex = NIL
 
     def visit_trigger_rule_fired(self, element: TriggerRuleFired) -> None:
-        # self.current_regex = Nil() # TODO: como processar o fired?
+        # self.current_regex = NIL() # TODO: como processar o fired?
         pass
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:

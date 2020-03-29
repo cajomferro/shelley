@@ -1,7 +1,7 @@
 # from .context import shelley
 
 from karakuri.regular import NFA, DFA, Nil, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
-    nfa_to_dfa, Star, dfa_to_nfa, Void
+    nfa_to_dfa, Star, dfa_to_nfa, Void, NIL, VOID
 from shelley.automata import get_invalid_behavior, decode_behavior, \
         build_components, CheckedDevice, prefix_nfa, build_behavior, \
         InvalidBehavior, mut_remove_star, flatten, eager_flatten
@@ -215,7 +215,7 @@ def test_decode2():
     behavior = Star(Concat(Char(LEVEL1), Char(LEVEL2)))
     triggers = {
         LEVEL1: Concat(Char(B_P), Char(B_P)),
-        LEVEL2: Nil,
+        LEVEL2: NIL,
     }
     be = decode_behavior(behavior, triggers, flatten=True, minimize=True)
     expected = nfa_to_dfa(regex_to_nfa(Star(Concat(Char(B_P), Char(B_P))))).flatten(minimize=True)
@@ -248,7 +248,9 @@ def test_ok_1():
 
 
 def test_fail_hello_world():
-    behavior = nfa_to_regex(create_hello_world())
+    hello = create_hello_world()
+    assert hello.accepts([])
+    behavior = nfa_to_regex(hello)
     triggers = {
         LEVEL1:
             Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
@@ -274,10 +276,15 @@ def test_fail_hello_world():
         create_timer()
     ]
     be = decode_behavior(behavior, triggers, flatten=True, minimize=True)
+    assert be.accepts([])
     res = get_invalid_behavior(components, behavior, triggers)
+    res = res.minimize()
+    assert not res.accepts([])
     assert res is not None
     elems = list(list(w) for idx, w in zip(range(10), InvalidBehavior(res).sample(unique=True)))
-    print(list(map(list, elems)))
+    elems = list(map(list, elems))
+    for seq in elems:
+        assert res.accepts(seq)
     assert False
 
 def test_flatten_regex():
@@ -286,24 +293,24 @@ def test_flatten_regex():
     assert eager_flatten(Union(Char('a'), Char('b'))) == [ ['a'], ['b'] ]
     assert eager_flatten(Concat(Char('a'), Union(Char('b'), Char('c')))) == [ ['a', 'b'], ['a', 'c'] ]
     assert eager_flatten(Union(Char('a'), Concat(Char('b'), Char('c')))) == [ ['a'], ['b', 'c'] ]
-    assert eager_flatten(Concat(Char('a'), Nil)) == [['a']]
-    assert eager_flatten(Concat(Nil, Char('a'))) == [['a']]
-    assert eager_flatten(Union(Void, Char('a'))) == [['a']]
-    assert eager_flatten(Union(Char('a'), Void)) == [['a']]
+    assert eager_flatten(Concat(Char('a'), NIL)) == [['a']]
+    assert eager_flatten(Concat(NIL, Char('a'))) == [['a']]
+    assert eager_flatten(Union(VOID, Char('a'))) == [['a']]
+    assert eager_flatten(Union(Char('a'), VOID)) == [['a']]
 
 def test_mut_remove_star():
-    assert mut_remove_star(Nil) is Nil
-    assert mut_remove_star(Void) is Void
-    assert mut_remove_star(Star(Char('a'))) is Nil
+    assert mut_remove_star(NIL) is NIL
+    assert mut_remove_star(VOID) is VOID
+    assert mut_remove_star(Star(Char('a'))) is NIL
     assert mut_remove_star(Concat(Char('a'), Char('b'))) == Concat(Char('a'), Char('b'))
     #
     r = Concat(Char('a'), Star(Char('b')))
     assert r is mut_remove_star(r)
-    assert r == Concat(Char('a'), Nil)
+    assert r == Concat(Char('a'), NIL)
     #
     r = Union(Char('a'), Star(Char('b')))
     assert r is mut_remove_star(r)
-    assert r == Union(Char('a'), Nil)
+    assert r == Union(Char('a'), NIL)
 
 def test_prefix_nfa():
     led = NFA(

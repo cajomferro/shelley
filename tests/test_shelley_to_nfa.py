@@ -5,7 +5,8 @@ from .context import shelley
 from typing import Dict
 
 import yaml
-from karakuri.regular import Regex, nfa_to_regex, dfa_to_nfa, Char, Concat, Union, Nil
+from karakuri.regular import Regex, nfa_to_regex, dfa_to_nfa, Char, Concat, \
+    Union, Nil, NIL
 
 from shelley.automata import Device as AutomataDevice, check_valid_device, CheckedDevice, InvalidBehavior
 from shelley.ast.devices import Device as ShelleyDevice
@@ -45,8 +46,8 @@ def test_button():
         ],
         components={},
         triggers={
-            'pressed': Nil,
-            'released': Nil,
+            'pressed': NIL,
+            'released': NIL,
         },
     )
     assert expected == get_automata_device('button')
@@ -62,8 +63,8 @@ def test_led():
         ],
         components={},
         triggers={
-            'on': Nil,
-            'off': Nil,
+            'on': NIL,
+            'off': NIL,
         },
     )
     assert expected == get_automata_device('led')
@@ -84,9 +85,9 @@ def test_timer():
         ],
         components={},
         triggers={
-            'started': Nil,
-            'canceled': Nil,
-            'timeout': Nil
+            'started': NIL,
+            'canceled': NIL,
+            'timeout': NIL
         },
     )
     assert expected == get_automata_device('timer')

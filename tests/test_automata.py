@@ -388,6 +388,10 @@ def test_build_behavior():
     assert nfa_to_dfa(build_behavior(behavior, start_events, events)).is_equivalent_to(nfa_to_dfa(create_hello_world()))
 
 
+######################
+#### TEST DEVICES ####
+######################
+
 def test_device_button():
     device = Device(
         start_events=['b.pressed'],
@@ -443,6 +447,52 @@ def test_device_led_b():
     expected = check_valid_device(device, {}).nfa.flatten()
 
     assert nfa_to_dfa(create_led_b()).is_equivalent_to(nfa_to_dfa(expected))
+
+
+def test_device_timer():
+    device = Device(
+        start_events=['t.started'],
+        events=['t.started', 't.canceled', 't.timeout'],
+        behavior=[
+            ('t.started', 't.canceled'),
+            ('t.started', 't.timeout'),
+            ('t.canceled', 't.started'),
+            ('t.timeout', 't.started')
+        ],
+        components={},
+        triggers={
+            't.started': NIL,
+            't.canceled': NIL,
+            't.timeout': NIL
+        },
+    )
+    expected = check_valid_device(device, {}).nfa.flatten()
+
+    assert nfa_to_dfa(create_timer()).is_equivalent_to(nfa_to_dfa(expected))
+
+
+def test_device_hello_world():
+    device = Device(
+        start_events=['level1'],
+        events=['level1', 'level2', 'standby1', 'standby2'],
+        behavior=[
+            ('level1', 'standby1'),
+            ('level1', 'level2'),
+            ('level2', 'standby2'),
+            ('standby1', 'level1'),
+            ('standby2', 'level1')
+        ],
+        components={},
+        triggers={
+            'level1': NIL,
+            'level2': NIL,
+            'standby1': NIL,
+            'standby2': NIL
+        },
+    )
+    expected = check_valid_device(device, {}).nfa.flatten()
+
+    assert nfa_to_dfa(create_hello_world()).is_equivalent_to(nfa_to_dfa(expected))
 
 
 def test_device_led_and_button():

@@ -6,7 +6,7 @@ from typing import Dict
 
 import yaml
 from karakuri.regular import Regex, nfa_to_regex, dfa_to_nfa, Char, Concat, \
-    Union, Nil, NIL
+    Union, NIL
 
 from shelley.automata import Device as AutomataDevice, check_valid_device, CheckedDevice, InvalidBehavior
 from shelley.ast.devices import Device as ShelleyDevice
@@ -177,6 +177,6 @@ def test_desklamp():
 def test_system_test():
     dev = get_automata_device('desklamp')
     known_devices = {'Led': check_valid_device(get_automata_device('led'), {}),
-                      'Button': check_valid_device(get_automata_device('button'), {}),
-                      'Timer': check_valid_device(get_automata_device('timer'), {})}
+                     'Button': check_valid_device(get_automata_device('button'), {}),
+                     'Timer': check_valid_device(get_automata_device('timer'), {})}
     assert type(check_valid_device(dev, known_devices)) == CheckedDevice

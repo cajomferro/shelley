@@ -1,10 +1,10 @@
 # from .context import shelley
 
-from karakuri.regular import NFA, DFA, Nil, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
-    nfa_to_dfa, Star, dfa_to_nfa, Void, NIL, VOID
+from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
+    nfa_to_dfa, Star, NIL, VOID
 from shelley.automata import get_invalid_behavior, decode_behavior, \
-        build_components, CheckedDevice, prefix_nfa, build_behavior, \
-        InvalidBehavior, mut_remove_star, flatten, eager_flatten
+    build_components, CheckedDevice, prefix_nfa, build_behavior, \
+    InvalidBehavior, mut_remove_star, eager_flatten
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -287,16 +287,18 @@ def test_fail_hello_world():
         assert res.accepts(seq)
     assert False
 
+
 def test_flatten_regex():
     assert eager_flatten(Char('a')) == [['a']]
-    assert eager_flatten(Concat(Char('a'), Char('b'))) == [ ['a', 'b'] ]
-    assert eager_flatten(Union(Char('a'), Char('b'))) == [ ['a'], ['b'] ]
-    assert eager_flatten(Concat(Char('a'), Union(Char('b'), Char('c')))) == [ ['a', 'b'], ['a', 'c'] ]
-    assert eager_flatten(Union(Char('a'), Concat(Char('b'), Char('c')))) == [ ['a'], ['b', 'c'] ]
+    assert eager_flatten(Concat(Char('a'), Char('b'))) == [['a', 'b']]
+    assert eager_flatten(Union(Char('a'), Char('b'))) == [['a'], ['b']]
+    assert eager_flatten(Concat(Char('a'), Union(Char('b'), Char('c')))) == [['a', 'b'], ['a', 'c']]
+    assert eager_flatten(Union(Char('a'), Concat(Char('b'), Char('c')))) == [['a'], ['b', 'c']]
     assert eager_flatten(Concat(Char('a'), NIL)) == [['a']]
     assert eager_flatten(Concat(NIL, Char('a'))) == [['a']]
     assert eager_flatten(Union(VOID, Char('a'))) == [['a']]
     assert eager_flatten(Union(Char('a'), VOID)) == [['a']]
+
 
 def test_mut_remove_star():
     assert mut_remove_star(NIL) is NIL
@@ -312,6 +314,7 @@ def test_mut_remove_star():
     assert r is mut_remove_star(r)
     assert r == Union(Char('a'), NIL)
 
+
 def test_prefix_nfa():
     led = NFA(
         alphabet=["on", "off"],
@@ -323,6 +326,7 @@ def test_prefix_nfa():
         accepted_states=[0, 1],
     )
     assert prefix_nfa(led, "ledA.") == create_led_a()
+
 
 def test_build_components():
     led = NFA(
@@ -351,6 +355,7 @@ def test_build_components():
     for (ex, giv) in zip(expected, given):
         assert ex == giv
 
+
 def test_build_behavior():
     start_events = ['level1']
     events = ['level1', 'standby1', 'level2', 'standby2']
@@ -374,10 +379,10 @@ def test_build_behavior():
     accepted = set(x + "_post" for x in events)
     accepted.add("start")
     expected = NFA(alphabet=set(events),
-        transition_func=NFA.transition_edges_split(tsx),
-        start_state="start",
-        accepted_states=accepted,
-    )
+                   transition_func=NFA.transition_edges_split(tsx),
+                   start_state="start",
+                   accepted_states=accepted,
+                   )
     assert build_behavior(behavior, start_events, events) == expected
     # Make sure this is equivalent to HELLO WORLD
     assert nfa_to_dfa(build_behavior(behavior, start_events, events)).is_equivalent_to(nfa_to_dfa(create_hello_world()))

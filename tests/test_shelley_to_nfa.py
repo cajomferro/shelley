@@ -2,38 +2,20 @@
 
 from .context import shelley
 
-from typing import Dict
-
 import yaml
-from karakuri.regular import Regex, nfa_to_regex, dfa_to_nfa, Char, Concat, \
-    Union, NIL
+from karakuri.regular import Char, Concat, Union, NIL
 
-from shelley.automata import Device as AutomataDevice, check_valid_device, CheckedDevice, InvalidBehavior
+from shelley.automata import Device as AutomataDevice
 from shelley.ast.devices import Device as ShelleyDevice
-from shelley.ast.triggers import Triggers
-from shelley.ast.visitors.trules2regex import TRules2RegexVisitor
-from shelley.yaml_parser import create_device_from_yaml
+from shelley.shelley2automata import shelley2automata
+from shelley.yaml2shelley import create_device_from_yaml
 
 
-def get_shelley_device(name: str) -> ShelleyDevice:
+def _get_automata_from_yaml(name: str) -> AutomataDevice:
     with open('tests/input/{0}.yaml'.format(name), 'r') as stream:
         yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
-    return create_device_from_yaml(yaml_code)
-
-
-def get_regex_dict(triggers: Triggers) -> Dict[str, Regex]:
-    visitor = TRules2RegexVisitor()
-    triggers.accept(visitor)
-    return visitor.regex_dict
-
-
-def get_automata_device(name: str) -> AutomataDevice:
-    shelley_device = get_shelley_device(name)
-    return AutomataDevice(start_events=shelley_device.start_events,
-                          events=shelley_device.get_all_events().list_str(),
-                          behavior=shelley_device.behaviors.as_list_tuples(),
-                          components=shelley_device.components.components_to_devices,
-                          triggers=get_regex_dict(shelley_device.triggers))
+    shelley: ShelleyDevice = create_device_from_yaml(yaml_code)
+    return shelley2automata(shelley)
 
 
 def test_button():
@@ -50,7 +32,7 @@ def test_button():
             'released': NIL,
         },
     )
-    assert expected == get_automata_device('button')
+    assert expected == _get_automata_from_yaml('button')
 
 
 def test_led():
@@ -67,10 +49,7 @@ def test_led():
             'off': NIL,
         },
     )
-    assert expected == get_automata_device('led')
-
-    #    checked_led = check_valid_device(automata, {})
-    #    assert isinstance(checked_led, CheckedDevice)
+    assert expected == _get_automata_from_yaml('led')
 
 
 def test_timer():
@@ -90,7 +69,7 @@ def test_timer():
             'timeout': NIL
         },
     )
-    assert expected == get_automata_device('timer')
+    assert expected == _get_automata_from_yaml('timer')
 
 
 def test_smartbutton1():
@@ -105,17 +84,7 @@ def test_smartbutton1():
             'on': Concat(Char('b.pressed'), Char('b.released'))
         },
     )
-    assert expected == get_automata_device('smartbutton1')
-
-    # known_devices = {'Button': check_valid_device(get_automata_device('button'), {})}
-    #
-    # checked_automata = check_valid_device(automata, known_devices)
-    # print()
-    # print(checked_automata.dfa)
-    # # print(dfa_to_nfa(checked_automata.dfa))
-    # print(nfa_to_regex(dfa_to_nfa(checked_automata.dfa)).to_string(app_str=lambda x, y: x + " ; " + y))
-
-    # assert isinstance(checked_automata, CheckedDevice)
+    assert expected == _get_automata_from_yaml('smartbutton1')
 
 
 def test_desklamp():
@@ -171,12 +140,4 @@ def test_desklamp():
                 ))
         },
     )
-    assert expected == get_automata_device('desklamp')
-
-
-def test_system_test():
-    dev = get_automata_device('desklamp')
-    known_devices = {'Led': check_valid_device(get_automata_device('led'), {}),
-                     'Button': check_valid_device(get_automata_device('button'), {}),
-                     'Timer': check_valid_device(get_automata_device('timer'), {})}
-    assert type(check_valid_device(dev, known_devices)) == CheckedDevice
+    assert expected == _get_automata_from_yaml('desklamp')

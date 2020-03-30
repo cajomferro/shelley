@@ -2,7 +2,7 @@ import yaml
 from .context import shelley
 from shelley.ast.devices import Device
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
-from shelley.yaml_parser import create_device_from_yaml
+from shelley.yaml2shelley import create_device_from_yaml
 
 
 def get_shelley_device(name: str) -> Device:

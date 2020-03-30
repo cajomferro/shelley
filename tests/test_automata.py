@@ -1,10 +1,10 @@
-# from .context import shelley
+from .context import shelley
 
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
     nfa_to_dfa, Star, NIL, VOID
 from shelley.automata import get_invalid_behavior, decode_behavior, \
-    build_components, CheckedDevice, prefix_nfa, build_behavior, \
-    InvalidBehavior, mut_remove_star, eager_flatten
+    build_components, Device, CheckedDevice, prefix_nfa, build_behavior, \
+    InvalidBehavior, mut_remove_star, eager_flatten, check_valid_device
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -386,3 +386,85 @@ def test_build_behavior():
     assert build_behavior(behavior, start_events, events) == expected
     # Make sure this is equivalent to HELLO WORLD
     assert nfa_to_dfa(build_behavior(behavior, start_events, events)).is_equivalent_to(nfa_to_dfa(create_hello_world()))
+
+
+def test_device_button():
+    device = Device(
+        start_events=['b.pressed'],
+        events=['b.pressed', 'b.released'],
+        behavior=[
+            ('b.pressed', 'b.released'),
+            ('b.released', 'b.pressed'),
+        ],
+        components={},
+        triggers={
+            'b.pressed': NIL,
+            'b.released': NIL,
+        },
+    )
+    expected = check_valid_device(device, {}).nfa.flatten()
+
+    assert nfa_to_dfa(create_button()).is_equivalent_to(nfa_to_dfa(expected))
+
+
+def test_device_led_a():
+    device = Device(
+        start_events=['ledA.on'],
+        events=['ledA.on', 'ledA.off'],
+        behavior=[
+            ('ledA.on', 'ledA.off'),
+            ('ledA.off', 'ledA.on'),
+        ],
+        components={},
+        triggers={
+            'ledA.on': NIL,
+            'ledA.off': NIL,
+        },
+    )
+    expected = check_valid_device(device, {}).nfa.flatten()
+
+    assert nfa_to_dfa(create_led_a()).is_equivalent_to(nfa_to_dfa(expected))
+
+
+def test_device_led_b():
+    device = Device(
+        start_events=['ledB.on'],
+        events=['ledB.on', 'ledB.off'],
+        behavior=[
+            ('ledB.on', 'ledB.off'),
+            ('ledB.off', 'ledB.on'),
+        ],
+        components={},
+        triggers={
+            'ledB.on': NIL,
+            'ledB.off': NIL,
+        },
+    )
+    expected = check_valid_device(device, {}).nfa.flatten()
+
+    assert nfa_to_dfa(create_led_b()).is_equivalent_to(nfa_to_dfa(expected))
+
+
+def test_device_led_and_button():
+    device = Device(
+        start_events=['ledA.on'],
+        events=['ledA.on', 'ledA.off', 'b.pressed', 'b.released'],
+        behavior=[
+            ('ledA.on', 'ledA.off'),
+            ('ledA.on', 'b.pressed'),
+            ('b.pressed', 'b.released'),
+            ('b.released', 'ledA.off'),
+            ('b.released', 'b.pressed'),
+            ('ledA.off', 'ledA.on')
+        ],
+        components={},
+        triggers={
+            'ledA.on': NIL,
+            'ledA.off': NIL,
+            'b.pressed': NIL,
+            'b.released': NIL
+        },
+    )
+    expected = check_valid_device(device, {}).nfa.flatten()
+
+    assert nfa_to_dfa(create_led_and_button()).is_equivalent_to(nfa_to_dfa(expected))

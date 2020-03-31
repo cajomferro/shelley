@@ -1,0 +1,3 @@
+COMPILED_FILES_DIR = '.compiled'
+DEVICE_PATH = ''
+DEVICE_NAME = ''

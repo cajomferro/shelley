@@ -6,7 +6,7 @@ from shelley.yaml2shelley import create_device_from_yaml
 
 
 def get_shelley_device(name: str) -> Device:
-    with open('tests/input/{0}.yaml'.format(name), 'r') as stream:
+    with open('examples/{0}.yaml'.format(name), 'r') as stream:
         yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
     return create_device_from_yaml(yaml_code)
 

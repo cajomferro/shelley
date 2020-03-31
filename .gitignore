@@ -6,3 +6,5 @@ _local
 *.dot
 /.python-version
 .mypy_cache/
+/.compiled/
+/tests/compiled/

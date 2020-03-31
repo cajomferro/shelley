@@ -11,7 +11,7 @@ from shelley.yaml2shelley import create_device_from_yaml
 
 
 def _get_automata_from_yaml(name: str) -> AutomataDevice:
-    with open('tests/input/{0}.yaml'.format(name), 'r') as stream:
+    with open('examples/{0}.yaml'.format(name), 'r') as stream:
         yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
     shelley: ShelleyDevice = create_device_from_yaml(yaml_code)
     return shelley2automata(shelley)

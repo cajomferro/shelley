@@ -1,5 +1,4 @@
 pytest
 pyyaml
 mypy
-dill
 git+http://gitlab.com/cogumbreiro/karukuri.git

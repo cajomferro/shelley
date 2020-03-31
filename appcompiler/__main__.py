@@ -28,6 +28,7 @@ def _find_compiled_device(name: str) -> CheckedDevice:
         deserialized_device: CheckedDevice = _deserialize_checked_device(path)
     except FileNotFoundError:
         sys.exit('{0}.pickle not found! Please compile it first!'.format(name.lower()))
+    print('Found dependency: {0}'.format(name))
     return deserialized_device
 
 
@@ -49,7 +50,7 @@ def _compile():
     if type(checked_device) == CheckedDevice:
         _serialize_checked_device(settings.COMPILED_FILE_PATH, checked_device)
     else:
-        raise Exception("Invalid device!")
+        sys.exit("Invalid device!")
 
     assert os.path.exists(settings.COMPILED_FILE_PATH)
 

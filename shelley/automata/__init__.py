@@ -71,6 +71,11 @@ def flatten_union(left, right):
         yield itertools.chain(l, r)
 
 def eager_flatten(r):
+    """
+    Generates iterator
+    :param r:
+    :return:
+    """
     result = flatten(r)
     if result is None:
         return None

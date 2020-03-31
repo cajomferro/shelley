@@ -1,3 +1,5 @@
 COMPILED_FILES_DIR = '.compiled'
+YAML_EXAMPLES_DIR = 'examples'
 DEVICE_PATH = ''
 DEVICE_NAME = ''
+COMPILED_FILE_PATH = ''

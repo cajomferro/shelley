@@ -1,4 +1,4 @@
-import pickle
+import dill
 import typing
 import yaml
 import os
@@ -21,14 +21,12 @@ def deserialize_checked_device(path: str) -> CheckedDevice:
 
 def serialize_checked_device_binary(path: str, device: CheckedDevice) -> typing.NoReturn:
     with open(path, 'wb') as f:
-        pickle.dump(device.nfa.as_dict(), f, pickle.HIGHEST_PROTOCOL)
+        dill.dump(device, f, dill.HIGHEST_PROTOCOL)
 
 
 def deserialize_checked_device_binary(path: str) -> CheckedDevice:
     with open(path, 'rb') as f:
-        nfa = regular.NFA.from_dict(pickle.load(f))
-
-    return CheckedDevice(nfa)
+        return dill.load(f)
 
 # def _serialize_checked_device_with_yaml(path: str, device: CheckedDevice) -> typing.NoReturn:
 #     with open(path, 'w') as f:

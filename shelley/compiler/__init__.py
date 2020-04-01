@@ -12,16 +12,16 @@ def serialize_checked_device(path: str, device: CheckedDevice) -> typing.NoRetur
         yaml.dump(device.nfa.as_dict(), f)
 
 
-def serialize_checked_device_binary(path: str, device: CheckedDevice) -> typing.NoReturn:
-    with open(path, 'wb') as f:
-        pickle.dump(device.nfa.as_dict(), f, pickle.HIGHEST_PROTOCOL)
-
-
 def deserialize_checked_device(path: str) -> CheckedDevice:
     with open(path, 'r') as f:
         nfa = regular.NFA.from_dict(yaml.load(f, Loader=yaml.BaseLoader))
 
     return CheckedDevice(nfa)
+
+
+def serialize_checked_device_binary(path: str, device: CheckedDevice) -> typing.NoReturn:
+    with open(path, 'wb') as f:
+        pickle.dump(device.nfa.as_dict(), f, pickle.HIGHEST_PROTOCOL)
 
 
 def deserialize_checked_device_binary(path: str) -> CheckedDevice:

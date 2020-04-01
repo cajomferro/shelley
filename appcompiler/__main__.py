@@ -2,91 +2,108 @@ import yaml
 import os
 import sys
 import typing
+import argparse
 
 from .context import shelley
 
 from . import settings
+from . import get_args
 
 from shelley.automata import Device as AutomataDevice, check_valid_device, CheckedDevice, InvalidBehavior
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley.yaml2shelley import create_device_from_yaml
-from shelley.compiler import _deserialize_checked_device, _serialize_checked_device
+from shelley.compiler import deserialize_checked_device, deserialize_checked_device_binary, serialize_checked_device, \
+    serialize_checked_device_binary
 
 
-def _get_automata_from_yaml(name: str) -> AutomataDevice:
-    path = os.path.join(settings.YAML_EXAMPLES_DIR, '{0}.yaml'.format(name))
+def _get_shelley_from_yaml(path: str) -> ShelleyDevice:
     with open(path, 'r') as stream:
         yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
     shelley: ShelleyDevice = create_device_from_yaml(yaml_code)
     return shelley
 
 
-def _find_compiled_device(name: str) -> CheckedDevice:
-    path = os.path.join(settings.COMPILED_FILES_DIR, '{0}.pickle'.format(name.lower()))
+def _find_compiled_device(path: str) -> CheckedDevice:
+    # if os.path.splitext(path)[1] == '.shelcb':
     try:
-        deserialized_device: CheckedDevice = _deserialize_checked_device(path)
+        deserialized_device: CheckedDevice = deserialize_checked_device(path)
     except FileNotFoundError:
-        sys.exit('{0}.pickle not found! Please compile it first!'.format(name.lower()))
-    print('Found dependency: {0}'.format(name))
+        sys.exit('{0} not found! Please compile it first!'.format(path))
+
     return deserialized_device
 
 
-def _get_known_devices(device: ShelleyDevice) -> typing.Mapping[str, CheckedDevice]:
-    known_devices = dict()
-    for device_name in device.uses:
-        known_devices[device_name] = _find_compiled_device(device_name)
-    return known_devices
+def _get_known_devices(device: ShelleyDevice, uses_list: typing.List[str]) -> typing.Mapping[str, CheckedDevice]:
+    known_devices: typing.Mapping[str, CheckedDevice] = dict()
+    for u in uses_list:
+        device_path, device_name = u.split(':')
+        known_devices[device_name] = _find_compiled_device(device_path)
+        # print("{0},{1}".format(device_path, device_name))
+
+    assert len(device.uses) == len(known_devices)
+    for dname in device.uses:  # check that all uses match the specified dependencies on the command
+        if dname not in known_devices:
+            sys.exit('Device dependency not specified: {0}!'.format(dname))
 
 
-def _compile():
-    current_device: ShelleyDevice = _get_automata_from_yaml(settings.DEVICE_NAME)
+#    known_devices = dict()
+#    for d in device.uses:
+#        known_devices[device_name] = _find_compiled_device(device_name)
+#    return known_devices
 
-    automata_device: AutomataDevice = shelley2automata(current_device)
-    known_devices: typing.Mapping[str, CheckedDevice] = _get_known_devices(current_device)
 
+def _compile(automata_device: AutomataDevice, known_devices: typing.Mapping[str, CheckedDevice], dst_path: str,
+             binary=False):
     checked_device = check_valid_device(automata_device, known_devices)
 
     if type(checked_device) == CheckedDevice:
-        _serialize_checked_device(settings.COMPILED_FILE_PATH, checked_device)
+        if binary:
+            serialize_checked_device_binary(dst_path, checked_device)
+        else:
+            serialize_checked_device(dst_path, checked_device)
     else:
         sys.exit("Invalid device!")
 
-    assert os.path.exists(settings.COMPILED_FILE_PATH)
 
+def main(args):
+    # print(args)
 
-def main():
-    try:
-        os.mkdir(settings.COMPILED_FILES_DIR)
-    except FileExistsError:
-        pass
+    settings.SRC_FILEPATH = os.path.realpath(args.source)  # --source
+    settings.SRC_BASENAME = os.path.splitext(os.path.basename(settings.SRC_FILEPATH))[0]
 
-    try:
-        settings.DEVICE_PATH = os.path.realpath(sys.argv[1])
-    except IndexError:
-        sys.exit('Please specify the path to the yaml file!')
-    settings.DEVICE_NAME = os.path.splitext(os.path.basename(settings.DEVICE_PATH))[0]
-    settings.COMPILED_FILE_PATH = os.path.join(os.path.realpath(settings.COMPILED_FILES_DIR),
-                                               '{0}.pickle'.format(settings.DEVICE_NAME))
-    print('Compiling {0}...'.format(settings.DEVICE_NAME))
-    print('Input yaml path: {0}'.format(settings.DEVICE_PATH))
+    if args.outdir is None:
+        settings.OUTPUT_DIR = os.path.dirname(settings.SRC_FILEPATH)
+    else:  # if --output is specified, create folder if doesn't exist yet
+        settings.OUTPUT_DIR = os.path.realpath(args.outdir)
+        try:
+            os.mkdir(settings.OUTPUT_DIR)
+        except FileExistsError:
+            pass
 
-    _compile()
+    shelley_device: ShelleyDevice = _get_shelley_from_yaml(settings.SRC_FILEPATH)
+    settings.DEVICE_NAME = shelley_device.name
 
-    print('Compiled file: {0}'.format(settings.COMPILED_FILE_PATH))
+    if args.binary is True:
+        settings.DST_FILEPATH = os.path.join(settings.OUTPUT_DIR, '{0}.shelcb'.format(settings.SRC_BASENAME))
+    else:
+        settings.DST_FILEPATH = os.path.join(settings.OUTPUT_DIR, '{0}.shelc'.format(settings.SRC_BASENAME))
+
+    #    if args.name is not None:
+    #        assert args.name == settings.DEVICE_NAME
+
+    print('Compiling device {0}...'.format(settings.DEVICE_NAME))
+    print('Input yaml file: {0}'.format(settings.SRC_FILEPATH))
+
+    known_devices: typing.Mapping[str, CheckedDevice] = _get_known_devices(shelley_device, args.uses)
+
+    automata_device = shelley2automata(shelley_device)
+
+    _compile(automata_device, known_devices, settings.DST_FILEPATH, binary=args.binary)
+
+    print('Compiled file: {0}'.format(settings.DST_FILEPATH))
     print('OK!')
 
 
-# deserialized_device = _deserialize_checked_device(path)
-
-#    os.remove(path)
-#    assert os.path.exists(path) is False
-
-# dfa_checked_device = regular.nfa_to_dfa(checked_device.nfa)
-# dfa_deserialized_device = regular.nfa_to_dfa(deserialized_device.nfa)
-
-# assert dfa_deserialized_device.is_equivalent_to(dfa_checked_device)
-
-
 if __name__ == "__main__":
-    main()
+    main(get_args())

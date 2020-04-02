@@ -6,17 +6,26 @@ import os
 from karakuri import regular
 from shelley.automata import CheckedDevice
 
+class SerializationError(Exception):
+    pass
+
 
 def serialize_checked_device(path: str, device: CheckedDevice) -> typing.NoReturn:
     with open(path, 'w') as f:
-        nfa_as_dict = device.nfa.as_dict(flatten=False)
+        try:
+            nfa_as_dict = device.nfa.as_dict(flatten=False)
+        except:
+            raise SerializationError("Invalid device for serialization!")
         yaml.dump(nfa_as_dict, f)
 
 
 def deserialize_checked_device(path: str) -> CheckedDevice:
     with open(path, 'r') as f:
         yaml_load = yaml.load(f, Loader=yaml.FullLoader)
-        nfa = regular.NFA.from_dict(yaml_load)
+        try:
+            nfa = regular.NFA.from_dict(yaml_load)
+        except:
+            raise SerializationError("Invalid device for deserialization!")
     return CheckedDevice(nfa)
 
 

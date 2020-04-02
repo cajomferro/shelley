@@ -8,4 +8,4 @@ _local
 .mypy_cache/
 /.compiled/
 /tests/compiled/
-*.shelc*
+*.sc*

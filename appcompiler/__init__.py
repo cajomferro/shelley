@@ -12,9 +12,10 @@ import argparse
 
 def create_parser():
     parser = argparse.ArgumentParser(description='Compile shelley files')
+    parser.add_argument("-v", "--verbosity", help="increase output verbosity",  action='store_true')
     parser.add_argument("-u", "--uses", nargs='*', default=[], help="path to used device")
-    parser.add_argument("-o", "--outdir", nargs=1, help="path to store compiled files")
-    parser.add_argument("-b", "--binary", help="generate binary files", action='store_true')
+    parser.add_argument("-o", "--outdir", help="path to store compiled files")
+    #parser.add_argument("-b", "--binary", help="generate binary files", action='store_true')
     parser.add_argument("-s", '--source', help="Path to the input example yaml file", required=True)
     return parser
 

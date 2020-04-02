@@ -12,7 +12,7 @@ from shelley.automata import Device as AutomataDevice, check_valid_device, Check
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley.yaml2shelley import create_device_from_yaml
-from shelley.compiler import deserialize_checked_device, deserialize_checked_device_binary, serialize_checked_device, \
+from appcompiler.serializer import deserialize_checked_device, deserialize_checked_device_binary, serialize_checked_device, \
     serialize_checked_device_binary
 
 COMPILED_FILES_PATH = 'tests/compiled'

@@ -15,7 +15,7 @@ from shelley.yaml2shelley import create_device_from_yaml
 from shelley.compiler import deserialize_checked_device, deserialize_checked_device_binary, serialize_checked_device, \
     serialize_checked_device_binary
 
-COMPILED_FILES_PATH = 'examples/compiled'
+COMPILED_FILES_PATH = 'tests/compiled'
 EXAMPLES_PATH = 'examples'
 
 
@@ -39,7 +39,7 @@ def _get_compiled_path(name: str, binary=False):
 
 
 def _serialize_device(name, known_devices: typing.Mapping[str, CheckedDevice] = {}, binary=False) -> CheckedDevice:
-    path = _get_compiled_path(name, binary=True)
+    path = _get_compiled_path(name, binary=binary)
     checked_device = check_valid_device(_get_automata_from_yaml(name), known_devices)
     if binary:
         serialize_checked_device_binary(path, checked_device)
@@ -48,61 +48,57 @@ def _serialize_device(name, known_devices: typing.Mapping[str, CheckedDevice] = 
     return checked_device
 
 
-def test_button():
+def _test_button(binary=False):
     name = 'button'
 
     # serialize and deserialize (yaml)
-    path = _get_compiled_path(name, binary=False)
-    checked_device = _serialize_device(name, binary=False)
-    deserialized_device = deserialize_checked_device(path)
+    path = _get_compiled_path(name, binary=binary)
+    checked_device = _serialize_device(name, binary=binary)
+    if binary:
+        deserialized_device = deserialize_checked_device_binary(path)
+    else:
+        deserialized_device = deserialize_checked_device(path)
 
-    # compare original to deserialized
-    dfa_checked_device = regular.nfa_to_dfa(checked_device.nfa)
-    dfa_deserialized_device = regular.nfa_to_dfa(deserialized_device.nfa)
-    assert dfa_deserialized_device.is_equivalent_to(dfa_checked_device)
+    assert deserialized_device.nfa == checked_device.nfa
 
-    os.remove(path)
+
+def _test_smartbutton1(binary=False):
+    # serialize and deserialize button
+
+    _serialize_device('button', binary=binary)
+    button_path = _get_compiled_path('button', binary=binary)
+
+    if binary:
+        button_device = deserialize_checked_device_binary(button_path)
+    else:
+        button_device = deserialize_checked_device(button_path)
+
+    known_devices = {
+        'Button': button_device
+    }
+
+    # serialize and deserialize smartbutton
+    path = _get_compiled_path('smartbutton1', binary=binary)
+    checked_device = _serialize_device('smartbutton1', known_devices, binary=binary)
+    if binary:
+        deserialized_device = deserialize_checked_device_binary(path)
+    else:
+        deserialized_device = deserialize_checked_device(path)
+
+    assert deserialized_device.nfa == checked_device.nfa
+
+
+def test_button():
+    _test_button(binary=False)
 
 
 def test_button_binary():
-    name = 'button'
+    _test_button(binary=True)
 
-    # serialize and deserialize (dill)
-    path = _get_compiled_path(name, binary=True)
-    checked_device = _serialize_device(name, binary=True)
-    deserialized_device = deserialize_checked_device_binary(path)
 
-    # compare original to deserialized
-    dfa_checked_device = regular.nfa_to_dfa(checked_device.nfa)
-    # print(dfa_checked_device)
-    dfa_deserialized_device = regular.nfa_to_dfa(deserialized_device.nfa)
-    # print(dfa_deserialized_device)
-    assert dfa_deserialized_device.is_equivalent_to(dfa_checked_device)
-
-    os.remove(path)
+def test_smartbutton1():
+    _test_smartbutton1(binary=False)
 
 
 def test_smartbutton1_binary():
-    name = 'smartbutton1'
-
-    _serialize_device('button', binary=True)
-
-    button_path = _get_compiled_path('button', binary=True)
-    known_devices = {
-        'Button': deserialize_checked_device_binary(button_path)
-    }
-    os.remove(button_path)
-
-    # serialize and deserialize (dill)
-    path = _get_compiled_path(name, binary=True)
-    checked_device = _serialize_device(name, known_devices, binary=True)
-    deserialized_device = deserialize_checked_device_binary(path)
-
-    # compare original to deserialized
-    dfa_checked_device = regular.nfa_to_dfa(checked_device.nfa)
-    # print(dfa_checked_device)
-    dfa_deserialized_device = regular.nfa_to_dfa(deserialized_device.nfa)
-    # print(dfa_deserialized_device)
-    assert dfa_deserialized_device.is_equivalent_to(dfa_checked_device)
-
-    os.remove(path)
+    _test_smartbutton1(binary=True)

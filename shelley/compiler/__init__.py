@@ -9,13 +9,14 @@ from shelley.automata import CheckedDevice
 
 def serialize_checked_device(path: str, device: CheckedDevice) -> typing.NoReturn:
     with open(path, 'w') as f:
-        yaml.dump(device.nfa.as_dict(), f)
+        nfa_as_dict = device.nfa.as_dict(flatten=False)
+        yaml.dump(nfa_as_dict, f)
 
 
 def deserialize_checked_device(path: str) -> CheckedDevice:
     with open(path, 'r') as f:
-        nfa = regular.NFA.from_dict(yaml.load(f, Loader=yaml.BaseLoader))
-
+        yaml_load = yaml.load(f, Loader=yaml.FullLoader)
+        nfa = regular.NFA.from_dict(yaml_load)
     return CheckedDevice(nfa)
 
 

@@ -15,4 +15,4 @@ build_deps:
 	$(APPCOMPILER_CMD) -d $(EXAMPLE_DIR)/button.yaml
 
 clean:
-	rm -rf $(foreach postfix, $(BUILD_EXTENSIONS), *.$(postfix))
+	rm -f $(foreach postfix, $(BUILD_EXTENSIONS), *.$(postfix))

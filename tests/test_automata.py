@@ -4,7 +4,7 @@ from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Conca
     nfa_to_dfa, Star, NIL, VOID
 from shelley.automata import get_invalid_behavior, decode_behavior, \
     build_components, Device, CheckedDevice, prefix_nfa, build_behavior, \
-    InvalidBehavior, mut_remove_star, eager_flatten, check_valid_device
+    InvalidBehavior, remove_star, eager_flatten, check_valid_device
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -300,19 +300,17 @@ def test_flatten_regex():
     assert eager_flatten(Union(Char('a'), VOID)) == [['a']]
 
 
-def test_mut_remove_star():
-    assert mut_remove_star(NIL) is NIL
-    assert mut_remove_star(VOID) is VOID
-    assert mut_remove_star(Star(Char('a'))) is NIL
-    assert mut_remove_star(Concat(Char('a'), Char('b'))) == Concat(Char('a'), Char('b'))
+def test_remove_star():
+    assert remove_star(NIL) is NIL
+    assert remove_star(VOID) is VOID
+    assert remove_star(Star(Char('a'))) is NIL
+    assert remove_star(Concat(Char('a'), Char('b'))) == Concat(Char('a'), Char('b'))
     #
     r = Concat(Char('a'), Star(Char('b')))
-    assert r is mut_remove_star(r)
-    assert r == Concat(Char('a'), NIL)
+    assert remove_star(r) == Concat(Char('a'), NIL)
     #
     r = Union(Char('a'), Star(Char('b')))
-    assert r is mut_remove_star(r)
-    assert r == Union(Char('a'), NIL)
+    assert remove_star(r) == Union(Char('a'), NIL)
 
 
 def test_prefix_nfa():

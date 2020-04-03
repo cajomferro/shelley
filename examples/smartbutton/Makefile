@@ -6,7 +6,7 @@ DEVICE=$(EXAMPLE_DIR)/smartbutton.yaml
 USES=$(EXAMPLE_DIR)/button.scy\:Button
 APPCOMPILER_CMD=@cd $(APPCOMPILER_DIR) && python3 -m $(APPCOMPILER_SCRIPT)
 
-all: clean build
+all: build
 
 build: build_deps
 	$(APPCOMPILER_CMD) -u $(USES) -d $(DEVICE)

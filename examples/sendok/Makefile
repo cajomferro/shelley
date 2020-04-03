@@ -6,7 +6,7 @@ DEVICE=$(EXAMPLE_DIR)/sendok.yaml
 USES=$(EXAMPLE_DIR)/button.scy\:Button $(EXAMPLE_DIR)/led.scy\:Led
 APPCOMPILER_CMD=@cd $(APPCOMPILER_DIR) && python3 -m $(APPCOMPILER_SCRIPT)
 
-all: clean build
+all: build
 
 build: build_deps
 	$(APPCOMPILER_CMD) -u $(USES) -d $(DEVICE)

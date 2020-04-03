@@ -1,6 +1,20 @@
-from .context import shelley
+import pytest
+
+from .context import appcompiler
 
 from appcompiler import create_parser
+from appcompiler import CompilationError, _find_compiled_device
+
+
+def test_find_yml():
+    with pytest.raises(CompilationError) as exc_info:
+        _find_compiled_device('examples/compiled/button.yml')
+    assert "Invalid file: examples/compiled/button.yml. Expecting extension .scy or .scb but found yml!" == str(
+        exc_info.value)
+
+    with pytest.raises(CompilationError) as exc_info:
+        _find_compiled_device('examples/compiled/button.scb')
+    assert "examples/compiled/button.scb not found! Please compile it first!" == str(exc_info.value)
 
 
 def test_single_device():
@@ -12,6 +26,7 @@ def test_single_device():
     assert args.src == src
     assert args.uses == None
 
+
 def test_single_device_binary():
     src = 'examples/button.yaml'
     parser = create_parser()
@@ -21,6 +36,7 @@ def test_single_device_binary():
     assert args.src == src
     assert args.uses == None
     assert args.binary is True
+
 
 def test_single_device_user_defined_name():
     src = 'examples/button.yaml'

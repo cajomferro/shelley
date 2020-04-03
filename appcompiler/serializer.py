@@ -1,42 +1,91 @@
-import dill
+import logging
+import pickle
 import typing
 import yaml
 import os
 
 from karakuri import regular
+
+from .exceptions import CompilationError
+from . import settings
 from shelley.automata import CheckedDevice
 
-class SerializationError(Exception):
-    pass
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
-def serialize_checked_device(path: str, device: CheckedDevice) -> typing.NoReturn:
+def _test_extension_deserialize(path: str, binary=False):
+    ext = os.path.splitext(path)[1].split(".")[1]
+    if binary:
+        expected = settings.EXT_SHELLEY_COMPILED_BIN
+    else:
+        expected = settings.EXT_SHELLEY_COMPILED_YAML
+    if ext != expected:
+        raise CompilationError('Invalid file: {2}. Expecting extension .{0} but found {1}!'.format(
+            expected, ext, path))
+
+
+# def _test_extension_serialize(path: str, binary=False):
+#     ext = os.path.splitext(path)[1].split(".")[1]
+#     if ext not in settings.EXT_SHELLEY_SOURCE_YAML:
+#         raise CompilationError('Invalid file: {2}. Expecting extension .{0} but found {1}!'.format(
+#             settings.EXT_SHELLEY_SOURCE_YAML, ext, path))
+
+
+def _serialize_checked_device(path: str, device: CheckedDevice) -> typing.NoReturn:
+    nfa_as_dict = device.nfa.as_dict(flatten=False)
     with open(path, 'w') as f:
-        try:
-            nfa_as_dict = device.nfa.as_dict(flatten=False)
-        except:
-            raise SerializationError("Invalid device for serialization!")
         yaml.dump(nfa_as_dict, f)
 
 
-def deserialize_checked_device(path: str) -> CheckedDevice:
+def _deserialize_checked_device(path: str) -> CheckedDevice:
     with open(path, 'r') as f:
         yaml_load = yaml.load(f, Loader=yaml.FullLoader)
-        try:
-            nfa = regular.NFA.from_dict(yaml_load)
-        except:
-            raise SerializationError("Invalid device for deserialization!")
+    nfa = regular.NFA.from_dict(yaml_load)
     return CheckedDevice(nfa)
 
 
-def serialize_checked_device_binary(path: str, device: CheckedDevice) -> typing.NoReturn:
+def _serialize_checked_device_binary(path: str, device: CheckedDevice) -> typing.NoReturn:
+    nfa_as_dict = device.nfa.as_dict(flatten=False)
     with open(path, 'wb') as f:
-        dill.dump(device, f, dill.HIGHEST_PROTOCOL)
+        pickle.dump(nfa_as_dict, f, pickle.HIGHEST_PROTOCOL)
 
 
-def deserialize_checked_device_binary(path: str) -> CheckedDevice:
+def _deserialize_checked_device_binary(path: str) -> CheckedDevice:
     with open(path, 'rb') as f:
-        return dill.load(f)
+        load = pickle.load(f)
+    nfa = regular.NFA.from_dict(load)
+    return CheckedDevice(nfa)
+
+
+def serialize(path: str, device: CheckedDevice, binary=False) -> typing.NoReturn:
+    try:
+        if binary:
+            _serialize_checked_device_binary(path, device)
+        else:
+            _serialize_checked_device(path, device)
+    except FileNotFoundError as error:
+        raise error
+    except Exception as error:
+        if settings.VERBOSE:
+            logger.exception(error)
+        raise CompilationError("Invalid device!")
+
+
+def deserialize(path: str, binary=False) -> CheckedDevice:
+    _test_extension_deserialize(path, binary)
+    try:
+        if binary:
+            device = _deserialize_checked_device_binary(path)
+        else:
+            device = _deserialize_checked_device(path)
+    except FileNotFoundError as error:
+        raise error
+    except Exception as error:
+        if settings.VERBOSE:
+            logger.exception(error)
+        raise CompilationError("Invalid device!")
+    return device
 
 # def _serialize_checked_device_with_yaml(path: str, device: CheckedDevice) -> typing.NoReturn:
 #     with open(path, 'w') as f:
@@ -61,37 +110,3 @@ def deserialize_checked_device_binary(path: str) -> CheckedDevice:
 #
 #     return CheckedDevice(nfa)
 #
-#
-# def _serialize_checked_device(target_dir: str, target_name: str, device: CheckedDevice, binary=False) -> str:
-#     """
-#
-#     :param target_dir:
-#     :param target_name:
-#     :param device:
-#     :param binary:
-#     :return: path to generated file
-#     """
-#     if binary:
-#         path = os.path.join(target_dir, '{0}.shelcb'.format(target_name))
-#         _serialize_checked_device_with_pickle(path, device)
-#     else:
-#         path = os.path.join(target_dir, '{0}.shelc.yaml'.format(target_name))
-#         _serialize_checked_device_with_yaml(path, device)
-#     return path
-#
-#
-# def _deserialize_checked_device(path: str, binary=False) -> CheckedDevice:
-#     """
-#
-#     :param target_dir:
-#     :param target_name:
-#     :param device:
-#     :param binary:
-#     :return: path to generated file
-#     """
-#
-#     if binary:
-#         device = _deserialize_checked_device_with_pickle(path)
-#     else:
-#         device = _deserialize_checked_device_with_yaml(path)
-#     return device

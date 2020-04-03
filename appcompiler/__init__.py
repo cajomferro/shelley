@@ -88,10 +88,10 @@ def compile_shelley(device: ShelleyDevice, uses: typing.List[str], dst_path: str
 
     checked_device = check_valid_device(automata_device, known_devices)
 
-    if type(checked_device) == CheckedDevice:
+    if isinstance(checked_device, CheckedDevice):
         serialize(dst_path, checked_device, binary)
     else:
-        raise CompilationError("Invalid device!")
+        raise CompilationError("Invalid device: {0}".format(checked_device.get_smallest_error()))
 
 
 def get_args() -> argparse.Namespace:

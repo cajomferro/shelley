@@ -56,15 +56,13 @@ def main(args):
 
     try:
         compile_shelley(shelley_device, args.uses, settings.DST_FILEPATH, binary=args.binary)
-    except CompilationError as error:
-        logger.error(str(error), exc_info=settings.VERBOSE)
-        sys.exit()
-    except FileNotFoundError as error:
-        logger.error(str(error), exc_info=settings.VERBOSE)
-        sys.exit()
+    except Exception as error:
+        if settings.VERBOSE:
+            logger.error(str(error), exc_info=settings.VERBOSE)
+        sys.exit(str(error))
 
     logger.debug('Compiled file: {0}'.format(settings.DST_FILEPATH))
-    print('OK!')
+    logger.debug('OK!')
 
 
 if __name__ == "__main__":

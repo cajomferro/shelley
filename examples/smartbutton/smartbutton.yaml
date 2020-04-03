@@ -1,5 +1,5 @@
 device:
-  name: SmartButton1
+  name: SmartButton
   start_events: [on]
   behavior:
     - [on, on]

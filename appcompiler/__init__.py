@@ -50,7 +50,7 @@ def _get_known_devices(device: ShelleyDevice, uses_list: typing.List[str], binar
     known_devices: typing.Mapping[str, CheckedDevice] = dict()
     for u in uses_list:
         try:
-            device_path, device_name = u.split(':')
+            device_path, device_name = u.split(settings.USE_DEVICE_NAME_SEP)
         except ValueError as error:
             if settings.VERBOSE:
                 logger.exception(error)

@@ -16,6 +16,10 @@ logger = logging.getLogger(__name__)
 def main(args):
     # print(args)
 
+    if args.verbosity:
+        settings.VERBOSE = True
+        logger.setLevel(logging.DEBUG)
+
     settings.SRC_FILEPATH = os.path.realpath(args.device)  # --device
     settings.SRC_BASENAME = os.path.splitext(os.path.basename(settings.SRC_FILEPATH))[0]
 
@@ -27,6 +31,9 @@ def main(args):
             os.mkdir(settings.OUTPUT_DIR)
         except FileExistsError:
             pass
+
+    logger.debug('Input yaml file: {0}'.format(settings.SRC_FILEPATH))
+    logger.debug('Output dir: {0}'.format(settings.OUTPUT_DIR))
 
     try:
         shelley_device: ShelleyDevice = get_shelley_from_yaml(settings.SRC_FILEPATH)
@@ -44,15 +51,10 @@ def main(args):
                                              '{0}.{1}'.format(settings.SRC_BASENAME,
                                                               settings.EXT_SHELLEY_COMPILED_YAML))
 
-    if args.verbosity:
-        settings.VERBOSE = True
-        logger.setLevel(logging.DEBUG)
-
     #    if args.name is not None:
     #        assert args.name == settings.DEVICE_NAME
 
-    logger.debug('Compiling device {0}...'.format(settings.DEVICE_NAME))
-    logger.debug('Input yaml file: {0}'.format(settings.SRC_FILEPATH))
+    logger.debug('Compiling device: {0}'.format(settings.DEVICE_NAME))
 
     try:
         compile_shelley(shelley_device, args.uses, settings.DST_FILEPATH, binary=args.binary)

@@ -42,6 +42,9 @@ class InvalidBehavior:
                         known.add(k)
             else:
                 yield from result
+    def get_smallest_error(self):
+        r = nfa_to_regex(dfa_to_nfa(self.dfa))
+        return smallest_string(r)
 
 
 class RemoveStarHandler(SubstHandler):
@@ -72,29 +75,52 @@ def eager_flatten(r):
     else:
         return list(map(list, result))
 
-def flatten(r: Regex) -> Optional[Iterator[Tuple[str]]]:
-    if isinstance(r, Nil):
-        return ( () ,)
-    elif isinstance(r, Char):
+class FlattenHandler(RegexHandler):
+    on_nil = ( () ,)
+    on_void = None
+    def on_char(self, r):
         return ( (r.char ,)   ,)
-    elif isinstance(r, Void):
-        return None
-    elif isinstance(r, Star):
+    def on_star(self, r, child):
         raise ValueError("Does not support star: ", r)
-    elif isinstance(r, Union):
-        left = flatten(r.left)
-        right = flatten(r.right)
+    def on_union(self, r, left, right):
         if left is None:
             return right
         if right is None:
             return left
         return itertools.chain(left, right)
-    elif isinstance(r, Concat):
-        left = flatten(r.left)
-        right = flatten(r.right)
+    def on_concat(self, r, left, right):
         if left is None or right is None:
             return None
         return flatten_union(left, right)
+# We only need one instance
+FLATTEN_HANDLER = FlattenHandler()
+
+def flatten(r: Regex) -> Optional[Iterator[Tuple[str]]]:
+    return r.fold(FLATTEN_HANDLER)
+
+class SmallestHandler(RegexHandler):
+    on_nil = tuple([])
+    on_void = None
+    def on_char(self, r):
+        return tuple([r.char])
+    def on_union(self, r, left, right):
+        if left is None:
+            return right
+        if right is None:
+            return left
+        return left if len(left) < len(right) else right
+    def on_concat(self, r, left, right):
+        if left is None:
+            return None
+        if right is None:
+            return None
+        return left + right
+    def on_star(self, r, child):
+        return tuple([])
+
+SMALLEST_HANDLER = SmallestHandler()
+def smallest_string(r:Regex):
+    return r.fold(SMALLEST_HANDLER)
 
 class ReplaceHandler(SubstHandler):
     def __init__(self, subst):

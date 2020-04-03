@@ -348,12 +348,13 @@ def test_smallest_error():
         create_led_b(),
         create_timer()
     ]
-    be = decode_behavior(behavior, triggers, flatten=True, minimize=True)
+    be = decode_behavior(behavior, triggers)
     res = get_invalid_behavior(components, behavior, triggers)
     res = res.minimize()
     err = InvalidBehavior(res).get_smallest_error()
     assert err is not None
     assert res.accepts(err)
+
 
 def test_flatten_regex():
     assert eager_flatten(Char('a')) == [['a']]

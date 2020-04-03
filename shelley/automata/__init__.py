@@ -1,7 +1,7 @@
 from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, Mapping, Set, Iterator
 import typing
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, NIL, Concat, Star, Regex, nfa_to_dfa, \
-    DFA, dfa_to_nfa, Nil, Void
+    DFA, dfa_to_nfa, Nil, Void, RegexHandler, SubstHandler, VOID
 from dataclasses import dataclass
 import copy
 import itertools
@@ -28,7 +28,7 @@ class InvalidBehavior:
         Sample invalid sequences.
         """
         r = nfa_to_regex(dfa_to_nfa(self.dfa))
-        r = mut_remove_star(r)
+        r = remove_star(r)
         result = flatten(r)
         if result is None:
             return
@@ -44,27 +44,17 @@ class InvalidBehavior:
                 yield from result
 
 
-def mut_remove_star(r: Regex) -> Regex:
-    if isinstance(r, Void) or isinstance(r, Nil) or isinstance(r, Char):
-        return r
-    if isinstance(r, Star):
+class RemoveStarHandler(SubstHandler):
+    """
+    Same as subst-handler, but 
+    """
+    def on_star(self, reg, child):
         return NIL
 
-    to_proc = [r]
+REMOVE_STAR_HANDLER = RemoveStarHandler()
 
-    def do_subst(r, attr):
-        child = getattr(r, attr)
-        if isinstance(child, Star):
-            setattr(r, attr, NIL)
-            return
-        elif isinstance(child, Concat) or isinstance(child, Union):
-            to_proc.append(child)
-
-    while len(to_proc) > 0:
-        elem = to_proc.pop()
-        do_subst(elem, "left")
-        do_subst(elem, "right")
-    return r
+def remove_star(r: Regex) -> Regex:
+    return r.fold(REMOVE_STAR_HANDLER)
 
 def flatten_union(left, right):
     for l, r in itertools.product(left, right):
@@ -106,35 +96,17 @@ def flatten(r: Regex) -> Optional[Iterator[Tuple[str]]]:
             return None
         return flatten_union(left, right)
 
-def mut_replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
-    if isinstance(r, Void) or isinstance(r, Nil):
-        return r
-    elif isinstance(r, Char):
-        return rules.get(r.char, r)
+class ReplaceHandler(SubstHandler):
+    def __init__(self, subst):
+        self.subst = subst
 
-    to_proc = [r]
+    def on_char(self, char):
+        result = self.subst.get(char.char, None)
+        return char if result is None else result
 
-    def do_subst(r, attr):
-        child = getattr(r, attr)
-        if isinstance(child, Char):
-            new_child = rules.get(child.char, None)
-            if new_child is not None and isinstance(new_child, str):
-                raise ValueError(child.char)
-            if new_child is not None:
-                setattr(r, attr, new_child)
-            return
-        elif isinstance(child, Concat) or isinstance(
-                child, Union) or isinstance(child, Star):
-            to_proc.append(child)
 
-    while len(to_proc) > 0:
-        elem = to_proc.pop()
-        if isinstance(elem, Star):
-            do_subst(elem, "child")
-        else:
-            do_subst(elem, "left")
-            do_subst(elem, "right")
-    return r
+def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
+    return r.fold(ReplaceHandler(rules))
 
 
 def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], events: List[str]) -> NFA[Any, str]:
@@ -201,7 +173,7 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
                     alphabet: Optional[Collection[str]] = None,
                     minimize: bool = False, flatten: bool = False) -> DFA[Any, str]:
     # Replace tokens by REGEX in decoder
-    decoded_regex = mut_replace(copy.deepcopy(behavior), triggers)
+    decoded_regex = replace(behavior, triggers)
     decoded_behavior = regex_to_nfa(decoded_regex, alphabet)
     # Convert into a minimized DFA
     decoded_behavior_dfa = nfa_to_dfa(decoded_behavior)

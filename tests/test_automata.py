@@ -561,8 +561,6 @@ def get_basic_known_devices():
     return dict((k,check_valid_device(d, {})) for (k,d) in get_basic_devices().items())
 
 def test_invalid_behavior_1():
-
-
     device = Device(
         start_events=['level1'],
         events=['level1', 'level2', 'standby1', 'standby2'],
@@ -609,6 +607,53 @@ def test_invalid_behavior_1():
         "b": (["pressed", "pressed"], 1),
     }
 
+def test_invalid_behavior_2():
+    device = Device(
+        start_events=['level1'],
+        events=['level1', 'level2', 'standby1', 'standby2'],
+        behavior=[
+            ('level1', 'standby1'),
+            ('level1', 'level2'),
+            ('level2', 'standby2'),
+            ('standby1', 'level1'),
+            ('standby2', 'level1')
+        ],
+        components={
+            "b": "Button",
+            "ledA": "Led",
+            "ledB": "Led",
+            "t": "Timer",
+        },
+        triggers={
+            LEVEL1:
+                Concat.from_list(map(Char, [
+                    B_R, # <--- ERROR HERE: should be B_P
+                    B_P, # <--- ERROR HERE: should be B_P
+                    B_R, # <--- ERROR HERE: should be B_P
+                    LA_ON,
+                    T_S
+                ])),
+            LEVEL2:
+                Concat.from_list([
+                    Char(B_P),
+                    Char(B_R),
+                    And(Char(T_C), Char(LB_ON)),
+                    Char(T_S),
+                ]),
+            STANDBY1:
+                concat(Char(T_T), Char(LA_OFF)),
+            STANDBY2:
+                concat(
+                    Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+                    And(Char(LB_OFF), Char(LA_OFF)),
+                ),
+        },
+    )
+    given = check_valid_device(device, get_basic_known_devices())
+    assert given.error_trace == (B_R, B_P, B_R, LA_ON, T_S)
+    assert given.component_errors == {
+        "b": (["released", "pressed", "released"], 0),
+    }
 
 
 def test_device_led_and_button():

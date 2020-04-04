@@ -310,10 +310,6 @@ def test_smallest_error():
     ]
     be = decode_behavior(behavior, triggers)
     res = get_invalid_behavior(components, behavior, triggers)
-    #res = res.minimize()
-    #err = InvalidBehavior(res).get_smallest_error()
-    #assert err is not None
-    #assert res.accepts(err)
     err = InvalidBehavior(res).get_shortest_error()
     assert err is not None
     assert res.accepts(err)

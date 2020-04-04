@@ -1,10 +1,10 @@
 from .context import shelley
 
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
-    nfa_to_dfa, Star, NIL, VOID
+    nfa_to_dfa, Star, NIL, VOID, DFA
 from shelley.automata import get_invalid_behavior, decode_behavior, \
     build_components, Device, CheckedDevice, prefix_nfa, build_behavior, \
-    InvalidBehavior, check_valid_device
+    InvalidBehavior, check_valid_device, demultiplex
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -286,11 +286,16 @@ def test_smallest_error():
     behavior = nfa_to_regex(hello)
     triggers = {
         LEVEL1:
-            Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
+            Concat.from_list(map(Char, [
+                B_P,
+                B_P, # <--- ERROR HERE: should be B_R
+                LA_ON,
+                T_S
+            ])),
         LEVEL2:
             Concat.from_list([
                 Char(B_P), #
-                #Char(B_R), # Omitted string
+                Char(B_R), # Omitted string
                 And(Char(T_C), Char(LB_ON)),
                 Char(T_S),
             ]),
@@ -310,10 +315,22 @@ def test_smallest_error():
     ]
     be = decode_behavior(behavior, triggers)
     res = get_invalid_behavior(components, behavior, triggers)
-    err = InvalidBehavior(res).get_shortest_error()
-    assert err is not None
+    err = res.get_shortest_string()
     assert res.accepts(err)
+    assert err is not None
+    assert err == (B_P, B_P, LA_ON, T_S)
+    assert demultiplex(err) == {
+        "b": ["pressed", "pressed"],
+        "ledA": ["on"],
+        "t": ["started"],
+    }
 
+def test_demultiplex():
+    assert demultiplex(["a.a1", "b.b1", "c.c1", "b.b2", "a.a2"]) == {
+        "a": ["a1", "a2"],
+        "b": ["b1", "b2"],
+        "c": ["c1"],
+    }
 
 def test_prefix_nfa():
     led = NFA(
@@ -493,6 +510,105 @@ def test_device_hello_world():
     expected = check_valid_device(device, {}).nfa.flatten()
 
     assert nfa_to_dfa(create_hello_world()).is_equivalent_to(nfa_to_dfa(expected))
+
+def get_basic_devices():
+    return dict(
+        Led=Device(
+            start_events=['on'],
+            events=['on', 'off'],
+            behavior=[
+                ('on', 'off'),
+                ('off', 'on'),
+            ],
+            components={},
+            triggers={
+                'on': NIL,
+                'off': NIL,
+            },
+        ),
+        Button=Device(
+            start_events=['pressed'],
+            events=['pressed', 'released'],
+            behavior=[
+                ('pressed', 'released'),
+                ('released', 'pressed'),
+            ],
+            components={},
+            triggers={
+                'pressed': NIL,
+                'released': NIL,
+            },
+        ),
+        Timer=Device(
+            start_events=['started'],
+            events=['started', 'canceled', 'timeout'],
+            behavior=[
+                ('started', 'canceled'),
+                ('started', 'timeout'),
+                ('canceled', 'started'),
+                ('timeout', 'started')
+            ],
+            components={},
+            triggers={
+                'started': NIL,
+                'canceled': NIL,
+                'timeout': NIL
+            },
+        )
+    )
+
+def get_basic_known_devices():
+    return dict((k,check_valid_device(d, {})) for (k,d) in get_basic_devices().items())
+
+def test_invalid_behavior_1():
+
+
+    device = Device(
+        start_events=['level1'],
+        events=['level1', 'level2', 'standby1', 'standby2'],
+        behavior=[
+            ('level1', 'standby1'),
+            ('level1', 'level2'),
+            ('level2', 'standby2'),
+            ('standby1', 'level1'),
+            ('standby2', 'level1')
+        ],
+        components={
+            "b": "Button",
+            "ledA": "Led",
+            "ledB": "Led",
+            "t": "Timer",
+        },
+        triggers={
+            LEVEL1:
+                Concat.from_list(map(Char, [
+                    B_P,
+                    B_P, # <--- ERROR HERE: should be B_R
+                    LA_ON,
+                    T_S
+                ])),
+            LEVEL2:
+                Concat.from_list([
+                    Char(B_P),
+                    Char(B_R),
+                    And(Char(T_C), Char(LB_ON)),
+                    Char(T_S),
+                ]),
+            STANDBY1:
+                concat(Char(T_T), Char(LA_OFF)),
+            STANDBY2:
+                concat(
+                    Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+                    And(Char(LB_OFF), Char(LA_OFF)),
+                ),
+        },
+    )
+    given = check_valid_device(device, get_basic_known_devices())
+    assert given.error_trace == (B_P, B_P, LA_ON, T_S)
+    assert given.component_errors == {
+        "b": (["pressed", "pressed"], 1),
+    }
+
 
 
 def test_device_led_and_button():

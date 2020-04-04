@@ -14,7 +14,6 @@ class Device:
     components: Dict[str, str]
     triggers: Dict[str, Regex]
 
-
 @dataclass
 class CheckedDevice:
     nfa: NFA[Any, str]
@@ -22,28 +21,8 @@ class CheckedDevice:
 
 @dataclass
 class InvalidBehavior:
-    dfa: DFA[Any, str]
-    def sample(self, unique=False):
-        """
-        Sample invalid sequences.
-        """
-        r = nfa_to_regex(dfa_to_nfa(self.dfa))
-        r = remove_star(r)
-        result = flatten(r)
-        if result is None:
-            return
-        else:
-            if unique:
-                known = set()
-                for k in result:
-                    k = tuple(k)
-                    if k not in known:
-                        yield k
-                        known.add(k)
-            else:
-                yield from result
-    def get_shortest_error(self):
-        return self.dfa.shortest_string()
+    error_trace: List[str]
+    component_errors: Dict[str, Tuple[List[str], int]]
 
 
 class ReplaceHandler(SubstHandler):
@@ -184,7 +163,15 @@ def ensure_well_formed(dev: Device):
     if trigs != evts:
         return ValueError("The following trigger rules were not defined: ", evts - trigs)
 
-
+def demultiplex(seq:List[str]) -> Mapping[str,List[str]]:
+    sequences = dict()
+    for msg in seq:
+        component, op = msg.split(".")
+        component_seq = sequences.get(component, None)
+        if component_seq is None:
+            sequences[component] = component_seq = []
+        component_seq.append(op)
+    return sequences
 
 def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[CheckedDevice, InvalidBehavior]:
     ensure_well_formed(dev)
@@ -194,4 +181,15 @@ def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) 
     if inv_behavior is None:
         return CheckedDevice(behavior)
     else:
-        return InvalidBehavior(inv_behavior)
+        # We compute the smallest error
+        dec_seq = inv_behavior.get_shortest_string()
+        # We demutex by device
+        errs = dict()
+        for component, seq in demultiplex(dec_seq).items():
+            ch_dev = known_devices[dev.components[component]]
+            if not ch_dev.nfa.accepts(seq):
+                dfa = nfa_to_dfa(ch_dev.nfa).minimize()
+                errs[component] = (seq, dfa.get_divergence_index(seq))
+
+
+        return InvalidBehavior(dec_seq, errs)

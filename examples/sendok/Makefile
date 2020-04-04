@@ -1,19 +1,15 @@
-BUILD_EXTENSIONS=scb scy
-APPCOMPILER_DIR=../..
-APPCOMPILER_SCRIPT=appcompiler
-EXAMPLE_DIR=examples/sendok
-DEVICE=$(EXAMPLE_DIR)/sendok.yaml
-USES=$(EXAMPLE_DIR)/button.scy\:Button $(EXAMPLE_DIR)/led.scy\:Led
-APPCOMPILER_CMD=@cd $(APPCOMPILER_DIR) && python3 -m $(APPCOMPILER_SCRIPT)
+PYTHON = PYTHONPATH=../../ python3
+SHELLYC = $(PYTHON) -m appcompiler
 
-all: build
+all: sendok.scy
 
-build: build_deps
-	$(APPCOMPILER_CMD) -u $(USES) -d $(DEVICE)
+%.scy: %.yaml
+	$(SHELLYC) -d $<
 
-build_deps:
-	$(APPCOMPILER_CMD) -d $(EXAMPLE_DIR)/led.yaml
-	$(APPCOMPILER_CMD) -d $(EXAMPLE_DIR)/button.yaml
+sendok.scy: sendok.yaml led.scy button.scy
+	$(SHELLYC) -d $< -u button.scy\:Button led.scy\:Led
 
 clean:
-	rm -f $(foreach postfix, $(BUILD_EXTENSIONS), *.$(postfix))
+	rm -f *.scy
+
+.SUFFIXES: .yaml .scy

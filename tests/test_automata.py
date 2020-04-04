@@ -4,7 +4,7 @@ from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Conca
     nfa_to_dfa, Star, NIL, VOID
 from shelley.automata import get_invalid_behavior, decode_behavior, \
     build_components, Device, CheckedDevice, prefix_nfa, build_behavior, \
-    InvalidBehavior, remove_star, eager_flatten, check_valid_device
+    InvalidBehavior, check_valid_device
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -278,48 +278,8 @@ def test_fail_hello_world():
     be = decode_behavior(behavior, triggers, flatten=True, minimize=True)
     assert be.accepts([])
     res = get_invalid_behavior(components, behavior, triggers)
-    res = res.minimize()
     assert not res.accepts([])
     assert res is not None
-
-def test_sample():
-    hello = create_hello_world()
-    behavior = nfa_to_regex(hello)
-    triggers = {
-        LEVEL1:
-            Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
-        LEVEL2:
-            Concat.from_list([
-                Char(B_R),
-                Char(B_P),
-                And(Char(T_C), Char(LB_ON)),
-                Char(T_S),
-            ]),
-        STANDBY1:
-            concat(Char(T_T), Char(LA_OFF)),
-        STANDBY2:
-            concat(
-                Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
-                And(Char(LB_OFF), Char(LA_OFF)),
-            ),
-    }
-    components = [
-        create_button(),
-        create_led_a(),
-        create_led_b(),
-        create_timer()
-    ]
-    be = decode_behavior(behavior, triggers, flatten=True, minimize=True)
-    res = get_invalid_behavior(components, behavior, triggers)
-    res = res.minimize()
-    SAMPLES = 10
-    # Get the first N strings that are accepted by `re`
-    elems = list(list(w) for idx, w in zip(range(SAMPLES), InvalidBehavior(res).sample()))
-    elems = list(map(list, elems))
-    for seq in elems:
-        print(seq)
-        assert res.accepts(seq)
-    assert False
 
 def test_smallest_error():
     hello = create_hello_world()
@@ -350,35 +310,13 @@ def test_smallest_error():
     ]
     be = decode_behavior(behavior, triggers)
     res = get_invalid_behavior(components, behavior, triggers)
-    res = res.minimize()
-    err = InvalidBehavior(res).get_smallest_error()
+    #res = res.minimize()
+    #err = InvalidBehavior(res).get_smallest_error()
+    #assert err is not None
+    #assert res.accepts(err)
+    err = InvalidBehavior(res).get_shortest_error()
     assert err is not None
     assert res.accepts(err)
-
-
-def test_flatten_regex():
-    assert eager_flatten(Char('a')) == [['a']]
-    assert eager_flatten(Concat(Char('a'), Char('b'))) == [['a', 'b']]
-    assert eager_flatten(Union(Char('a'), Char('b'))) == [['a'], ['b']]
-    assert eager_flatten(Concat(Char('a'), Union(Char('b'), Char('c')))) == [['a', 'b'], ['a', 'c']]
-    assert eager_flatten(Union(Char('a'), Concat(Char('b'), Char('c')))) == [['a'], ['b', 'c']]
-    assert eager_flatten(Concat(Char('a'), NIL)) == [['a']]
-    assert eager_flatten(Concat(NIL, Char('a'))) == [['a']]
-    assert eager_flatten(Union(VOID, Char('a'))) == [['a']]
-    assert eager_flatten(Union(Char('a'), VOID)) == [['a']]
-
-
-def test_remove_star():
-    assert remove_star(NIL) is NIL
-    assert remove_star(VOID) is VOID
-    assert remove_star(Star(Char('a'))) is NIL
-    assert remove_star(Concat(Char('a'), Char('b'))) == Concat(Char('a'), Char('b'))
-    #
-    r = Concat(Char('a'), Star(Char('b')))
-    assert remove_star(r) == Concat(Char('a'), NIL)
-    #
-    r = Union(Char('a'), Star(Char('b')))
-    assert remove_star(r) == Union(Char('a'), NIL)
 
 
 def test_prefix_nfa():

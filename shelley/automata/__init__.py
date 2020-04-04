@@ -42,85 +42,9 @@ class InvalidBehavior:
                         known.add(k)
             else:
                 yield from result
-    def get_smallest_error(self):
-        r = nfa_to_regex(dfa_to_nfa(self.dfa))
-        return smallest_string(r)
+    def get_shortest_error(self):
+        return self.dfa.shortest_string()
 
-
-class RemoveStarHandler(SubstHandler):
-    """
-    Same as subst-handler, but 
-    """
-    def on_star(self, reg, child):
-        return NIL
-
-REMOVE_STAR_HANDLER = RemoveStarHandler()
-
-def remove_star(r: Regex) -> Regex:
-    return r.fold(REMOVE_STAR_HANDLER)
-
-def flatten_union(left, right):
-    for l, r in itertools.product(left, right):
-        yield itertools.chain(l, r)
-
-def eager_flatten(r):
-    """
-    Generates iterator
-    :param r:
-    :return:
-    """
-    result = flatten(r)
-    if result is None:
-        return None
-    else:
-        return list(map(list, result))
-
-class FlattenHandler(RegexHandler):
-    on_nil = ( () ,)
-    on_void = None
-    def on_char(self, r):
-        return ( (r.char ,)   ,)
-    def on_star(self, r, child):
-        raise ValueError("Does not support star: ", r)
-    def on_union(self, r, left, right):
-        if left is None:
-            return right
-        if right is None:
-            return left
-        return itertools.chain(left, right)
-    def on_concat(self, r, left, right):
-        if left is None or right is None:
-            return None
-        return flatten_union(left, right)
-# We only need one instance
-FLATTEN_HANDLER = FlattenHandler()
-
-def flatten(r: Regex) -> Optional[Iterator[Tuple[str]]]:
-    return r.fold(FLATTEN_HANDLER)
-
-class SmallestHandler(RegexHandler):
-    on_nil = tuple([])
-    on_void = None
-    def on_char(self, r):
-        return tuple([r.char])
-    def on_union(self, r, left, right):
-        if left is None:
-            return right
-        if right is None:
-            return left
-        return left if len(left) < len(right) else right
-    def on_concat(self, r, left, right):
-        if left is None:
-            return None
-        if right is None:
-            return None
-        return left + right
-    def on_star(self, r, child):
-        return tuple([])
-
-SMALLEST_HANDLER = SmallestHandler()
-def smallest_string(r:Regex):
-    return r.fold(SMALLEST_HANDLER)
 
 class ReplaceHandler(SubstHandler):
     def __init__(self, subst):
@@ -133,6 +57,32 @@ class ReplaceHandler(SubstHandler):
 
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     return r.fold(ReplaceHandler(rules))
+
+A = typing.TypeVar('A')
+def dfa_shortest_string(d:DFA[Any,A]) -> List[A]:
+    visited = set([d.start_state])
+    if d.accepted_states(d.start_state):
+        return ()
+    to_process = [((), d.start_state)]
+    # Perform a breadth-first visit, while ensuring we don't visit
+    # The same node more than once
+    while len(to_process) > 0:
+        next_frontier = []
+        for (seq, src) in to_process:
+            for c in d.alphabet:
+                next_st = d.transition_func(src, c)
+                if next_st in visited:
+                    continue
+                next_seq = seq + (c,)
+                if d.accepted_states(next_st):
+                    # Found the shortest string
+                    return next_seq
+                else:
+                    visited.add(next_st)
+                    next_frontier.append((next_seq, next_st))
+        to_process.clear()
+        to_process = next_frontier
+    return None
 
 
 def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], events: List[str]) -> NFA[Any, str]:

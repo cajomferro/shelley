@@ -2,10 +2,9 @@ PYTHON = PYTHONPATH=../../ python3
 SHELLYC = $(PYTHON) -m appcompiler
 SHELLYVIZ = $(PYTHON) -m appvizviewer
 
-all: ledbutton_led ledbutton_ledstrict ledbuttonstrict_ledstrict viz
+all: ledbutton_led ledbutton_ledstrict ledbuttonstrict_ledstrict pdf
 
-%.scy: %.yaml
-	$(SHELLYC) -d $<
+pdf: button.pdf led.pdf led_strict.pdf ledbutton.pdf ledbuttonstrict_ledstrict.pdf
 
 ledbutton_led: ledbutton.yaml led.scy button.scy
 	$(SHELLYC) -d $< -u button.scy\:Button led.scy\:Led
@@ -18,17 +17,16 @@ ledbuttonstrict_ledstrict: ledbuttonstrict_ledstrict.yaml led_strict.scy button.
 	# This is ok: led is more strict but ledbutton is also more strict
 	$(SHELLYC) -d $< -u button.scy\:Button led_strict.scy\:LedStrict
 
-viz:
-	$(SHELLYVIZ) -i button.scy
-	$(SHELLYVIZ) -i led.scy
-	$(SHELLYVIZ) -i led_strict.scy
-	$(SHELLYVIZ) -i ledbutton.scy
-	# $(SHELLYVIZ) -i ledbutton_ledstrict.scy
-	$(SHELLYVIZ) -i ledbuttonstrict_ledstrict.scy
+%.scy: %.yaml
+	$(SHELLYC) -d $<
+
+%.gv: %.scy
+	$(SHELLYVIZ) -i $< -o $@
+
+%.pdf: %.gv
+	dot -Tpdf -o $@ $<
 
 clean:
-	rm -f *.scy
-	rm -f *.gv
-	rm -f *.pdf
+	rm -f *.scy *.pdf *.gv
 
 .SUFFIXES: .yaml .scy

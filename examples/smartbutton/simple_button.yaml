@@ -1,0 +1,5 @@
+device:
+  name: SimpleButton
+  start_events: [pressed]
+  behavior:
+    - [pressed, pressed]

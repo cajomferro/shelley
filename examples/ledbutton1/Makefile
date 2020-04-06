@@ -4,7 +4,7 @@ SHELLYVIZ = $(PYTHON) -m appvizviewer
 OUTDIR = compiled
 EXTENSIONS=scy scb pdf png svg jpg jpeg tif tiff eps dot json ps gv
 
-all: ledbutton_led ledbutton_ledstrict ledbuttonstrict_ledstrict
+all: ledbutton_led ledbutton_ledstrict ledbuttonstrict_ledstrict viz
 
 %.scy: %.yaml
 	$(SHELLYC) -d $< -o $(OUTDIR)

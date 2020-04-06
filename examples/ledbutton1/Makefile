@@ -1,7 +1,6 @@
 PYTHON = PYTHONPATH=../../ python3
 SHELLYC = $(PYTHON) -m appcompiler
 SHELLYVIZ = $(PYTHON) -m appvizviewer
-EXTENSIONS=scy scb pdf png svg jpg jpeg tif tiff eps dot json ps gv
 
 all: ledbutton_led ledbutton_ledstrict ledbuttonstrict_ledstrict viz
 
@@ -28,6 +27,8 @@ viz:
 	$(SHELLYVIZ) -i ledbuttonstrict_ledstrict.scy
 
 clean:
-	rm -rf $(foreach postfix, $(EXTENSIONS), *.$(postfix))
+	rm -f *.scy
+	rm -f *.gv
+	rm -f *.pdf
 
 .SUFFIXES: .yaml .scy

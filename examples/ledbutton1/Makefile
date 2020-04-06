@@ -21,7 +21,7 @@ ledbuttonstrict_ledstrict: ledbuttonstrict_ledstrict.yaml led_strict.scy button.
 	$(SHELLYC) -d $<
 
 %.gv: %.scy
-	$(SHELLYVIZ) -i $< -o $@
+	$(SHELLYVIZ) $< -o $@
 
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<

@@ -1,7 +1,12 @@
 import graphviz
-import yaml
+from typing import Dict
 
-def visualize_graph(automaton):
+
+def automaton2dot(automaton: Dict) -> graphviz.Digraph:
+    """
+    :param automaton: YAML checked device as dict
+    :return:
+    """
     dot = graphviz.Digraph()
     nodes = set(k for edge in automaton["edges"] for k in (edge["src"], edge["dst"]))
     nodes.add(automaton["start_state"])
@@ -30,15 +35,3 @@ def visualize_graph(automaton):
         dot.edge(src, dst, label=", ".join(chars))
 
     return dot
-
-def save_graph(fp, filename):
-    d = yaml.safe_load(fp)
-    dot = visualize_graph(d)
-    #d.save(filename)
-    print(dot)
-
-def main():
-    import sys
-    save_graph(sys.stdin, "/dev/stdout")
-
-main()

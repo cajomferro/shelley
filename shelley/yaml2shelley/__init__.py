@@ -41,7 +41,10 @@ def parse_behavior(input: List[List[str]], events: EEvents, behaviors: Behaviors
     """
     for beh_transition in input:
         left = beh_transition[0]
-        right = beh_transition[1]
+        try:
+            right = beh_transition[1]
+        except IndexError:
+            raise Exception("Missing behaviour right side: [{0}, ???]".format(left))
         e1 = events.find_by_name(left)
         if e1 is None:
             e1 = events.create(left)

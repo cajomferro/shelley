@@ -22,8 +22,11 @@ Run compiler
    # compile a device in binary mode
    python3 -m appcompiler -b -d examples/button.yaml
 
-   # visualize a compiled device
-   python3 viz.py < examples/desklamp.scy | xdot -
+   # visualize a compiled device using xdot
+   python3 -m appvizviewer -i examples/desklamp/desklamp.scy -p | xdot -
+
+   # export compiled device as a state diagram to pdf, png, svg, etc.
+   python3 -m appvizviewer -i examples/desklamp/desklamp.scy -f pdf
 
 .. warning:: To compile composite devices, please compile all dependency components first.
 

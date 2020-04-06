@@ -1,13 +1,12 @@
 from __future__ import annotations
-from typing import Dict, List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING
 
 from .node import Node
-from .actions import Action, Actions
-from .behaviors import Behavior, Behaviors
-from .components import Component, Components
-from .triggers import Trigger, Triggers
-from .rules import TriggerRule
-from .events import GenericEvent, IEvent, EEvent, IEvents, EEvents, Events
+from .actions import Actions
+from .behaviors import Behaviors
+from .components import Components
+from .triggers import Triggers
+from .events import IEvents, EEvents, Events
 
 if TYPE_CHECKING:
     from .visitors import Visitor
@@ -31,10 +30,10 @@ class Device(Node):
     internal_events: IEvents = None
     external_events: EEvents = None
     start_events: List[str] = None
-    behaviors = None  # type: Behaviors
+    behaviors: Behaviors = None
     uses = None  # type: List[str]
-    components = None  # type: Components
-    triggers = None  # type: Triggers
+    components: Components = None
+    triggers: Triggers = None
 
     def __init__(self, name: str,
                  actions: Actions,
@@ -74,39 +73,8 @@ class Device(Node):
             raise DevicesListDuplicatedError(
                 "Duplicated device with name '{0}'".format(self.name))
 
-    # def find_event(self, event_name: str):
-    #     result = [event for event in self.get_all_events() if event.name == event_name]
-    #     if len(result) == 0:
-    #         raise Exception("Event not found!")
-    #     return result[0]
-    #
-    # def find_trigger(self, event_name: str) -> Trigger:
-    #     result = [trigger for trigger in self.triggers if trigger.event.name == event_name]
-    #     if len(result) == 0:
-    #         raise Exception("Trigger for event '{0}' not found!".format(event_name))
-    #     return result[0]
-    #
-    # def find_behaviour(self, left_event_name: str, right_event_name: str) -> Behaviour:
-    #     result = [behaviour for behaviour in self.behaviours if
-    #               behaviour.e1.name == left_event_name and behaviour.e2.name == right_event_name]
-    #     if len(result) == 0:
-    #         raise Exception("Behaviour not found!")
-    #     return result[0]
-    #
     def get_all_events(self) -> Events:
         return self.external_events.merge(self.internal_events)
-
-    #
-    # @staticmethod
-    # def behaviours_as_event_tuple(behaviours: Set[Behaviour]):
-    #     return [(behaviour.e1, behaviour.e2) for behaviour in behaviours]
-    #
-    # @staticmethod
-    # def triggers_as_dict(triggers_list: Set[Trigger]) -> Dict[GenericEvent, TriggerRule]:
-    #     triggers_dict = {}
-    #     for trigger in triggers_list:
-    #         triggers_dict[trigger.event] = trigger.trigger_rule
-    #     return triggers_dict
 
     def __eq__(self, other):
         if not isinstance(other, Device):

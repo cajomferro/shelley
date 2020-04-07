@@ -2,6 +2,7 @@ device:
   name: 3Buttons
   start_events: [button1AndOther, button3OrOthers]
   behavior:
+    - [button1AndOther, button3OrOthersv2]
     - [button1AndOther, button1AndOther]
     - [button1AndOther, button3OrOthers]
     - [button3OrOthers, button3OrOthers]
@@ -35,6 +36,16 @@ device:
                       - b1.pressed
           - right:
               - b3.pressed
+    button3OrOthersv2:
+      - xor:
+          - xor:
+              - left:
+                  - b1.pressed
+                  - b2.pressed
+              - right:
+                  - b2.pressed
+                  - b1.pressed
+          - b3.pressed
 
 # button1AndOther <- b1.pressed and (b2.pressed or b3.pressed) <=> b1.pressed; (b2.pressed or b3.pressed) or (b2.pressed or b3.pressed); b1.pressed
 # b1.pressed, b2.pressed

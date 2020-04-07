@@ -162,10 +162,11 @@ def test_3buttons_variant():
 
     assert visitor.result.strip() == """Device 3Buttons uses SimpleButton:
   external events:
-    button1AndOther, button3OrOthers
+    button1AndOther, button3OrOthersv2, button3OrOthers
   start events:
     button1AndOther, button3OrOthers
   behaviours:
+    button1AndOther -> button3OrOthersv2
     button1AndOther -> button1AndOther
     button1AndOther -> button3OrOthers
     button3OrOthers -> button3OrOthers
@@ -174,4 +175,5 @@ def test_3buttons_variant():
     SimpleButton b1, SimpleButton b2, SimpleButton b3
   triggers:
     button1AndOther: ( ( b1.pressed ; ( b2.pressed xor b3.pressed ) ) xor ( ( b2.pressed xor b3.pressed ) ; b1.pressed ) )
-    button3OrOthers: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )"""
+    button3OrOthers: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )
+    button3OrOthersv2: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )"""

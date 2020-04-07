@@ -12,39 +12,51 @@ device:
     b3: SimpleButton
   triggers:
     #    button1AndOther:
-    #      - xor
-    #        - seq
-    #          - b1.pressed
-    #          - xor
-    #            - b2.pressed
-    #            - b3.pressed
-    #        - seq
-    #          - xor
-    #            - b2.pressed
-    #            - b3.pressed
-    #          - b1.pressed
+    #      - xor:
+    #          - seq:
+    #              - b1.pressed
+    #              - xor:
+    #                  - b2.pressed
+    #                  - b3.pressed
+    #          - seq:
+    #              - xor:
+    #                  - b2.pressed
+    #                  - b3.pressed
+    #              - b1.pressed
+    #    button1AndOther:
+    #      - xor:
+    #          - group:
+    #            - b1.pressed
+    #            - xor:
+    #                - b2.pressed
+    #                - b3.pressed
+    #          - group:
+    #            - xor:
+    #                - b2.pressed
+    #                - b3.pressed
+    #            - b1.pressed
     button1AndOther:
       - xor:
           - xor:
-              - [b1.pressed, b2.pressed]
+              - [b1.pressed, b2.pressed] # A -> EQUAL
               - [b1.pressed, b3.pressed]
           - xor:
-              - [b2.pressed, b1.pressed]
+              - [b2.pressed, b1.pressed] # B -> EQUAL
               - [b3.pressed, b1.pressed]
     button3OrOthers:
       - xor:
           - xor:
-              - [b1.pressed, b2.pressed]
-              - [b2.pressed, b1.pressed]
+              - [b1.pressed, b2.pressed] # A -> EQUAL
+              - [b2.pressed, b1.pressed] # B -> EQUAL
           - b3.pressed
 
-# button1AndOther <- b1.pressed and (b2.pressed or b3.pressed)
+# button1AndOther <- b1.pressed and (b2.pressed or b3.pressed) <=> b1.pressed; (b2.pressed or b3.pressed) or (b2.pressed or b3.pressed); b1.pressed
 # b1.pressed, b2.pressed
 # b1.pressed, b3.pressed
 # b2.pressed, b1.pressed
 # b3.pressed, b1.pressed
 
-# button3OrOthers <- (b1.pressed and b2.pressed) or b3.pressed
+# button3OrOthers <- (b1.pressed and b2.pressed) or b3.pressed <=> (b1.pressed; b2.pressed or b2.pressed; b1.pressed) or b3.pressed
 # b1.pressed, b2.pressed
 # b2.pressed, b1.pressed
 # b3.pressed

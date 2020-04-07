@@ -136,6 +136,71 @@ def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
         return decoded_behavior_dfa.flatten(minimize=minimize)
     return decoded_behavior_dfa
 
+@dataclass(frozen=True)
+class DecodedState:
+    pass
+
+@dataclass(frozen=True, order=True)
+class MacroState(DecodedState):
+    state: str
+
+@dataclass(frozen=True, order=True)
+class MicroState(DecodedState):
+    # The next macro state
+    macro: str
+    # The event that we are processing
+    event: str
+    # The current micro state
+    micro: str
+
+    def advance_micro(self, micro:str):
+        return MicroState(macro=self.macro, event=self.event, micro=micro)
+
+    def advance_macro(self):
+        return MacroState(self.macro)
+
+
+def decode_behavior2(behavior: DFA[Any,str], triggers: Dict[str, DFA], alphabet:Optional[Collection[str]] = None):
+    def tsx(src, char):
+        if isinstance(src, MacroState):
+            if char is not None:
+                return frozenset()
+            # Macro-state
+            result = set()
+            for evt in behavior.alphabet:
+                result.add(MicroState(
+                    macro=behavior.transition_func(src.state, evt),
+                    event=evt,
+                    micro=triggers[evt].start_state
+                ))
+            return frozenset(result)
+        elif isinstance(src, MicroState):
+            dfa = triggers[src.event]
+            if dfa.accepted_states(src.micro) and char is None:
+                return frozenset([src.advance_macro()])
+            elif char in dfa.alphabet:
+                dst = src.advance_micro(dfa.transition_func(src.micro, char))
+                return frozenset([dst])
+            return frozenset()
+        else:
+            raise ValueError("Unknown state", src, char)
+
+    def is_final(st):
+        return isinstance(st, MacroState) and behavior.accepted_states(st.state)
+
+    if alphabet is None:
+        # Infer the alphabet from each trigger
+        alphabet = set()
+        for dfa in triggers.values():
+            alphabet.update(dfa.alphabet)
+
+    return NFA(
+        alphabet,
+        tsx,
+        MacroState(behavior.start_state),
+        is_final
+    )
+
 
 def get_invalid_behavior(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]],
                          minimize=False,

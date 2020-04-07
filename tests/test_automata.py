@@ -2,9 +2,7 @@ from .context import shelley
 
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
     nfa_to_dfa, Star, NIL, VOID, DFA
-from shelley.automata import get_invalid_behavior, decode_behavior, \
-    build_components, Device, CheckedDevice, prefix_nfa, build_behavior, \
-    InvalidBehavior, check_valid_device, demultiplex
+from shelley.automata import *
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -209,6 +207,25 @@ def test_decode_1():
     be = decode_behavior(behavior, triggers, flatten=True, minimize=True)
     expected = nfa_to_dfa(regex_to_nfa(Star(Char(B_P)))).flatten(minimize=True)
     assert expected.contains(be)
+
+
+def test_decode_behavior2_1():
+    behavior = Union(
+        Char(LEVEL1),
+        Star(Concat(Char(LEVEL1), Char(LEVEL2)))
+    )
+    triggers = {
+        LEVEL1: Char(B_P),
+        LEVEL2: Char(B_P),
+    }
+    expected = decode_behavior(behavior, triggers, flatten=True, minimize=True)
+    triggers2 = {
+        LEVEL1: nfa_to_dfa(regex_to_nfa(Char(B_P))).minimize(),
+        LEVEL2: nfa_to_dfa(regex_to_nfa(Char(B_P))).minimize(),
+    }
+    behavior_dfa = nfa_to_dfa(regex_to_nfa(behavior)).minimize()
+    given = nfa_to_dfa(decode_behavior2(behavior_dfa, triggers2)).minimize()
+    assert given.is_equivalent_to(expected)
 
 
 def test_decode2():

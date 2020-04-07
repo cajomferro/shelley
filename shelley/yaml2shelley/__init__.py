@@ -86,10 +86,18 @@ def parse_trigger_rule(input, components: Components) -> TriggerRule:
         right = parse_trigger_rule(input, components)
         return TriggerRuleSequence(left, right)
     elif isinstance(input, dict):
-        xor_options: List = input['xor']
-        left = parse_trigger_rule(xor_options[0], components)
-        right = parse_trigger_rule(xor_options[1], components)
-        return TriggerRuleChoice(left, right)
+        if 'xor' in input:
+            xor_options: List = input['xor']
+            left_option = xor_options[0]
+            right_option = xor_options[1]
+            if isinstance(left_option, dict) and 'left' in left_option:
+                left = parse_trigger_rule(left_option['left'], components)
+                right = parse_trigger_rule(right_option['right'], components)
+                return TriggerRuleChoice(left, right)
+            else:
+                left = parse_trigger_rule(left_option, components)
+                right = parse_trigger_rule(right_option, components)
+                return TriggerRuleChoice(left, right)
 
 
 def create_device_from_yaml(yaml_code) -> Device:

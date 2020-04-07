@@ -6,7 +6,7 @@ from shelley.yaml2shelley import create_device_from_yaml
 
 
 def get_shelley_device(name: str) -> Device:
-    with open('examples/{0}.yaml'.format(name), 'r') as stream:
+    with open('examples/test_yaml_parser/{0}.yml'.format(name), 'r') as stream:
         yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
     return create_device_from_yaml(yaml_code)
 
@@ -92,7 +92,7 @@ def test_smartbutton_1():
     shelley_device = get_shelley_device('smartbutton1')
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
-    assert visitor.result.strip() == """Device SmartButton1 uses Button:
+    assert visitor.result.strip() == """Device SmartButton uses Button:
   external events:
     on
   start events:
@@ -128,3 +128,50 @@ def test_desklamp():
     level2: ( b.pressed ; ( b.released ; ( ( ( t.canceled ; ledB.on ) xor ( ledB.on ; t.canceled ) ) ; t.started ) ) )
     standby1: ( t.timeout ; ledA.off )
     standby2: ( ( ( b.pressed ; ( b.released ; t.canceled ) ) xor t.timeout ) ; ( ( ledB.off ; ledA.off ) xor ( ledA.off ; ledB.off ) ) )"""
+
+
+def test_3buttons():
+    shelley_device = get_shelley_device('3buttons')
+    visitor = PrettyPrintVisitor(components=shelley_device.components)
+    shelley_device.accept(visitor)
+
+    assert visitor.result.strip() == """Device 3Buttons uses SimpleButton:
+  external events:
+    button1AndOther, button3OrOthers
+  start events:
+    button1AndOther, button3OrOthers
+  behaviours:
+    button1AndOther -> button1AndOther
+    button1AndOther -> button3OrOthers
+    button3OrOthers -> button3OrOthers
+    button3OrOthers -> button1AndOther
+  components:
+    SimpleButton b1, SimpleButton b2, SimpleButton b3
+  triggers:
+    button1AndOther: ( ( ( b1.pressed ; b2.pressed ) xor ( b1.pressed ; b3.pressed ) ) xor ( ( b2.pressed ; b1.pressed ) xor ( b3.pressed ; b1.pressed ) ) )
+    button3OrOthers: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )"""
+
+
+def test_3buttons_variant():
+    """
+    Syntax variant that uses XOR LEFT RIGHT
+    """
+    shelley_device = get_shelley_device('3buttons_variant')
+    visitor = PrettyPrintVisitor(components=shelley_device.components)
+    shelley_device.accept(visitor)
+
+    assert visitor.result.strip() == """Device 3Buttons uses SimpleButton:
+  external events:
+    button1AndOther, button3OrOthers
+  start events:
+    button1AndOther, button3OrOthers
+  behaviours:
+    button1AndOther -> button1AndOther
+    button1AndOther -> button3OrOthers
+    button3OrOthers -> button3OrOthers
+    button3OrOthers -> button1AndOther
+  components:
+    SimpleButton b1, SimpleButton b2, SimpleButton b3
+  triggers:
+    button1AndOther: ( ( b1.pressed ; ( b2.pressed xor b3.pressed ) ) xor ( ( b2.pressed xor b3.pressed ) ; b1.pressed ) )
+    button3OrOthers: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )"""

@@ -64,16 +64,18 @@ def dfa_shortest_string(d:DFA[Any,A]) -> List[A]:
     return None
 
 
-def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], events: List[str]) -> NFA[Any, str]:
-    states = ["start"]
+def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], events: List[str], start_state="$START") -> NFA[Any, str]:
+    states = []
     for evt in events:
-        states.append(evt + "_pre")
-        states.append(evt + "_post")
+        states.append(evt)
+    if start_state in events:
+        raise ValueError(f"Start state '{start_state}' cannot have the same name as an event.")
+    states.append(start_state)
     edges: List[Tuple[str, Optional[str], str]] = []
     for (src, dst) in behavior:
-        edges.append((src + "_post", dst, dst + "_post"))
+        edges.append((src, dst, dst))
     for evt in start_events:
-        edges.append(("start", evt, evt + "_post"))
+        edges.append((start_state, evt, evt))
     tsx: Dict[Tuple[str, Optional[str]], Set[str]] = {}
     for (src, char, dst) in edges:
         out = tsx.get((src, char), None)
@@ -81,14 +83,13 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], 
             out = set()
             tsx[(src, char)] = out
         out.add(dst)
-    accepted = list(evt + "_post" for evt in events)
-    accepted.append("start")
+    accepted = list(evt for evt in events)
+    accepted.append(start_state)
 
     return NFA(alphabet=frozenset(events),
                transition_func=NFA.transition_table(tsx),
-               start_state="start",
+               start_state=start_state,
                accepted_states=set(accepted))
-
 
 def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
     old_tsx_func = nfa.transition_func

@@ -402,22 +402,22 @@ def test_build_behavior():
     ]
     tsx = [
         # Start events:
-        ('start', 'level1', 'level1_post'),
+        ('start', 'level1', 'level1'),
         # (level1, standby1)
-        ('level1_post', 'standby1', 'standby1_post'),
-        ('level1_post', 'level2', 'level2_post'),
-        ('level2_post', 'standby2', 'standby2_post'),
-        ('standby1_post', 'level1', 'level1_post'),
-        ('standby2_post', 'level1', 'level1_post'),
+        ('level1', 'standby1', 'standby1'),
+        ('level1', 'level2', 'level2'),
+        ('level2', 'standby2', 'standby2'),
+        ('standby1', 'level1', 'level1'),
+        ('standby2', 'level1', 'level1'),
     ]
-    accepted = set(x + "_post" for x in events)
+    accepted = set(x for x in events)
     accepted.add("start")
     expected = NFA(alphabet=set(events),
                    transition_func=NFA.transition_edges_split(tsx),
                    start_state="start",
                    accepted_states=accepted,
                    )
-    assert build_behavior(behavior, start_events, events) == expected
+    assert build_behavior(behavior, start_events, events, "start") == expected
     # Make sure this is equivalent to HELLO WORLD
     assert nfa_to_dfa(build_behavior(behavior, start_events, events)).is_equivalent_to(nfa_to_dfa(create_hello_world()))
 

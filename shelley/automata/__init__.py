@@ -63,7 +63,7 @@ def dfa_shortest_string(d:DFA[Any,A]) -> List[A]:
         to_process = next_frontier
     return None
 
-
+# XXX: make the start_state not be a string
 def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], events: List[str], start_state="$START") -> NFA[Any, str]:
     states = []
     for evt in events:
@@ -160,6 +160,10 @@ class MicroState(DecodedState):
     def advance_macro(self):
         return MacroState(self.macro)
 
+@dataclass
+class AmbiguousTriggers:
+    nfa:NFA
+    states:Any
 
 def decode_behavior2(behavior: DFA[Any,str], triggers: Dict[str, DFA], alphabet:Optional[Collection[str]] = None):
     def tsx(src, char):
@@ -195,12 +199,22 @@ def decode_behavior2(behavior: DFA[Any,str], triggers: Dict[str, DFA], alphabet:
         for dfa in triggers.values():
             alphabet.update(dfa.alphabet)
 
-    return NFA(
-        alphabet,
-        tsx,
-        MacroState(behavior.start_state),
-        is_final
+    nfa = NFA(
+        alphabet=alphabet,
+        transition_func=tsx,
+        start_state=MacroState(behavior.start_state),
+        accepted_states=is_final
     )
+    dfa = nfa_to_dfa(nfa)
+    # Check if there are concurrent macro-states
+    ambiguous_states = []
+    for st in dfa.states:
+        row = list(filter(lambda x: isinstance(x, MacroState), st))
+        if len(row) > 1:
+            ambiguous_states.append(row)
+    if len(ambiguous_states) > 0:
+        return AmbiguousTriggers(nfa, ambiguous_states)
+    return nfa
 
 
 def get_invalid_behavior(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]],

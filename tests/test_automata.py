@@ -216,15 +216,17 @@ def test_decode_behavior2_1():
     )
     triggers = {
         LEVEL1: Char(B_P),
-        LEVEL2: Char(B_P),
+        LEVEL2: Char(B_R),
     }
     expected = decode_behavior(behavior, triggers, flatten=True, minimize=True)
     triggers2 = {
         LEVEL1: nfa_to_dfa(regex_to_nfa(Char(B_P))).minimize(),
-        LEVEL2: nfa_to_dfa(regex_to_nfa(Char(B_P))).minimize(),
+        LEVEL2: nfa_to_dfa(regex_to_nfa(Char(B_R))).minimize(),
     }
     behavior_dfa = nfa_to_dfa(regex_to_nfa(behavior)).minimize()
-    given = nfa_to_dfa(decode_behavior2(behavior_dfa, triggers2)).minimize()
+    result = decode_behavior2(behavior_dfa, triggers2)
+    assert isinstance(result, NFA)
+    given = nfa_to_dfa(result).minimize()
     assert given.is_equivalent_to(expected)
 
 

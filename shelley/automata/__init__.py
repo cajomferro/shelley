@@ -37,32 +37,6 @@ class ReplaceHandler(SubstHandler):
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     return r.fold(ReplaceHandler(rules))
 
-A = typing.TypeVar('A')
-def dfa_shortest_string(d:DFA[Any,A]) -> List[A]:
-    visited = set([d.start_state])
-    if d.accepted_states(d.start_state):
-        return ()
-    to_process = [((), d.start_state)]
-    # Perform a breadth-first visit, while ensuring we don't visit
-    # The same node more than once
-    while len(to_process) > 0:
-        next_frontier = []
-        for (seq, src) in to_process:
-            for c in d.alphabet:
-                next_st = d.transition_func(src, c)
-                if next_st in visited:
-                    continue
-                next_seq = seq + (c,)
-                if d.accepted_states(next_st):
-                    # Found the shortest string
-                    return next_seq
-                else:
-                    visited.add(next_st)
-                    next_frontier.append((next_seq, next_st))
-        to_process.clear()
-        to_process = next_frontier
-    return None
-
 # XXX: make the start_state not be a string
 def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], events: List[str], start_state="$START") -> NFA[Any, str]:
     states = []

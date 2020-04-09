@@ -192,7 +192,7 @@ def test_hello_world():
         create_timer()
     ]
     behavior = create_hello_world()
-    assert get_invalid_behavior(components, behavior, HELLO_WORLD_TRIGGERS) is None
+    assert isinstance(get_invalid_behavior(components, behavior, HELLO_WORLD_TRIGGERS), NFA)
 
 
 def test_encode_1():
@@ -220,11 +220,7 @@ def test_encode_behavior2_1():
     }
     n_behavior = regex_to_nfa(behavior)
     expected = nfa_to_dfa(encode_behavior(n_behavior, triggers))
-    triggers2 = {
-        LEVEL1: nfa_to_dfa(regex_to_nfa(Char(B_P))).minimize(),
-        LEVEL2: nfa_to_dfa(regex_to_nfa(Char(B_R))).minimize(),
-    }
-    result = encode_behavior_ex(n_behavior, triggers2)
+    result = encode_behavior_ex(n_behavior, triggers)
     assert isinstance(result, NFA)
     given = nfa_to_dfa(result).minimize()
     assert given.is_equivalent_to(expected)
@@ -265,7 +261,7 @@ def test_ok_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    assert get_invalid_behavior([create_button()], n_behavior, triggers) is None
+    assert isinstance(get_invalid_behavior([create_button()], n_behavior, triggers), NFA)
 
 
 def test_fail_hello_world():
@@ -298,7 +294,7 @@ def test_fail_hello_world():
     be = encode_behavior(hello, triggers)
     assert be.accepts([])
     res = get_invalid_behavior(components, hello, triggers)
-    assert not res.accepts([])
+    assert not res.dfa.accepts([])
     assert res is not None
 
 def test_smallest_error():
@@ -334,8 +330,9 @@ def test_smallest_error():
     ]
     be = encode_behavior(hello, triggers)
     res = get_invalid_behavior(components, hello, triggers)
-    err = res.get_shortest_string()
-    assert res.accepts(err)
+    assert isinstance(res, EncodingFailure)
+    err = res.dfa.get_shortest_string()
+    assert res.dfa.accepts(err)
     assert err is not None
     assert err == (B_P, B_P, LA_ON, T_S)
     assert demultiplex(err) == {
@@ -442,7 +439,7 @@ def test_device_button():
             'b.released': NIL,
         },
     )
-    expected = check_valid_device(device, {}).nfa.flatten()
+    expected = check_valid_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_button()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -461,7 +458,7 @@ def test_device_led_a():
             'ledA.off': NIL,
         },
     )
-    expected = check_valid_device(device, {}).nfa.flatten()
+    expected = check_valid_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_led_a()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -480,7 +477,7 @@ def test_device_led_b():
             'ledB.off': NIL,
         },
     )
-    expected = check_valid_device(device, {}).nfa.flatten()
+    expected = check_valid_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_led_b()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -502,7 +499,7 @@ def test_device_timer():
             't.timeout': NIL
         },
     )
-    expected = check_valid_device(device, {}).nfa.flatten()
+    expected = check_valid_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_timer()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -526,7 +523,7 @@ def test_device_hello_world():
             'standby2': NIL
         },
     )
-    expected = check_valid_device(device, {}).nfa.flatten()
+    expected = check_valid_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_hello_world()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -577,7 +574,7 @@ def get_basic_devices():
     )
 
 def get_basic_known_devices():
-    return dict((k,check_valid_device(d, {})) for (k,d) in get_basic_devices().items())
+    return dict((k,check_valid_device(d, {}).external) for (k,d) in get_basic_devices().items())
 
 def test_invalid_behavior_1():
     device = Device(
@@ -695,6 +692,6 @@ def test_device_led_and_button():
             'b.released': NIL
         },
     )
-    expected = check_valid_device(device, {}).nfa.flatten()
+    expected = check_valid_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_led_and_button()).is_equivalent_to(nfa_to_dfa(expected))

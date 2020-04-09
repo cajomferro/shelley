@@ -18,9 +18,8 @@ class Device:
 class CheckedDevice:
     nfa: NFA[Any, str]
 
-
 @dataclass
-class InvalidBehavior:
+class TriggerIntegrationFailure:
     error_trace: List[str]
     component_errors: Dict[str, Tuple[List[str], int]]
 
@@ -129,12 +128,15 @@ class MicroState(DecodedState):
         return MacroState(self.macro)
 
 @dataclass
-class AmbiguousTriggers:
+class AmbiguousTriggersFailure:
     nfa:NFA
     states:Any
 
-def encode_behavior_ex(behavior: NFA[Any,str], triggers: Dict[str, DFA], alphabet:Optional[Collection[str]] = None):
+def encode_behavior_ex(behavior: NFA[Any,str], triggers: Dict[str, Regex[str]], alphabet:Optional[Collection[str]] = None):
+    assert isinstance(behavior, NFA)
     det_behavior = nfa_to_dfa(behavior)
+    det_triggers = dict( (k, nfa_to_dfa(regex_to_nfa(v))) for k,v in triggers.items())
+    del triggers
     del behavior
     def tsx(src, char):
         if isinstance(src, MacroState):
@@ -146,11 +148,11 @@ def encode_behavior_ex(behavior: NFA[Any,str], triggers: Dict[str, DFA], alphabe
                 result.add(MicroState(
                     macro=det_behavior.transition_func(src.state, evt),
                     event=evt,
-                    micro=triggers[evt].start_state
+                    micro=det_triggers[evt].start_state
                 ))
             return frozenset(result)
         elif isinstance(src, MicroState):
-            dfa = triggers[src.event]
+            dfa = det_triggers[src.event]
             if dfa.accepted_states(src.micro) and char is None:
                 return frozenset([src.advance_macro()])
             elif char in dfa.alphabet:
@@ -166,7 +168,7 @@ def encode_behavior_ex(behavior: NFA[Any,str], triggers: Dict[str, DFA], alphabe
     if alphabet is None:
         # Infer the alphabet from each trigger
         alphabet = set()
-        for dfa in triggers.values():
+        for dfa in det_triggers.values():
             alphabet.update(dfa.alphabet)
 
     nfa = NFA(
@@ -183,9 +185,15 @@ def encode_behavior_ex(behavior: NFA[Any,str], triggers: Dict[str, DFA], alphabe
         if len(row) > 1:
             ambiguous_states.append(row)
     if len(ambiguous_states) > 0:
-        return AmbiguousTriggers(nfa, ambiguous_states)
+        return AmbiguousTriggersFailure(nfa, ambiguous_states)
     return nfa
 
+@dataclass(frozen=True)
+class EncodingFailure:
+    """
+    An erroneous DFA that contains all invalid sequences.
+    """
+    dfa:DFA
 
 def get_invalid_behavior(components: List[NFA[Any, str]], behavior: NFA[Any,str], triggers: Dict[str, Regex[str]],
                          minimize=False,
@@ -193,16 +201,20 @@ def get_invalid_behavior(components: List[NFA[Any, str]], behavior: NFA[Any,str]
     if len(components) == 0:
         return None
     all_possible = merge_components(components, flatten, minimize)
-    encoded_behavior = encode_behavior(behavior, triggers, all_possible.alphabet)
+    encoded_behavior = encode_behavior_ex(behavior, triggers, all_possible.alphabet)
+    if isinstance(encoded_behavior, AmbiguousTriggersFailure):
+        # We got an error
+        return encoded_behavior
     det_encoded_behavior = nfa_to_dfa(encoded_behavior)
     if flatten or minimize:
         det_encoded_behavior = det_encoded_behavior.flatten(minimize=minimize)
     # Ensure that the all possible behaviors in dev contain the encoded behavior
     invalid_behavior = det_encoded_behavior.subtract(all_possible)
     if invalid_behavior.is_empty():
-        return None
+        # All is fine, return the encoded behavior
+        return encoded_behavior
     else:
-        return invalid_behavior
+        return EncodingFailure(invalid_behavior)
 
 def ensure_well_formed(dev: Device):
     evts = set(dev.events)
@@ -226,16 +238,22 @@ def demultiplex(seq:List[str]) -> Mapping[str,List[str]]:
         component_seq.append(op)
     return sequences
 
-def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[CheckedDevice, InvalidBehavior]:
+@dataclass
+class AssembledDevice:
+    external: CheckedDevice
+    internal: NFA[Any,str]
+
+def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[AssembledDevice, TriggerIntegrationFailure, AmbiguousTriggersFailure]:
     ensure_well_formed(dev)
     components = list(dict(build_components(dev.components, known_devices)).values())
     behavior = build_behavior(dev.behavior, dev.start_events, dev.events)
-    inv_behavior = get_invalid_behavior(components, behavior, dev.triggers)
-    if inv_behavior is None:
-        return CheckedDevice(behavior)
-    else:
+    encoded = get_invalid_behavior(components, behavior, dev.triggers)
+    if isinstance(encoded, AmbiguousTriggersFailure):
+        return encoded
+    elif isinstance(encoded, EncodingFailure):
+        # We could not assemble the device
         # We compute the smallest error
-        dec_seq = inv_behavior.get_shortest_string()
+        dec_seq = encoded.dfa.get_shortest_string()
         # We demutex by device
         errs = dict()
         for component, seq in demultiplex(dec_seq).items():
@@ -245,4 +263,6 @@ def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) 
                 errs[component] = (seq, dfa.get_divergence_index(seq))
 
 
-        return InvalidBehavior(dec_seq, errs)
+        return TriggerIntegrationFailure(dec_seq, errs)
+    else:
+        return AssembledDevice(CheckedDevice(behavior), encoded)

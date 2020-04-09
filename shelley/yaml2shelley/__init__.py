@@ -66,7 +66,7 @@ def parse_components(input: Mapping[str, str], components: Components) -> NoRetu
         components.create(component_name, device_name)
 
 
-def parse_triggers(input: dict, events: EEvents, components: Components, triggers: Triggers) -> NoReturn:
+def parse_triggers(input: Mapping, events: EEvents, components: Components, triggers: Triggers) -> NoReturn:
     for trigger_event_name in input:
         trigger_rule = parse_trigger_rule(input[trigger_event_name], components)
 
@@ -100,6 +100,21 @@ def parse_trigger_rule(input, components: Components) -> TriggerRule:
                 return TriggerRuleChoice(left, right)
 
 
+# def parse_tests(tests: Mapping):
+#     try:
+#         testsok = tests['ok']
+#     except KeyError:
+#         testsok = dict()
+#
+#     try:
+#         testsfail = tests['fail']
+#     except KeyError:
+#         testsfail = dict()
+#
+#     for tname in testsok:
+#
+
+
 def create_device_from_yaml(yaml_code) -> Device:
     try:
         device_name = yaml_code['device']['name']
@@ -131,6 +146,16 @@ def create_device_from_yaml(yaml_code) -> Device:
     except KeyError:
         device_triggers = dict()
 
+    try:
+        test_macro = yaml_code['test_macro']
+    except KeyError:
+        test_macro = dict()
+
+    try:
+        test_micro = yaml_code['test_micro']
+    except KeyError:
+        test_micro = dict()
+
     events: EEvents = EEvents()
     behaviors: Behaviors = Behaviors()
     components: Components = Components()
@@ -145,5 +170,13 @@ def create_device_from_yaml(yaml_code) -> Device:
         parse_triggers(copy.deepcopy(device_triggers), events, components,
                        triggers)  # deep copy because i will consume some list elements (not really important)
 
-    return Device(device_name, Actions(), IEvents(), events, device_start_events, behaviors, triggers,
-                  components=components)
+    # if len(tests) > 0:
+    #     parse_tests(tests)
+
+    device = Device(device_name, Actions(), IEvents(), events, device_start_events, behaviors, triggers,
+                    components=components)
+
+    device.test_macro = test_macro
+    device.test_micro = test_micro
+
+    return device

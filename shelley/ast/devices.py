@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
+from typing import Mapping, List, TYPE_CHECKING
 
 from .node import Node
 from .actions import Actions
@@ -25,15 +25,17 @@ class Device(Node):
     """
     \\hard{D} -> categoria sintática
     """
-    name: str = None
-    actions: Actions = None
-    internal_events: IEvents = None
-    external_events: EEvents = None
-    start_events: List[str] = None
-    behaviors: Behaviors = None
-    uses = None  # type: List[str]
-    components: Components = None
-    triggers: Triggers = None
+    name: str
+    actions: Actions
+    internal_events: IEvents
+    external_events: EEvents
+    start_events: List[str]
+    behaviors: Behaviors
+    uses: List[str]
+    components: Components
+    triggers: Triggers
+    test_macro: Mapping[str, Mapping[str, List[str]]]
+    test_micro: Mapping[str, Mapping[str, List[str]]]
 
     def __init__(self, name: str,
                  actions: Actions,

@@ -192,7 +192,7 @@ def test_hello_world():
         create_timer()
     ]
     behavior = create_hello_world()
-    assert get_invalid_behavior(components, nfa_to_regex(behavior), HELLO_WORLD_TRIGGERS) is None
+    assert get_invalid_behavior(components, behavior, HELLO_WORLD_TRIGGERS) is None
 
 
 def test_encode_1():
@@ -204,7 +204,7 @@ def test_encode_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
-    be = encode_behavior(behavior, triggers, flatten=True, minimize=True)
+    be = nfa_to_dfa(encode_behavior(regex_to_nfa(behavior), triggers))
     expected = nfa_to_dfa(regex_to_nfa(Star(Char(B_P)))).flatten(minimize=True)
     assert expected.contains(be)
 
@@ -218,13 +218,13 @@ def test_encode_behavior2_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    expected = encode_behavior(behavior, triggers, flatten=True, minimize=True)
+    n_behavior = regex_to_nfa(behavior)
+    expected = nfa_to_dfa(encode_behavior(n_behavior, triggers))
     triggers2 = {
         LEVEL1: nfa_to_dfa(regex_to_nfa(Char(B_P))).minimize(),
         LEVEL2: nfa_to_dfa(regex_to_nfa(Char(B_R))).minimize(),
     }
-    behavior_dfa = nfa_to_dfa(regex_to_nfa(behavior)).minimize()
-    result = encode_behavior2(behavior_dfa, triggers2)
+    result = encode_behavior_ex(n_behavior, triggers2)
     assert isinstance(result, NFA)
     given = nfa_to_dfa(result).minimize()
     assert given.is_equivalent_to(expected)
@@ -236,7 +236,7 @@ def test_encode2():
         LEVEL1: Concat(Char(B_P), Char(B_P)),
         LEVEL2: NIL,
     }
-    be = encode_behavior(behavior, triggers, flatten=True, minimize=True)
+    be = nfa_to_dfa(encode_behavior(regex_to_nfa(behavior), triggers))
     expected = nfa_to_dfa(regex_to_nfa(Star(Concat(Char(B_P), Char(B_P))))).flatten(minimize=True)
     assert expected.contains(be)
     assert be.contains(expected)
@@ -247,11 +247,12 @@ def test_fail_1():
         Char(LEVEL1),
         Star(Concat(Char(LEVEL1), Char(LEVEL2)))
     )
+    n_behavior = regex_to_nfa(behavior)
     triggers = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
-    assert get_invalid_behavior([create_button()], behavior, triggers) is not None
+    assert get_invalid_behavior([create_button()], n_behavior, triggers) is not None
 
 
 def test_ok_1():
@@ -259,17 +260,17 @@ def test_ok_1():
         Char(LEVEL1),
         Star(Concat(Char(LEVEL1), Char(LEVEL2)))
     )
+    n_behavior = regex_to_nfa(behavior)
     triggers = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    assert get_invalid_behavior([create_button()], behavior, triggers) is None
+    assert get_invalid_behavior([create_button()], n_behavior, triggers) is None
 
 
 def test_fail_hello_world():
     hello = create_hello_world()
     assert hello.accepts([])
-    behavior = nfa_to_regex(hello)
     triggers = {
         LEVEL1:
             Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
@@ -294,15 +295,14 @@ def test_fail_hello_world():
         create_led_b(),
         create_timer()
     ]
-    be = encode_behavior(behavior, triggers, flatten=True, minimize=True)
+    be = encode_behavior(hello, triggers)
     assert be.accepts([])
-    res = get_invalid_behavior(components, behavior, triggers)
+    res = get_invalid_behavior(components, hello, triggers)
     assert not res.accepts([])
     assert res is not None
 
 def test_smallest_error():
     hello = create_hello_world()
-    behavior = nfa_to_regex(hello)
     triggers = {
         LEVEL1:
             Concat.from_list(map(Char, [
@@ -332,8 +332,8 @@ def test_smallest_error():
         create_led_b(),
         create_timer()
     ]
-    be = encode_behavior(behavior, triggers)
-    res = get_invalid_behavior(components, behavior, triggers)
+    be = encode_behavior(hello, triggers)
+    res = get_invalid_behavior(components, hello, triggers)
     err = res.get_shortest_string()
     assert res.accepts(err)
     assert err is not None

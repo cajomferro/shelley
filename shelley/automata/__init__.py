@@ -79,8 +79,7 @@ def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
     )
 
 
-def build_components(components: Dict[str, str], known_devices: Mapping[str, CheckedDevice]) -> List[NFA]:
-    result = []
+def build_components(components: Dict[str, str], known_devices: Mapping[str, CheckedDevice]) -> Iterator[Tuple[str,NFA]]:
     for (name, ty) in components.items():
         yield (name, prefix_nfa(known_devices[ty].nfa, name + "."))
 
@@ -99,17 +98,12 @@ def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False,
     return dev_dfa
 
 
-def encode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
-                    alphabet: Optional[Collection[str]] = None,
-                    minimize: bool = False, flatten: bool = False) -> DFA[Any, str]:
+def encode_behavior(behavior: NFA[Any,str], triggers: Dict[str, Regex],
+                    alphabet: Optional[Collection[str]] = None) -> NFA[Any, str]:
+    assert isinstance(behavior, NFA)
     # Replace tokens by REGEX in encoder
-    encoded_regex = replace(behavior, triggers)
-    encoded_behavior = regex_to_nfa(encoded_regex, alphabet)
-    # Convert into a minimized DFA
-    encoded_behavior_dfa = nfa_to_dfa(encoded_behavior)
-    if flatten:
-        return encoded_behavior_dfa.flatten(minimize=minimize)
-    return encoded_behavior_dfa
+    encoded_regex = replace(nfa_to_regex(behavior), triggers)
+    return regex_to_nfa(encoded_regex, alphabet)
 
 @dataclass(frozen=True)
 class DecodedState:
@@ -139,16 +133,18 @@ class AmbiguousTriggers:
     nfa:NFA
     states:Any
 
-def encode_behavior2(behavior: DFA[Any,str], triggers: Dict[str, DFA], alphabet:Optional[Collection[str]] = None):
+def encode_behavior_ex(behavior: NFA[Any,str], triggers: Dict[str, DFA], alphabet:Optional[Collection[str]] = None):
+    det_behavior = nfa_to_dfa(behavior)
+    del behavior
     def tsx(src, char):
         if isinstance(src, MacroState):
             if char is not None:
                 return frozenset()
             # Macro-state
             result = set()
-            for evt in behavior.alphabet:
+            for evt in det_behavior.alphabet:
                 result.add(MicroState(
-                    macro=behavior.transition_func(src.state, evt),
+                    macro=det_behavior.transition_func(src.state, evt),
                     event=evt,
                     micro=triggers[evt].start_state
                 ))
@@ -165,7 +161,7 @@ def encode_behavior2(behavior: DFA[Any,str], triggers: Dict[str, DFA], alphabet:
             raise ValueError("Unknown state", src, char)
 
     def is_final(st):
-        return isinstance(st, MacroState) and behavior.accepted_states(st.state)
+        return isinstance(st, MacroState) and det_behavior.accepted_states(st.state)
 
     if alphabet is None:
         # Infer the alphabet from each trigger
@@ -176,7 +172,7 @@ def encode_behavior2(behavior: DFA[Any,str], triggers: Dict[str, DFA], alphabet:
     nfa = NFA(
         alphabet=alphabet,
         transition_func=tsx,
-        start_state=MacroState(behavior.start_state),
+        start_state=MacroState(det_behavior.start_state),
         accepted_states=is_final
     )
     dfa = nfa_to_dfa(nfa)
@@ -191,15 +187,18 @@ def encode_behavior2(behavior: DFA[Any,str], triggers: Dict[str, DFA], alphabet:
     return nfa
 
 
-def get_invalid_behavior(components: List[NFA[Any, str]], behavior: Regex[str], triggers: Dict[str, Regex[str]],
+def get_invalid_behavior(components: List[NFA[Any, str]], behavior: NFA[Any,str], triggers: Dict[str, Regex[str]],
                          minimize=False,
                          flatten=False) -> Optional[DFA[Any, str]]:
     if len(components) == 0:
         return None
     all_possible = merge_components(components, flatten, minimize)
-    encoded_behavior = encode_behavior(behavior, triggers, all_possible.alphabet, minimize, flatten)
+    encoded_behavior = encode_behavior(behavior, triggers, all_possible.alphabet)
+    det_encoded_behavior = nfa_to_dfa(encoded_behavior)
+    if flatten or minimize:
+        det_encoded_behavior = det_encoded_behavior.flatten(minimize=minimize)
     # Ensure that the all possible behaviors in dev contain the encoded behavior
-    invalid_behavior = encoded_behavior.subtract(all_possible)
+    invalid_behavior = det_encoded_behavior.subtract(all_possible)
     if invalid_behavior.is_empty():
         return None
     else:
@@ -231,7 +230,7 @@ def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) 
     ensure_well_formed(dev)
     components = list(dict(build_components(dev.components, known_devices)).values())
     behavior = build_behavior(dev.behavior, dev.start_events, dev.events)
-    inv_behavior = get_invalid_behavior(components, nfa_to_regex(behavior), dev.triggers)
+    inv_behavior = get_invalid_behavior(components, behavior, dev.triggers)
     if inv_behavior is None:
         return CheckedDevice(behavior)
     else:

@@ -6,7 +6,7 @@ from shelley.yaml2shelley import create_device_from_yaml
 
 
 def get_shelley_device(name: str) -> Device:
-    with open('examples/test_yaml_parser/{0}.yml'.format(name), 'r') as stream:
+    with open('tests/input/{0}.yml'.format(name), 'r') as stream:
         yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
     return create_device_from_yaml(yaml_code)
 
@@ -26,6 +26,18 @@ def test_button():
   triggers:
     pressed: fired
     released: fired"""
+
+    assert shelley_device.test_macro['ok'] == {
+        "valid1": ["pressed", "released", "pressed", "released", "pressed", "released", "pressed", "released"],
+        "valid2": ["pressed"],
+        "valid3": ["pressed", "released"],
+        "valid4": ["pressed", "released", "pressed"],
+        "empty": []
+    }
+    assert shelley_device.test_macro['fail'] == {
+        "invalid1": ["released", "pressed"],
+        "invalid2": ["released"]
+    }
 
 
 def test_led():
@@ -103,6 +115,29 @@ def test_smartbutton_1():
     Button b
   triggers:
     on: ( b.pressed ; b.released )"""
+
+    assert shelley_device.test_macro['ok'] == {
+        "valid1": ["on"],
+        "valid2": ["on", "on", "on", "on"],
+        "empty": []
+    }
+    assert shelley_device.test_macro['fail'] == {
+        "invalid1": ["off"]
+    }
+
+    assert shelley_device.test_micro['ok'] == {
+        "valid1": ["b.pressed"],
+        "valid2": ["b.pressed", "b.released"],
+        "valid3": ["b.pressed", "b.released", "b.pressed", "b.released", "b.pressed"],
+        "valid4": ["b.pressed", "b.released", "b.pressed", "b.released"],
+        "empty": []
+    }
+    assert shelley_device.test_micro['fail'] == {
+        "invalid1": ["b.released", "b.pressed"],
+        "invalid2": ["b.pressed", "b.pressed"],
+        "invalid3": ["b.released", "b.released"],
+        "invalid4": ["b.released"]
+    }
 
 
 def test_desklamp():

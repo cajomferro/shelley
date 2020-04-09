@@ -1,0 +1,30 @@
+device:
+  name: SmartButton
+  start_events: [on]
+  behavior:
+    - [on, on]
+  components:
+    b: Button
+  triggers:
+    on: [ b.pressed, b.released]
+
+test_macro:
+  ok:
+    valid1: [on]
+    valid2: [on, on, on, on]
+    empty: []
+  fail:
+    invalid1: [off]
+
+test_micro:
+  ok:
+    valid1: [b.pressed]
+    valid2: [b.pressed, b.released]
+    valid3: [b.pressed, b.released, b.pressed, b.released, b.pressed]
+    valid4: [b.pressed, b.released, b.pressed, b.released]
+    empty: []
+  fail:
+    invalid1: [b.released, b.pressed]
+    invalid2: [b.pressed, b.pressed]
+    invalid3: [b.released, b.released]
+    invalid4: [b.released]

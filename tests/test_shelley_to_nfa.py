@@ -11,11 +11,10 @@ from shelley.shelley2automata import shelley2automata
 from shelley.yaml2shelley import create_device_from_yaml
 
 
-def _get_automata_from_yaml(name: str) -> AutomataDevice:
-    with open('examples/{0}.yaml'.format(name), 'r') as stream:
+def get_shelley_device(name: str) -> ShelleyDevice:
+    with open('tests/input/{0}.yml'.format(name), 'r') as stream:
         yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
-    shelley: ShelleyDevice = create_device_from_yaml(yaml_code)
-    return shelley2automata(shelley)
+    return create_device_from_yaml(yaml_code)
 
 
 def test_button():
@@ -32,7 +31,7 @@ def test_button():
             'released': NIL,
         },
     )
-    assert expected == _get_automata_from_yaml('button')
+    assert expected == shelley2automata(get_shelley_device('button'))
 
 
 def test_led():
@@ -49,7 +48,7 @@ def test_led():
             'off': NIL,
         },
     )
-    assert expected == _get_automata_from_yaml('led')
+    assert expected == shelley2automata(get_shelley_device('led'))
 
 
 def test_timer():
@@ -69,7 +68,7 @@ def test_timer():
             'timeout': NIL
         },
     )
-    assert expected == _get_automata_from_yaml('timer')
+    assert expected == shelley2automata(get_shelley_device('timer'))
 
 
 def test_smartbutton1():
@@ -84,7 +83,7 @@ def test_smartbutton1():
             'on': Concat(Char('b.pressed'), Char('b.released'))
         },
     )
-    assert expected == _get_automata_from_yaml('smartbutton1')
+    assert expected == shelley2automata(get_shelley_device('smartbutton1'))
 
 
 def test_desklamp():
@@ -140,4 +139,4 @@ def test_desklamp():
                 ))
         },
     )
-    assert expected == _get_automata_from_yaml('desklamp')
+    assert expected == shelley2automata(get_shelley_device('desklamp'))

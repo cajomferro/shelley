@@ -125,17 +125,17 @@ def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False,
     return dev_dfa
 
 
-def decode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
+def encode_behavior(behavior: Regex[str], triggers: Dict[str, Regex],
                     alphabet: Optional[Collection[str]] = None,
                     minimize: bool = False, flatten: bool = False) -> DFA[Any, str]:
-    # Replace tokens by REGEX in decoder
-    decoded_regex = replace(behavior, triggers)
-    decoded_behavior = regex_to_nfa(decoded_regex, alphabet)
+    # Replace tokens by REGEX in encoder
+    encoded_regex = replace(behavior, triggers)
+    encoded_behavior = regex_to_nfa(encoded_regex, alphabet)
     # Convert into a minimized DFA
-    decoded_behavior_dfa = nfa_to_dfa(decoded_behavior)
+    encoded_behavior_dfa = nfa_to_dfa(encoded_behavior)
     if flatten:
-        return decoded_behavior_dfa.flatten(minimize=minimize)
-    return decoded_behavior_dfa
+        return encoded_behavior_dfa.flatten(minimize=minimize)
+    return encoded_behavior_dfa
 
 @dataclass(frozen=True)
 class DecodedState:
@@ -165,7 +165,7 @@ class AmbiguousTriggers:
     nfa:NFA
     states:Any
 
-def decode_behavior2(behavior: DFA[Any,str], triggers: Dict[str, DFA], alphabet:Optional[Collection[str]] = None):
+def encode_behavior2(behavior: DFA[Any,str], triggers: Dict[str, DFA], alphabet:Optional[Collection[str]] = None):
     def tsx(src, char):
         if isinstance(src, MacroState):
             if char is not None:
@@ -223,9 +223,9 @@ def get_invalid_behavior(components: List[NFA[Any, str]], behavior: Regex[str], 
     if len(components) == 0:
         return None
     all_possible = merge_components(components, flatten, minimize)
-    decoded_behavior = decode_behavior(behavior, triggers, all_possible.alphabet, minimize, flatten)
-    # Ensure that the all possible behaviors in dev contain the decoded behavior
-    invalid_behavior = decoded_behavior.subtract(all_possible)
+    encoded_behavior = encode_behavior(behavior, triggers, all_possible.alphabet, minimize, flatten)
+    # Ensure that the all possible behaviors in dev contain the encoded behavior
+    invalid_behavior = encoded_behavior.subtract(all_possible)
     if invalid_behavior.is_empty():
         return None
     else:

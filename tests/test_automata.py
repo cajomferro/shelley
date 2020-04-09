@@ -2,9 +2,7 @@ from .context import shelley
 
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
     nfa_to_dfa, Star, NIL, VOID, DFA
-from shelley.automata import get_invalid_behavior, decode_behavior, \
-    build_components, Device, CheckedDevice, prefix_nfa, build_behavior, \
-    InvalidBehavior, check_valid_device, demultiplex
+from shelley.automata import *
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -211,6 +209,27 @@ def test_decode_1():
     assert expected.contains(be)
 
 
+def test_decode_behavior2_1():
+    behavior = Union(
+        Char(LEVEL1),
+        Star(Concat(Char(LEVEL1), Char(LEVEL2)))
+    )
+    triggers = {
+        LEVEL1: Char(B_P),
+        LEVEL2: Char(B_R),
+    }
+    expected = decode_behavior(behavior, triggers, flatten=True, minimize=True)
+    triggers2 = {
+        LEVEL1: nfa_to_dfa(regex_to_nfa(Char(B_P))).minimize(),
+        LEVEL2: nfa_to_dfa(regex_to_nfa(Char(B_R))).minimize(),
+    }
+    behavior_dfa = nfa_to_dfa(regex_to_nfa(behavior)).minimize()
+    result = decode_behavior2(behavior_dfa, triggers2)
+    assert isinstance(result, NFA)
+    given = nfa_to_dfa(result).minimize()
+    assert given.is_equivalent_to(expected)
+
+
 def test_decode2():
     behavior = Star(Concat(Char(LEVEL1), Char(LEVEL2)))
     triggers = {
@@ -385,22 +404,22 @@ def test_build_behavior():
     ]
     tsx = [
         # Start events:
-        ('start', 'level1', 'level1_post'),
+        ('start', 'level1', 'level1'),
         # (level1, standby1)
-        ('level1_post', 'standby1', 'standby1_post'),
-        ('level1_post', 'level2', 'level2_post'),
-        ('level2_post', 'standby2', 'standby2_post'),
-        ('standby1_post', 'level1', 'level1_post'),
-        ('standby2_post', 'level1', 'level1_post'),
+        ('level1', 'standby1', 'standby1'),
+        ('level1', 'level2', 'level2'),
+        ('level2', 'standby2', 'standby2'),
+        ('standby1', 'level1', 'level1'),
+        ('standby2', 'level1', 'level1'),
     ]
-    accepted = set(x + "_post" for x in events)
+    accepted = set(x for x in events)
     accepted.add("start")
     expected = NFA(alphabet=set(events),
                    transition_func=NFA.transition_edges_split(tsx),
                    start_state="start",
                    accepted_states=accepted,
                    )
-    assert build_behavior(behavior, start_events, events) == expected
+    assert build_behavior(behavior, start_events, events, "start") == expected
     # Make sure this is equivalent to HELLO WORLD
     assert nfa_to_dfa(build_behavior(behavior, start_events, events)).is_equivalent_to(nfa_to_dfa(create_hello_world()))
 

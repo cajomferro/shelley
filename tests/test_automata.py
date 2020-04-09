@@ -192,7 +192,7 @@ def test_hello_world():
         create_timer()
     ]
     behavior = create_hello_world()
-    assert isinstance(get_invalid_behavior(components, behavior, HELLO_WORLD_TRIGGERS), NFA)
+    assert isinstance(build_encoded_behavior(components, behavior, HELLO_WORLD_TRIGGERS), NFA)
 
 
 def test_encode_1():
@@ -248,7 +248,7 @@ def test_fail_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
-    assert get_invalid_behavior([create_button()], n_behavior, triggers) is not None
+    assert build_encoded_behavior([create_button()], n_behavior, triggers) is not None
 
 
 def test_ok_1():
@@ -261,7 +261,7 @@ def test_ok_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    assert isinstance(get_invalid_behavior([create_button()], n_behavior, triggers), NFA)
+    assert isinstance(build_encoded_behavior([create_button()], n_behavior, triggers), NFA)
 
 
 def test_fail_hello_world():
@@ -293,7 +293,7 @@ def test_fail_hello_world():
     ]
     be = encode_behavior(hello, triggers)
     assert be.accepts([])
-    res = get_invalid_behavior(components, hello, triggers)
+    res = build_encoded_behavior(components, hello, triggers)
     assert not res.dfa.accepts([])
     assert res is not None
 
@@ -329,7 +329,7 @@ def test_smallest_error():
         create_timer()
     ]
     be = encode_behavior(hello, triggers)
-    res = get_invalid_behavior(components, hello, triggers)
+    res = build_encoded_behavior(components, hello, triggers)
     assert isinstance(res, EncodingFailure)
     err = res.dfa.get_shortest_string()
     assert res.dfa.accepts(err)
@@ -439,7 +439,7 @@ def test_device_button():
             'b.released': NIL,
         },
     )
-    expected = check_valid_device(device, {}).external.nfa.flatten()
+    expected = assemble_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_button()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -458,7 +458,7 @@ def test_device_led_a():
             'ledA.off': NIL,
         },
     )
-    expected = check_valid_device(device, {}).external.nfa.flatten()
+    expected = assemble_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_led_a()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -477,7 +477,7 @@ def test_device_led_b():
             'ledB.off': NIL,
         },
     )
-    expected = check_valid_device(device, {}).external.nfa.flatten()
+    expected = assemble_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_led_b()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -499,7 +499,7 @@ def test_device_timer():
             't.timeout': NIL
         },
     )
-    expected = check_valid_device(device, {}).external.nfa.flatten()
+    expected = assemble_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_timer()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -523,7 +523,7 @@ def test_device_hello_world():
             'standby2': NIL
         },
     )
-    expected = check_valid_device(device, {}).external.nfa.flatten()
+    expected = assemble_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_hello_world()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -574,7 +574,7 @@ def get_basic_devices():
     )
 
 def get_basic_known_devices():
-    return dict((k,check_valid_device(d, {}).external) for (k,d) in get_basic_devices().items())
+    return dict((k,assemble_device(d, {}).external) for (k,d) in get_basic_devices().items())
 
 def test_invalid_behavior_1():
     device = Device(
@@ -617,7 +617,7 @@ def test_invalid_behavior_1():
                 ),
         },
     )
-    given = check_valid_device(device, get_basic_known_devices())
+    given = assemble_device(device, get_basic_known_devices())
     assert given.error_trace == (B_P, B_P, LA_ON, T_S)
     assert given.component_errors == {
         "b": (["pressed", "pressed"], 1),
@@ -665,7 +665,7 @@ def test_invalid_behavior_2():
                 ),
         },
     )
-    given = check_valid_device(device, get_basic_known_devices())
+    given = assemble_device(device, get_basic_known_devices())
     assert given.error_trace == (B_R, B_P, B_R, LA_ON, T_S)
     assert given.component_errors == {
         "b": (["released", "pressed", "released"], 0),
@@ -692,6 +692,6 @@ def test_device_led_and_button():
             'b.released': NIL
         },
     )
-    expected = check_valid_device(device, {}).external.nfa.flatten()
+    expected = assemble_device(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_led_and_button()).is_equivalent_to(nfa_to_dfa(expected))

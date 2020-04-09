@@ -195,7 +195,7 @@ class EncodingFailure:
     """
     dfa:DFA
 
-def get_invalid_behavior(components: List[NFA[Any, str]], behavior: NFA[Any,str], triggers: Dict[str, Regex[str]],
+def build_encoded_behavior(components: List[NFA[Any, str]], behavior: NFA[Any,str], triggers: Dict[str, Regex[str]],
                          minimize=False,
                          flatten=False) -> Optional[DFA[Any, str]]:
     if len(components) == 0:
@@ -243,11 +243,11 @@ class AssembledDevice:
     external: CheckedDevice
     internal: NFA[Any,str]
 
-def check_valid_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[AssembledDevice, TriggerIntegrationFailure, AmbiguousTriggersFailure]:
+def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[AssembledDevice, TriggerIntegrationFailure, AmbiguousTriggersFailure]:
     ensure_well_formed(dev)
     components = list(dict(build_components(dev.components, known_devices)).values())
     behavior = build_behavior(dev.behavior, dev.start_events, dev.events)
-    encoded = get_invalid_behavior(components, behavior, dev.triggers)
+    encoded = build_encoded_behavior(components, behavior, dev.triggers)
     if isinstance(encoded, AmbiguousTriggersFailure):
         return encoded
     elif isinstance(encoded, EncodingFailure):

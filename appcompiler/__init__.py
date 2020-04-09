@@ -10,7 +10,7 @@ from . import settings
 from .exceptions import CompilationError
 from .serializer import serialize, deserialize
 
-from shelley.automata import check_valid_device, CheckedDevice, AssembledDevice
+from shelley.automata import assemble_device, CheckedDevice, AssembledDevice
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley.yaml2shelley import create_device_from_yaml
@@ -86,7 +86,7 @@ def compile_shelley(device: ShelleyDevice, uses: typing.List[str], dst_path: str
     known_devices: typing.Mapping[str, CheckedDevice] = _get_known_devices(device, uses, binary)
     automata_device = shelley2automata(device)
 
-    checked_device = check_valid_device(automata_device, known_devices)
+    checked_device = assemble_device(automata_device, known_devices)
 
     if isinstance(checked_device, AssembledDevice):
         serialize(dst_path, checked_device.external, binary)

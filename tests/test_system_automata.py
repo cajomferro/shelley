@@ -6,8 +6,7 @@ from .context import shelley
 
 import yaml
 
-from shelley.automata import Device as AutomataDevice, check_valid_device, CheckedDevice, InvalidBehavior, cenas, \
-    nfa_to_regex, NFA, decode_behavior, dfa_to_nfa
+from shelley.automata import Device as AutomataDevice, assemble_device, CheckedDevice, NFA
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley.yaml2shelley import create_device_from_yaml
@@ -28,34 +27,34 @@ def check_traces(nfa: NFA, test_ok: Mapping[str, List[str]], test_fail: Mapping[
 
 
 def test_button():
-    shelley_device = get_shelley_device('button')
-    automata = shelley2automata(shelley_device)
+    shelley_device: ShelleyDevice = get_shelley_device('button')
+    automata: AutomataDevice = shelley2automata(shelley_device)
 
-    checked_button = check_valid_device(automata, {})
+    checked_button: CheckedDevice = assemble_device(automata, {}).external
     assert type(checked_button) == CheckedDevice
 
     check_traces(checked_button.nfa, shelley_device.test_macro['ok'], shelley_device.test_macro['fail'])
 
 
 def test_smart_button():
-    checked_button = check_valid_device(shelley2automata(get_shelley_device('button')), {})
+    checked_button = assemble_device(shelley2automata(get_shelley_device('button')), {}).external
     assert type(checked_button) == CheckedDevice
 
     shelley_device = get_shelley_device('smartbutton1')
     automata = shelley2automata(shelley_device)
-    checked_smartbutton = check_valid_device(automata, {'Button': checked_button})
+    checked_smartbutton = assemble_device(automata, {'Button': checked_button}).external
     assert type(checked_smartbutton) == CheckedDevice
 
     decoded_behavior = None  # decode_behavior(nfa_to_regex(checked_smartbutton.nfa), automata.triggers) # TODO: implement this for device
 
     check_traces(checked_smartbutton.nfa, shelley_device.test_macro['ok'], shelley_device.test_macro['fail'])  # macro
-    #check_traces(dfa_to_nfa(decoded_behavior), shelley_device.test_micro['ok'],
+    # check_traces(dfa_to_nfa(decoded_behavior), shelley_device.test_micro['ok'],
     #             shelley_device.test_micro['fail'])  # micro
 
 
 def test_desklamp():
     dev = shelley2automata(get_shelley_device('desklamp'))
-    known_devices = {'Led': check_valid_device(shelley2automata(get_shelley_device('led')), {}),
-                     'Button': check_valid_device(shelley2automata(get_shelley_device('button')), {}),
-                     'Timer': check_valid_device(shelley2automata(get_shelley_device('timer')), {})}
-    assert type(check_valid_device(dev, known_devices)) == CheckedDevice
+    known_devices = {'Led': assemble_device(shelley2automata(get_shelley_device('led')), {}).external,
+                     'Button': assemble_device(shelley2automata(get_shelley_device('button')), {}).external,
+                     'Timer': assemble_device(shelley2automata(get_shelley_device('timer')), {}).external}
+    assert type(assemble_device(dev, known_devices).external) == CheckedDevice

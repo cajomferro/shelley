@@ -1,9 +1,3 @@
-OUTPUT_DIR = '.compiled'
-INPUT_DIR = 'examples'
-SRC_FILEPATH = ''
-SRC_BASENAME = ''
-DST_FILEPATH = ''
-DEVICE_NAME = ''
 USE_DEVICE_NAME_SEP = ':'
 EXT_SHELLEY_SOURCE_YAML = ['yml', 'yaml']
 EXT_SHELLEY_COMPILED_YAML = 'scy'

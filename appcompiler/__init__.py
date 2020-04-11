@@ -38,6 +38,25 @@ def create_parser():
     return parser
 
 
+def get_dest_path(args_binary: bool, args_output_dir: str, args_src_filepath: str, device_name: str) -> str:
+    if args_output_dir is None:
+        output_dir = os.path.dirname(args_src_filepath)
+    else:  # if --output is specified, create folder if doesn't exist yet
+        output_dir = os.path.realpath(args_output_dir)
+        try:
+            os.mkdir(output_dir)
+        except FileExistsError:
+            pass
+
+    dest_path: str
+    if args_binary:
+        dest_path = os.path.join(output_dir, '{0}.{1}'.format(device_name, settings.EXT_SHELLEY_COMPILED_BIN))
+    else:
+        dest_path = os.path.join(output_dir, '{0}.{1}'.format(device_name, settings.EXT_SHELLEY_COMPILED_YAML))
+
+    return dest_path
+
+
 def get_shelley_from_yaml(path: str) -> ShelleyDevice:
     with open(path, 'r') as stream:
         yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
@@ -74,24 +93,34 @@ def _get_known_devices(device: ShelleyDevice, uses_list: typing.List[str], binar
 #    return known_devices
 
 
-def compile_shelley(device: ShelleyDevice, uses: typing.List[str], dst_path: str, binary=False):
+def compile_shelley(src_path: str, uses: typing.List[str], outdir: str = None, binary=False) -> str:
     """
 
-    :param device: Shelley device to be compiled
+    :param device: Shelley device src path to be compiled
     :param uses: list of paths to compiled dependencies (uses)
-    :param dst_path: destination path to compiled shelley device
+    :param outdir: optional output dir path (if not specified, same as src)
     :param binary: save as binary or as yaml
     :return:
     """
-    known_devices: typing.Mapping[str, CheckedDevice] = _get_known_devices(device, uses, binary)
-    automata_device = shelley2automata(device)
+    shelley_device: ShelleyDevice = get_shelley_from_yaml(src_path)
+
+    dest_path: str = get_dest_path(binary, outdir, src_path, shelley_device.name)
+
+    logger.debug('Compiling device: {0}'.format(shelley_device.name))
+
+    known_devices: typing.Mapping[str, CheckedDevice] = _get_known_devices(shelley_device, uses, binary)
+    automata_device = shelley2automata(shelley_device)
 
     checked_device = assemble_device(automata_device, known_devices)
 
     if isinstance(checked_device, AssembledDevice):
-        serialize(dst_path, checked_device.external, binary)
+        serialize(dest_path, checked_device.external, binary)
     else:
         raise CompilationError("Invalid device: {0}".format(checked_device))
+
+    logger.debug('Compiled file: {0}'.format(dest_path))
+
+    return dest_path
 
 
 def get_args() -> argparse.Namespace:

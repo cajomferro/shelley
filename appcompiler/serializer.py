@@ -80,7 +80,9 @@ def deserialize(path: str, binary=False) -> CheckedDevice:
         else:
             device = _deserialize_checked_device(path)
     except FileNotFoundError as error:
-        raise error
+        if settings.VERBOSE:
+            logger.exception(error)
+        raise CompilationError("Use device not found: {0}. Please compile it first!".format(path))
     except Exception as error:
         if settings.VERBOSE:
             logger.exception(error)

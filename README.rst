@@ -11,16 +11,16 @@ Run compiler
    python3 -m appcompiler -h
 
    # compile a device without dependencies (uses)
-   python3 -m appcompiler -d examples/button.yaml
+   python3 -m appcompiler -d examples/button.yml
 
    # compile a device with dependencies (uses)
-   python3 -m appcompiler -u examples/button.sc:Button examples/led.sc:Led examples/timer.sc:Timer -d examples/desklamp.yaml
+   python3 -m appcompiler -u examples/button.scy:Button examples/led.scy:Led examples/timer.scy:Timer -d examples/desklamp.yml
 
    # user-defined output folder (-o), verbose (-v)
-   python3 -m appcompiler -o examples/compiled  -u examples/compiled/button.sc:Button examples/compiled/led.sc:Led examples/compiled/timer.sc:Timer -d examples/desklamp.yaml -v
+   python3 -m appcompiler -o examples/compiled  -u examples/compiled/button.scy:Button examples/compiled/led.scy:Led examples/compiled/timer.scy:Timer -d examples/desklamp.yml -v
 
    # compile a device in binary mode
-   python3 -m appcompiler -b -d examples/button.yaml
+   python3 -m appcompiler -b -d examples/button.yml
 
    # visualize a compiled device using xdot
    python3 -m appvizviewer -i examples/desklamp/desklamp.scy -p | xdot -

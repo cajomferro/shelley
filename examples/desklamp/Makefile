@@ -12,7 +12,8 @@ desklamp.scy: desklamp.yaml timer.scy led.scy button.scy
 	$(SHELLYC) -d $< -u button.scy\:Button led.scy\:Led timer.scy\:Timer
 
 %.scy: %.yaml
-	$(SHELLYC) -d $<
+	$(SHELLYC) -d $< -o $@
+	test -f $<
 
 %.gv: %.scy
 	$(SHELLYVIZ) $< -o $@

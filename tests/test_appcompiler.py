@@ -1,6 +1,7 @@
 import os
 import pytest
 import yaml
+from pathlib import Path
 
 from .context import shelley
 from .context import appcompiler
@@ -11,8 +12,8 @@ from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley.yaml2shelley import create_device_from_yaml
 
-EXAMPLES_PATH = 'tests/input'
-COMPILED_PATH = 'tests/input/compiled'
+EXAMPLES_PATH = Path('tests/input')
+COMPILED_PATH = Path('tests/input/compiled')
 
 
 ### TEST ASSEMBLE DEVICE ###
@@ -74,58 +75,59 @@ def test_desklamp():
 ### TEST ARGPARSE ###
 
 def test_single_device():
-    device = os.path.join(EXAMPLES_PATH, 'button.yml')
-    parser = appcompiler.create_parser()
-    args = parser.parse_args(['-d', device])
+    device = EXAMPLES_PATH / 'button.yml'
+    args = make_args(device)
     assert args.device == device
-    assert args.outdir is None
+    assert args.output == COMPILED_PATH / 'button.scy'
     assert args.uses == []
 
 
 def test_single_device_binary():
-    device = os.path.join(EXAMPLES_PATH, 'button.yml')
+    device = EXAMPLES_PATH / 'button.yml'
     parser = appcompiler.create_parser()
-    args = parser.parse_args(['-b', '-d', device])
+    args = parser.parse_args(['-b', '-d', str(device)])
     assert args.device == device
-    assert args.outdir is None
+    assert args.output is None
     assert args.uses == []
     assert args.binary is True
 
 
 def test_single_device_user_defined_outdir():
-    device = os.path.join(EXAMPLES_PATH, 'button.yml')
-    outdir = os.path.join(EXAMPLES_PATH, 'compiled')
+    device = EXAMPLES_PATH / 'button.yml'
+    output = EXAMPLES_PATH / 'compiled' / 'button.scy'
     parser = appcompiler.create_parser()
-    args = parser.parse_args(['--device', device, '--outdir', outdir])
+    args = make_args(device)
     assert args.device == device
-    assert args.outdir == outdir
+    assert args.output == output
     assert args.uses == []
 
 
 def test_composite_device():
-    device = os.path.join(EXAMPLES_PATH, 'desklamp.yml')
-    outdir = 'compiled/'
-    uses_button = '{0}:Button'.format(os.path.join(EXAMPLES_PATH, 'button.scy'))
-    uses_led = '{0}:Led'.format(os.path.join(EXAMPLES_PATH, 'led.scy'))
-    uses_timer = '{0}:Timer'.format(os.path.join(EXAMPLES_PATH, 'timer.scy'))
-    parser = appcompiler.create_parser()
-    args = parser.parse_args(['--outdir', outdir, '--uses', uses_button, uses_led, uses_timer, '--device', device])
+    device = EXAMPLES_PATH / 'desklamp.yml'
+    args = make_args(device, Button=EXAMPLES_PATH / 'button.scy', Led=EXAMPLES_PATH / 'led.scy', Timer=EXAMPLES_PATH / 'timer.scy')
     assert args.device == device
-    assert args.outdir == outdir
+    assert args.output == COMPILED_PATH / 'desklamp.scy'
     assert len(args.uses) == 3
-    assert args.uses[0] == uses_button
-    assert args.uses[1] == uses_led
-    assert args.uses[2] == uses_timer
+    assert args.uses[0] == mk_use(Button=EXAMPLES_PATH / 'button.scy')
+    assert args.uses[1] == mk_use(Led=EXAMPLES_PATH / 'led.scy')
+    assert args.uses[2] == mk_use(Timer=EXAMPLES_PATH / 'timer.scy')
 
 
 ### TEST COMPILER ###
 
 def _remove_compiled_dir():
     _remove_compiled_files(COMPILED_PATH)
-    os.rmdir(COMPILED_PATH)
+    try:
+        COMPILED_PATH.rmdir()
+    except FileNotFoundError:
+        pass
 
 
-def _remove_compiled_files(outdir: str = None):
+def _remove_compiled_files(outdir: Path = None):
+    for file in outdir.glob("*.sc[y,b]"):
+        file.unlink()
+
+    """
     if outdir is not None:
         if not os.path.exists(outdir):
             return  # compiled dir may not exist yet so skip removing files
@@ -138,13 +140,12 @@ def _remove_compiled_files(outdir: str = None):
         path_to_file = os.path.join(target_dir, file)
         os.remove(path_to_file)
 
-
-def _compile_simple_device(device_name, outdir: str = None):
-    src_path = os.path.join(EXAMPLES_PATH, '{0}.yml'.format(device_name))
-    parser = appcompiler.create_parser()
-    args = parser.parse_args(['-o', outdir, '-d', src_path])
-
-    return appcompiler.compile_shelley(args.device, args.uses, args.outdir, args.binary)
+    """
+def _compile_simple_device(device_name, outdir: Path = None):
+    src_path = EXAMPLES_PATH / (device_name + ".yml")
+    COMPILED_PATH.mkdir(parents=True, exist_ok=True)
+    args = make_args(src_path)
+    return appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
 
 def test_not_found_device():
@@ -153,12 +154,12 @@ def test_not_found_device():
     args = parser.parse_args(['-d', src_path])
 
     with pytest.raises(FileNotFoundError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.outdir, args.binary)
+        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
 
 def test_compile_buton_ok():
-    assert not os.path.exists(COMPILED_PATH)
-
+    #assert not COMPILED_PATH.exists()
+    COMPILED_PATH.mkdir()
     path = _compile_simple_device('button', COMPILED_PATH)
     assert os.path.exists(path)
 
@@ -167,16 +168,36 @@ def test_compile_buton_ok():
 
 ### smartbutton
 
-def test_smartbutton_dependency_missing():
-    assert not os.path.exists(COMPILED_PATH)
+def get_path(p):
+    assert isinstance(p, Path)
+    return str(COMPILED_PATH / (p.stem + '.scy'))
 
-    src_path = os.path.join(EXAMPLES_PATH, 'smartbutton1.yml')
+def mk_use(**kwargs):
+    assert len(kwargs) == 1
+    for key,val in kwargs.items():
+        assert isinstance(val, Path)
+        assert isinstance(key, str)
+        return str(val) + ":" + key
+
+def make_args(src_path, **kwargs):
+    assert isinstance(src_path, Path)
+    uses = []
+    for k,v in kwargs.items():
+        uses.append(str(v) + ":" + k)
     parser = appcompiler.create_parser()
-    args = parser.parse_args(
-        ['--outdir', COMPILED_PATH, '--device', src_path])
+    if len(uses) > 0:
+        uses = ['--uses'] + list(sorted(uses))
+    return parser.parse_args(
+        ['--output', get_path(src_path) ] + uses + ['--device', str(src_path)])
+
+def test_smartbutton_dependency_missing():
+    assert not COMPILED_PATH.exists()
+
+    src_path = EXAMPLES_PATH / 'smartbutton1.yml'
+    args = make_args(src_path)
 
     with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.outdir, args.binary)
+        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     assert str(exc_info.value) == "Device SmartButton expects ['Button'] but found []!"
 
@@ -184,16 +205,12 @@ def test_smartbutton_dependency_missing():
 
 
 def test_smartbutton_dependency_not_found():
-    assert not os.path.exists(COMPILED_PATH)
-
-    src_path = os.path.join(EXAMPLES_PATH, 'smartbutton1.yml')
-    uses_button = '{0}:Button'.format(os.path.join(COMPILED_PATH, 'button.scy'))
-    parser = appcompiler.create_parser()
-    args = parser.parse_args(
-        ['--outdir', COMPILED_PATH, '--uses', uses_button, '--device', src_path])
-
+    assert not COMPILED_PATH.exists()
+    COMPILED_PATH.mkdir()
+    src_path = EXAMPLES_PATH / 'smartbutton1.yml'
+    args = make_args(src_path, Button=COMPILED_PATH/ 'button.scy')
     with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.outdir, args.binary)
+        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     assert str(exc_info.value) == "Use device not found: tests/input/compiled/button.scy. Please compile it first!"
 
@@ -201,34 +218,29 @@ def test_smartbutton_dependency_not_found():
 
 
 def test_smartbutton_ok():
-    assert not os.path.exists(COMPILED_PATH)
-
+    #assert not COMPILED_PATH.exists()
     _compile_simple_device('button', COMPILED_PATH)
 
-    src_path = os.path.join(EXAMPLES_PATH, 'smartbutton1.yml')
-    uses_button = '{0}:Button'.format(os.path.join(COMPILED_PATH, 'button.scy'))
-    parser = appcompiler.create_parser()
-    args = parser.parse_args(
-        ['--outdir', COMPILED_PATH, '--uses', uses_button, '--device', src_path])
+    src_path = EXAMPLES_PATH / 'smartbutton1.yml'
+    args = make_args(src_path, Button=COMPILED_PATH / 'button.scy')
 
-    appcompiler.compile_shelley(args.device, args.uses, args.outdir, args.binary)
+    appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     _remove_compiled_dir()
 
 
 def test_compile_desklamp_dependency_not_found():
-    assert not os.path.exists(COMPILED_PATH)
+    COMPILED_PATH.mkdir(exist_ok=True, parents=True)
 
-    src_path = os.path.join(EXAMPLES_PATH, 'desklamp.yml')
-    uses_button = '{0}:Button'.format(os.path.join(COMPILED_PATH, 'button.scy'))
-    uses_led = '{0}:Led'.format(os.path.join(COMPILED_PATH, 'led.scy'))
-    uses_timer = '{0}:Timer'.format(os.path.join(COMPILED_PATH, 'timer.scy'))
-    parser = appcompiler.create_parser()
-    args = parser.parse_args(
-        ['--outdir', COMPILED_PATH, '--uses', uses_button, uses_led, uses_timer, '--device', src_path])
+    src_path = EXAMPLES_PATH / 'desklamp.yml'
+    args = make_args(src_path,
+        Button=COMPILED_PATH/'button.scy',
+        Led=COMPILED_PATH/'led.scy',
+        Timer=COMPILED_PATH/'timer.scy'
+    )
 
     with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.outdir, args.binary)
+        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     assert str(exc_info.value) == "Use device not found: tests/input/compiled/button.scy. Please compile it first!"
 
@@ -236,22 +248,20 @@ def test_compile_desklamp_dependency_not_found():
 
 
 def test_compile_desklamp_dependency_not_found_2():
-    assert not os.path.exists(COMPILED_PATH)
-
+    #assert not COMPILED_PATH.exists()
     _compile_simple_device('button', COMPILED_PATH)
     # _compile_simple_device('led', COMPILED_PATH)
     _compile_simple_device('timer', COMPILED_PATH)
 
-    src_path = os.path.join(EXAMPLES_PATH, 'desklamp.yml')
-    uses_button = '{0}:Button'.format(os.path.join(COMPILED_PATH, 'button.scy'))
-    uses_led = '{0}:Led'.format(os.path.join(COMPILED_PATH, 'led.scy'))
-    uses_timer = '{0}:Timer'.format(os.path.join(COMPILED_PATH, 'timer.scy'))
-    parser = appcompiler.create_parser()
-    args = parser.parse_args(
-        ['--outdir', COMPILED_PATH, '--uses', uses_button, uses_led, uses_timer, '--device', src_path])
+    src_path = EXAMPLES_PATH / 'desklamp.yml'
+    args = make_args(src_path,
+        Button=COMPILED_PATH/'button.scy',
+        Led=COMPILED_PATH/'led.scy',
+        Timer=COMPILED_PATH/'timer.scy'
+    )
 
     with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.outdir, args.binary)
+        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     assert str(exc_info.value) == "Use device not found: tests/input/compiled/led.scy. Please compile it first!"
 
@@ -259,20 +269,14 @@ def test_compile_desklamp_dependency_not_found_2():
 
 
 def test_compile_desklamp_ok():
-    assert not os.path.exists(COMPILED_PATH)
-
+    #assert not COMPILED_PATH.exists()
+    COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     _compile_simple_device('button', COMPILED_PATH)
     _compile_simple_device('led', COMPILED_PATH)
     _compile_simple_device('timer', COMPILED_PATH)
 
-    src_path = os.path.join(EXAMPLES_PATH, 'desklamp.yml')
-    uses_button = '{0}:Button'.format(os.path.join(COMPILED_PATH, 'button.scy'))
-    uses_led = '{0}:Led'.format(os.path.join(COMPILED_PATH, 'led.scy'))
-    uses_timer = '{0}:Timer'.format(os.path.join(COMPILED_PATH, 'timer.scy'))
-    parser = appcompiler.create_parser()
-    args = parser.parse_args(
-        ['--outdir', COMPILED_PATH, '--uses', uses_button, uses_led, uses_timer, '--device', src_path])
-
-    appcompiler.compile_shelley(args.device, args.uses, args.outdir, args.binary)
+    src_path = EXAMPLES_PATH / 'desklamp.yml'
+    args = make_args(src_path, Button=COMPILED_PATH/'button.scy', Led=COMPILED_PATH/'led.scy', Timer=COMPILED_PATH/'timer.scy')
+    appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     _remove_compiled_dir()

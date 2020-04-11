@@ -3,6 +3,7 @@ import yaml
 import os
 import typing
 import argparse
+from pathlib import Path
 
 from .context import shelley
 
@@ -32,9 +33,9 @@ def create_parser():
     parser = argparse.ArgumentParser(description='Compile shelley files')
     parser.add_argument("-v", "--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("-u", "--uses", nargs='*', default=[], help="path to used device")
-    parser.add_argument("-o", "--outdir", help="path to store compiled files")
+    parser.add_argument("-o", "--output", type=Path, help="path to store compile file")
     parser.add_argument("-b", "--binary", help="generate binary files", action='store_true')
-    parser.add_argument("-d", '--device', help="Path to the input example yaml file", required=True)
+    parser.add_argument("-d", '--device', type=Path, help="Path to the input example yaml file", required=True)
     return parser
 
 
@@ -57,7 +58,7 @@ def get_dest_path(args_binary: bool, args_output_dir: str, args_src_filepath: st
     return dest_path
 
 
-def get_shelley_from_yaml(path: str) -> ShelleyDevice:
+def get_shelley_from_yaml(path: Path) -> ShelleyDevice:
     with open(path, 'r') as stream:
         yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
     shelley: ShelleyDevice = create_device_from_yaml(yaml_code)
@@ -87,7 +88,7 @@ def _get_known_devices(device: ShelleyDevice, uses_list: typing.List[str], binar
     return known_devices
 
 
-def compile_shelley(src_path: str, uses: typing.List[str], outdir: str = None, binary=False) -> str:
+def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = None, binary=False) -> Path:
     """
 
     :param device: Shelley device src path to be compiled
@@ -97,8 +98,9 @@ def compile_shelley(src_path: str, uses: typing.List[str], outdir: str = None, b
     :return:
     """
     shelley_device: ShelleyDevice = get_shelley_from_yaml(src_path)
-
-    dest_path: str = get_dest_path(binary, outdir, src_path, shelley_device.name)
+    if dst_path is None:
+        ext = settings.EXT_SHELLEY_COMPILED_BIN if binary else settings.EXT_SHELLEY_COMPILED_YAML
+        dst_path = src_path.parent / (src_path.stem + "." + ext)
 
     logger.debug('Compiling device: {0}'.format(shelley_device.name))
 
@@ -117,13 +119,13 @@ def compile_shelley(src_path: str, uses: typing.List[str], outdir: str = None, b
         check_traces(checked_device.internal, shelley_device.test_micro['ok'],
                      shelley_device.test_micro['fail'])  # micro
 
-        serialize(dest_path, checked_device.external, binary)
+        serialize(dst_path, checked_device.external, binary)
     else:
         raise CompilationError("Invalid device: {0}".format(checked_device))
 
-    logger.debug('Compiled file: {0}'.format(dest_path))
+    logger.debug('Compiled file: {0}'.format(dst_path))
 
-    return dest_path
+    return dst_path
 
 
 def get_args() -> argparse.Namespace:

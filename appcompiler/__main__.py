@@ -21,7 +21,7 @@ def main(args):
     logger.debug('Input yaml file: {0}'.format(args.device))
 
     try:
-        compile_shelley(args.device, args.uses, args.outdir, binary=args.binary)
+        compile_shelley(args.device, args.uses, args.output, binary=args.binary)
     except Exception as error:
         if settings.VERBOSE:
             logger.error(str(error), exc_info=settings.VERBOSE)

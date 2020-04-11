@@ -10,7 +10,7 @@ from . import settings
 from .exceptions import CompilationError
 from .serializer import serialize, deserialize
 
-from shelley.automata import assemble_device, CheckedDevice, AssembledDevice
+from shelley.automata import assemble_device, CheckedDevice, AssembledDevice, check_traces
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley.yaml2shelley import create_device_from_yaml
@@ -87,12 +87,6 @@ def _get_known_devices(device: ShelleyDevice, uses_list: typing.List[str], binar
     return known_devices
 
 
-#    known_devices = dict()
-#    for d in device.uses:
-#        known_devices[device_name] = _find_compiled_device(device_name)
-#    return known_devices
-
-
 def compile_shelley(src_path: str, uses: typing.List[str], outdir: str = None, binary=False) -> str:
     """
 
@@ -114,6 +108,15 @@ def compile_shelley(src_path: str, uses: typing.List[str], outdir: str = None, b
     checked_device = assemble_device(automata_device, known_devices)
 
     if isinstance(checked_device, AssembledDevice):
+
+        # test macro traces
+        check_traces(checked_device.external.nfa, shelley_device.test_macro['ok'],
+                     shelley_device.test_macro['fail'])  # macro
+
+        # test micro traces
+        check_traces(checked_device.internal, shelley_device.test_micro['ok'],
+                     shelley_device.test_micro['fail'])  # micro
+
         serialize(dest_path, checked_device.external, binary)
     else:
         raise CompilationError("Invalid device: {0}".format(checked_device))

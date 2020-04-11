@@ -149,12 +149,12 @@ def create_device_from_yaml(yaml_code) -> Device:
     try:
         test_macro = yaml_code['test_macro']
     except KeyError:
-        test_macro = dict()
+        test_macro = {'ok': dict(), 'fail': dict()}
 
     try:
         test_micro = yaml_code['test_micro']
     except KeyError:
-        test_micro = dict()
+        test_micro = {'ok': dict(), 'fail': dict()}
 
     events: EEvents = EEvents()
     behaviors: Behaviors = Behaviors()

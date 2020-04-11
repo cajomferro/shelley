@@ -1,12 +1,12 @@
 # Shelley to NFA[S,A] --> S: tipo do estado (str ou int), A: tipo do alfabeto (str)
 
-from typing import Mapping, List
+import pytest
 
 from .context import shelley
 
 import yaml
 
-from shelley.automata import Device as AutomataDevice, AssembledDevice, assemble_device, CheckedDevice, NFA
+from shelley.automata import Device as AutomataDevice, AssembledDevice, assemble_device, CheckedDevice, check_traces
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley.yaml2shelley import create_device_from_yaml
@@ -18,22 +18,20 @@ def get_shelley_device(name: str) -> ShelleyDevice:
     return create_device_from_yaml(yaml_code)
 
 
-def check_traces(nfa: NFA, test_ok: Mapping[str, List[str]], test_fail: Mapping[str, List[str]]):
-    for key in test_ok:
-        assert nfa.accepts(test_ok[key])
-
-    for key in test_fail:
-        assert not nfa.accepts(test_fail[key])
-
-
 def test_button():
     shelley_device: ShelleyDevice = get_shelley_device('button')
     automata: AutomataDevice = shelley2automata(shelley_device)
 
-    checked_button: CheckedDevice = assemble_device(automata, {}).external
-    assert type(checked_button) == CheckedDevice
+    assembled_button: AssembledDevice = assemble_device(automata, {})
+    assert type(assembled_button.external) == CheckedDevice
 
-    check_traces(checked_button.nfa, shelley_device.test_macro['ok'], shelley_device.test_macro['fail'])
+    # # test macro traces
+    # check_traces(assembled_button.external.nfa, shelley_device.test_macro['ok'],
+    #              shelley_device.test_macro['fail'])  # macro
+    #
+    # # test micro traces
+    # check_traces(assembled_button.internal, shelley_device.test_micro['ok'],
+    #              shelley_device.test_micro['fail'])  # micro
 
 
 def test_smart_button():
@@ -45,13 +43,19 @@ def test_smart_button():
     assembled_smartbutton: AssembledDevice = assemble_device(automata, {'Button': checked_button})
     assert type(assembled_smartbutton.external) == CheckedDevice
 
-    # test macro traces
-    check_traces(assembled_smartbutton.external.nfa, shelley_device.test_macro['ok'],
-                 shelley_device.test_macro['fail'])  # macro
+    with pytest.raises(ValueError) as exc_info:
+        # test micro traces
+        check_traces(assembled_smartbutton.internal, {"good": ["b.released", "b.pressed"]}, {})  # micro
 
-    # test micro traces
-    check_traces(assembled_smartbutton.internal, shelley_device.test_micro['ok'],
-                 shelley_device.test_micro['fail'])  # micro
+    assert str(exc_info.value) == "Unaccepted valid trace: good : ['b.released', 'b.pressed']"
+
+    # # test macro traces
+    # check_traces(assembled_smartbutton.external.nfa, shelley_device.test_macro['ok'],
+    #              shelley_device.test_macro['fail'])  # macro
+    #
+    # # test micro traces
+    # check_traces(assembled_smartbutton.internal, shelley_device.test_micro['ok'],
+    #              shelley_device.test_micro['fail'])  # micro
 
 
 def test_desklamp():

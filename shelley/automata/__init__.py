@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import copy
 import itertools
 
+
 @dataclass
 class Device:
     start_events: List[str]
@@ -14,9 +15,11 @@ class Device:
     components: Dict[str, str]
     triggers: Dict[str, Regex]
 
+
 @dataclass
 class CheckedDevice:
     nfa: NFA[Any, str]
+
 
 @dataclass
 class TriggerIntegrationFailure:
@@ -36,8 +39,10 @@ class ReplaceHandler(SubstHandler):
 def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     return r.fold(ReplaceHandler(rules))
 
+
 # XXX: make the start_state not be a string
-def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], events: List[str], start_state="$START") -> NFA[Any, str]:
+def build_behavior(behavior: Iterable[Tuple[str, str]], start_events: List[str], events: List[str],
+                   start_state="$START") -> NFA[Any, str]:
     states = []
     for evt in events:
         states.append(evt)
@@ -64,12 +69,15 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], start_events:List[str], 
                start_state=start_state,
                accepted_states=set(accepted))
 
+
 def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
     old_tsx_func = nfa.transition_func
     offset = len(prefix)
+
     def transition_func(src, char):
         new_char = None if char is None else char[offset:]
         return old_tsx_func(src, new_char)
+
     return NFA(
         alphabet=set(prefix + x for x in nfa.alphabet),
         transition_func=transition_func,
@@ -78,7 +86,8 @@ def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
     )
 
 
-def build_components(components: Dict[str, str], known_devices: Mapping[str, CheckedDevice]) -> Iterator[Tuple[str,NFA]]:
+def build_components(components: Dict[str, str], known_devices: Mapping[str, CheckedDevice]) -> Iterator[
+    Tuple[str, NFA]]:
     for (name, ty) in components.items():
         yield (name, prefix_nfa(known_devices[ty].nfa, name + "."))
 
@@ -97,20 +106,23 @@ def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False,
     return dev_dfa
 
 
-def encode_behavior(behavior: NFA[Any,str], triggers: Dict[str, Regex],
+def encode_behavior(behavior: NFA[Any, str], triggers: Dict[str, Regex],
                     alphabet: Optional[Collection[str]] = None) -> NFA[Any, str]:
     assert isinstance(behavior, NFA)
     # Replace tokens by REGEX in encoder
     encoded_regex = replace(nfa_to_regex(behavior), triggers)
     return regex_to_nfa(encoded_regex, alphabet)
 
+
 @dataclass(frozen=True)
 class DecodedState:
     pass
 
+
 @dataclass(frozen=True, order=True)
 class MacroState(DecodedState):
     state: str
+
 
 @dataclass(frozen=True, order=True)
 class MicroState(DecodedState):
@@ -121,23 +133,27 @@ class MicroState(DecodedState):
     # The current micro state
     micro: str
 
-    def advance_micro(self, micro:str):
+    def advance_micro(self, micro: str):
         return MicroState(macro=self.macro, event=self.event, micro=micro)
 
     def advance_macro(self):
         return MacroState(self.macro)
 
+
 @dataclass
 class AmbiguousTriggersFailure:
-    nfa:NFA
-    states:Any
+    nfa: NFA
+    states: Any
 
-def encode_behavior_ex(behavior: NFA[Any,str], triggers: Dict[str, Regex[str]], alphabet:Optional[Collection[str]] = None):
+
+def encode_behavior_ex(behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
+                       alphabet: Optional[Collection[str]] = None):
     assert isinstance(behavior, NFA)
     det_behavior = nfa_to_dfa(behavior)
-    det_triggers = dict( (k, nfa_to_dfa(regex_to_nfa(v))) for k,v in triggers.items())
+    det_triggers = dict((k, nfa_to_dfa(regex_to_nfa(v))) for k, v in triggers.items())
     del triggers
     del behavior
+
     def tsx(src, char):
         if isinstance(src, MacroState):
             if char is not None:
@@ -188,16 +204,18 @@ def encode_behavior_ex(behavior: NFA[Any,str], triggers: Dict[str, Regex[str]], 
         return AmbiguousTriggersFailure(nfa, ambiguous_states)
     return nfa
 
+
 @dataclass(frozen=True)
 class EncodingFailure:
     """
     An erroneous DFA that contains all invalid sequences.
     """
-    dfa:DFA
+    dfa: DFA
 
-def build_encoded_behavior(components: List[NFA[Any, str]], behavior: NFA[Any,str], triggers: Dict[str, Regex[str]],
-                         minimize=False,
-                         flatten=False) -> Optional[DFA[Any, str]]:
+
+def build_encoded_behavior(components: List[NFA[Any, str]], behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
+                           minimize=False,
+                           flatten=False) -> Optional[DFA[Any, str]]:
     if len(components) == 0:
         return None
     all_possible = merge_components(components, flatten, minimize)
@@ -216,6 +234,7 @@ def build_encoded_behavior(components: List[NFA[Any, str]], behavior: NFA[Any,st
     else:
         return EncodingFailure(invalid_behavior)
 
+
 def ensure_well_formed(dev: Device):
     evts = set(dev.events)
     start_evts = set(dev.start_events)
@@ -228,7 +247,8 @@ def ensure_well_formed(dev: Device):
     if trigs != evts:
         return ValueError("The following trigger rules were not defined: ", evts - trigs)
 
-def demultiplex(seq:List[str]) -> Mapping[str,List[str]]:
+
+def demultiplex(seq: List[str]) -> Mapping[str, List[str]]:
     sequences = dict()
     for msg in seq:
         component, op = msg.split(".")
@@ -238,12 +258,25 @@ def demultiplex(seq:List[str]) -> Mapping[str,List[str]]:
         component_seq.append(op)
     return sequences
 
+
+def check_traces(nfa: NFA, test_ok: Mapping[str, List[str]], test_fail: Mapping[str, List[str]]) -> typing.NoReturn:
+    for key in test_ok:
+        if not nfa.accepts(test_ok[key]):
+            raise ValueError("Unaccepted valid trace: {0} : {1}".format(key, test_ok[key]))
+
+    for key in test_fail:
+        if nfa.accepts(test_fail[key]):
+            raise ValueError("Unexpected invalid trace: {0} : {1}".format(key, test_fail[key]))
+
+
 @dataclass
 class AssembledDevice:
     external: CheckedDevice
-    internal: NFA[Any,str]
+    internal: NFA[Any, str]
 
-def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[AssembledDevice, TriggerIntegrationFailure, AmbiguousTriggersFailure]:
+
+def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[
+    AssembledDevice, TriggerIntegrationFailure, AmbiguousTriggersFailure]:
     ensure_well_formed(dev)
     components = list(dict(build_components(dev.components, known_devices)).values())
     behavior = build_behavior(dev.behavior, dev.start_events, dev.events)
@@ -261,7 +294,6 @@ def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> 
             if not ch_dev.nfa.accepts(seq):
                 dfa = nfa_to_dfa(ch_dev.nfa).minimize()
                 errs[component] = (seq, dfa.get_divergence_index(seq))
-
 
         return TriggerIntegrationFailure(dec_seq, errs)
     else:

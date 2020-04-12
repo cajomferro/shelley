@@ -4,7 +4,7 @@ SHELLYVIZ = $(PYTHON) -m appvizviewer
 
 all: scy pdf
 
-pdf: button.pdf smartbutton1.pdf smartbutton2.pdf smartbutton5.pdf
+pdf: button.pdf smartbutton1.pdf smartbutton2.pdf
 
 scy: smartbutton1.scy smartbutton2.scy smartbutton3.scy smartbutton4.scy smartbutton5.scy
 

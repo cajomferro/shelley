@@ -1,0 +1,17 @@
+device:
+  name: Button
+  start_events: [pressed]
+  behavior:
+    - [pressed, released]
+    - [released, pressed]
+
+test_macro:
+  ok:
+    valid1: [pressed, released, pressed, released, pressed, released, pressed, released]
+    valid2: [pressed]
+    valid3: [pressed, released]
+    valid4: [pressed, released, pressed]
+    empty: []
+  fail:
+    invalid1: [released, pressed]
+    invalid2: [released]

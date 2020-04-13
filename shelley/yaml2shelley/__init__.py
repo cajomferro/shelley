@@ -2,6 +2,7 @@ import yaml
 from typing import List, Mapping, NoReturn
 import copy
 import pathlib
+from shelley.yaml2shelley.util import MySafeLoader
 from shelley.ast.events import EEvent, EEvents, IEvents
 from shelley.ast.actions import Actions
 from shelley.ast.behaviors import Behaviors
@@ -185,5 +186,5 @@ def _create_device_from_yaml(yaml_code) -> Device:
 
 def get_shelley_from_yaml(path: pathlib.Path) -> Device:
     with path.open(mode='r') as stream:
-        yaml_code = yaml.safe_load(stream)
+        yaml_code = yaml.load(stream, MySafeLoader)
     return _create_device_from_yaml(yaml_code)

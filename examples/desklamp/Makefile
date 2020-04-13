@@ -8,10 +8,10 @@ pdf: button.pdf led.pdf timer.pdf desklamp.pdf
 
 scy: desklamp.scy
 
-desklamp.scy: desklamp.yaml timer.scy led.scy button.scy
+desklamp.scy: desklamp.yml timer.scy led.scy button.scy
 	$(SHELLYC) -d $< -u button.scy\:Button led.scy\:Led timer.scy\:Timer
 
-%.scy: %.yaml
+%.scy: %.yml
 	$(SHELLYC) -d $< -o $@
 	test -f $<
 
@@ -25,4 +25,4 @@ clean:
 	rm -f *.scy *.pdf *.gv
 
 
-.SUFFIXES: .yaml .scy
+.SUFFIXES: .yml .scy

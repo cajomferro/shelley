@@ -6,7 +6,6 @@ from pathlib import Path
 from karakuri.regular import Char, Concat, Union, NIL
 
 from shelley.automata import Device as AutomataDevice
-from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley
 

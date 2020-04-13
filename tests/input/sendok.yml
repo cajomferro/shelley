@@ -1,20 +1,20 @@
 device:
-  name: "SendOK"
-  start_events: ["send"]
+  name: SendOK
+  start_events: [send]
   behavior:
-    - ["send", "ok"]
-    - ["send", "off"]
-    - ["ok", "send"]
-    - ["off", "send"]
+    - [send, ok]
+    - [send, off]
+    - [ok, send]
+    - [off, send]
   components:
     b1: Button
     b2: Button
     lgreen: Led
     lred: Led
   triggers:
-    "send": [ "b1.pressed", "b1.released"]
-    "ok":
+    send: [ b1.pressed, b1.released]
+    ok:
       - xor:
-          - [ "lred.on", "lred.off" ]
-          - [ "lgreen.on", "lgreen.off" ]
-    "off": [ "b2.pressed", "b2.released"]
+          - [ lred.on, lred.off ]
+          - [ lgreen.on, lgreen.off ]
+    off: [ b2.pressed, b2.released]

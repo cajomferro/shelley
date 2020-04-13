@@ -1,18 +1,16 @@
-import yaml
+from pathlib import Path
 from .context import shelley
 from shelley.ast.devices import Device
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
-from shelley.yaml2shelley import create_device_from_yaml
+from shelley import yaml2shelley
 
 
-def get_shelley_device(name: str) -> Device:
-    with open('tests/input/{0}.yml'.format(name), 'r') as stream:
-        yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
-    return create_device_from_yaml(yaml_code)
+def _get_path(device_name: str) -> Path:
+    return Path('tests/input/') / '{0}.yml'.format(device_name)
 
 
 def test_button():
-    shelley_device = get_shelley_device('button')
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('button'))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert visitor.result.strip() == """Device Button:
@@ -41,7 +39,7 @@ def test_button():
 
 
 def test_led():
-    shelley_device = get_shelley_device('led')
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('led'))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert visitor.result.strip() == """Device Led:
@@ -58,7 +56,7 @@ def test_led():
 
 
 def test_timer():
-    shelley_device = get_shelley_device('timer')
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('timer'))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert visitor.result.strip() == """Device Timer:
@@ -78,7 +76,7 @@ def test_timer():
 
 
 def test_sendok():
-    shelley_device = get_shelley_device('sendok')
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('sendok'))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
@@ -101,7 +99,7 @@ def test_sendok():
 
 
 def test_smartbutton_1():
-    shelley_device = get_shelley_device('smartbutton1')
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('smartbutton1'))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert visitor.result.strip() == """Device SmartButton uses Button:
@@ -142,7 +140,7 @@ def test_smartbutton_1():
 
 
 def test_desklamp():
-    shelley_device = get_shelley_device('desklamp')
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('desklamp'))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
@@ -167,7 +165,7 @@ def test_desklamp():
 
 
 def test_3buttons():
-    shelley_device = get_shelley_device('3buttons')
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('3buttons'))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
@@ -192,7 +190,7 @@ def test_3buttons_variant():
     """
     Syntax variant that uses XOR LEFT RIGHT
     """
-    shelley_device = get_shelley_device('3buttons_variant')
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('3buttons_variant'))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 

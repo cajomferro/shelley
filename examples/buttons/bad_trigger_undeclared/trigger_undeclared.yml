@@ -1,0 +1,9 @@
+device:
+  name: WrongButton
+  start_events: [on]
+  behavior:
+    - [on, on]
+  components:
+    b: SingleClickButton
+  triggers:
+    off: [ b.pressed, b.released] # ERROR: off is undeclared!

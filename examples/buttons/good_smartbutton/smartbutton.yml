@@ -4,6 +4,6 @@ device:
   behavior:
     - [on, on]
   components:
-    b: Button
+    b: SingleClickButton
   triggers:
     on: [ b.pressed, b.released]

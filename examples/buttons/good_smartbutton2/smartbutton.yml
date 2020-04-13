@@ -12,7 +12,7 @@ device:
     - [buttonPressedLong, buttonPressedTwice]
     - [buttonPressedLong, buttonPressedOnce]
   components:
-    b: Button
+    b: SingleClickButton
     t: Timer
   triggers:
     buttonPressedOnce: [b.pressed, t.started, b.released, t.canceled, t.started, t.timeout]

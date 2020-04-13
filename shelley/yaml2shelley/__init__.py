@@ -12,6 +12,10 @@ from shelley.ast.triggers import Triggers
 from shelley.ast.rules import TriggerRule, TriggerRuleEvent, TriggerRuleChoice, TriggerRuleSequence, TriggerRuleFired
 
 
+class ShelleyParserError(Exception):
+    pass
+
+
 # def parse_events(input: List[str]) -> EEvents:
 #     events: EEvents = EEvents()
 #     for event_name in input:
@@ -46,7 +50,7 @@ def _parse_behavior(src: List[List[str]], events: EEvents, behaviors: Behaviors)
         try:
             right = beh_transition[1]
         except IndexError:
-            raise Exception("Missing behaviour right side: [{0}, ???]".format(left))
+            raise ShelleyParserError("Missing behaviour right side: [{0}, ???]".format(left))
         e1 = events.find_by_name(left)
         if e1 is None:
             e1 = events.create(left)
@@ -73,7 +77,13 @@ def _parse_triggers(src: Mapping, events: EEvents, components: Components, trigg
         trigger_rule = _parse_trigger_rule(src[trigger_event_name], components)
 
         event = events.find_by_name(trigger_event_name)
+        if event is None:
+            raise ShelleyParserError("Trigger event '{0}' has not been declared".format(trigger_event_name))
         triggers.create(event, trigger_rule)
+
+    for event_name in events.list_str():
+        if triggers.find_by_event(event_name) is None:
+            raise ShelleyParserError("Missing trigger for event '{0}'".format(event_name))
 
 
 def _parse_trigger_rule(src, components: Components) -> TriggerRule:
@@ -121,7 +131,7 @@ def _create_device_from_yaml(yaml_code) -> Device:
     try:
         device_name = yaml_code['device']['name']
     except KeyError:
-        raise Exception("Device must have a name")
+        raise ShelleyParserError("Device must have a name")
 
     # try:
     #     device_events = yaml_code['device']['events']
@@ -131,12 +141,12 @@ def _create_device_from_yaml(yaml_code) -> Device:
     try:
         device_start_events = yaml_code['device']['start_events']
     except KeyError:
-        raise Exception("Please specify at least one start event")
+        raise ShelleyParserError("Please specify at least one start event")
 
     try:
         device_behavior = yaml_code['device']['behavior']
     except KeyError:
-        raise Exception("Device must have a behavior")
+        raise ShelleyParserError("Device must have a behavior")
 
     try:
         device_components = yaml_code['device']['components']

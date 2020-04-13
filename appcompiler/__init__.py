@@ -90,7 +90,14 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
     :param binary: save as binary or as yaml
     :return:
     """
-    shelley_device: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(src_path)
+
+    try:
+        shelley_device: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(src_path)
+    except yaml2shelley.ShelleyParserError as error:
+        if settings.VERBOSE:
+            logger.exception(error)
+        raise CompilationError('Shelley parser error: {0}'.format(str(error)))
+
     if dst_path is None:
         ext = settings.EXT_SHELLEY_COMPILED_BIN if binary else settings.EXT_SHELLEY_COMPILED_YAML
         dst_path = src_path.parent / (src_path.stem + "." + ext)

@@ -1,4 +1,4 @@
-device:
+madevice:
   name: LedButton
   start_events: [led1, led2]
   behavior:

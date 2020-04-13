@@ -1,0 +1,9 @@
+device:
+  name: SmartButton
+  start_events: [on]
+  behavior:
+    - [on, on]
+  components:
+    b: SingleClickButton
+  triggers:
+    on: [ b.pressed, b.pressed] # this is not an allowed sequence for SingleClickButton

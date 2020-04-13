@@ -1,0 +1,10 @@
+device:
+  name: WrongButton
+  start_events: [on]
+  behavior:
+    - [on, off]
+  components:
+    b: SingleClickButton
+  triggers:
+    on: [ b.pressed]
+    # off: [ b.released] # ERROR: off is missing!

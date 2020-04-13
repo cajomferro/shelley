@@ -1,0 +1,6 @@
+device:
+  name: SingleClickButton
+  start_events: [pressed]
+  behavior:
+    - [pressed, released]
+    - [released, pressed]

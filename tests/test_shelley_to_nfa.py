@@ -2,19 +2,17 @@
 
 from .context import shelley
 
-import yaml
+from pathlib import Path
 from karakuri.regular import Char, Concat, Union, NIL
 
 from shelley.automata import Device as AutomataDevice
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
-from shelley.yaml2shelley import create_device_from_yaml
+from shelley import yaml2shelley
 
 
-def get_shelley_device(name: str) -> ShelleyDevice:
-    with open('tests/input/{0}.yml'.format(name), 'r') as stream:
-        yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
-    return create_device_from_yaml(yaml_code)
+def _get_path(device_name: str) -> Path:
+    return Path('tests/input/') / '{0}.yml'.format(device_name)
 
 
 def test_button():
@@ -31,7 +29,7 @@ def test_button():
             'released': NIL,
         },
     )
-    assert expected == shelley2automata(get_shelley_device('button'))
+    assert expected == shelley2automata(yaml2shelley.get_shelley_from_yaml(_get_path('button')))
 
 
 def test_led():
@@ -48,7 +46,7 @@ def test_led():
             'off': NIL,
         },
     )
-    assert expected == shelley2automata(get_shelley_device('led'))
+    assert expected == shelley2automata(yaml2shelley.get_shelley_from_yaml(_get_path('led')))
 
 
 def test_timer():
@@ -68,7 +66,7 @@ def test_timer():
             'timeout': NIL
         },
     )
-    assert expected == shelley2automata(get_shelley_device('timer'))
+    assert expected == shelley2automata(yaml2shelley.get_shelley_from_yaml(_get_path('timer')))
 
 
 def test_smartbutton1():
@@ -83,7 +81,7 @@ def test_smartbutton1():
             'on': Concat(Char('b.pressed'), Char('b.released'))
         },
     )
-    assert expected == shelley2automata(get_shelley_device('smartbutton1'))
+    assert expected == shelley2automata(yaml2shelley.get_shelley_from_yaml(_get_path('smartbutton1')))
 
 
 def test_desklamp():
@@ -139,4 +137,4 @@ def test_desklamp():
                 ))
         },
     )
-    assert expected == shelley2automata(get_shelley_device('desklamp'))
+    assert expected == shelley2automata(yaml2shelley.get_shelley_from_yaml(_get_path('desklamp')))

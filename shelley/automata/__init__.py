@@ -277,9 +277,9 @@ def model_check(nfa, word_or_formula):
     if isinstance(word_or_formula, list):
         return nfa.accepts(word_or_formula)
     else:
-        exp = nfa_to_dfa(word_or_formula.interpret(nfa.alphabet))
-        internal = nfa_to_dfa(nfa)
-        return exp.contains(internal)
+        prop = nfa_to_dfa(word_or_formula.interpret(nfa.alphabet))
+        model = nfa_to_dfa(nfa)
+        return not prop.intersection(model).is_empty()
 
 @dataclass
 class AssembledDevice:

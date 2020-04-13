@@ -258,16 +258,28 @@ def demultiplex(seq: List[str]) -> Mapping[str, List[str]]:
         component_seq.append(op)
     return sequences
 
+def parse_formula(data):
+    if isinstance(data, list):
+        return data
+    return hml.Formula.deserialize(data)
 
-def check_traces(nfa: NFA, test_ok: Mapping[str, List[str]], test_fail: Mapping[str, List[str]]) -> typing.NoReturn:
-    for key in test_ok:
-        if not nfa.accepts(test_ok[key]):
-            raise ValueError("Unaccepted valid trace: {0} : {1}".format(key, test_ok[key]))
+def check_traces(mc, tests: Mapping[str, Mapping[str, Any]]) -> typing.NoReturn:
+    for key,trace in tests.get('ok', dict()).items():
+        formula = parse_formula(trace)
+        if not mc(formula):
+            raise ValueError(f"Unaccepted valid trace: {key}: {trace}")
 
-    for key in test_fail:
-        if nfa.accepts(test_fail[key]):
-            raise ValueError("Unexpected invalid trace: {0} : {1}".format(key, test_fail[key]))
+    for key,trace in tests.get('fail', dict()).items():
+        if mc(parse_formula(trace)):
+            raise ValueError(f"Unexpected invalid trace: {key}: {trace}")
 
+def model_check(nfa, word_or_formula):
+    if isinstance(word_or_formula, list):
+        return nfa.accepts(word_or_formula)
+    else:
+        exp = nfa_to_dfa(word_or_formula.interpret(nfa.alphabet))
+        internal = nfa_to_dfa(nfa)
+        return exp.contains(internal)
 
 @dataclass
 class AssembledDevice:
@@ -275,21 +287,11 @@ class AssembledDevice:
 
     internal: NFA[Any, str]
 
-    def internal_accepts(self, word:List[str]) -> bool:
-        return self.internal.accepts(word)
+    def internal_model_check(self, word_or_formula:typing.Union[List[str],hml.Formula[str]]) -> bool:
+        return model_check(self.internal, word_or_formula)
 
-    def external_accepts(self, word:List[str]) -> bool:
-        return self.external.nfa.accepts(word)
-
-    def internal_model_check(self, formula:hml.Formula[str]):
-        exp = nfa_to_dfa(formula.interpret(internal.alphabet))
-        internal = nfa_to_dfa(self.internal)
-        return internal.contains(exp)
-
-    def external_model_check(self, formula:hml.Formula[str]):
-        exp = nfa_to_dfa(formula.interpret(internal.alphabet))
-        external = nfa_to_dfa(self.external.nfa)
-        return external.contains(exp)
+    def external_model_check(self, word_or_formula:typing.Union[List[str],hml.Formula[str]]):
+        return model_check(self.external.nfa, word_or_formula)
 
 
 def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[

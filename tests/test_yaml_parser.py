@@ -126,17 +126,18 @@ def test_smartbutton_1():
     }
 
     assert shelley_device.test_micro['ok'] == {
-        "valid1": ["b.pressed"],
-        "valid2": ["b.pressed", "b.released"],
-        "valid3": ["b.pressed", "b.released", "b.pressed", "b.released", "b.pressed"],
-        "valid4": ["b.pressed", "b.released", "b.pressed", "b.released"],
+        "valid1": ["b.pressed", "b.released"],
+        "valid2": ["b.pressed", "b.released", "b.pressed", "b.released"],
+        "valid3": ["b.pressed", "b.released", "b.pressed", "b.released"],
         "empty": []
     }
     assert shelley_device.test_micro['fail'] == {
         "invalid1": ["b.released", "b.pressed"],
         "invalid2": ["b.pressed", "b.pressed"],
         "invalid3": ["b.released", "b.released"],
-        "invalid4": ["b.released"]
+        "incomplete1": ["b.released"],
+        "incomplete2": ["b.pressed"],
+        "incomplete3": ["b.pressed", "b.released", "b.pressed"],
     }
 
 

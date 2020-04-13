@@ -51,7 +51,7 @@ def test_smart_button():
 
     with pytest.raises(ValueError) as exc_info:
         # test micro traces
-        check_traces(assembled_smartbutton.internal, {"good": ["b.released", "b.pressed"]}, {})  # micro
+        check_traces(assembled_smartbutton.internal_model_check, {"good": ["b.released", "b.pressed"]}, {})  # micro
 
     assert str(exc_info.value) == "Unaccepted valid trace: good : ['b.released', 'b.pressed']"
 
@@ -158,10 +158,8 @@ def test_not_found_device():
 
 
 def test_compile_buton_ok():
-    #assert not COMPILED_PATH.exists()
-    COMPILED_PATH.mkdir()
     path = _compile_simple_device('button', COMPILED_PATH)
-    assert os.path.exists(path)
+    assert path.exists()
 
     _remove_compiled_dir()
 

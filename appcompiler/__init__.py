@@ -60,7 +60,7 @@ def get_dest_path(args_binary: bool, args_output_dir: str, args_src_filepath: st
 
 def get_shelley_from_yaml(path: Path) -> ShelleyDevice:
     with open(path, 'r') as stream:
-        yaml_code = yaml.load(stream, Loader=yaml.BaseLoader)
+        yaml_code = yaml.safe_load(stream)
     shelley: ShelleyDevice = create_device_from_yaml(yaml_code)
     return shelley
 
@@ -112,12 +112,10 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
     if isinstance(checked_device, AssembledDevice):
 
         # test macro traces
-        check_traces(checked_device.external.nfa, shelley_device.test_macro['ok'],
-                     shelley_device.test_macro['fail'])  # macro
+        check_traces(checked_device.external_model_check, shelley_device.test_macro)  # macro
 
         # test micro traces
-        check_traces(checked_device.internal, shelley_device.test_micro['ok'],
-                     shelley_device.test_micro['fail'])  # micro
+        check_traces(checked_device.internal_model_check, shelley_device.test_micro)  # micro
 
         serialize(dst_path, checked_device.external, binary)
     else:

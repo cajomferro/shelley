@@ -3,6 +3,7 @@ import pickle
 import typing
 import yaml
 import os
+from pathlib import Path
 
 from karakuri import regular
 
@@ -14,7 +15,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def _test_extension_deserialize(path: str, binary=False):
+def _test_extension_deserialize(path: Path, binary=False):
     ext = os.path.splitext(path)[1].split(".")[1]
     if binary:
         expected = settings.EXT_SHELLEY_COMPILED_BIN
@@ -25,40 +26,40 @@ def _test_extension_deserialize(path: str, binary=False):
             expected, ext, path))
 
 
-# def _test_extension_serialize(path: str, binary=False):
+# def _test_extension_serialize(path: Path, binary=False):
 #     ext = os.path.splitext(path)[1].split(".")[1]
 #     if ext not in settings.EXT_SHELLEY_SOURCE_YAML:
 #         raise CompilationError('Invalid file: {2}. Expecting extension .{0} but found {1}!'.format(
 #             settings.EXT_SHELLEY_SOURCE_YAML, ext, path))
 
 
-def _serialize_checked_device(path: str, device: CheckedDevice) -> typing.NoReturn:
+def _serialize_checked_device(path: Path, device: CheckedDevice) -> typing.NoReturn:
     nfa_as_dict = device.nfa.as_dict(flatten=False)
-    with open(path, 'w') as f:
+    with path.open(mode='w') as f:
         yaml.dump(nfa_as_dict, f)
 
 
-def _deserialize_checked_device(path: str) -> CheckedDevice:
-    with open(path, 'r') as f:
-        yaml_load = yaml.load(f, Loader=yaml.FullLoader)
+def _deserialize_checked_device(path: Path) -> CheckedDevice:
+    with path.open(mode='r') as f:
+        yaml_load = yaml.safe_load(f)
     nfa = regular.NFA.from_dict(yaml_load)
     return CheckedDevice(nfa)
 
 
-def _serialize_checked_device_binary(path: str, device: CheckedDevice) -> typing.NoReturn:
+def _serialize_checked_device_binary(path: Path, device: CheckedDevice) -> typing.NoReturn:
     nfa_as_dict = device.nfa.as_dict(flatten=False)
-    with open(path, 'wb') as f:
+    with path.open(mode='wb') as f:
         pickle.dump(nfa_as_dict, f, pickle.HIGHEST_PROTOCOL)
 
 
-def _deserialize_checked_device_binary(path: str) -> CheckedDevice:
-    with open(path, 'rb') as f:
+def _deserialize_checked_device_binary(path: Path) -> CheckedDevice:
+    with path.open(mode='rb') as f:
         load = pickle.load(f)
     nfa = regular.NFA.from_dict(load)
     return CheckedDevice(nfa)
 
 
-def serialize(path: str, device: CheckedDevice, binary=False) -> typing.NoReturn:
+def serialize(path: Path, device: CheckedDevice, binary=False) -> typing.NoReturn:
     try:
         if binary:
             _serialize_checked_device_binary(path, device)
@@ -72,7 +73,7 @@ def serialize(path: str, device: CheckedDevice, binary=False) -> typing.NoReturn
         raise CompilationError("Invalid device!")
 
 
-def deserialize(path: str, binary=False) -> CheckedDevice:
+def deserialize(path: Path, binary=False) -> CheckedDevice:
     _test_extension_deserialize(path, binary)
     try:
         if binary:
@@ -89,24 +90,24 @@ def deserialize(path: str, binary=False) -> CheckedDevice:
         raise CompilationError("Invalid device!")
     return device
 
-# def _serialize_checked_device_with_yaml(path: str, device: CheckedDevice) -> typing.NoReturn:
+# def _serialize_checked_device_with_yaml(path: Path, device: CheckedDevice) -> typing.NoReturn:
 #     with open(path, 'w') as f:
 #         yaml.dump(device.nfa.as_dict(), f)
 #
 #
-# def _serialize_checked_device_with_pickle(path: str, device: CheckedDevice) -> typing.NoReturn:
+# def _serialize_checked_device_with_pickle(path: Path, device: CheckedDevice) -> typing.NoReturn:
 #     with open(path, 'wb') as f:
 #         pickle.dump(device.nfa.as_dict(), f, pickle.HIGHEST_PROTOCOL)
 #
 #
-# def _deserialize_checked_device_with_yaml(path: str) -> CheckedDevice:
+# def _deserialize_checked_device_with_yaml(path: Path) -> CheckedDevice:
 #     with open(path, 'r') as f:
 #         nfa = regular.NFA.from_dict(yaml.load(f, Loader=yaml.BaseLoader))
 #
 #     return CheckedDevice(nfa)
 #
 #
-# def _deserialize_checked_device_with_pickle(path: str) -> CheckedDevice:
+# def _deserialize_checked_device_with_pickle(path: Path) -> CheckedDevice:
 #     with open(path, 'rb') as f:
 #         nfa = regular.NFA.from_dict(pickle.load(f))
 #

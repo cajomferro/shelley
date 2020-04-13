@@ -14,7 +14,7 @@ from .serializer import serialize, deserialize
 from shelley.automata import assemble_device, CheckedDevice, AssembledDevice, check_traces
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
-from shelley.yaml2shelley import create_device_from_yaml
+from shelley import yaml2shelley
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -58,13 +58,6 @@ def get_dest_path(args_binary: bool, args_output_dir: str, args_src_filepath: st
     return dest_path
 
 
-def get_shelley_from_yaml(path: Path) -> ShelleyDevice:
-    with open(path, 'r') as stream:
-        yaml_code = yaml.safe_load(stream)
-    shelley: ShelleyDevice = create_device_from_yaml(yaml_code)
-    return shelley
-
-
 def _get_known_devices(device: ShelleyDevice, uses_list: typing.List[str], binary=False) -> typing.Mapping[
     str, CheckedDevice]:
     known_devices: typing.Mapping[str, CheckedDevice] = dict()
@@ -75,7 +68,7 @@ def _get_known_devices(device: ShelleyDevice, uses_list: typing.List[str], binar
             if settings.VERBOSE:
                 logger.exception(error)
             raise CompilationError('Invalid dependency: {0}. Perhaps missing device name?'.format(u))
-        known_devices[device_name] = deserialize(device_path, binary)
+        known_devices[device_name] = deserialize(Path(device_path), binary)
 
     if len(device.uses) != len(known_devices):
         raise CompilationError('Device {name} expects {uses} but found {known_devices}!'.format(
@@ -91,13 +84,13 @@ def _get_known_devices(device: ShelleyDevice, uses_list: typing.List[str], binar
 def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = None, binary=False) -> Path:
     """
 
-    :param device: Shelley device src path to be compiled
+    :param src_path: Shelley device src path to be compiled (YAML file)
     :param uses: list of paths to compiled dependencies (uses)
-    :param outdir: optional output dir path (if not specified, same as src)
+    :param dst_path: compiled file destination path
     :param binary: save as binary or as yaml
     :return:
     """
-    shelley_device: ShelleyDevice = get_shelley_from_yaml(src_path)
+    shelley_device: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(src_path)
     if dst_path is None:
         ext = settings.EXT_SHELLEY_COMPILED_BIN if binary else settings.EXT_SHELLEY_COMPILED_YAML
         dst_path = src_path.parent / (src_path.stem + "." + ext)

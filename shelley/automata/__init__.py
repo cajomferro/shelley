@@ -5,7 +5,7 @@ from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, NIL, 
 from dataclasses import dataclass
 import copy
 import itertools
-
+from karakuri import hml
 
 @dataclass
 class Device:
@@ -272,7 +272,24 @@ def check_traces(nfa: NFA, test_ok: Mapping[str, List[str]], test_fail: Mapping[
 @dataclass
 class AssembledDevice:
     external: CheckedDevice
+
     internal: NFA[Any, str]
+
+    def internal_accepts(self, word:List[str]) -> bool:
+        return self.internal.accepts(word)
+
+    def external_accepts(self, word:List[str]) -> bool:
+        return self.external.nfa.accepts(word)
+
+    def internal_model_check(self, formula:hml.Formula[str]):
+        exp = nfa_to_dfa(formula.interpret(internal.alphabet))
+        internal = nfa_to_dfa(self.internal)
+        return internal.contains(exp)
+
+    def external_model_check(self, formula:hml.Formula[str]):
+        exp = nfa_to_dfa(formula.interpret(internal.alphabet))
+        external = nfa_to_dfa(self.external.nfa)
+        return external.contains(exp)
 
 
 def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[

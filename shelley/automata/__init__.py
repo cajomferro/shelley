@@ -7,6 +7,7 @@ import copy
 import itertools
 from karakuri import hml
 
+
 @dataclass
 class Device:
     start_events: List[str]
@@ -22,9 +23,62 @@ class CheckedDevice:
 
 
 @dataclass
+class AssembledDevice:
+    external: CheckedDevice
+
+    internal: NFA[Any, str]
+
+    def internal_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]) -> bool:
+        return model_check(self.internal, word_or_formula)
+
+    def external_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]):
+        return model_check(self.external.nfa, word_or_formula)
+
+
+@dataclass
 class TriggerIntegrationFailure:
     error_trace: List[str]
     component_errors: Dict[str, Tuple[List[str], int]]
+
+
+@dataclass
+class AmbiguousTriggersFailure:
+    nfa: NFA
+    states: Any
+
+
+@dataclass(frozen=True)
+class EncodingFailure:
+    """
+    An erroneous DFA that contains all invalid sequences.
+    """
+    dfa: DFA
+
+
+@dataclass(frozen=True)
+class DecodedState:
+    pass
+
+
+@dataclass(frozen=True, order=True)
+class MacroState(DecodedState):
+    state: str
+
+
+@dataclass(frozen=True, order=True)
+class MicroState(DecodedState):
+    # The next macro state
+    macro: str
+    # The event that we are processing
+    event: str
+    # The current micro state
+    micro: str
+
+    def advance_micro(self, micro: str):
+        return MicroState(macro=self.macro, event=self.event, micro=micro)
+
+    def advance_macro(self):
+        return MacroState(self.macro)
 
 
 class ReplaceHandler(SubstHandler):
@@ -114,38 +168,6 @@ def encode_behavior(behavior: NFA[Any, str], triggers: Dict[str, Regex],
     return regex_to_nfa(encoded_regex, alphabet)
 
 
-@dataclass(frozen=True)
-class DecodedState:
-    pass
-
-
-@dataclass(frozen=True, order=True)
-class MacroState(DecodedState):
-    state: str
-
-
-@dataclass(frozen=True, order=True)
-class MicroState(DecodedState):
-    # The next macro state
-    macro: str
-    # The event that we are processing
-    event: str
-    # The current micro state
-    micro: str
-
-    def advance_micro(self, micro: str):
-        return MicroState(macro=self.macro, event=self.event, micro=micro)
-
-    def advance_macro(self):
-        return MacroState(self.macro)
-
-
-@dataclass
-class AmbiguousTriggersFailure:
-    nfa: NFA
-    states: Any
-
-
 def encode_behavior_ex(behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
                        alphabet: Optional[Collection[str]] = None):
     assert isinstance(behavior, NFA)
@@ -205,14 +227,6 @@ def encode_behavior_ex(behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
     return nfa
 
 
-@dataclass(frozen=True)
-class EncodingFailure:
-    """
-    An erroneous DFA that contains all invalid sequences.
-    """
-    dfa: DFA
-
-
 def build_encoded_behavior(components: List[NFA[Any, str]], behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
                            minimize=False,
                            flatten=False) -> Optional[DFA[Any, str]]:
@@ -258,20 +272,23 @@ def demultiplex(seq: List[str]) -> Mapping[str, List[str]]:
         component_seq.append(op)
     return sequences
 
+
 def parse_formula(data):
     if isinstance(data, list):
         return data
     return hml.Formula.deserialize(data)
 
+
 def check_traces(mc, tests: Mapping[str, Mapping[str, Any]]) -> typing.NoReturn:
-    for key,trace in tests.get('ok', dict()).items():
+    for key, trace in tests.get('ok', dict()).items():
         formula = parse_formula(trace)
         if not mc(formula):
             raise ValueError(f"Unaccepted valid trace: {key}: {trace}")
 
-    for key,trace in tests.get('fail', dict()).items():
+    for key, trace in tests.get('fail', dict()).items():
         if mc(parse_formula(trace)):
             raise ValueError(f"Unexpected invalid trace: {key}: {trace}")
+
 
 def model_check(nfa, word_or_formula):
     if isinstance(word_or_formula, list):
@@ -280,18 +297,6 @@ def model_check(nfa, word_or_formula):
         prop = nfa_to_dfa(word_or_formula.interpret(nfa.alphabet))
         model = nfa_to_dfa(nfa)
         return not prop.intersection(model).is_empty()
-
-@dataclass
-class AssembledDevice:
-    external: CheckedDevice
-
-    internal: NFA[Any, str]
-
-    def internal_model_check(self, word_or_formula:typing.Union[List[str],hml.Formula[str]]) -> bool:
-        return model_check(self.internal, word_or_formula)
-
-    def external_model_check(self, word_or_formula:typing.Union[List[str],hml.Formula[str]]):
-        return model_check(self.external.nfa, word_or_formula)
 
 
 def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[

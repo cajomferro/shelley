@@ -1,14 +1,13 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List
+from dataclasses import dataclass
 
 from .util import MyCollection
 from .node import Node
-# from . import components, find_instance_by_name
-from dataclasses import dataclass
 
 # https://stackoverflow.com/questions/39740632/python-type-hinting-without-cyclic-imports
 if TYPE_CHECKING:
-    from ast.visitors import Visitor
+    from .visitors import Visitor
     from .devices import Device
 
 

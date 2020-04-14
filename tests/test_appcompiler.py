@@ -90,9 +90,10 @@ def test_assemble_smart_button():
 
     with pytest.raises(ValueError) as exc_info:
         # test micro traces
-        check_traces(assembled_smartbutton.internal_model_check, {"good": ["b.released", "b.pressed"]}, {})  # micro
+        check_traces(assembled_smartbutton.internal_model_check,
+                     {"ok": {"good": ["b.released", "b.pressed"]}, "fail": {}})  # micro
 
-    assert str(exc_info.value) == "Unaccepted valid trace: good : ['b.released', 'b.pressed']"
+    assert str(exc_info.value) == "Unaccepted valid trace: good: ['b.released', 'b.pressed']"
 
 
 def test_assemble_desklamp():
@@ -324,5 +325,20 @@ def test_compile_desklamp_ok():
     args = make_args(src_path, Button=COMPILED_PATH / 'button.scy', Led=COMPILED_PATH / 'led.scy',
                      Timer=COMPILED_PATH / 'timer.scy')
     appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+
+    _remove_compiled_dir()
+
+
+def test_compile_ambiguous():
+    COMPILED_PATH.mkdir(parents=True, exist_ok=True)
+    _compile_simple_device('simple_button', COMPILED_PATH)
+
+    src_path = EXAMPLES_PATH / 'ambiguous.yml'
+    args = make_args(src_path, SimpleButton=COMPILED_PATH / 'simple_button.scy')
+
+    with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
+        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+
+    assert "Invalid device" in str(exc_info.value)
 
     _remove_compiled_dir()

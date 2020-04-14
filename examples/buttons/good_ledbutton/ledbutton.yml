@@ -7,10 +7,10 @@ device:
     - [led2, led1]
     - [led2, led2]
   components:
-    led1: LedStrict # Let's use a strict led here!
-    led2: LedStrict # Let's use a strict led here!
-    b1: Button
-    b2: Button
-  triggers: # this is wrong: led1->led1 and led2->led2 are invalid!
+    led1: Led
+    led2: Led
+    b1: SimpleButton
+    b2: SimpleButton
+  triggers:
     led1: [b1.pressed, led1.on]
     led2: [b2.pressed, led2.on]

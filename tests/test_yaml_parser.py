@@ -164,8 +164,8 @@ def test_desklamp():
     standby2: ( ( ( b.pressed ; ( b.released ; t.canceled ) ) xor t.timeout ) ; ( ( ledB.off ; ledA.off ) xor ( ledA.off ; ledB.off ) ) )"""
 
 
-def test_3buttons():
-    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('3buttons'))
+def test_ambiguous():
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('ambiguous'))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
@@ -186,11 +186,11 @@ def test_3buttons():
     button3OrOthers: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )"""
 
 
-def test_3buttons_variant():
+def test_ambiguous_variant():
     """
     Syntax variant that uses XOR LEFT RIGHT
     """
-    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('3buttons_variant'))
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('ambiguous_variant'))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 

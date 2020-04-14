@@ -4,12 +4,12 @@ SHELLYVIZ = $(PYTHON) -m appvizviewer
 
 all: scy pdf
 
-pdf: button.pdf led.pdf timer.pdf desklamp.pdf
+pdf: button.pdf led.pdf sendok.pdf
 
-scy: desklamp.scy
+scy: sendok.scy
 
-desklamp.scy: desklamp.yml timer.scy led.scy button.scy
-	$(SHELLYC) -d $< -u button.scy\:Button led.scy\:Led timer.scy\:Timer
+sendok.scy: sendok.yml led.scy button.scy
+	$(SHELLYC) -d $< -u button.scy\:Button led.scy\:Led
 
 %.scy: %.yml
 	$(SHELLYC) -d $< -o $@

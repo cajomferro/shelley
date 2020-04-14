@@ -1,5 +1,5 @@
 device:
-  name: LedButtonStrict
+  name: LedButton
   start_events: [led1]
   behavior:
     - [led1, led2]
@@ -7,8 +7,8 @@ device:
   components:
     led1: LedStrict
     led2: LedStrict
-    b1: Button
-    b2: Button
+    b1: SimpleButton
+    b2: SimpleButton
   triggers:
     led1: [b1.pressed, led1.on] # this will happen only once so there's no problem
     led2: [b2.pressed, led2.on, led2.off] # (led2.on led2.off) is required here because trigger led2 can loop

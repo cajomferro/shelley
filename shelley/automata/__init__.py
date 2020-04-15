@@ -125,6 +125,15 @@ def build_behavior(behavior: Iterable[Tuple[str, str]], start_events: List[str],
 
 
 def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
+    """
+    The NFA definition of a device doesn't have a prefixed alphabet. However, when declaring components,
+    we are referring to device instantiations (e.g., a device of type Button called 'buttonX'). Hence we need to prefix
+    the alphabet on the NFA, so that we can, for example, refer to 'buttonX.pressed' transition instead of just 'pressed'.
+
+    :param nfa: the NFA (device) we want to prefix with
+    :param prefix: the instantiation name of the NFA (device) (e.g., 'Button b' with alphabet 'pressed' would became 'b.pressed')
+    :return: prefixed NFA
+    """
     old_tsx_func = nfa.transition_func
     offset = len(prefix)
 
@@ -142,6 +151,19 @@ def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
 
 def build_components(components: Dict[str, str], known_devices: Mapping[str, CheckedDevice]) -> Iterator[
     Tuple[str, NFA]]:
+    """
+    Build a structure of components that is a map of component name to device instance with a prefixed alphabet
+    :func:`.prefix_nfa`
+
+    :param components: map of component name to device type
+        Example:  components = {"t": "Timer", "b": "Button"}
+
+    :param known_devices: map of device type to device instance
+        Example: known_devices = {"Timer": Timer(..started..timeout..), Button(..pressed..released..)} )
+
+    :return: iterator of component name to device instance with alphabet prefixed with component name
+        Example: "t": Timer(..t.started..t.timeout..), "b": Button(..b.pressed..b.released..)
+    """
     for (name, ty) in components.items():
         yield (name, prefix_nfa(known_devices[ty].nfa, name + "."))
 

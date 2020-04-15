@@ -261,9 +261,11 @@ def encode_behavior_ex(behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
     return nfa
 
 
+TInternalBehavior = typing.Union[typing.Optional[NFA], AmbiguousTriggersFailure, EncodingFailure]
+
+
 def build_internal_behavior(components: List[NFA[Any, str]], behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
-                            minimize=False,
-                            flatten=False) -> typing.Union[None, NFA, AmbiguousTriggersFailure, EncodingFailure]:
+                            minimize=False, flatten=False) -> TInternalBehavior:
     if len(components) == 0:
         return None
     all_possible = merge_components(components, flatten, minimize)
@@ -331,9 +333,6 @@ def model_check(nfa, word_or_formula):
         prop = nfa_to_dfa(word_or_formula.interpret(nfa.alphabet))
         model = nfa_to_dfa(nfa)
         return not prop.intersection(model).is_empty()
-
-
-TInternalBehavior = typing.Union[None, NFA, AmbiguousTriggersFailure, EncodingFailure]
 
 
 def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[

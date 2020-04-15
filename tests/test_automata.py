@@ -1,3 +1,5 @@
+import pytest
+
 from .context import shelley
 
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
@@ -192,7 +194,7 @@ def test_hello_world():
         create_prefixed_timer()
     ]
     behavior = create_hello_world()
-    assert isinstance(build_encoded_behavior(components, behavior, HELLO_WORLD_TRIGGERS), NFA)
+    assert isinstance(build_internal_behavior(components, behavior, HELLO_WORLD_TRIGGERS), NFA)
 
 
 def test_encode_1():
@@ -248,7 +250,7 @@ def test_fail_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
-    assert build_encoded_behavior([create_prefixed_button()], n_behavior, triggers) is not None
+    assert build_internal_behavior([create_prefixed_button()], n_behavior, triggers) is not None
 
 
 def test_ok_1():
@@ -261,7 +263,7 @@ def test_ok_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    assert isinstance(build_encoded_behavior([create_prefixed_button()], n_behavior, triggers), NFA)
+    assert isinstance(build_internal_behavior([create_prefixed_button()], n_behavior, triggers), NFA)
 
 
 def test_fail_hello_world():
@@ -293,7 +295,7 @@ def test_fail_hello_world():
     ]
     be = encode_behavior(hello, triggers)
     assert be.accepts([])
-    res = build_encoded_behavior(components, hello, triggers)
+    res = build_internal_behavior(components, hello, triggers)
     assert not res.dfa.accepts([])
     assert res is not None
 
@@ -330,7 +332,7 @@ def test_smallest_error():
         create_prefixed_timer()
     ]
     be = encode_behavior(hello, triggers)
-    res = build_encoded_behavior(components, hello, triggers)
+    res = build_internal_behavior(components, hello, triggers)
     assert isinstance(res, EncodingFailure)
     err = res.dfa.get_shortest_string()
     assert res.dfa.accepts(err)
@@ -460,9 +462,16 @@ def test_build_behavior():
                    start_state="start",
                    accepted_states=accepted,
                    )
-    assert build_behavior(behavior, start_events, events, "start") == expected
+    assert build_external_behavior(behavior, start_events, events, "start") == expected
     # Make sure this is equivalent to HELLO WORLD
-    assert nfa_to_dfa(build_behavior(behavior, start_events, events)).is_equivalent_to(nfa_to_dfa(create_hello_world()))
+    assert nfa_to_dfa(build_external_behavior(behavior, start_events, events)).is_equivalent_to(nfa_to_dfa(create_hello_world()))
+
+
+def test_build_behavior_empty_start_events():
+    with pytest.raises(ValueError) as exc_info:
+        build_external_behavior([], [], [], "start")
+
+    assert str(exc_info.value) == "At least one start event must be specified."
 
 
 ######################

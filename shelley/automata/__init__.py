@@ -95,8 +95,20 @@ def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
 
 
 # XXX: make the start_state not be a string
-def build_behavior(behavior: Iterable[Tuple[str, str]], start_events: List[str], events: List[str],
-                   start_state="$START") -> NFA[Any, str]:
+def build_external_behavior(behavior: Iterable[Tuple[str, str]], start_events: List[str], events: List[str],
+                            start_state="$START") -> NFA[Any, str]:
+    """
+    Build the external NFA that represents the device behavior (i.e., its macro event transitions)
+
+    :param behavior: pairs of events that represent the device's macro event transitions
+        Example: [('b.pressed', 'b.released'), ('b.released', 'b.pressed')]
+    :param start_events: list of possible start events (requires len >= 1)
+    :param events: list of all device's events
+    :param start_state: reserved name for start state (must be different from all events)
+    :return: NFA representing the external behaviour
+    """
+    if len(start_events) == 0:
+        raise ValueError("At least one start event must be specified.")
     states = []
     for evt in events:
         states.append(evt)
@@ -249,9 +261,9 @@ def encode_behavior_ex(behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
     return nfa
 
 
-def build_encoded_behavior(components: List[NFA[Any, str]], behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
-                           minimize=False,
-                           flatten=False) -> Optional[DFA[Any, str]]:
+def build_internal_behavior(components: List[NFA[Any, str]], behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
+                            minimize=False,
+                            flatten=False) -> typing.Union[None, NFA, AmbiguousTriggersFailure, EncodingFailure]:
     if len(components) == 0:
         return None
     all_possible = merge_components(components, flatten, minimize)
@@ -321,18 +333,34 @@ def model_check(nfa, word_or_formula):
         return not prop.intersection(model).is_empty()
 
 
+TInternalBehavior = typing.Union[None, NFA, AmbiguousTriggersFailure, EncodingFailure]
+
+
 def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[
     AssembledDevice, TriggerIntegrationFailure, AmbiguousTriggersFailure]:
+    """
+    In order to assemble a device, the following steps are required:
+    * ensure well formedness (start_evts <= evts, trigs <= evts, and trigs == evts)
+    *
+    * build a list of components with prefixed NFAs
+    *
+
+    :param dev: the device to be assembled
+    :param known_devices: map of device type to checked device instance (NFA)
+    :return:
+    """
     ensure_well_formed(dev)
-    components = list(dict(build_components(dev.components, known_devices)).values())
-    behavior = build_behavior(dev.behavior, dev.start_events, dev.events)
-    encoded = build_encoded_behavior(components, behavior, dev.triggers)
-    if isinstance(encoded, AmbiguousTriggersFailure):
-        return encoded
-    elif isinstance(encoded, EncodingFailure):
+    external_behavior: NFA = build_external_behavior(dev.behavior, dev.start_events, dev.events)
+    components_behaviors: List[NFA] = list(dict(build_components(dev.components, known_devices)).values())
+    internal_behavior: TInternalBehavior = build_internal_behavior(components_behaviors, external_behavior,
+                                                                   dev.triggers)
+
+    if isinstance(internal_behavior, AmbiguousTriggersFailure):
+        return internal_behavior
+    elif isinstance(internal_behavior, EncodingFailure):
         # We could not assemble the device
         # We compute the smallest error
-        dec_seq = encoded.dfa.get_shortest_string()
+        dec_seq = internal_behavior.dfa.get_shortest_string()
         # We demutex by device
         errs = dict()
         for component, seq in demultiplex(dec_seq).items():
@@ -342,5 +370,5 @@ def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> 
                 errs[component] = (seq, dfa.get_divergence_index(seq))
 
         return TriggerIntegrationFailure(dec_seq, errs)
-    else:
-        return AssembledDevice(CheckedDevice(behavior), encoded)
+    else:  # None (no components) or valid NFA (verified components)
+        return AssembledDevice(CheckedDevice(external_behavior), internal_behavior)

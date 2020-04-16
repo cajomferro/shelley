@@ -212,15 +212,26 @@ def build_components(components: Dict[str, str], known_devices: Mapping[str, Che
 
 def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False, minimize: bool = False) -> DFA[
     Any, str]:
+    """
+    Merge all components by using the shuffle operation
+    :param components: list of components as NFAs (see :func:`.build_components`)
+    :param flatten:
+    :param minimize:
+    :return: shuffled components DFA
+    """
     # Get the first component
     dev, *rst = components
+
     # Shuffle all devices:
     for d in rst:
         dev = dev.shuffle(d)
+
     # Convert the given NFA into a minimized DFA
     dev_dfa = nfa_to_dfa(dev)
+
     if flatten:
         return dev_dfa.flatten(minimize=minimize)
+
     return dev_dfa
 
 
@@ -294,12 +305,28 @@ def encode_behavior_ex(behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
 TInternalBehavior = typing.Union[typing.Optional[NFA], AmbiguousTriggersFailure, EncodingFailure]
 
 
-def build_internal_behavior(components: List[NFA[Any, str]], behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
+def build_internal_behavior(components: List[NFA[Any, str]], external_behavior: NFA[Any, str],
+                            triggers: Dict[str, Regex[str]],
                             minimize=False, flatten=False) -> TInternalBehavior:
+    """
+
+    :param components: list of components as NFAs
+    :param external_behavior: device external behavior as NFA
+    :param triggers: device triggers
+        Example:
+    :param minimize:
+    :param flatten:
+    :return:
+        None - This is a base device (without any components) hence there is no internal behavior
+
+    """
+
+    # base device
     if len(components) == 0:
         return None
+
     all_possible = merge_components(components, flatten, minimize)
-    encoded_behavior = encode_behavior_ex(behavior, triggers, all_possible.alphabet)
+    encoded_behavior = encode_behavior_ex(external_behavior, triggers, all_possible.alphabet)
     if isinstance(encoded_behavior, AmbiguousTriggersFailure):
         # We got an error
         return encoded_behavior
@@ -370,9 +397,9 @@ def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> 
     """
     In order to assemble a device, the following steps are required:
     * ensure well formedness (start_evts <= evts, trigs <= evts, and trigs == evts)
-    *
-    * build a list of components with prefixed NFAs
-    *
+    * compute the external behavior
+    * compute the list of components with prefixed NFAs
+    * compute the internal behavior using the external behavior, components, and triggers
 
     :param dev: the device to be assembled
     :param known_devices: map of device type to checked device instance (NFA)

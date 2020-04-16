@@ -1,0 +1,27 @@
+device:
+  name: DeskLamp
+  start_events: [level1]
+  behavior:
+    - [level1, level2]
+    - [level2, off]
+    - [off, level1]
+  components:
+    ledA: LedStrict
+    ledB: LedStrict
+    b: SimpleButton
+  triggers:
+    level1: [b.pressed, ledA.on]
+    level2: [b.pressed, ledB.on]
+    off:
+      - [b.pressed]
+      - xor:
+          - [ledB.off, ledA.off]
+          - [ledA.off, ledB.off]
+
+test_micro:
+  ok:
+    valid1: [b.pressed, ledA.on, b.pressed, ledB.on, b.pressed, ledB.off, ledA.off]
+    valid2: [b.pressed, ledA.on, b.pressed, ledB.on, b.pressed, ledA.off, ledB.off]
+  fail:
+    # wrong order for leds
+    invalid1: [b.pressed, ledB.on, b.pressed, ledA.on, b.pressed, ledB.off, ledA.off]

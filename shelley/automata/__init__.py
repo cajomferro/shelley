@@ -226,7 +226,7 @@ def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False,
     for d in rst:
         dev = dev.shuffle(d)
 
-    # Convert the given NFA into a minimized DFA
+    # Convert the given NFA into a minimized DFA #TODO: is this still valid?!
     dev_dfa = nfa_to_dfa(dev)
 
     if flatten:
@@ -239,17 +239,27 @@ def encode_behavior(behavior: NFA[Any, str], triggers: Dict[str, Regex],
                     alphabet: Optional[Collection[str]] = None) -> NFA[Any, str]:
     assert isinstance(behavior, NFA)
     # Replace tokens by REGEX in encoder
-    encoded_regex = replace(nfa_to_regex(behavior), triggers)
+    encoded_regex: Regex = replace(nfa_to_regex(behavior), triggers)
     return regex_to_nfa(encoded_regex, alphabet)
 
 
-def encode_behavior_ex(behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
+def encode_behavior_ex(external_behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
                        alphabet: Optional[Collection[str]] = None):
-    assert isinstance(behavior, NFA)
-    det_behavior = nfa_to_dfa(behavior)
+    """
+    ???
+    How:
+        - convert external behavior (NFA) and triggers (REGEX) to DFAs (because ... ???)
+        -
+    :param external_behavior: device external behavior as NFA
+    :param triggers: device triggers as REGEX
+    :param alphabet: the alphabet from all shuffled components (should be equivalent to the alphabet from all triggers)
+    :return:
+    """
+    assert isinstance(external_behavior, NFA)
+    det_behavior = nfa_to_dfa(external_behavior)
     det_triggers = dict((k, nfa_to_dfa(regex_to_nfa(v))) for k, v in triggers.items())
-    del triggers
-    del behavior
+    del triggers  # TODO: Is this really needed?
+    del external_behavior  # TODO: Is this really needed?
 
     def tsx(src, char):
         if isinstance(src, MacroState):
@@ -309,10 +319,13 @@ def build_internal_behavior(components: List[NFA[Any, str]], external_behavior: 
                             triggers: Dict[str, Regex[str]],
                             minimize=False, flatten=False) -> TInternalBehavior:
     """
-
+    Build internal behavior by using components, external behavior and triggers
+    How:
+        - Shuffle all components into a minimized DFA (minimized because ... ??? )
+        -
     :param components: list of components as NFAs
     :param external_behavior: device external behavior as NFA
-    :param triggers: device triggers
+    :param triggers: device triggers as REGEX
         Example:
     :param minimize:
     :param flatten:
@@ -325,14 +338,18 @@ def build_internal_behavior(components: List[NFA[Any, str]], external_behavior: 
     if len(components) == 0:
         return None
 
-    all_possible = merge_components(components, flatten, minimize)
+    all_possible = merge_components(components, flatten, minimize)  # shuffle operation
+
     encoded_behavior = encode_behavior_ex(external_behavior, triggers, all_possible.alphabet)
+
     if isinstance(encoded_behavior, AmbiguousTriggersFailure):
         # We got an error
         return encoded_behavior
+
     det_encoded_behavior = nfa_to_dfa(encoded_behavior)
     if flatten or minimize:
         det_encoded_behavior = det_encoded_behavior.flatten(minimize=minimize)
+
     # Ensure that the all possible behaviors in dev contain the encoded behavior
     invalid_behavior = det_encoded_behavior.subtract(all_possible)
     if invalid_behavior.is_empty():

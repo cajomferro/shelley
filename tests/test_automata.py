@@ -5,6 +5,7 @@ from .context import shelley
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
     nfa_to_dfa, Star, NIL, VOID, DFA
 from shelley.automata import *
+from shelley import automata
 
 B_P = "b.pressed"
 B_R = "b.released"
@@ -435,6 +436,27 @@ def test_build_components2():
         assert ex == giv
 
 
+def test_build_nfa_transitions():
+    start_events = ['level1']
+    behavior = [
+        ('level1', 'standby1'),
+        ('level1', 'level2'),
+        ('level2', 'standby2'),
+        ('standby1', 'level1'),
+        ('standby2', 'level1')
+    ]
+    expected_tsx = {('level1', 'standby1'): {'standby1'},
+                    ('level1', 'level2'): {'level2'},
+                    ('level2', 'standby2'): {'standby2'},
+                    ('standby1', 'level1'): {'level1'},
+                    ('standby2', 'level1'): {'level1'},
+                    ('$START', 'level1'): {'level1'}}
+
+    actual_tsx = automata._build_nfa_transitions(behavior, start_events)
+
+    assert actual_tsx == expected_tsx
+
+
 def test_build_behavior():
     start_events = ['level1']
     events = ['level1', 'standby1', 'level2', 'standby2']
@@ -464,7 +486,8 @@ def test_build_behavior():
                    )
     assert build_external_behavior(behavior, start_events, events, "start") == expected
     # Make sure this is equivalent to HELLO WORLD
-    assert nfa_to_dfa(build_external_behavior(behavior, start_events, events)).is_equivalent_to(nfa_to_dfa(create_hello_world()))
+    assert nfa_to_dfa(build_external_behavior(behavior, start_events, events)).is_equivalent_to(
+        nfa_to_dfa(create_hello_world()))
 
 
 def test_build_behavior_empty_start_events():
@@ -472,6 +495,13 @@ def test_build_behavior_empty_start_events():
         build_external_behavior([], [], [], "start")
 
     assert str(exc_info.value) == "At least one start event must be specified."
+
+
+def test_build_behavior_same_name_start_event():
+    with pytest.raises(ValueError) as exc_info:
+        build_external_behavior([], ["xxx"], ["xxx", "yyy"], "yyy")
+
+    assert str(exc_info.value) == "Start state 'yyy' cannot have the same name as an event."
 
 
 ######################

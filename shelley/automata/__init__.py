@@ -94,11 +94,50 @@ def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
     return r.fold(ReplaceHandler(rules))
 
 
+TTransitionTable = Dict[Tuple[str, Optional[str]], Set[str]]
+
+
+def _build_nfa_transitions(behavior: Iterable[Tuple[str, str]], start_events: List[str],
+                           start_state="$START") -> TTransitionTable:
+    """
+    Build the NFA transition table given the device behavior and start events.
+    How:
+        - For each device behavior pair (src, dst), create an edge (src, dst, dst)
+        - For each device start event, also create an edge (start_state, evt, evt)
+        - For each edge, create key (src, char) and add value (dst)
+    :param behavior: pairs of events that represent the device's macro event transitions
+        Example: [('b.pressed', 'b.released'), ('b.released', 'b.pressed')]
+    :param start_events: list of possible start events (requires len >= 1)
+    :param start_state: reserved name for start state (must be different from all events)
+    :return: table representing NFA transitions
+    """
+
+    edges: List[Tuple[str, Optional[str], str]] = []
+    for (src, dst) in behavior:
+        edges.append((src, dst, dst))
+
+    for evt in start_events:
+        edges.append((start_state, evt, evt))
+
+    tsx: Dict[Tuple[str, Optional[str]], Set[str]] = {}
+    for (src, char, dst) in edges:
+        out = tsx.get((src, char), None)
+        if out is None:
+            out = set()
+            tsx[(src, char)] = out
+        out.add(dst)
+
+    return tsx
+
+
 # XXX: make the start_state not be a string
 def build_external_behavior(behavior: Iterable[Tuple[str, str]], start_events: List[str], events: List[str],
                             start_state="$START") -> NFA[Any, str]:
     """
     Build the external NFA that represents the device behavior (i.e., its macro event transitions)
+    How:
+        - For each device event, create an NFA accepted state with that name
+        - Build the NFA transition table given the device behavior and start events
 
     :param behavior: pairs of events that represent the device's macro event transitions
         Example: [('b.pressed', 'b.released'), ('b.released', 'b.pressed')]
@@ -109,31 +148,22 @@ def build_external_behavior(behavior: Iterable[Tuple[str, str]], start_events: L
     """
     if len(start_events) == 0:
         raise ValueError("At least one start event must be specified.")
-    states = []
-    for evt in events:
-        states.append(evt)
+
     if start_state in events:
         raise ValueError(f"Start state '{start_state}' cannot have the same name as an event.")
-    states.append(start_state)
-    edges: List[Tuple[str, Optional[str], str]] = []
-    for (src, dst) in behavior:
-        edges.append((src, dst, dst))
-    for evt in start_events:
-        edges.append((start_state, evt, evt))
-    tsx: Dict[Tuple[str, Optional[str]], Set[str]] = {}
-    for (src, char, dst) in edges:
-        out = tsx.get((src, char), None)
-        if out is None:
-            out = set()
-            tsx[(src, char)] = out
-        out.add(dst)
-    accepted = list(evt for evt in events)
-    accepted.append(start_state)
 
+    # build NFA states
+    states = set(evt for evt in events)
+    states.add(start_state)
+
+    # build NFA transitions
+    tsx = _build_nfa_transitions(behavior, start_events, start_state)
+
+    # create and return NFA
     return NFA(alphabet=frozenset(events),
                transition_func=NFA.transition_table(tsx),
                start_state=start_state,
-               accepted_states=set(accepted))
+               accepted_states=states)
 
 
 def prefix_nfa(nfa: NFA, prefix: str) -> NFA:

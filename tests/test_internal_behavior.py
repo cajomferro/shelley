@@ -111,7 +111,7 @@ dev2 = automata.Device(
     start_events=['level1'],
     events=['level1', 'off'],
     behavior=[
-        ('level1', 'level1'),
+        ('level1', 'off'),
         ('off', 'level1')
     ],
     components={
@@ -133,29 +133,6 @@ dev2 = automata.Device(
 )
 
 
-def test_merge_components():
-    COMPILED_PATH.mkdir(parents=True, exist_ok=True)
-
-    external_behavior: NFA = automata.build_external_behavior(dev.behavior, dev.start_events, dev.events)
-    print(external_behavior.as_dict(flatten=False))
-    path: Path = _serialize("simple_desklamp_external", external_behavior.as_dict(flatten=False))
-
-    components_behaviors: dict[str, NFA] = dict(automata.build_components(dev.components, get_basic_known_devices()))
-    for key, value in components_behaviors.items():
-        path: Path = _serialize("{0}_external".format(key), value.as_dict(flatten=False))
-        print(value.as_dict(flatten=False))
-
-    all_possible: NFA = _merge_components(list(dict(components_behaviors).values()))
-    all_possible_as_dict = all_possible.as_dict(flatten=False)
-    print(all_possible_as_dict)
-    path: Path = _serialize("simple_desklamp_nfa", all_possible_as_dict)
-    dfa_all_possible_as_dict = nfa_to_dfa(all_possible).as_dict(flatten=False)
-    print(dfa_all_possible_as_dict)
-    path: Path = _serialize("simple_desklamp_dfa", dfa_all_possible_as_dict)
-
-    # _remove_compiled_dir()
-
-
 def test_encode_behavior_external_dev():
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
 
@@ -169,8 +146,9 @@ def test_encode_behavior_external_dev():
     all_possible: DFA = automata.merge_components(list(dict(components_behaviors).values()))
 
     internal_behavior: NFA = automata.encode_behavior_ex(external_behavior, dev.triggers, all_possible.alphabet)
-    print(internal_behavior.as_dict(flatten=False))
-    path: Path = _serialize("encoded_nfa", internal_behavior.as_dict(flatten=False))
+    print(internal_behavior.flatten().as_dict(flatten=False))
+    #path: Path = _serialize("encoded_nfa", internal_behavior.flatten().as_dict(flatten=False))
+    path: Path = _serialize("encoded_dfa", nfa_to_dfa(internal_behavior).as_dict(flatten=False))
     print([state for state in internal_behavior.states])
     print(len([state for state in internal_behavior.states]))
 
@@ -189,10 +167,12 @@ def test_encode_behavior_external_dev2():
     print('all_possible alphabet: {alphabet}'.format(alphabet=all_possible.alphabet))  # frozenset of str
 
     internal_behavior: NFA = automata.encode_behavior_ex(external_behavior, dev2.triggers, all_possible.alphabet)
+    print("flatten", internal_behavior.flatten().as_dict())
     print(internal_behavior.as_dict(flatten=False))
-    path: Path = _serialize("encoded_nfa", internal_behavior.as_dict(flatten=False))
-    print([state for state in internal_behavior.states])
-    print(len([state for state in internal_behavior.states]))
+    path: Path = _serialize("encoded_nfa", internal_behavior.flatten().as_dict(flatten=False))
+    path: Path = _serialize("encoded_dfa", nfa_to_dfa(internal_behavior).minimize().as_dict())
+    print([state for state in internal_behavior.flatten().states])
+    print(len([state for state in internal_behavior.flatten().states]))
 
     edges = [e for e in internal_behavior.edges]
     for src, char, dsts in edges:

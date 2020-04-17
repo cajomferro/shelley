@@ -20,11 +20,11 @@ def automaton2dot(automaton: Dict) -> graphviz.Digraph:
             kwargs["shape"] = "octagon"
         elif node in accepted:
             kwargs["shape"] = "doublecircle"
-        dot.node(node, **kwargs)
+        dot.node(str(node), **kwargs)
     # Group by edges:
     edges = {}
     for edge in automaton["edges"]:
-        pair = edge["src"], edge["dst"]
+        pair = str(edge["src"]), str(edge["dst"])
         outs = edges.get(pair, None)
         if outs is None:
             edges[pair] = outs = []

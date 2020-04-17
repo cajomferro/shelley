@@ -9,4 +9,5 @@ _local
 /.compiled/
 /tests/compiled/
 *.sc*
+*.gv*
 *.pdf

@@ -152,9 +152,9 @@ def _serialize(name, known_devices=None, binary=False) -> CheckedDevice:
     if known_devices is None:
         known_devices = {}
     path = _get_compiled_path(name, binary=binary)
-    checked_device: CheckedDevice = assemble_device(shelley2automata(_get_shelley_device(name)), known_devices).external
-    appcompiler.serializer.serialize(path, checked_device, binary)
-    return checked_device
+    assembled_device: AssembledDevice = assemble_device(shelley2automata(_get_shelley_device(name)), known_devices)
+    appcompiler.serializer.serialize(path, assembled_device.external.nfa.as_dict(flatten=False), binary)
+    return assembled_device.external
 
 
 def _test_serializer_button(binary=False):

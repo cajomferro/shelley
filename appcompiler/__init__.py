@@ -4,6 +4,7 @@ import os
 import typing
 import argparse
 from pathlib import Path
+from karakuri import regular
 
 from .context import shelley
 
@@ -36,6 +37,8 @@ def create_parser():
     parser.add_argument("-o", "--output", type=Path, help="path to store compile file")
     parser.add_argument("-b", "--binary", help="generate binary files", action='store_true')
     parser.add_argument("-d", '--device', type=Path, help="Path to the input example yaml file", required=True)
+    parser.add_argument("-i", '--intermediate', help="export intermediate structures representations",
+                        action='store_true')
     return parser
 
 
@@ -81,7 +84,12 @@ def _get_known_devices(device: ShelleyDevice, uses_list: typing.List[str], binar
     return known_devices
 
 
-def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = None, binary=False) -> Path:
+def _get_ext(binary=False) -> str:
+    return settings.EXT_SHELLEY_COMPILED_BIN if binary else settings.EXT_SHELLEY_COMPILED_YAML
+
+
+def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = None, binary=False,
+                    intermediate=False) -> Path:
     """
 
     :param src_path: Shelley device src path to be compiled (YAML file)
@@ -99,8 +107,7 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
         raise CompilationError('Shelley parser error: {0}'.format(str(error)))
 
     if dst_path is None:
-        ext = settings.EXT_SHELLEY_COMPILED_BIN if binary else settings.EXT_SHELLEY_COMPILED_YAML
-        dst_path = src_path.parent / (src_path.stem + "." + ext)
+        dst_path = src_path.parent / (src_path.stem + "." + _get_ext(binary))
 
     logger.debug('Compiling device: {0}'.format(shelley_device.name))
 
@@ -117,7 +124,19 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
         # test micro traces
         check_traces(checked_device.internal_model_check, shelley_device.test_micro)  # micro
 
-        serialize(dst_path, checked_device.external, binary)
+        serialize(dst_path, checked_device.external.nfa.as_dict(flatten=False), binary)
+
+        if intermediate is True:
+            # generate internal nfa
+            path = src_path.parent / (src_path.stem + "-internal-nfa" + "." + _get_ext(binary))
+            data = checked_device.internal.flatten().as_dict()
+            serialize(path, data, binary)
+
+            # generate internal minimized dfa
+            path = src_path.parent / (src_path.stem + "-internal-dfa" + "." + _get_ext(binary))
+            data = regular.nfa_to_dfa(checked_device.internal).minimize().as_dict()
+            serialize(path, data, binary)
+
     else:
         raise CompilationError("Invalid device: {0}".format(checked_device))
 

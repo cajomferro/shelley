@@ -19,3 +19,4 @@ test_micro:
     invalid2: [ledA.on, ledA.off, b.pressed]
     invalid3: [b.pressed, ledA.on, ledA.off]
     invalid4: [b.pressed, ledA.off, ledA.on]
+    invalid5: [b.pressed, ledA.on, b.pressed, ledA.on]

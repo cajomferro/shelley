@@ -33,10 +33,9 @@ def _test_extension_deserialize(path: Path, binary=False):
 #             settings.EXT_SHELLEY_SOURCE_YAML, ext, path))
 
 
-def _serialize_checked_device(path: Path, device: CheckedDevice) -> typing.NoReturn:
-    nfa_as_dict = device.nfa.as_dict(flatten=False)
+def _serialize_checked_device(path: Path, device: dict) -> typing.NoReturn:
     with path.open(mode='w') as f:
-        yaml.dump(nfa_as_dict, f)
+        yaml.dump(device, f)
 
 
 def _deserialize_checked_device(path: Path) -> CheckedDevice:
@@ -46,10 +45,9 @@ def _deserialize_checked_device(path: Path) -> CheckedDevice:
     return CheckedDevice(nfa)
 
 
-def _serialize_checked_device_binary(path: Path, device: CheckedDevice) -> typing.NoReturn:
-    nfa_as_dict = device.nfa.as_dict(flatten=False)
+def _serialize_checked_device_binary(path: Path, device: dict) -> typing.NoReturn:
     with path.open(mode='wb') as f:
-        pickle.dump(nfa_as_dict, f, pickle.HIGHEST_PROTOCOL)
+        pickle.dump(device, f, pickle.HIGHEST_PROTOCOL)
 
 
 def _deserialize_checked_device_binary(path: Path) -> CheckedDevice:
@@ -59,7 +57,7 @@ def _deserialize_checked_device_binary(path: Path) -> CheckedDevice:
     return CheckedDevice(nfa)
 
 
-def serialize(path: Path, device: CheckedDevice, binary=False) -> typing.NoReturn:
+def serialize(path: Path, device: dict, binary=False) -> typing.NoReturn:
     try:
         if binary:
             _serialize_checked_device_binary(path, device)

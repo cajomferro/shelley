@@ -73,25 +73,6 @@ def _serialize(name: str, data: Any) -> Path:
     return path
 
 
-def _merge_components(components: List[NFA[Any, str]], flatten: bool = False, minimize: bool = False) -> NFA[
-    Any, str]:
-    """
-    Merge all components by using the shuffle operation
-    :param components: list of components as NFAs (see :func:`.build_components`)
-    :param flatten:
-    :param minimize:
-    :return: shuffled components DFA
-    """
-    # Get the first component
-    dev, *rst = components
-
-    # Shuffle all devices:
-    for d in rst:
-        dev = dev.shuffle(d)
-
-    return dev
-
-
 dev = automata.Device(
     start_events=['level1'],
     events=['level1', 'level2', 'off'],
@@ -185,14 +166,14 @@ def test_encode_behavior_external_dev():
     for key, value in components_behaviors.items():
         print(value.as_dict(flatten=False))
 
-    all_possible: NFA = _merge_components(list(dict(components_behaviors).values()))
-    dfa_all_possible = nfa_to_dfa(all_possible)
+    all_possible: DFA = automata.merge_components(list(dict(components_behaviors).values()))
 
-    encoded_nfa = automata.encode_behavior_ex(external_behavior, dev.triggers, dfa_all_possible.alphabet)
-    print(encoded_nfa.as_dict(flatten=False))
-    path: Path = _serialize("encoded_dfa", encoded_nfa.as_dict(flatten=False))
-    print([state for state in encoded_nfa.states])
-    print(len([state for state in encoded_nfa.states]))
+    internal_behavior: NFA = automata.encode_behavior_ex(external_behavior, dev.triggers, all_possible.alphabet)
+    print(internal_behavior.as_dict(flatten=False))
+    path: Path = _serialize("encoded_nfa", internal_behavior.as_dict(flatten=False))
+    print([state for state in internal_behavior.states])
+    print(len([state for state in internal_behavior.states]))
+
 
 def test_encode_behavior_external_dev2():
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
@@ -204,11 +185,34 @@ def test_encode_behavior_external_dev2():
     for key, value in components_behaviors.items():
         print(value.as_dict(flatten=False))
 
-    all_possible: NFA = _merge_components(list(dict(components_behaviors).values()))
-    dfa_all_possible = nfa_to_dfa(all_possible)
+    all_possible: DFA = automata.merge_components(list(dict(components_behaviors).values()))
+    print('all_possible alphabet: {alphabet}'.format(alphabet=all_possible.alphabet))  # frozenset of str
 
-    encoded_nfa = automata.encode_behavior_ex(external_behavior, dev2.triggers, dfa_all_possible.alphabet)
-    print(encoded_nfa.as_dict(flatten=False))
-    path: Path = _serialize("encoded_dfa", encoded_nfa.as_dict(flatten=False))
-    print([state for state in encoded_nfa.states])
-    print(len([state for state in encoded_nfa.states]))
+    internal_behavior: NFA = automata.encode_behavior_ex(external_behavior, dev2.triggers, all_possible.alphabet)
+    print(internal_behavior.as_dict(flatten=False))
+    path: Path = _serialize("encoded_nfa", internal_behavior.as_dict(flatten=False))
+    print([state for state in internal_behavior.states])
+    print(len([state for state in internal_behavior.states]))
+
+    edges = [e for e in internal_behavior.edges]
+    for src, char, dsts in edges:
+        if isinstance(src, automata.MicroState):
+            # print(src)
+            try:
+                macro = set(src.macro).pop()
+            except KeyError:
+                macro = None
+
+            try:
+                micro = set(src.micro).pop()
+            except KeyError:
+                micro = None
+
+            print("Micro: {macro}, {event}, {micro}".format(macro=macro, event=src.event, micro=micro))
+
+        else:
+            try:
+                state = set(src.state).pop()
+            except KeyError:
+                state = None
+            print("Macro: {state}".format(state=state))

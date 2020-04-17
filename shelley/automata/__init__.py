@@ -243,8 +243,11 @@ def encode_behavior(behavior: NFA[Any, str], triggers: Dict[str, Regex],
     return regex_to_nfa(encoded_regex, alphabet)
 
 
+TEncodeBehaviorEx = typing.Union[NFA[Any, str], AmbiguousTriggersFailure]
+
+
 def encode_behavior_ex(external_behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
-                       alphabet: Optional[Collection[str]] = None):
+                       alphabet: Optional[Collection[str]] = None) -> TEncodeBehaviorEx:
     """
     ???
     How:
@@ -300,16 +303,25 @@ def encode_behavior_ex(external_behavior: NFA[Any, str], triggers: Dict[str, Reg
         start_state=MacroState(det_behavior.start_state),
         accepted_states=is_final
     )
+
+    ambiguous_states: List[Any] = _ambiguous_states(nfa)  # Devia ser List[str]???
+    if len(ambiguous_states) > 0:
+        return AmbiguousTriggersFailure(nfa, ambiguous_states)
+
+    return nfa
+
+
+def _ambiguous_states(nfa: NFA[Any, str]) -> List[Any]:
     dfa = nfa_to_dfa(nfa)
+
     # Check if there are concurrent macro-states
     ambiguous_states = []
     for st in dfa.states:
         row = list(filter(lambda x: isinstance(x, MacroState), st))
         if len(row) > 1:
             ambiguous_states.append(row)
-    if len(ambiguous_states) > 0:
-        return AmbiguousTriggersFailure(nfa, ambiguous_states)
-    return nfa
+
+    return ambiguous_states
 
 
 TInternalBehavior = typing.Union[typing.Optional[NFA], AmbiguousTriggersFailure, EncodingFailure]
@@ -338,23 +350,23 @@ def build_internal_behavior(components: List[NFA[Any, str]], external_behavior: 
     if len(components) == 0:
         return None
 
-    all_possible = merge_components(components, flatten, minimize)  # shuffle operation
+    all_possible: DFA[Any, str] = merge_components(components, flatten, minimize)  # shuffle operation
 
-    encoded_behavior = encode_behavior_ex(external_behavior, triggers, all_possible.alphabet)
+    internal_behavior = encode_behavior_ex(external_behavior, triggers, all_possible.alphabet)
 
-    if isinstance(encoded_behavior, AmbiguousTriggersFailure):
+    if isinstance(internal_behavior, AmbiguousTriggersFailure):
         # We got an error
-        return encoded_behavior
+        return internal_behavior
 
-    det_encoded_behavior = nfa_to_dfa(encoded_behavior)
+    det_internal_behavior = nfa_to_dfa(internal_behavior)
     if flatten or minimize:
-        det_encoded_behavior = det_encoded_behavior.flatten(minimize=minimize)
+        det_internal_behavior = det_internal_behavior.flatten(minimize=minimize)
 
     # Ensure that the all possible behaviors in dev contain the encoded behavior
-    invalid_behavior = det_encoded_behavior.subtract(all_possible)
+    invalid_behavior = det_internal_behavior.subtract(all_possible)
     if invalid_behavior.is_empty():
         # All is fine, return the encoded behavior
-        return encoded_behavior
+        return internal_behavior
     else:
         return EncodingFailure(invalid_behavior)
 

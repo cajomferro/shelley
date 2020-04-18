@@ -37,8 +37,8 @@ class AssembledDevice:
 
 @dataclass
 class TriggerIntegrationFailure:
-    error_trace: List[str]
-    component_errors: Dict[str, Tuple[List[str], int]]
+    error_trace: Tuple[str,...]
+    component_errors: Dict[str, Tuple[Tuple[str,...], int]]
 
 
 @dataclass
@@ -259,7 +259,7 @@ def encode_behavior_ex(external_behavior: NFA[Any, str], triggers: Dict[str, Reg
     :return:
     """
     assert isinstance(external_behavior, NFA)
-    det_behavior = nfa_to_dfa(external_behavior)
+    det_behavior:DFA = nfa_to_dfa(external_behavior)
     det_triggers = dict((k, nfa_to_dfa(regex_to_nfa(v))) for k, v in triggers.items())
     del triggers  # TODO: Is this really needed?
     del external_behavior  # TODO: Is this really needed?
@@ -324,7 +324,7 @@ def _ambiguous_states(nfa: NFA[Any, str]) -> List[Any]:
     return ambiguous_states
 
 
-TInternalBehavior = typing.Union[typing.Optional[NFA], AmbiguousTriggersFailure, EncodingFailure]
+TInternalBehavior = typing.Union[NFA, AmbiguousTriggersFailure, EncodingFailure]
 
 
 def build_internal_behavior(components: List[NFA[Any, str]], external_behavior: NFA[Any, str],
@@ -341,14 +341,9 @@ def build_internal_behavior(components: List[NFA[Any, str]], external_behavior: 
         Example:
     :param minimize:
     :param flatten:
-    :return:
-        None - This is a base device (without any components) hence there is no internal behavior
-
     """
-
-    # base device
     if len(components) == 0:
-        return None
+        raise ValueError("Should not be creating an internal behavior with 0 components")
 
     all_possible: DFA[Any, str] = merge_components(components, flatten, minimize)  # shuffle operation
 
@@ -358,7 +353,7 @@ def build_internal_behavior(components: List[NFA[Any, str]], external_behavior: 
         # We got an error
         return internal_behavior
 
-    det_internal_behavior = nfa_to_dfa(internal_behavior)
+    det_internal_behavior:DFA = nfa_to_dfa(internal_behavior)
     if flatten or minimize:
         det_internal_behavior = det_internal_behavior.flatten(minimize=minimize)
 
@@ -384,8 +379,8 @@ def ensure_well_formed(dev: Device):
         return ValueError("The following trigger rules were not defined: ", evts - trigs)
 
 
-def demultiplex(seq: List[str]) -> Mapping[str, List[str]]:
-    sequences = dict()
+def demultiplex(seq: Iterable[str]) -> Mapping[str, List[str]]:
+    sequences:Dict[str,List[str]] = dict()
     for msg in seq:
         component, op = msg.split(".")
         component_seq = sequences.get(component, None)
@@ -401,7 +396,7 @@ def parse_formula(data):
     return hml.Formula.deserialize(data)
 
 
-def check_traces(mc, tests: Mapping[str, Mapping[str, Any]]) -> typing.NoReturn:
+def check_traces(mc, tests: Mapping[str, Mapping[str, Any]]) -> None:
     for key, trace in tests.get('ok', dict()).items():
         formula = parse_formula(trace)
         if not mc(formula):
@@ -445,14 +440,17 @@ def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> 
     elif isinstance(internal_behavior, EncodingFailure):
         # We could not assemble the device
         # We compute the smallest error
-        dec_seq = internal_behavior.dfa.get_shortest_string()
+        dec_seq:Optional[Tuple[str,...]] = internal_behavior.dfa.get_shortest_string()
+        assert dec_seq is not None, "dec_seq can only be none if failure is empty, which cannot be"
         # We demutex by device
         errs = dict()
         for component, seq in demultiplex(dec_seq).items():
             ch_dev = known_devices[dev.components[component]]
             if not ch_dev.nfa.accepts(seq):
                 dfa = nfa_to_dfa(ch_dev.nfa).minimize()
-                errs[component] = (seq, dfa.get_divergence_index(seq))
+                idx = dfa.get_divergence_index(seq)
+                assert idx is not None, "The index can only be None if the behavior is empty, which should never happen"
+                errs[component] = (tuple(seq), idx)
 
         return TriggerIntegrationFailure(dec_seq, errs)
     else:  # None (no components) or valid NFA (verified components)

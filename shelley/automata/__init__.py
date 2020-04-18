@@ -1,4 +1,5 @@
-from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, Mapping, Set, Iterator
+from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, \
+    Mapping, Set, Iterator, Callable
 import typing
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, NIL, Concat, Star, Regex, nfa_to_dfa, \
     DFA, dfa_to_nfa, Nil, Void, RegexHandler, SubstHandler, VOID
@@ -81,8 +82,8 @@ class MicroState(DecodedState):
         return MacroState(self.macro)
 
 
-class ReplaceHandler(SubstHandler):
-    def __init__(self, subst):
+class ReplaceHandler(SubstHandler[str]):
+    def __init__(self, subst:Dict[str,Regex[str]]):
         self.subst = subst
 
     def on_char(self, char):
@@ -90,7 +91,7 @@ class ReplaceHandler(SubstHandler):
         return char if result is None else result
 
 
-def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
+def replace(r: Regex[str], rules: Dict[str, Regex[str]]) -> Regex[str]:
     return r.fold(ReplaceHandler(rules))
 
 
@@ -259,10 +260,12 @@ def encode_behavior_ex(external_behavior: NFA[Any, str], triggers: Dict[str, Reg
     :return:
     """
     assert isinstance(external_behavior, NFA)
-    det_behavior:DFA = nfa_to_dfa(external_behavior)
+    det_behavior:DFA[Any,str] = nfa_to_dfa(external_behavior)
     det_triggers = dict((k, nfa_to_dfa(regex_to_nfa(v))) for k, v in triggers.items())
-    del triggers  # TODO: Is this really needed?
-    del external_behavior  # TODO: Is this really needed?
+    # det_triggers and triggers are so close together, make sure we don't mistype
+    del triggers
+    # make sure we don't use external_behavior in the rest of the code
+    del external_behavior
 
     def tsx(src, char):
         if isinstance(src, MacroState):
@@ -389,14 +392,15 @@ def demultiplex(seq: Iterable[str]) -> Mapping[str, List[str]]:
         component_seq.append(op)
     return sequences
 
+FormulaOrTrace = typing.Union[List[str], hml.Formula[str]]
 
-def parse_formula(data):
+def parse_formula(data:Any) -> FormulaOrTrace:
     if isinstance(data, list):
-        return data
+        return typing.cast(List[str], data)
     return hml.Formula.deserialize(data)
 
 
-def check_traces(mc, tests: Mapping[str, Mapping[str, Any]]) -> None:
+def check_traces(mc:Callable[[FormulaOrTrace],bool], tests: Mapping[str, Mapping[str, Any]]) -> None:
     for key, trace in tests.get('ok', dict()).items():
         formula = parse_formula(trace)
         if not mc(formula):
@@ -407,7 +411,7 @@ def check_traces(mc, tests: Mapping[str, Mapping[str, Any]]) -> None:
             raise ValueError(f"Unexpected invalid trace: {key}: {trace}")
 
 
-def model_check(nfa, word_or_formula):
+def model_check(nfa:NFA[Any,str], word_or_formula:typing.Union[List[str], hml.Formula[str]]) -> bool:
     if isinstance(word_or_formula, list):
         return nfa.accepts(word_or_formula)
     else:

@@ -42,12 +42,6 @@ class TriggerIntegrationFailure:
     component_errors: Dict[str, Tuple[Tuple[str,...], int]]
 
 
-@dataclass
-class AmbiguousTriggersFailure:
-    nfa: NFA
-    states: Any
-
-
 @dataclass(frozen=True)
 class EncodingFailure:
     """
@@ -244,8 +238,14 @@ def encode_behavior(behavior: NFA[Any, str], triggers: Dict[str, Regex],
     return regex_to_nfa(encoded_regex, alphabet)
 
 
-TEncodeBehaviorEx = typing.Union[NFA[Any, str], AmbiguousTriggersFailure]
+AmbiguousStates = Tuple[MacroState,...]
 
+@dataclass
+class AmbiguousTriggersFailure:
+    nfa: NFA[typing.Union[MicroState, MacroState], str]
+    states: Tuple[AmbiguousStates,...]
+
+TEncodeBehaviorEx = typing.Union[NFA[Any, str], AmbiguousTriggersFailure]
 
 def encode_behavior_ex(external_behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
                        alphabet: Optional[Collection[str]] = None) -> TEncodeBehaviorEx:
@@ -300,31 +300,30 @@ def encode_behavior_ex(external_behavior: NFA[Any, str], triggers: Dict[str, Reg
         for dfa in det_triggers.values():
             alphabet.update(dfa.alphabet)
 
-    nfa = NFA(
+    nfa = NFA[typing.Union[MacroState,MicroState], str](
         alphabet=alphabet,
         transition_func=tsx,
         start_state=MacroState(det_behavior.start_state),
         accepted_states=is_final
     )
 
-    ambiguous_states: List[Any] = _ambiguous_states(nfa)  # Devia ser List[str]???
+    ambiguous_states = get_ambiguous_macro_states(nfa)  # Devia ser List[str]???
     if len(ambiguous_states) > 0:
         return AmbiguousTriggersFailure(nfa, ambiguous_states)
 
     return nfa
 
-
-def _ambiguous_states(nfa: NFA[Any, str]) -> List[Any]:
-    dfa = nfa_to_dfa(nfa)
+def get_ambiguous_macro_states(nfa: NFA[Any, str]) -> Tuple[AmbiguousStates,...]:
+    dfa:DFA[Any,str] = nfa_to_dfa(nfa)
 
     # Check if there are concurrent macro-states
     ambiguous_states = []
     for st in dfa.states:
-        row = list(filter(lambda x: isinstance(x, MacroState), st))
+        row = tuple(filter(lambda x: isinstance(x, MacroState), st))
         if len(row) > 1:
             ambiguous_states.append(row)
 
-    return ambiguous_states
+    return tuple(ambiguous_states)
 
 
 TInternalBehavior = typing.Union[NFA, AmbiguousTriggersFailure, EncodingFailure]

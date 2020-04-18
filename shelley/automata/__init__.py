@@ -1,5 +1,5 @@
 from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, \
-    Mapping, Set, Iterator, Callable
+    Mapping, Set, Iterator, Callable, AbstractSet
 import typing
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, NIL, Concat, Star, Regex, nfa_to_dfa, \
     DFA, dfa_to_nfa, Nil, Void, RegexHandler, SubstHandler, VOID
@@ -63,13 +63,13 @@ class DecodedState:
 
 @dataclass(frozen=True, order=True)
 class MacroState(DecodedState):
-    state: str
+    state: AbstractSet[str]
 
 
 @dataclass(frozen=True, order=True)
 class MicroState(DecodedState):
     # The next macro state
-    macro: str
+    macro: AbstractSet[str]
     # The event that we are processing
     event: str
     # The current micro state
@@ -260,7 +260,7 @@ def encode_behavior_ex(external_behavior: NFA[Any, str], triggers: Dict[str, Reg
     :return:
     """
     assert isinstance(external_behavior, NFA)
-    det_behavior:DFA[Any,str] = nfa_to_dfa(external_behavior)
+    det_behavior:DFA[AbstractSet[str],str] = nfa_to_dfa(external_behavior)
     det_triggers = dict((k, nfa_to_dfa(regex_to_nfa(v))) for k, v in triggers.items())
     # det_triggers and triggers are so close together, make sure we don't mistype
     del triggers

@@ -27,7 +27,7 @@ class CheckedDevice:
 class AssembledDevice:
     external: CheckedDevice
 
-    internal: NFA[Any, str]
+    internal: Optional[NFA[Any, str]]
 
     def internal_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]) -> bool:
         return model_check(self.internal, word_or_formula)
@@ -434,6 +434,8 @@ def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> 
     """
     ensure_well_formed(dev)
     external_behavior: NFA = build_external_behavior(dev.behavior, dev.start_events, dev.events)
+    if len(dev.components) == 0:
+        return AssembledDevice(CheckedDevice(external_behavior), None)
     components_behaviors: List[NFA] = list(dict(build_components(dev.components, known_devices)).values())
     internal_behavior: TInternalBehavior = build_internal_behavior(components_behaviors, external_behavior,
                                                                    dev.triggers)

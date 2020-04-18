@@ -706,7 +706,7 @@ def test_invalid_behavior_1():
     given = assemble_device(device, get_basic_known_devices())
     assert given.error_trace == (B_P, B_P, LA_ON, T_S)
     assert given.component_errors == {
-        "b": (["pressed", "pressed"], 1),
+        "b": (("pressed", "pressed"), 1),
     }
 
 
@@ -755,7 +755,7 @@ def test_invalid_behavior_2():
     given = assemble_device(device, get_basic_known_devices())
     assert given.error_trace == (B_R, B_P, B_R, LA_ON, T_S)
     assert given.component_errors == {
-        "b": (["released", "pressed", "released"], 0),
+        "b": (("released", "pressed", "released"), 0),
     }
 
 

@@ -711,7 +711,8 @@ def test_invalid_behavior_1():
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
     assert isinstance(given.failure, TriggerIntegrationFailure)
-    assert given.failure.error_trace == (B_P, B_P, LA_ON, T_S)
+    assert given.failure.macro_trace == (LEVEL1,)
+    assert given.failure.micro_trace == (B_P, B_P, LA_ON, T_S)
     assert given.failure.component_errors == {
         "b": (("pressed", "pressed"), 1),
     }
@@ -762,7 +763,8 @@ def test_invalid_behavior_2():
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
     assert isinstance(given.failure, TriggerIntegrationFailure)
-    assert given.failure.error_trace == (B_R, B_P, B_R, LA_ON, T_S)
+    assert given.failure.micro_trace == (B_R, B_P, B_R, LA_ON, T_S)
+    assert given.failure.macro_trace == (LEVEL1,)
     assert given.failure.component_errors == {
         "b": (("released", "pressed", "released"), 0),
     }

@@ -25,27 +25,6 @@ class CheckedDevice:
 
 KnownDevices = Mapping[str, CheckedDevice]
 
-@dataclass
-class TriggerIntegrationFailure:
-    error_trace: Tuple[str,...]
-    component_errors: Dict[str, Tuple[Tuple[str,...], int]]
-    @classmethod
-    def make(cls, dfa:[Any,str], known_devices:KnownDevices, components: Dict[str, str]) -> "TriggerIntegrationFailure":
-        # We could not assemble the device
-        # We compute the smallest error
-        dec_seq:Optional[Tuple[str,...]] = dfa.get_shortest_string()
-        assert dec_seq is not None, "dec_seq can only be none if failure is empty, which cannot be"
-        # We demutex by device
-        errs = dict()
-        for component, seq in demultiplex(dec_seq).items():
-            ch_dev = known_devices[components[component]]
-            if not ch_dev.nfa.accepts(seq):
-                dfa = nfa_to_dfa(ch_dev.nfa).minimize()
-                idx = dfa.get_divergence_index(seq)
-                assert idx is not None, "The index can only be None if the behavior is empty, which should never happen"
-                errs[component] = (tuple(seq), idx)
-
-        return cls(dec_seq, errs)
 
 
 @dataclass(frozen=True)
@@ -291,6 +270,18 @@ class MicroBehavior:
         self.is_valid = err_trace is None
         self.failure = None if self.is_valid else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
 
+    def convert_micro_to_macro(self, seq:Iterable[str]) -> Tuple[MacroTrace,...]:
+        rest = [()]
+        for st in self.dfa.get_derivation(seq):
+            sts = set(get_macro_states(st))
+            if len(sts) > 0:
+                new_rest = list(
+                    x + (st.event,) for x in rest
+                        for st in sts
+                )
+                rest = new_rest
+        return tuple(rest)
+
     @classmethod
     def make(cls, external_behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
                         alphabet: Optional[Collection[str]] = None) -> "MicroBehavior":
@@ -356,6 +347,31 @@ class MicroBehavior:
 
 
 @dataclass
+class TriggerIntegrationFailure:
+    micro_trace: MicroTrace
+    macro_trace: MacroTrace
+    component_errors: Dict[str, Tuple[MacroTrace, int]]
+    @classmethod
+    def make(cls, micro:MicroBehavior, dfa:[Any,str], known_devices:KnownDevices, components: Dict[str, str]) -> "TriggerIntegrationFailure":
+        # We could not assemble the device
+        # We compute the smallest error
+        dec_seq:Optional[MicroTrace] = dfa.get_shortest_string()
+        assert dec_seq is not None, "dec_seq can only be none if failure is empty, which cannot be"
+        # There should be a unique macro trace
+        macro_trace, = micro.convert_micro_to_macro(dec_seq)
+        # We demutex by device
+        errs = dict()
+        for component, seq in demultiplex(dec_seq).items():
+            ch_dev = known_devices[components[component]]
+            if not ch_dev.nfa.accepts(seq):
+                dfa = nfa_to_dfa(ch_dev.nfa).minimize()
+                idx = dfa.get_divergence_index(seq)
+                assert idx is not None, "The index can only be None if the behavior is empty, which should never happen"
+                errs[component] = (tuple(seq), idx)
+
+        return cls(dec_seq, macro_trace, errs)
+
+@dataclass
 class AssembledMicroBehavior:
     possible: DFA[Any,str]
     impossible: DFA[Any,str]
@@ -377,7 +393,7 @@ class AssembledMicroBehavior:
         # Fill in the failure field
         failure = self.micro.failure
         if failure is None and not self.impossible.is_empty():
-            failure = TriggerIntegrationFailure.make(self.impossible, known_devices, components)
+            failure = TriggerIntegrationFailure.make(self.micro, self.impossible, known_devices, components)
         return failure
 
     @classmethod

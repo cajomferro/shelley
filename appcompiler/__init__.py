@@ -12,7 +12,7 @@ from . import settings
 from .exceptions import CompilationError
 from .serializer import serialize, deserialize
 
-from shelley.automata import assemble_device, CheckedDevice, AssembledDevice, check_traces
+from shelley.automata import CheckedDevice, AssembledDevice, check_traces
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley
@@ -114,31 +114,33 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
     known_devices: typing.Mapping[str, CheckedDevice] = _get_known_devices(shelley_device, uses, binary)
     automata_device = shelley2automata(shelley_device)
 
-    checked_device = assemble_device(automata_device, known_devices)
+    dev = AssembledDevice.make(automata_device, known_devices)
 
-    if isinstance(checked_device, AssembledDevice):
+    if dev.is_valid:
 
         # test macro traces
-        check_traces(checked_device.external_model_check, shelley_device.test_macro)  # macro
+        check_traces(dev.external_model_check, shelley_device.test_macro)  # macro
 
         # test micro traces
-        check_traces(checked_device.internal_model_check, shelley_device.test_micro)  # micro
+        check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
 
-        serialize(dst_path, checked_device.external.nfa.as_dict(flatten=False), binary)
+        serialize(dst_path, dev.external.nfa.as_dict(), binary)
 
-        if intermediate is True:
+        if intermediate is True and dev.internal is not None:
             # generate internal nfa
             path = src_path.parent / (src_path.stem + "-internal-nfa" + "." + _get_ext(binary))
-            data = checked_device.internal.flatten().as_dict()
+            nfa = dev.internal.nfa.remove_epsilon_transitions().remove_all_sink_states()
+            data = nfa.as_dict(flatten=True)
             serialize(path, data, binary)
 
             # generate internal minimized dfa
             path = src_path.parent / (src_path.stem + "-internal-dfa" + "." + _get_ext(binary))
-            data = regular.nfa_to_dfa(checked_device.internal).minimize().as_dict()
+            nfa = regular.dfa_to_nfa(dev.internal.dfa.minimize()).remove_all_sink_states()
+            data = nfa.as_dict(flatten=True)
             serialize(path, data, binary)
 
     else:
-        raise CompilationError("Invalid device: {0}".format(checked_device))
+        raise CompilationError("Invalid device: {0}".format(dev.failure))
 
     logger.debug('Compiled file: {0}'.format(dst_path))
 

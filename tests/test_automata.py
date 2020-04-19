@@ -256,7 +256,7 @@ def test_ambiguity_1():
     assert not res.micro.is_valid
     fail = res.micro.failure
     assert fail.micro_trace == (B_P,)
-    assert fail.macro_traces == ((LEVEL1,), (LEVEL2,))
+    assert fail.macro_traces == ((LEVEL2,), (LEVEL1,))
 
 def test_ok_1():
     behavior = Union(

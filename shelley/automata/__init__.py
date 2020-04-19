@@ -256,14 +256,15 @@ MicroTrace = Tuple[str,...]
 
 @dataclass
 class AmbiguityFailure:
-    dfa: DFA[Any,str]
-    micro_trace : MicroTrace
+    micro_trace: MicroTrace
+    macro_traces: Tuple[MacroTrace, MacroTrace]
 
-    @property
-    def macro_traces(self) -> Tuple[MacroTrace, MacroTrace]:
+    @classmethod
+    def make(cls, micro_trace: MicroTrace, dfa: DFA[Any,str]):
+        macro_traces = None
         rest = []
-        seq = self.micro_trace
-        for st in self.dfa.get_derivation(seq):
+        seq = micro_trace
+        for st in dfa.get_derivation(seq):
             sts = set(get_macro_states(st))
             if len(sts) == 1:
                 m, = sts
@@ -271,8 +272,11 @@ class AmbiguityFailure:
             elif len(sts) > 1:
                 st1, st2, *st3 = sts
                 head = tuple(rest)
-                return head + (st1.event,), head + (st2.event,)
-        raise ValueError("Ambiguity expected")
+                macro_traces = head + (st1.event,), head + (st2.event,)
+                break
+        if macro_traces is None:
+            raise ValueError("Ambiguity expected")
+        return cls(micro_trace, macro_traces)
 
 @dataclass
 class MicroBehavior:
@@ -285,7 +289,7 @@ class MicroBehavior:
         self.dfa = nfa_to_dfa(self.nfa)
         err_trace = self.dfa.find_shortest_path(is_macro_ambiguous)
         self.is_valid = err_trace is None
-        self.failure = None if self.is_valid else AmbiguityFailure(self.dfa, err_trace)
+        self.failure = None if self.is_valid else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
 
     @classmethod
     def make(cls, external_behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],

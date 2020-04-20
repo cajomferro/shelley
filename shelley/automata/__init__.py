@@ -157,7 +157,7 @@ def build_components(components: Dict[str, str], known_devices: KnownDevices) ->
         Example: "t": Timer(..t.started..t.timeout..), "b": Button(..b.pressed..b.released..)
     """
     for (name, ty) in components.items():
-        yield (name, prefix_nfa(known_devices[ty].nfa, name + "."))
+        yield name, prefix_nfa(known_devices[ty].nfa, name + ".")
 
 
 def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False, minimize: bool = False) -> DFA[

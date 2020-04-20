@@ -26,14 +26,13 @@ class CheckedDevice:
 KnownDevices = Mapping[str, CheckedDevice]
 
 
-
 @dataclass(frozen=True)
 class DecodedState:
     pass
 
 
 class ReplaceHandler(SubstHandler[str]):
-    def __init__(self, subst:Dict[str,Regex[str]]):
+    def __init__(self, subst: Dict[str, Regex[str]]):
         self.subst = subst
 
     def on_char(self, char):
@@ -141,6 +140,7 @@ def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
         accepted_states=nfa.accepted_states
     )
 
+
 def build_components(components: Dict[str, str], known_devices: KnownDevices) -> Iterator[
     Tuple[str, NFA]]:
     """
@@ -192,6 +192,7 @@ def encode_behavior(behavior: NFA[Any, str], triggers: Dict[str, Regex],
     encoded_regex: Regex = replace(nfa_to_regex(behavior), triggers)
     return regex_to_nfa(encoded_regex, alphabet)
 
+
 @dataclass(frozen=True, order=True)
 class MacroState(DecodedState):
     state: AbstractSet[str]
@@ -217,12 +218,15 @@ class MicroState(DecodedState):
 def is_macro_state(st):
     return isinstance(st, MacroState)
 
+
 AmbiguousState = typing.Union[MicroState, MacroState]
 
-def get_macro_states(st:AbstractSet[AmbiguousState]):
+
+def get_macro_states(st: AbstractSet[AmbiguousState]):
     return filter(is_macro_state, st)
 
-def is_macro_ambiguous(st:AbstractSet[AmbiguousState]) -> bool:
+
+def is_macro_ambiguous(st: AbstractSet[AmbiguousState]) -> bool:
     count = 0
     for st in get_macro_states(st):
         count += 1
@@ -230,8 +234,10 @@ def is_macro_ambiguous(st:AbstractSet[AmbiguousState]) -> bool:
             return True
     return False
 
-MacroTrace = Tuple[str,...]
-MicroTrace = Tuple[str,...]
+
+MacroTrace = Tuple[str, ...]
+MicroTrace = Tuple[str, ...]
+
 
 @dataclass
 class AmbiguityFailure:
@@ -239,7 +245,7 @@ class AmbiguityFailure:
     macro_traces: Tuple[MacroTrace, MacroTrace]
 
     @classmethod
-    def make(cls, micro_trace: MicroTrace, dfa: DFA[Any,str]):
+    def make(cls, micro_trace: MicroTrace, dfa: DFA[Any, str]):
         macro_traces = None
         rest = []
         seq = micro_trace
@@ -257,12 +263,13 @@ class AmbiguityFailure:
             raise ValueError("Ambiguity expected")
         return cls(micro_trace, macro_traces)
 
+
 @dataclass
 class MicroBehavior:
     nfa: NFA[AmbiguousState, str]
-    dfa: DFA[Any,str] = field(init=False)
+    dfa: DFA[Any, str] = field(init=False)
     failure: Optional[AmbiguityFailure] = field(init=False)
-    is_valid:bool = field(init=False)
+    is_valid: bool = field(init=False)
 
     def __post_init__(self):
         self.dfa = nfa_to_dfa(self.nfa)
@@ -270,21 +277,21 @@ class MicroBehavior:
         self.is_valid = err_trace is None
         self.failure = None if self.is_valid else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
 
-    def convert_micro_to_macro(self, seq:Iterable[str]) -> Tuple[MacroTrace,...]:
+    def convert_micro_to_macro(self, seq: Iterable[str]) -> Tuple[MacroTrace, ...]:
         rest = [()]
         for st in self.dfa.get_derivation(seq):
             sts = set(get_macro_states(st))
             if len(sts) > 0:
                 new_rest = list(
                     x + (st.event,) for x in rest
-                        for st in sts
+                    for st in sts
                 )
                 rest = new_rest
         return tuple(rest)
 
     @classmethod
     def make(cls, external_behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
-                        alphabet: Optional[Collection[str]] = None) -> "MicroBehavior":
+             alphabet: Optional[Collection[str]] = None) -> "MicroBehavior":
         """
         Encode behavior
         
@@ -297,7 +304,7 @@ class MicroBehavior:
         :return:
         """
         assert isinstance(external_behavior, NFA)
-        det_behavior:DFA[AbstractSet[str],str] = nfa_to_dfa(external_behavior)
+        det_behavior: DFA[AbstractSet[str], str] = nfa_to_dfa(external_behavior)
         det_triggers = dict((k, nfa_to_dfa(regex_to_nfa(v))) for k, v in triggers.items())
         # det_triggers and triggers are so close together, make sure we don't mistype
         del triggers
@@ -337,7 +344,7 @@ class MicroBehavior:
             for dfa in det_triggers.values():
                 alphabet.update(dfa.alphabet)
 
-        nfa = NFA[typing.Union[MacroState,MicroState], str](
+        nfa = NFA[typing.Union[MacroState, MicroState], str](
             alphabet=alphabet,
             transition_func=tsx,
             start_state=MacroState(det_behavior.start_state),
@@ -351,11 +358,13 @@ class TriggerIntegrationFailure:
     micro_trace: MicroTrace
     macro_trace: MacroTrace
     component_errors: Dict[str, Tuple[MacroTrace, int]]
+
     @classmethod
-    def make(cls, micro:MicroBehavior, dfa:[Any,str], known_devices:KnownDevices, components: Dict[str, str]) -> "TriggerIntegrationFailure":
+    def make(cls, micro: MicroBehavior, dfa: [Any, str], known_devices: KnownDevices,
+             components: Dict[str, str]) -> "TriggerIntegrationFailure":
         # We could not assemble the device
         # We compute the smallest error
-        dec_seq:Optional[MicroTrace] = dfa.get_shortest_string()
+        dec_seq: Optional[MicroTrace] = dfa.get_shortest_string()
         assert dec_seq is not None, "dec_seq can only be none if failure is empty, which cannot be"
         # There should be a unique macro trace
         macro_trace, = micro.convert_micro_to_macro(dec_seq)
@@ -371,25 +380,26 @@ class TriggerIntegrationFailure:
 
         return cls(dec_seq, macro_trace, errs)
 
+
 @dataclass
 class AssembledMicroBehavior:
-    possible: DFA[Any,str]
-    impossible: DFA[Any,str]
+    possible: DFA[Any, str]
+    impossible: DFA[Any, str]
     micro: MicroBehavior
-    is_valid:bool = field(init=False)
+    is_valid: bool = field(init=False)
 
     def __post_init__(self):
         self.is_valid = self.micro.is_valid and self.impossible.is_empty()
 
     @property
-    def dfa(self) -> DFA[Any,str]:
+    def dfa(self) -> DFA[Any, str]:
         return self.micro.dfa
 
     @property
     def nfa(self) -> NFA[AmbiguousState, str]:
         return self.micro.nfa
 
-    def get_failure(self, known_devices:KnownDevices, components: Dict[str, str]):
+    def get_failure(self, known_devices: KnownDevices, components: Dict[str, str]):
         # Fill in the failure field
         failure = self.micro.failure
         if failure is None and not self.impossible.is_empty():
@@ -398,8 +408,8 @@ class AssembledMicroBehavior:
 
     @classmethod
     def make(cls, components: List[NFA[Any, str]], external_behavior: NFA[Any, str],
-                                triggers: Dict[str, Regex[str]],
-                                minimize=False, flatten=False) -> Tuple[NFA,DFA]:
+             triggers: Dict[str, Regex[str]],
+             minimize=False, flatten=False) -> Tuple[NFA, DFA]:
         """
         Build internal behavior by using components, external behavior and triggers
         How:
@@ -427,6 +437,7 @@ class AssembledMicroBehavior:
             micro=internal_behavior,
         )
 
+
 def ensure_well_formed(dev: Device):
     evts = set(dev.events)
     start_evts = set(dev.start_events)
@@ -441,7 +452,7 @@ def ensure_well_formed(dev: Device):
 
 
 def demultiplex(seq: Iterable[str]) -> Mapping[str, List[str]]:
-    sequences:Dict[str,List[str]] = dict()
+    sequences: Dict[str, List[str]] = dict()
     for msg in seq:
         component, op = msg.split(".")
         component_seq = sequences.get(component, None)
@@ -450,15 +461,17 @@ def demultiplex(seq: Iterable[str]) -> Mapping[str, List[str]]:
         component_seq.append(op)
     return sequences
 
+
 FormulaOrTrace = typing.Union[List[str], hml.Formula[str]]
 
-def parse_formula(data:Any) -> FormulaOrTrace:
+
+def parse_formula(data: Any) -> FormulaOrTrace:
     if isinstance(data, list):
         return typing.cast(List[str], data)
     return hml.Formula.deserialize(data)
 
 
-def check_traces(mc:Callable[[FormulaOrTrace],bool], tests: Mapping[str, Mapping[str, Any]]) -> None:
+def check_traces(mc: Callable[[FormulaOrTrace], bool], tests: Mapping[str, Mapping[str, Any]]) -> None:
     for key, trace in tests.get('ok', dict()).items():
         formula = parse_formula(trace)
         if not mc(formula):
@@ -469,7 +482,7 @@ def check_traces(mc:Callable[[FormulaOrTrace],bool], tests: Mapping[str, Mapping
             raise ValueError(f"Unexpected invalid trace: {key}: {trace}")
 
 
-def model_check(nfa:NFA[Any,str], word_or_formula:typing.Union[List[str], hml.Formula[str]]) -> bool:
+def model_check(nfa: NFA[Any, str], word_or_formula: typing.Union[List[str], hml.Formula[str]]) -> bool:
     if isinstance(word_or_formula, list):
         return nfa.accepts(word_or_formula)
     else:
@@ -477,12 +490,14 @@ def model_check(nfa:NFA[Any,str], word_or_formula:typing.Union[List[str], hml.Fo
         model = nfa_to_dfa(nfa)
         return not prop.intersection(model).is_empty()
 
+
 @dataclass
 class AssembledDevice:
     external: CheckedDevice
     internal: AssembledMicroBehavior
     is_valid: bool = field(init=False)
     failure: Optional[typing.Union[AmbiguityFailure, TriggerIntegrationFailure]]
+
     def __post_init__(self):
         self.is_valid = self.failure is None
 

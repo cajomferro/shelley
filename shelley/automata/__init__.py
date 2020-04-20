@@ -228,7 +228,7 @@ def get_macro_states(st: AbstractSet[AmbiguousState]):
 
 def is_macro_ambiguous(st: AbstractSet[AmbiguousState]) -> bool:
     count = 0
-    for st in get_macro_states(st):
+    for _ in get_macro_states(st):
         count += 1
         if count > 1:
             return True

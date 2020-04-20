@@ -119,11 +119,13 @@ def build_external_behavior(behavior: Iterable[Tuple[str, str]], start_events: L
 def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
     """
     The NFA definition of a device doesn't have a prefixed alphabet. However, when declaring components,
-    we are referring to device instantiations (e.g., a device of type Button called 'buttonX'). Hence we need to prefix
-    the alphabet on the NFA, so that we can, for example, refer to 'buttonX.pressed' transition instead of just 'pressed'.
+    we are referring to device instantiations (e.g., a device of type Button called 'buttonX').
+    Hence we need to prefix the alphabet on the NFA, so that we can, for example, refer to
+    'buttonX.pressed' transition instead of just 'pressed'.
 
     :param nfa: the NFA (device) we want to prefix with
-    :param prefix: the instantiation name of the NFA (device) (e.g., 'Button b' with alphabet 'pressed' would became 'b.pressed')
+    :param prefix: the instantiation name of the NFA (device)
+    (e.g., 'Button b' with alphabet 'pressed' would became 'b.pressed')
     :return: prefixed NFA
     """
     old_tsx_func = nfa.transition_func
@@ -176,7 +178,7 @@ def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False,
     for d in rst:
         dev = dev.shuffle(d)
 
-    # Convert the given NFA into a minimized DFA #TODO: is this still valid?!
+    # Convert the given NFA into a minimized DFA # TODO: is this related to the minimize parameter?
     dev_dfa = nfa_to_dfa(dev)
 
     if flatten:
@@ -300,7 +302,8 @@ class MicroBehavior:
             -
         :param external_behavior: device external behavior as NFA
         :param triggers: device triggers as REGEX
-        :param alphabet: the alphabet from all shuffled components (should be equivalent to the alphabet from all triggers)
+        :param alphabet: the alphabet from all shuffled components
+        (should be equivalent to the alphabet from all triggers)
         :return:
         """
         assert isinstance(external_behavior, NFA)
@@ -325,7 +328,7 @@ class MicroBehavior:
                     ))
                 return frozenset(result)
             elif isinstance(src, MicroState):
-                dfa = det_triggers[src.event]
+                dfa = det_triggers[src.event]  # TODO: shadows name 'dfa' from outer scope, is this correct?
                 if dfa.accepted_states(src.micro) and char is None:
                     return frozenset([src.advance_macro()])
                 elif char in dfa.alphabet:

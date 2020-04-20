@@ -165,6 +165,7 @@ def test_encode_behavior_external_dev2():
 
     all_possible: DFA = automata.merge_components(list(dict(components_behaviors).values()))
     print('all_possible alphabet: {alphabet}'.format(alphabet=all_possible.alphabet))  # frozenset of str
+    path: Path = _serialize("all_possible_dfa", all_possible.minimize().as_dict())
 
     internal_behavior: NFA = automata.encode_behavior_ex(external_behavior, dev2.triggers, all_possible.alphabet)
     print("flatten", internal_behavior.flatten().as_dict())

@@ -360,7 +360,7 @@ class TriggerIntegrationFailure:
     component_errors: Dict[str, Tuple[MacroTrace, int]]
 
     @classmethod
-    def make(cls, micro: MicroBehavior, dfa: [Any, str], known_devices: KnownDevices,
+    def make(cls, micro: MicroBehavior, dfa: DFA[Any, str], known_devices: KnownDevices,
              components: Dict[str, str]) -> "TriggerIntegrationFailure":
         # We could not assemble the device
         # We compute the smallest error

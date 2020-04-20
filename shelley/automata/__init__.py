@@ -381,6 +381,9 @@ class TriggerIntegrationFailure:
         return cls(dec_seq, macro_trace, errs)
 
 
+TFailure = typing.Union[TriggerIntegrationFailure, AmbiguityFailure]
+
+
 @dataclass
 class AssembledMicroBehavior:
     possible: DFA[Any, str]
@@ -399,11 +402,12 @@ class AssembledMicroBehavior:
     def nfa(self) -> NFA[AmbiguousState, str]:
         return self.micro.nfa
 
-    def get_failure(self, known_devices: KnownDevices, components: Dict[str, str]):
+    def get_failure(self, known_devices: KnownDevices, components: Dict[str, str]) -> TFailure:
         # Fill in the failure field
-        failure = self.micro.failure
+        failure: AmbiguityFailure = self.micro.failure
         if failure is None and not self.impossible.is_empty():
-            failure = TriggerIntegrationFailure.make(self.micro, self.impossible, known_devices, components)
+            failure: TriggerIntegrationFailure = TriggerIntegrationFailure.make(self.micro, self.impossible,
+                                                                                known_devices, components)
         return failure
 
     @classmethod

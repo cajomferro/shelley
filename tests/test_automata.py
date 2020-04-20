@@ -195,7 +195,8 @@ def test_hello_world():
         create_prefixed_timer()
     ]
     behavior = create_hello_world()
-    assert isinstance(build_internal_behavior(components, behavior, HELLO_WORLD_TRIGGERS), NFA)
+    be = AssembledMicroBehavior.make(components, behavior, HELLO_WORLD_TRIGGERS)
+    assert be.is_valid
 
 
 def test_encode_1():
@@ -223,9 +224,9 @@ def test_encode_behavior2_1():
     }
     n_behavior = regex_to_nfa(behavior)
     expected = nfa_to_dfa(encode_behavior(n_behavior, triggers))
-    result = encode_behavior_ex(n_behavior, triggers)
-    assert isinstance(result, NFA)
-    given = nfa_to_dfa(result).minimize()
+    result = MicroBehavior.make(n_behavior, triggers)
+    assert result.is_valid
+    given = result.dfa.minimize()
     assert given.is_equivalent_to(expected)
 
 
@@ -241,7 +242,7 @@ def test_encode2():
     assert be.contains(expected)
 
 
-def test_fail_1():
+def test_ambiguity_1():
     behavior = Union(
         Char(LEVEL1),
         Star(Concat(Char(LEVEL1), Char(LEVEL2)))
@@ -251,8 +252,11 @@ def test_fail_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
-    assert build_internal_behavior([create_prefixed_button()], n_behavior, triggers) is not None
-
+    res = AssembledMicroBehavior.make([create_prefixed_button()], n_behavior, triggers)
+    assert not res.micro.is_valid
+    fail = res.micro.failure
+    assert fail.micro_trace == (B_P,)
+    assert fail.macro_traces == ((LEVEL2,), (LEVEL1,))
 
 def test_ok_1():
     behavior = Union(
@@ -264,7 +268,7 @@ def test_ok_1():
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    assert isinstance(build_internal_behavior([create_prefixed_button()], n_behavior, triggers), NFA)
+    assert AssembledMicroBehavior.make([create_prefixed_button()], n_behavior, triggers).is_valid
 
 
 def test_fail_hello_world():
@@ -296,9 +300,9 @@ def test_fail_hello_world():
     ]
     be = encode_behavior(hello, triggers)
     assert be.accepts([])
-    res = build_internal_behavior(components, hello, triggers)
-    assert not res.dfa.accepts([])
-    assert res is not None
+    res = AssembledMicroBehavior.make(components, hello, triggers)
+    assert not res.is_valid
+    assert not res.impossible.accepts([])
 
 
 def test_smallest_error():
@@ -332,11 +336,12 @@ def test_smallest_error():
         create_prefixed_led_b(),
         create_prefixed_timer()
     ]
-    be = encode_behavior(hello, triggers)
-    res = build_internal_behavior(components, hello, triggers)
-    assert isinstance(res, EncodingFailure)
-    err = res.dfa.get_shortest_string()
-    assert res.dfa.accepts(err)
+    res = AssembledMicroBehavior.make(components, hello, triggers)
+    assert not res.is_valid
+    assert res.micro.is_valid
+    fail = res.impossible
+    err = fail.get_shortest_string()
+    assert fail.accepts(err)
     assert err is not None
     assert err == (B_P, B_P, LA_ON, T_S)
     assert demultiplex(err) == {
@@ -522,7 +527,7 @@ def test_device_button():
             'b.released': NIL,
         },
     )
-    expected = assemble_device(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_prefixed_button()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -541,7 +546,7 @@ def test_device_led_a():
             'ledA.off': NIL,
         },
     )
-    expected = assemble_device(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_prefixed_led_a()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -560,7 +565,7 @@ def test_device_led_b():
             'ledB.off': NIL,
         },
     )
-    expected = assemble_device(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_prefixed_led_b()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -582,7 +587,7 @@ def test_device_timer():
             't.timeout': NIL
         },
     )
-    expected = assemble_device(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_prefixed_timer()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -606,7 +611,7 @@ def test_device_hello_world():
             'standby2': NIL
         },
     )
-    expected = assemble_device(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_hello_world()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -659,7 +664,7 @@ def get_basic_devices():
 
 
 def get_basic_known_devices():
-    return dict((k, assemble_device(d, {}).external) for (k, d) in get_basic_devices().items())
+    return dict((k, AssembledDevice.make(d, {}).external) for (k, d) in get_basic_devices().items())
 
 
 def test_invalid_behavior_1():
@@ -703,10 +708,13 @@ def test_invalid_behavior_1():
                 ),
         },
     )
-    given = assemble_device(device, get_basic_known_devices())
-    assert given.error_trace == (B_P, B_P, LA_ON, T_S)
-    assert given.component_errors == {
-        "b": (["pressed", "pressed"], 1),
+    given = AssembledDevice.make(device, get_basic_known_devices())
+    assert not given.is_valid
+    assert isinstance(given.failure, TriggerIntegrationFailure)
+    assert given.failure.macro_trace == (LEVEL1,)
+    assert given.failure.micro_trace == (B_P, B_P, LA_ON, T_S)
+    assert given.failure.component_errors == {
+        "b": (("pressed", "pressed"), 1),
     }
 
 
@@ -752,10 +760,13 @@ def test_invalid_behavior_2():
                 ),
         },
     )
-    given = assemble_device(device, get_basic_known_devices())
-    assert given.error_trace == (B_R, B_P, B_R, LA_ON, T_S)
-    assert given.component_errors == {
-        "b": (["released", "pressed", "released"], 0),
+    given = AssembledDevice.make(device, get_basic_known_devices())
+    assert not given.is_valid
+    assert isinstance(given.failure, TriggerIntegrationFailure)
+    assert given.failure.micro_trace == (B_R, B_P, B_R, LA_ON, T_S)
+    assert given.failure.macro_trace == (LEVEL1,)
+    assert given.failure.component_errors == {
+        "b": (("released", "pressed", "released"), 0),
     }
 
 
@@ -779,6 +790,6 @@ def test_device_led_and_button():
             'b.released': NIL
         },
     )
-    expected = assemble_device(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
     assert nfa_to_dfa(create_prefixed_led_and_button()).is_equivalent_to(nfa_to_dfa(expected))

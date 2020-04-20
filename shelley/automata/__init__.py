@@ -1,8 +1,9 @@
-from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, Mapping, Set, Iterator
+from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, \
+    Mapping, Set, Iterator, Callable, AbstractSet
 import typing
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, NIL, Concat, Star, Regex, nfa_to_dfa, \
     DFA, dfa_to_nfa, Nil, Void, RegexHandler, SubstHandler, VOID
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import copy
 import itertools
 from karakuri import hml
@@ -22,37 +23,8 @@ class CheckedDevice:
     nfa: NFA[Any, str]
 
 
-@dataclass
-class AssembledDevice:
-    external: CheckedDevice
+KnownDevices = Mapping[str, CheckedDevice]
 
-    internal: NFA[Any, str]
-
-    def internal_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]) -> bool:
-        return model_check(self.internal, word_or_formula)
-
-    def external_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]):
-        return model_check(self.external.nfa, word_or_formula)
-
-
-@dataclass
-class TriggerIntegrationFailure:
-    error_trace: List[str]
-    component_errors: Dict[str, Tuple[List[str], int]]
-
-
-@dataclass
-class AmbiguousTriggersFailure:
-    nfa: NFA
-    states: Any
-
-
-@dataclass(frozen=True)
-class EncodingFailure:
-    """
-    An erroneous DFA that contains all invalid sequences.
-    """
-    dfa: DFA
 
 
 @dataclass(frozen=True)
@@ -60,29 +32,8 @@ class DecodedState:
     pass
 
 
-@dataclass(frozen=True, order=True)
-class MacroState(DecodedState):
-    state: str
-
-
-@dataclass(frozen=True, order=True)
-class MicroState(DecodedState):
-    # The next macro state
-    macro: str
-    # The event that we are processing
-    event: str
-    # The current micro state
-    micro: str
-
-    def advance_micro(self, micro: str):
-        return MicroState(macro=self.macro, event=self.event, micro=micro)
-
-    def advance_macro(self):
-        return MacroState(self.macro)
-
-
-class ReplaceHandler(SubstHandler):
-    def __init__(self, subst):
+class ReplaceHandler(SubstHandler[str]):
+    def __init__(self, subst:Dict[str,Regex[str]]):
         self.subst = subst
 
     def on_char(self, char):
@@ -90,7 +41,7 @@ class ReplaceHandler(SubstHandler):
         return char if result is None else result
 
 
-def replace(r: Regex, rules: Dict[str, Regex]) -> Regex:
+def replace(r: Regex[str], rules: Dict[str, Regex[str]]) -> Regex[str]:
     return r.fold(ReplaceHandler(rules))
 
 
@@ -190,8 +141,7 @@ def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
         accepted_states=nfa.accepted_states
     )
 
-
-def build_components(components: Dict[str, str], known_devices: Mapping[str, CheckedDevice]) -> Iterator[
+def build_components(components: Dict[str, str], known_devices: KnownDevices) -> Iterator[
     Tuple[str, NFA]]:
     """
     Build a structure of components that is a map of component name to device instance with a prefixed alphabet
@@ -242,134 +192,240 @@ def encode_behavior(behavior: NFA[Any, str], triggers: Dict[str, Regex],
     encoded_regex: Regex = replace(nfa_to_regex(behavior), triggers)
     return regex_to_nfa(encoded_regex, alphabet)
 
+@dataclass(frozen=True, order=True)
+class MacroState(DecodedState):
+    state: AbstractSet[str]
+    event: Optional[str] = None
 
-TEncodeBehaviorEx = typing.Union[NFA[Any, str], AmbiguousTriggersFailure]
+
+@dataclass(frozen=True, order=True)
+class MicroState(DecodedState):
+    # The next macro state
+    macro: AbstractSet[str]
+    # The event that we are processing
+    event: str
+    # The current micro state
+    micro: str
+
+    def advance_micro(self, micro: str):
+        return MicroState(macro=self.macro, event=self.event, micro=micro)
+
+    def advance_macro(self):
+        return MacroState(self.macro, self.event)
 
 
-def encode_behavior_ex(external_behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
-                       alphabet: Optional[Collection[str]] = None) -> TEncodeBehaviorEx:
-    """
-    ???
-    How:
-        - convert external behavior (NFA) and triggers (REGEX) to DFAs (because ... ???)
-        -
-    :param external_behavior: device external behavior as NFA
-    :param triggers: device triggers as REGEX
-    :param alphabet: the alphabet from all shuffled components (should be equivalent to the alphabet from all triggers)
-    :return:
-    """
-    assert isinstance(external_behavior, NFA)
-    det_behavior = nfa_to_dfa(external_behavior)
-    det_triggers = dict((k, nfa_to_dfa(regex_to_nfa(v))) for k, v in triggers.items())
-    del triggers  # TODO: Is this really needed?
-    del external_behavior  # TODO: Is this really needed?
+def is_macro_state(st):
+    return isinstance(st, MacroState)
 
-    def tsx(src, char):
-        if isinstance(src, MacroState):
-            if char is not None:
+AmbiguousState = typing.Union[MicroState, MacroState]
+
+def get_macro_states(st:AbstractSet[AmbiguousState]):
+    return filter(is_macro_state, st)
+
+def is_macro_ambiguous(st:AbstractSet[AmbiguousState]) -> bool:
+    count = 0
+    for st in get_macro_states(st):
+        count += 1
+        if count > 1:
+            return True
+    return False
+
+MacroTrace = Tuple[str,...]
+MicroTrace = Tuple[str,...]
+
+@dataclass
+class AmbiguityFailure:
+    micro_trace: MicroTrace
+    macro_traces: Tuple[MacroTrace, MacroTrace]
+
+    @classmethod
+    def make(cls, micro_trace: MicroTrace, dfa: DFA[Any,str]):
+        macro_traces = None
+        rest = []
+        seq = micro_trace
+        for st in dfa.get_derivation(seq):
+            sts = set(get_macro_states(st))
+            if len(sts) == 1:
+                m, = sts
+                rest.append(m.event)
+            elif len(sts) > 1:
+                st1, st2, *st3 = sts
+                head = tuple(rest)
+                macro_traces = head + (st1.event,), head + (st2.event,)
+                break
+        if macro_traces is None:
+            raise ValueError("Ambiguity expected")
+        return cls(micro_trace, macro_traces)
+
+@dataclass
+class MicroBehavior:
+    nfa: NFA[AmbiguousState, str]
+    dfa: DFA[Any,str] = field(init=False)
+    failure: Optional[AmbiguityFailure] = field(init=False)
+    is_valid:bool = field(init=False)
+
+    def __post_init__(self):
+        self.dfa = nfa_to_dfa(self.nfa)
+        err_trace = self.dfa.find_shortest_path(is_macro_ambiguous)
+        self.is_valid = err_trace is None
+        self.failure = None if self.is_valid else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
+
+    def convert_micro_to_macro(self, seq:Iterable[str]) -> Tuple[MacroTrace,...]:
+        rest = [()]
+        for st in self.dfa.get_derivation(seq):
+            sts = set(get_macro_states(st))
+            if len(sts) > 0:
+                new_rest = list(
+                    x + (st.event,) for x in rest
+                        for st in sts
+                )
+                rest = new_rest
+        return tuple(rest)
+
+    @classmethod
+    def make(cls, external_behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
+                        alphabet: Optional[Collection[str]] = None) -> "MicroBehavior":
+        """
+        Encode behavior
+        
+        How:
+            - convert external behavior (NFA) and triggers (REGEX) to DFAs (because ... ???)
+            -
+        :param external_behavior: device external behavior as NFA
+        :param triggers: device triggers as REGEX
+        :param alphabet: the alphabet from all shuffled components (should be equivalent to the alphabet from all triggers)
+        :return:
+        """
+        assert isinstance(external_behavior, NFA)
+        det_behavior:DFA[AbstractSet[str],str] = nfa_to_dfa(external_behavior)
+        det_triggers = dict((k, nfa_to_dfa(regex_to_nfa(v))) for k, v in triggers.items())
+        # det_triggers and triggers are so close together, make sure we don't mistype
+        del triggers
+        # make sure we don't use external_behavior in the rest of the code
+        del external_behavior
+
+        def tsx(src, char):
+            if isinstance(src, MacroState):
+                if char is not None:
+                    return frozenset()
+                # Macro-state
+                result = set()
+                for evt in det_behavior.alphabet:
+                    result.add(MicroState(
+                        macro=det_behavior.transition_func(src.state, evt),
+                        event=evt,
+                        micro=det_triggers[evt].start_state
+                    ))
+                return frozenset(result)
+            elif isinstance(src, MicroState):
+                dfa = det_triggers[src.event]
+                if dfa.accepted_states(src.micro) and char is None:
+                    return frozenset([src.advance_macro()])
+                elif char in dfa.alphabet:
+                    dst = src.advance_micro(dfa.transition_func(src.micro, char))
+                    return frozenset([dst])
                 return frozenset()
-            # Macro-state
-            result = set()
-            for evt in det_behavior.alphabet:
-                result.add(MicroState(
-                    macro=det_behavior.transition_func(src.state, evt),
-                    event=evt,
-                    micro=det_triggers[evt].start_state
-                ))
-            return frozenset(result)
-        elif isinstance(src, MicroState):
-            dfa = det_triggers[src.event]
-            if dfa.accepted_states(src.micro) and char is None:
-                return frozenset([src.advance_macro()])
-            elif char in dfa.alphabet:
-                dst = src.advance_micro(dfa.transition_func(src.micro, char))
-                return frozenset([dst])
-            return frozenset()
-        else:
-            raise ValueError("Unknown state", src, char)
+            else:
+                raise ValueError("Unknown state", src, char)
 
-    def is_final(st):
-        return isinstance(st, MacroState) and det_behavior.accepted_states(st.state)
+        def is_final(st):
+            return isinstance(st, MacroState) and det_behavior.accepted_states(st.state)
 
-    if alphabet is None:
-        # Infer the alphabet from each trigger
-        alphabet = set()
-        for dfa in det_triggers.values():
-            alphabet.update(dfa.alphabet)
+        if alphabet is None:
+            # Infer the alphabet from each trigger
+            alphabet = set()
+            for dfa in det_triggers.values():
+                alphabet.update(dfa.alphabet)
 
-    nfa = NFA(
-        alphabet=alphabet,
-        transition_func=tsx,
-        start_state=MacroState(det_behavior.start_state),
-        accepted_states=is_final
-    )
-
-    ambiguous_states: List[Any] = _ambiguous_states(nfa)  # Devia ser List[str]???
-    if len(ambiguous_states) > 0:
-        return AmbiguousTriggersFailure(nfa, ambiguous_states)
-
-    return nfa
+        nfa = NFA[typing.Union[MacroState,MicroState], str](
+            alphabet=alphabet,
+            transition_func=tsx,
+            start_state=MacroState(det_behavior.start_state),
+            accepted_states=is_final
+        )
+        return cls(nfa)
 
 
-def _ambiguous_states(nfa: NFA[Any, str]) -> List[Any]:
-    dfa = nfa_to_dfa(nfa)
+@dataclass
+class TriggerIntegrationFailure:
+    micro_trace: MicroTrace
+    macro_trace: MacroTrace
+    component_errors: Dict[str, Tuple[MacroTrace, int]]
+    @classmethod
+    def make(cls, micro:MicroBehavior, dfa:[Any,str], known_devices:KnownDevices, components: Dict[str, str]) -> "TriggerIntegrationFailure":
+        # We could not assemble the device
+        # We compute the smallest error
+        dec_seq:Optional[MicroTrace] = dfa.get_shortest_string()
+        assert dec_seq is not None, "dec_seq can only be none if failure is empty, which cannot be"
+        # There should be a unique macro trace
+        macro_trace, = micro.convert_micro_to_macro(dec_seq)
+        # We demutex by device
+        errs = dict()
+        for component, seq in demultiplex(dec_seq).items():
+            ch_dev = known_devices[components[component]]
+            if not ch_dev.nfa.accepts(seq):
+                dfa = nfa_to_dfa(ch_dev.nfa).minimize()
+                idx = dfa.get_divergence_index(seq)
+                assert idx is not None, "The index can only be None if the behavior is empty, which should never happen"
+                errs[component] = (tuple(seq), idx)
 
-    # Check if there are concurrent macro-states
-    ambiguous_states = []
-    for st in dfa.states:
-        row = list(filter(lambda x: isinstance(x, MacroState), st))
-        if len(row) > 1:
-            ambiguous_states.append(row)
+        return cls(dec_seq, macro_trace, errs)
 
-    return ambiguous_states
+@dataclass
+class AssembledMicroBehavior:
+    possible: DFA[Any,str]
+    impossible: DFA[Any,str]
+    micro: MicroBehavior
+    is_valid:bool = field(init=False)
 
+    def __post_init__(self):
+        self.is_valid = self.micro.is_valid and self.impossible.is_empty()
 
-TInternalBehavior = typing.Union[typing.Optional[NFA], AmbiguousTriggersFailure, EncodingFailure]
+    @property
+    def dfa(self) -> DFA[Any,str]:
+        return self.micro.dfa
 
+    @property
+    def nfa(self) -> NFA[AmbiguousState, str]:
+        return self.micro.nfa
 
-def build_internal_behavior(components: List[NFA[Any, str]], external_behavior: NFA[Any, str],
-                            triggers: Dict[str, Regex[str]],
-                            minimize=False, flatten=False) -> TInternalBehavior:
-    """
-    Build internal behavior by using components, external behavior and triggers
-    How:
-        - Shuffle all components into a minimized DFA (minimized because ... ??? )
-        -
-    :param components: list of components as NFAs
-    :param external_behavior: device external behavior as NFA
-    :param triggers: device triggers as REGEX
-        Example:
-    :param minimize:
-    :param flatten:
-    :return:
-        None - This is a base device (without any components) hence there is no internal behavior
+    def get_failure(self, known_devices:KnownDevices, components: Dict[str, str]):
+        # Fill in the failure field
+        failure = self.micro.failure
+        if failure is None and not self.impossible.is_empty():
+            failure = TriggerIntegrationFailure.make(self.micro, self.impossible, known_devices, components)
+        return failure
 
-    """
+    @classmethod
+    def make(cls, components: List[NFA[Any, str]], external_behavior: NFA[Any, str],
+                                triggers: Dict[str, Regex[str]],
+                                minimize=False, flatten=False) -> Tuple[NFA,DFA]:
+        """
+        Build internal behavior by using components, external behavior and triggers
+        How:
+            - Shuffle all components into a minimized DFA (minimized because ... ??? )
+            -
+        :param components: list of components as NFAs
+        :param external_behavior: device external behavior as NFA
+        :param triggers: device triggers as REGEX
+            Example:
+        :param minimize:
+        :param flatten:
+        """
+        if len(components) == 0:
+            raise ValueError("Should not be creating an internal behavior with 0 components")
 
-    # base device
-    if len(components) == 0:
-        return None
+        all_possible: DFA[Any, str] = merge_components(components, flatten, minimize)  # shuffle operation
 
-    all_possible: DFA[Any, str] = merge_components(components, flatten, minimize)  # shuffle operation
-
-    internal_behavior = encode_behavior_ex(external_behavior, triggers, all_possible.alphabet)
-
-    if isinstance(internal_behavior, AmbiguousTriggersFailure):
-        # We got an error
-        return internal_behavior
-
-    det_internal_behavior = nfa_to_dfa(internal_behavior)
-    if flatten or minimize:
-        det_internal_behavior = det_internal_behavior.flatten(minimize=minimize)
-
-    # Ensure that the all possible behaviors in dev contain the encoded behavior
-    invalid_behavior = det_internal_behavior.subtract(all_possible)
-    if invalid_behavior.is_empty():
-        # All is fine, return the encoded behavior
-        return internal_behavior
-    else:
-        return EncodingFailure(invalid_behavior)
-
+        internal_behavior = MicroBehavior.make(external_behavior, triggers, all_possible.alphabet)
+        # Ensure that the all possible behaviors in dev contain the encoded behavior
+        invalid_behavior = internal_behavior.dfa.subtract(all_possible)
+        # Ready to create the object
+        return cls(
+            possible=all_possible,
+            impossible=invalid_behavior,
+            micro=internal_behavior,
+        )
 
 def ensure_well_formed(dev: Device):
     evts = set(dev.events)
@@ -384,8 +440,8 @@ def ensure_well_formed(dev: Device):
         return ValueError("The following trigger rules were not defined: ", evts - trigs)
 
 
-def demultiplex(seq: List[str]) -> Mapping[str, List[str]]:
-    sequences = dict()
+def demultiplex(seq: Iterable[str]) -> Mapping[str, List[str]]:
+    sequences:Dict[str,List[str]] = dict()
     for msg in seq:
         component, op = msg.split(".")
         component_seq = sequences.get(component, None)
@@ -394,14 +450,15 @@ def demultiplex(seq: List[str]) -> Mapping[str, List[str]]:
         component_seq.append(op)
     return sequences
 
+FormulaOrTrace = typing.Union[List[str], hml.Formula[str]]
 
-def parse_formula(data):
+def parse_formula(data:Any) -> FormulaOrTrace:
     if isinstance(data, list):
-        return data
+        return typing.cast(List[str], data)
     return hml.Formula.deserialize(data)
 
 
-def check_traces(mc, tests: Mapping[str, Mapping[str, Any]]) -> typing.NoReturn:
+def check_traces(mc:Callable[[FormulaOrTrace],bool], tests: Mapping[str, Mapping[str, Any]]) -> None:
     for key, trace in tests.get('ok', dict()).items():
         formula = parse_formula(trace)
         if not mc(formula):
@@ -412,7 +469,7 @@ def check_traces(mc, tests: Mapping[str, Mapping[str, Any]]) -> typing.NoReturn:
             raise ValueError(f"Unexpected invalid trace: {key}: {trace}")
 
 
-def model_check(nfa, word_or_formula):
+def model_check(nfa:NFA[Any,str], word_or_formula:typing.Union[List[str], hml.Formula[str]]) -> bool:
     if isinstance(word_or_formula, list):
         return nfa.accepts(word_or_formula)
     else:
@@ -420,40 +477,47 @@ def model_check(nfa, word_or_formula):
         model = nfa_to_dfa(nfa)
         return not prop.intersection(model).is_empty()
 
+@dataclass
+class AssembledDevice:
+    external: CheckedDevice
+    internal: AssembledMicroBehavior
+    is_valid: bool = field(init=False)
+    failure: Optional[typing.Union[AmbiguityFailure, TriggerIntegrationFailure]]
+    def __post_init__(self):
+        self.is_valid = self.failure is None
 
-def assemble_device(dev: Device, known_devices: Mapping[str, CheckedDevice]) -> typing.Union[
-    AssembledDevice, TriggerIntegrationFailure, AmbiguousTriggersFailure]:
-    """
-    In order to assemble a device, the following steps are required:
-    * ensure well formedness (start_evts <= evts, trigs <= evts, and trigs == evts)
-    * compute the external behavior
-    * compute the list of components with prefixed NFAs
-    * compute the internal behavior using the external behavior, components, and triggers
+    def internal_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]) -> bool:
+        return model_check(self.internal.nfa, word_or_formula)
 
-    :param dev: the device to be assembled
-    :param known_devices: map of device type to checked device instance (NFA)
-    :return:
-    """
-    ensure_well_formed(dev)
-    external_behavior: NFA = build_external_behavior(dev.behavior, dev.start_events, dev.events)
-    components_behaviors: List[NFA] = list(dict(build_components(dev.components, known_devices)).values())
-    internal_behavior: TInternalBehavior = build_internal_behavior(components_behaviors, external_behavior,
-                                                                   dev.triggers)
+    def external_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]):
+        return model_check(self.external.nfa, word_or_formula)
 
-    if isinstance(internal_behavior, AmbiguousTriggersFailure):
-        return internal_behavior
-    elif isinstance(internal_behavior, EncodingFailure):
-        # We could not assemble the device
-        # We compute the smallest error
-        dec_seq = internal_behavior.dfa.get_shortest_string()
-        # We demutex by device
-        errs = dict()
-        for component, seq in demultiplex(dec_seq).items():
-            ch_dev = known_devices[dev.components[component]]
-            if not ch_dev.nfa.accepts(seq):
-                dfa = nfa_to_dfa(ch_dev.nfa).minimize()
-                errs[component] = (seq, dfa.get_divergence_index(seq))
+    @classmethod
+    def make(cls, dev: Device, known_devices: Mapping[str, CheckedDevice]) -> "AssembledDevice":
+        """
+        In order to assemble a device, the following steps are required:
+        * ensure well formedness (start_evts <= evts, trigs <= evts, and trigs == evts)
+        * compute the external behavior
+        * compute the list of components with prefixed NFAs
+        * compute the internal behavior using the external behavior, components, and triggers
 
-        return TriggerIntegrationFailure(dec_seq, errs)
-    else:  # None (no components) or valid NFA (verified components)
-        return AssembledDevice(CheckedDevice(external_behavior), internal_behavior)
+        :param dev: the device to be assembled
+        :param known_devices: map of device type to checked device instance (NFA)
+        :return:
+        """
+        ensure_well_formed(dev)
+        external_behavior: NFA = build_external_behavior(dev.behavior, dev.start_events, dev.events)
+        ext = CheckedDevice(external_behavior)
+        micro = None
+        fail = None
+        if len(dev.components) > 0:
+            # Since there are components, we must assemble them
+            components_behaviors: List[NFA] = list(dict(build_components(dev.components, known_devices)).values())
+            micro = AssembledMicroBehavior.make(
+                components=components_behaviors,
+                external_behavior=external_behavior,
+                triggers=dev.triggers
+            )
+            fail = micro.get_failure(known_devices, dev.components)
+
+        return cls(external=ext, internal=micro, failure=fail)

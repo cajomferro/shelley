@@ -409,7 +409,7 @@ class AssembledMicroBehavior:
     @classmethod
     def make(cls, components: List[NFA[Any, str]], external_behavior: NFA[Any, str],
              triggers: Dict[str, Regex[str]],
-             minimize=False, flatten=False) -> Tuple[NFA, DFA]:
+             minimize=False, flatten=False) -> "AssembledMicroBehavior":
         """
         Build internal behavior by using components, external behavior and triggers
         How:

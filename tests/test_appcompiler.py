@@ -7,7 +7,7 @@ from .context import shelley
 from .context import appcompiler
 
 import appcompiler
-from shelley.automata import Device as AutomataDevice, AssembledDevice, assemble_device, CheckedDevice, check_traces
+from shelley.automata import Device as AutomataDevice, AssembledDevice, CheckedDevice, check_traces
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley
@@ -75,17 +75,19 @@ def test_assemble_button():
     shelley_device: ShelleyDevice = _get_shelley_device('button')
     automata: AutomataDevice = shelley2automata(shelley_device)
 
-    assembled_button: AssembledDevice = assemble_device(automata, {})
+    assembled_button: AssembledDevice = AssembledDevice.make(automata, {})
+    assert assembled_button.is_valid
     assert type(assembled_button.external) == CheckedDevice
 
 
 def test_assemble_smart_button():
-    checked_button = assemble_device(shelley2automata(_get_shelley_device('button')), {}).external
+    checked_button = AssembledDevice.make(shelley2automata(_get_shelley_device('button')), {}).external
     assert type(checked_button) == CheckedDevice
 
     shelley_device = _get_shelley_device('smartbutton1')
     automata = shelley2automata(shelley_device)
-    assembled_smartbutton: AssembledDevice = assemble_device(automata, {'Button': checked_button})
+    assembled_smartbutton: AssembledDevice = AssembledDevice.make(automata, {'Button': checked_button})
+    assert assembled_smartbutton.is_valid
     assert type(assembled_smartbutton.external) == CheckedDevice
 
     with pytest.raises(ValueError) as exc_info:
@@ -98,10 +100,12 @@ def test_assemble_smart_button():
 
 def test_assemble_desklamp():
     dev = shelley2automata(_get_shelley_device('desklamp'))
-    known_devices = {'Led': assemble_device(shelley2automata(_get_shelley_device('led')), {}).external,
-                     'Button': assemble_device(shelley2automata(_get_shelley_device('button')), {}).external,
-                     'Timer': assemble_device(shelley2automata(_get_shelley_device('timer')), {}).external}
-    assert type(assemble_device(dev, known_devices).external) == CheckedDevice
+    known_devices = {'Led': AssembledDevice.make(shelley2automata(_get_shelley_device('led')), {}).external,
+                     'Button': AssembledDevice.make(shelley2automata(_get_shelley_device('button')), {}).external,
+                     'Timer': AssembledDevice.make(shelley2automata(_get_shelley_device('timer')), {}).external}
+    assembled_desklamp = AssembledDevice.make(dev, known_devices)
+    assert assembled_desklamp.is_valid
+    assert type(assembled_desklamp.external) == CheckedDevice
 
 
 ### TEST ARGPARSE ###
@@ -152,7 +156,7 @@ def _serialize(name, known_devices=None, binary=False) -> CheckedDevice:
     if known_devices is None:
         known_devices = {}
     path = _get_compiled_path(name, binary=binary)
-    assembled_device: AssembledDevice = assemble_device(shelley2automata(_get_shelley_device(name)), known_devices)
+    assembled_device: AssembledDevice = AssembledDevice.make(shelley2automata(_get_shelley_device(name)), known_devices)
     appcompiler.serializer.serialize(path, assembled_device.external.nfa.as_dict(flatten=False), binary)
     return assembled_device.external
 
@@ -339,6 +343,6 @@ def test_compile_ambiguous():
     with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
         appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
-    assert "Invalid device" in str(exc_info.value)
+    assert "Invalid device: AmbiguityFailure" in str(exc_info.value)
 
     _remove_compiled_dir()

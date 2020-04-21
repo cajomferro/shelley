@@ -5,18 +5,27 @@ device:
     - [level1, off]
     - [off, level1]
   components:
-    ledA: LedStrict
+    l: LedStrict
     b: SimpleButton
   triggers:
-    level1: [b.pressed, ledA.on]
-    off: [b.pressed, ledA.off]
+    level1: [b.pressed, l.on]
+    off: [b.pressed, l.off]
+
+test_macro:
+  ok:
+    valid1: [level1, off]
+    valid2: [level1, off, level1, off]
+    valid3: [level1, off, level1]
+  fail:
+    invalid1: [off]
+    invalid2: [level1, level1]
 
 test_micro:
   ok:
-    valid1: [b.pressed, ledA.on, b.pressed, ledA.off]
+    valid1: [b.pressed, l.on, b.pressed, l.off]
   fail:
-    invalid1: [ledA.on, b.pressed, ledA.off]
-    invalid2: [ledA.on, ledA.off, b.pressed]
-    invalid3: [b.pressed, ledA.on, ledA.off]
-    invalid4: [b.pressed, ledA.off, ledA.on]
-    invalid5: [b.pressed, ledA.on, b.pressed, ledA.on]
+    invalid1: [l.on, b.pressed, l.off]
+    invalid2: [l.on, l.off, b.pressed]
+    invalid3: [b.pressed, l.on, l.off]
+    invalid4: [b.pressed, l.off, l.on]
+    invalid5: [b.pressed, l.on, b.pressed, l.on]

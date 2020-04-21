@@ -12,7 +12,7 @@ from . import settings
 from .exceptions import CompilationError
 from .serializer import serialize, deserialize
 
-from shelley.automata import CheckedDevice, AssembledDevice, check_traces
+from shelley.automata import CheckedDevice, AssembledDevice, check_traces, AssembledMicroBehavior
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley
@@ -127,17 +127,22 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
         serialize(dst_path, dev.external.nfa.as_dict(), binary)
 
         if intermediate is True and dev.internal is not None:
-            # generate internal nfa
-            path = src_path.parent / (src_path.stem + "-internal-nfa" + "." + _get_ext(binary))
-            nfa = dev.internal.nfa.remove_epsilon_transitions().remove_all_sink_states()
-            data = nfa.as_dict(flatten=True)
-            serialize(path, data, binary)
+            micro: AssembledMicroBehavior = dev.internal
 
-            # generate internal minimized dfa
+            # generate shuffling of all components
+            path = src_path.parent / (src_path.stem + "-shuffle-dfa" + "." + _get_ext(binary))
+            shuffle = regular.dfa_to_nfa(micro.possible).remove_all_sink_states()  # without traps
+            serialize(path, shuffle.as_dict(flatten=True), binary)
+
+            # generate internal nfa without epsilon and without traps
+            path = src_path.parent / (src_path.stem + "-internal-nfa" + "." + _get_ext(binary))
+            nfa = micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
+            serialize(path, nfa.as_dict(flatten=True), binary)
+
+            # generate internal minimized dfa without traps (must be converted to NFA)
             path = src_path.parent / (src_path.stem + "-internal-dfa" + "." + _get_ext(binary))
-            nfa = regular.dfa_to_nfa(dev.internal.dfa.minimize()).remove_all_sink_states()
-            data = nfa.as_dict(flatten=True)
-            serialize(path, data, binary)
+            nfa = regular.dfa_to_nfa(micro.dfa.minimize()).remove_all_sink_states()
+            serialize(path, nfa.as_dict(flatten=True), binary)
 
     else:
         raise CompilationError("Invalid device: {0}".format(dev.failure))

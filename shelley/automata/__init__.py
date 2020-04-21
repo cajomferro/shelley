@@ -280,7 +280,7 @@ class MicroBehavior:
         self.failure = None if self.is_valid else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
 
     def convert_micro_to_macro(self, seq: Iterable[str]) -> Tuple[MacroTrace, ...]:
-        rest = [()]
+        rest:List[MacroTrace] = [()]
         for st in self.dfa.get_derivation(seq):
             sts = set(get_macro_states(st))
             if len(sts) > 0:
@@ -405,11 +405,11 @@ class AssembledMicroBehavior:
     def nfa(self) -> NFA[AmbiguousState, str]:
         return self.micro.nfa
 
-    def get_failure(self, known_devices: KnownDevices, components: Dict[str, str]) -> TFailure:
+    def get_failure(self, known_devices: KnownDevices, components: Dict[str, str]) -> Optional[TFailure]:
         # Fill in the failure field
-        failure: AmbiguityFailure = self.micro.failure
+        failure: Optional[TFailure] = self.micro.failure
         if failure is None and not self.impossible.is_empty():
-            failure: TriggerIntegrationFailure = TriggerIntegrationFailure.make(self.micro, self.impossible,
+            failure = TriggerIntegrationFailure.make(self.micro, self.impossible,
                                                                                 known_devices, components)
         return failure
 
@@ -501,7 +501,7 @@ def model_check(nfa: NFA[Any, str], word_or_formula: typing.Union[List[str], hml
 @dataclass
 class AssembledDevice:
     external: CheckedDevice
-    internal: AssembledMicroBehavior
+    internal: Optional[AssembledMicroBehavior]
     is_valid: bool = field(init=False)
     failure: Optional[typing.Union[AmbiguityFailure, TriggerIntegrationFailure]]
 
@@ -509,6 +509,8 @@ class AssembledDevice:
         self.is_valid = self.failure is None
 
     def internal_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]) -> bool:
+        if self.internal is None:
+            raise ValueError("Cannot call internal_model_checker if there is no internal behavior")
         return model_check(self.internal.nfa, word_or_formula)
 
     def external_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]):

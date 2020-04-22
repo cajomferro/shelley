@@ -44,11 +44,11 @@ def replace(r: Regex[str], rules: Dict[str, Regex[str]]) -> Regex[str]:
     return r.fold(ReplaceHandler(rules))
 
 
-TTransitionTable = Dict[Tuple[str, Optional[str]], Set[str]]
+TNFATransitions = Dict[Tuple[str, Optional[str]], Set[str]]
 
 
 def _build_nfa_transitions(behavior: Iterable[Tuple[str, str]], start_events: List[str],
-                           start_state="$START") -> TTransitionTable:
+                           start_state="$START") -> TNFATransitions:
     """
     Build the NFA transition table given the device behavior and start events.
     How:
@@ -107,7 +107,7 @@ def build_external_behavior(behavior: Iterable[Tuple[str, str]], start_events: L
     states.add(start_state)
 
     # build NFA transitions (arcs)
-    tsx: Dict[Tuple[str, Optional[str]], Set[str]] = _build_nfa_transitions(behavior, start_events, start_state)
+    tsx: TNFATransitions = _build_nfa_transitions(behavior, start_events, start_state)
 
     # create and return NFA
     return NFA(alphabet=frozenset(events),

@@ -103,11 +103,11 @@ def build_external_behavior(behavior: Iterable[Tuple[str, str]], start_events: L
         raise ValueError(f"Start state '{start_state}' cannot have the same name as an event.")
 
     # build NFA states
-    states = set(evt for evt in events)
+    states: Set[str] = set(events)
     states.add(start_state)
 
-    # build NFA transitions
-    tsx = _build_nfa_transitions(behavior, start_events, start_state)
+    # build NFA transitions (arcs)
+    tsx: Dict[Tuple[str, Optional[str]], Set[str]] = _build_nfa_transitions(behavior, start_events, start_state)
 
     # create and return NFA
     return NFA(alphabet=frozenset(events),
@@ -280,7 +280,7 @@ class MicroBehavior:
         self.failure = None if self.is_valid else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
 
     def convert_micro_to_macro(self, seq: Iterable[str]) -> Tuple[MacroTrace, ...]:
-        rest:List[MacroTrace] = [()]
+        rest: List[MacroTrace] = [()]
         for st in self.dfa.get_derivation(seq):
             sts = set(get_macro_states(st))
             if len(sts) > 0:
@@ -410,7 +410,7 @@ class AssembledMicroBehavior:
         failure: Optional[TFailure] = self.micro.failure
         if failure is None and not self.impossible.is_empty():
             failure = TriggerIntegrationFailure.make(self.micro, self.impossible,
-                                                                                known_devices, components)
+                                                     known_devices, components)
         return failure
 
     @classmethod

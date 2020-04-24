@@ -124,7 +124,7 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
         # test micro traces
         check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
 
-        serialize(dst_path, dev.external.nfa.as_dict(flatten=True), binary)
+        serialize(dst_path, dev.external.nfa.as_dict(), binary)
 
         if intermediate is True and dev.internal is not None:
             micro: AssembledMicroBehavior = dev.internal
@@ -132,17 +132,17 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
             # generate shuffling of all components
             path = src_path.parent / (src_path.stem + "-shuffle-dfa" + "." + _get_ext(binary))
             shuffle = regular.dfa_to_nfa(micro.possible).remove_all_sink_states()  # without traps
-            serialize(path, shuffle.as_dict(flatten=True), binary)
+            serialize(path, shuffle.as_dict(), binary)
 
             # generate internal nfa without epsilon and without traps
             path = src_path.parent / (src_path.stem + "-internal-nfa" + "." + _get_ext(binary))
             nfa = micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
-            serialize(path, nfa.as_dict(flatten=True), binary)
+            serialize(path, nfa.as_dict(), binary)
 
             # generate internal minimized dfa without traps (must be converted to NFA)
             path = src_path.parent / (src_path.stem + "-internal-dfa" + "." + _get_ext(binary))
             nfa = regular.dfa_to_nfa(micro.dfa.minimize()).remove_all_sink_states()
-            serialize(path, nfa.as_dict(flatten=True), binary)
+            serialize(path, nfa.as_dict(), binary)
 
     else:
         raise CompilationError("Invalid device: {0}".format(dev.failure))

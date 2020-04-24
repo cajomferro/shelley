@@ -154,24 +154,23 @@ def _encode(example_name: str):
     # shuffle = interleave = all possible
     # all_possible: DFA = merge_components(list(dict(components_behaviors).values()))
     all_possible: DFA = micro.possible
-    _serialize("{0}-all-possible-dfa".format(example_name), all_possible.as_dict(flatten=True))
+    _serialize("{0}-all-possible-dfa".format(example_name), all_possible.as_dict())
     _serialize("{0}-all-possible-dfa-minimized-traps".format(example_name),
-               all_possible.minimize().as_dict(flatten=True))
+               all_possible.minimize().as_dict())
     _serialize("{0}-all-possible-dfa-minimized-notraps".format(example_name),
-               dfa_to_nfa(all_possible).remove_all_sink_states().as_dict(flatten=True))
+               dfa_to_nfa(all_possible).remove_all_sink_states().as_dict())
 
     # micro NFA
-    micro_nfa_no_epsilon_no_traps = micro.nfa.remove_epsilon_transitions().remove_all_sink_states().as_dict(
-        flatten=True)
+    micro_nfa_no_epsilon_no_traps = micro.nfa.remove_epsilon_transitions().remove_all_sink_states().as_dict()
     _serialize("{0}-micro-nfa-no-epsilon-no-traps".format(example_name), micro_nfa_no_epsilon_no_traps)
 
     micro_nfa = micro.nfa.flatten().as_dict()
     _serialize("{0}-micro-nfa".format(example_name), micro_nfa)
 
-    micro_nfa_no_epsilon = micro.nfa.remove_epsilon_transitions().as_dict(flatten=True)
+    micro_nfa_no_epsilon = micro.nfa.remove_epsilon_transitions().as_dict()
     _serialize("{0}-micro-nfa-no-epsilon".format(example_name), micro_nfa_no_epsilon)
 
-    micro_nfa_no_traps = micro.nfa.remove_all_sink_states().as_dict(flatten=True)
+    micro_nfa_no_traps = micro.nfa.remove_all_sink_states().as_dict()
     _serialize("{0}-micro-nfa-no-traps".format(example_name), micro_nfa_no_traps)
 
     # micro DFA
@@ -185,7 +184,7 @@ def _encode(example_name: str):
 
     micro_dfa_minimized_no_traps = dfa_to_nfa(micro.dfa.minimize()).remove_all_sink_states()
     _serialize("{0}-micro-dfa-minimized-no-traps".format(example_name),
-               micro_dfa_minimized_no_traps.as_dict(flatten=True))
+               micro_dfa_minimized_no_traps.as_dict())
     assert len([state for state in micro_dfa_minimized_no_traps.states]) == 4
 
     print("micro nfa states: ", [state for state in micro.nfa.flatten().states])

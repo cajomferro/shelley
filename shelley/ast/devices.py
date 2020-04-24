@@ -46,7 +46,6 @@ class Device(Node):
                  triggers: Triggers,
                  uses: Optional[List[str]] = None,
                  components: Optional[Components] = None) -> None:
-        super().__init__()
         if uses is None:
             uses = []
         if components is None:

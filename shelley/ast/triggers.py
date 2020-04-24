@@ -74,10 +74,6 @@ class TriggerRulesListEmptyError(Exception):
 
 
 class Triggers(Node, MyCollection[Trigger]):
-    _data = None  # type: List[Trigger]
-
-    def __init__(self):
-        self._data = list()
 
     def create(self, event: GenericEvent, rule: TriggerRule) -> Trigger:
         trigger = Trigger(event, rule)

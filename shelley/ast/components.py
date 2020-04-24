@@ -79,11 +79,10 @@ class ComponentsDeviceNotDeclaredError(Exception):
 
 class Components(Node, MyCollection[Component]):
     components_to_devices: Dict[str, str]
-    _data: List[Component]
 
     def __init__(self):
+        super().__init__()
         self.components_to_devices = dict()
-        self._data = list()
 
     def create(self, component_name: str, device_name: str) -> Component:
         component = Component(component_name)

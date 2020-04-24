@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Mapping, List, TYPE_CHECKING
+from typing import Mapping, List, TYPE_CHECKING, Optional
 
 from .node import Node
 from .actions import Actions
@@ -44,9 +44,13 @@ class Device(Node):
                  start_events: List[str],
                  behaviors: Behaviors,
                  triggers: Triggers,
-                 uses: List[str] = list(),
-                 components=Components()):
+                 uses: Optional[List[str]] = None,
+                 components: Optional[Components] = None):
 
+        if uses is None:
+            uses = []
+        if components is None:
+            components = Components()
         self.name = name
         self.actions = actions
         self.internal_events = internal_events

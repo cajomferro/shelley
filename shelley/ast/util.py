@@ -5,18 +5,18 @@ T = TypeVar('T')
 
 
 class MyCollection(Generic[T]):
-    _data = None  # type: List[T]
+    _data: List[T]
 
     def __init__(self):
         self._data = []
 
-    def add(self, elem: T):
+    def add(self, elem: T) -> None:
         if elem not in self._data:
             self._data.append(elem)
         else:
             raise ListDuplicatedError()
 
-    def contains(self, elem: T):
+    def contains(self, elem: T) -> bool:
         re = False
         try:
             next(x for x in self._data if x == elem)
@@ -25,10 +25,10 @@ class MyCollection(Generic[T]):
             pass
         return re
 
-    def count(self):
+    def count(self) -> int:
         return len(self._data)
 
-    def list(self):
+    def list(self) -> List[T]:
         return self._data
 
     def list_str(self):

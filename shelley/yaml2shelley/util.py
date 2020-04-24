@@ -25,7 +25,7 @@ class MySafeConstructor(SafeConstructor):
 
 
 # Inject the above boolean logic into the custom constuctor
-MySafeConstructor.add_constructor('tag:yaml.org,2002:bool', MySafeConstructor.add_bool)
+MySafeConstructor.add_constructor('tag:yaml.org,2002:bool', MySafeConstructor.add_bool) # type: ignore
 
 
 class MySafeLoader(Reader, Scanner, Parser, Composer, MySafeConstructor, Resolver):

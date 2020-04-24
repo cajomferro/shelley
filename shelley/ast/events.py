@@ -75,7 +75,7 @@ class EEvent(GenericEvent):
 T = TypeVar('T', IEvent, EEvent, GenericEvent)
 
 
-class Events(ABC, MyCollection[T]):
+class Events(MyCollection[T]):
 
     def find_by_name(self, name: str) -> Optional[GenericEvent]:
         re: Optional[GenericEvent] = None
@@ -86,12 +86,13 @@ class Events(ABC, MyCollection[T]):
         return re
 
     def merge(self, events: Events) -> Events:
-        merged_events = Events()
+        merged_events: Events = Events()
         merged_events._data = self._data + events._data
         return merged_events
 
 
 class IEvents(Node, Events):
+
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_ievents(self)
 

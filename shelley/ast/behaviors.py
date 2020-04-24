@@ -99,10 +99,6 @@ class BehaviorsMissingBegin(Exception):
 
 
 class Behaviors(Node, MyCollection[Behavior]):
-    _data: List[Behavior]
-
-    def __init__(self):
-        self._data = list()
 
     def create(self, e1: GenericEvent, e2: GenericEvent, a: Optional[Action] = None) -> Behavior:
         behavior = Behavior(e1, e2, a)

@@ -202,9 +202,9 @@ class MicroState(DecodedState):
     # The event that we are processing
     event: str
     # The current micro state
-    micro: str
+    micro: AbstractSet[str]
 
-    def advance_micro(self, micro: str):
+    def advance_micro(self, micro: AbstractSet[str]):
         return MicroState(macro=self.macro, event=self.event, micro=micro)
 
     def advance_macro(self):
@@ -215,14 +215,11 @@ def is_macro_state(st):
     return isinstance(st, MacroState)
 
 
-AmbiguousState = typing.Union[MicroState, MacroState]
-
-
-def get_macro_states(st: AbstractSet[AmbiguousState]):
+def get_macro_states(st: AbstractSet[DecodedState]):
     return filter(is_macro_state, st)
 
 
-def is_macro_ambiguous(st: AbstractSet[AmbiguousState]) -> bool:
+def is_macro_ambiguous(st: AbstractSet[DecodedState]) -> bool:
     count = 0
     for _ in get_macro_states(st):
         count += 1
@@ -262,7 +259,7 @@ class AmbiguityFailure:
 
 @dataclass
 class MicroBehavior:
-    nfa: NFA[AmbiguousState, str]
+    nfa: NFA[DecodedState, str]
     dfa: DFA[Any, str] = field(init=False)
     failure: Optional[AmbiguityFailure] = field(init=False)
     is_valid: bool = field(init=False)
@@ -341,7 +338,7 @@ class MicroBehavior:
             for t_dfa in det_triggers.values():
                 alphabet.update(t_dfa.alphabet)
 
-        nfa = NFA[typing.Union[MacroState, MicroState], str](
+        nfa = NFA[DecodedState, str](
             alphabet=alphabet,
             transition_func=tsx,
             start_state=MacroState(det_behavior.start_state),
@@ -396,7 +393,7 @@ class AssembledMicroBehavior:
         return self.micro.dfa
 
     @property
-    def nfa(self) -> NFA[AmbiguousState, str]:
+    def nfa(self) -> NFA[DecodedState, str]:
         return self.micro.nfa
 
     def get_failure(self, known_devices: TKnownDevices, components: Dict[str, str]) -> Optional[TFailure]:

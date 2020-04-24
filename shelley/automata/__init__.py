@@ -207,7 +207,7 @@ class MicroState(DecodedState):
     def advance_micro(self, micro: AbstractSet[str]):
         return MicroState(macro=self.macro, event=self.event, micro=micro)
 
-    def advance_macro(self):
+    def advance_macro(self) -> MacroState:
         return MacroState(self.macro, self.event)
 
 
@@ -305,7 +305,7 @@ class MicroBehavior:
         # make sure we don't use external_behavior in the rest of the code
         del external_behavior
 
-        def tsx(src: DecodedState, char: str):
+        def tsx(src: DecodedState, char: Optional[str]) -> AbstractSet[DecodedState]:
             if isinstance(src, MacroState):
                 if char is not None:
                     return frozenset()

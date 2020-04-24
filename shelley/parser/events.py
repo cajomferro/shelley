@@ -1,4 +1,5 @@
-from shelley.ast.events import GenericEvent, EEvent, IEvent, IEvents, EEvents
+from typing import Tuple
+from shelley.ast.events import EEvent, IEvent, IEvents, EEvents
 import re
 
 
@@ -34,7 +35,7 @@ def parse_external_events(input: str) -> EEvents:
     return events
 
 
-def parse(input: str) -> (IEvents, EEvents):
+def parse(input: str) -> Tuple[IEvents, EEvents]:
     ievents = parse_internal_events(input)
     eevents = parse_external_events(input)
     return ievents, eevents

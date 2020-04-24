@@ -7,7 +7,7 @@ T = TypeVar('T')
 class MyCollection(Generic[T]):
     _data: List[T]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._data = []
 
     def add(self, elem: T) -> None:

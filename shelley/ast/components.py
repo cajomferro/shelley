@@ -80,7 +80,7 @@ class ComponentsDeviceNotDeclaredError(Exception):
 class Components(Node, MyCollection[Component]):
     components_to_devices: Dict[str, str]
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.components_to_devices = dict()
 

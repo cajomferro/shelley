@@ -30,7 +30,7 @@ MySafeConstructor.add_constructor('tag:yaml.org,2002:bool', MySafeConstructor.ad
 
 class MySafeLoader(Reader, Scanner, Parser, Composer, MySafeConstructor, Resolver):
 
-    def __init__(self, stream):
+    def __init__(self, stream) -> None:
         Reader.__init__(self, stream)
         Scanner.__init__(self)
         Parser.__init__(self)

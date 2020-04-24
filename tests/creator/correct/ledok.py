@@ -9,7 +9,7 @@ from shelley.ast.triggers import Triggers
 class DLed(Device):
     name = 'Led'
 
-    def __init__(self):
+    def __init__(self) -> None:
         i_events, e_events = parse_events('internal on,internal off,external begin')
 
         actions = parse_actions("turnOn,turnOff")

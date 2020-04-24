@@ -14,7 +14,7 @@ from .timerok import DTimer
 class DDeskLamp(Device):
     name = 'DeskLamp'
 
-    def __init__(self):
+    def __init__(self) -> None:
         i_events, e_events = parse_events(
             "external begin, external level1, external level2, external standby1, external standby2")
         actions = parse_actions("")

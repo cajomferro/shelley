@@ -9,7 +9,7 @@ from shelley.ast.triggers import Triggers
 class DTimer(Device):
     name = 'Timer'
 
-    def __init__(self):
+    def __init__(self) -> None:
         i_events, e_events = parse_events("external begin, internal started, internal canceled, external timeout")
         actions = parse_actions("start,cancel")
         start_events = ['begin']

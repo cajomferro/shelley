@@ -1,4 +1,4 @@
-from shelley.parser.events import GenericEvent, EEvent, parse as parse_events
+from shelley.parser.events import parse as parse_events
 from shelley.parser.actions import parse as parse_actions
 from shelley.parser.behaviors import parse as parse_behaviours
 from shelley.ast.devices import Device
@@ -9,7 +9,7 @@ from shelley.ast.triggers import Triggers
 class DButton(Device):
     name = 'Button'
 
-    def __init__(self):
+    def __init__(self) -> None:
         i_events, e_events = parse_events('external begin, external pressed,external released')
         actions = parse_actions("")
         start_events = ['begin']

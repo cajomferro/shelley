@@ -1,12 +1,11 @@
 import os
 import pytest
-import yaml
+from typing import Optional
 from pathlib import Path
 
 from .context import shelley
 from .context import appcompiler
 
-import appcompiler
 from shelley.automata import Device as AutomataDevice, AssembledDevice, CheckedDevice, check_traces
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
@@ -24,7 +23,7 @@ def _remove_compiled_dir():
         pass
 
 
-def _remove_compiled_files(outdir: Path = None):
+def _remove_compiled_files(outdir: Path):
     for file in outdir.glob("*.sc[y,b]"):
         file.unlink()
 
@@ -214,7 +213,7 @@ def test_serializer_smartbutton1_binary():
 
 ### TEST COMPILER ###
 
-def _compile_simple_device(device_name, outdir: Path = None):
+def _compile_simple_device(device_name):
     src_path = EXAMPLES_PATH / (device_name + ".yml")
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     args = make_args(src_path)
@@ -231,7 +230,7 @@ def test_not_found_device():
 
 
 def test_compile_buton_ok():
-    path = _compile_simple_device('button', COMPILED_PATH)
+    path = _compile_simple_device('button')
     assert path.exists()
 
     _remove_compiled_dir()
@@ -269,7 +268,7 @@ def test_smartbutton_dependency_not_found():
 
 def test_smartbutton_ok():
     # assert not COMPILED_PATH.exists()
-    _compile_simple_device('button', COMPILED_PATH)
+    _compile_simple_device('button')
 
     src_path = EXAMPLES_PATH / 'smartbutton1.yml'
     args = make_args(src_path, Button=COMPILED_PATH / 'button.scy')
@@ -299,9 +298,9 @@ def test_compile_desklamp_dependency_not_found():
 
 def test_compile_desklamp_dependency_not_found_2():
     # assert not COMPILED_PATH.exists()
-    _compile_simple_device('button', COMPILED_PATH)
+    _compile_simple_device('button')
     # _compile_simple_device('led', COMPILED_PATH)
-    _compile_simple_device('timer', COMPILED_PATH)
+    _compile_simple_device('timer')
 
     src_path = EXAMPLES_PATH / 'desklamp.yml'
     args = make_args(src_path,
@@ -321,9 +320,9 @@ def test_compile_desklamp_dependency_not_found_2():
 def test_compile_desklamp_ok():
     # assert not COMPILED_PATH.exists()
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
-    _compile_simple_device('button', COMPILED_PATH)
-    _compile_simple_device('led', COMPILED_PATH)
-    _compile_simple_device('timer', COMPILED_PATH)
+    _compile_simple_device('button')
+    _compile_simple_device('led')
+    _compile_simple_device('timer')
 
     src_path = EXAMPLES_PATH / 'desklamp.yml'
     args = make_args(src_path, Button=COMPILED_PATH / 'button.scy', Led=COMPILED_PATH / 'led.scy',
@@ -335,7 +334,7 @@ def test_compile_desklamp_ok():
 
 def test_compile_ambiguous():
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
-    _compile_simple_device('simple_button', COMPILED_PATH)
+    _compile_simple_device('simple_button')
 
     src_path = EXAMPLES_PATH / 'ambiguous.yml'
     args = make_args(src_path, SimpleButton=COMPILED_PATH / 'simple_button.scy')

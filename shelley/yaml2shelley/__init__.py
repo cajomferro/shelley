@@ -1,5 +1,5 @@
 import yaml
-from typing import List, Mapping, NoReturn
+from typing import List, Mapping
 import copy
 import pathlib
 from shelley.yaml2shelley.util import MySafeLoader
@@ -38,7 +38,7 @@ class ShelleyParserError(Exception):
 #         behaviors.create(e1, e2)
 #     return behaviors
 
-def _parse_behavior(src: List[List[str]], events: EEvents, behaviors: Behaviors) -> NoReturn:
+def _parse_behavior(src: List[List[str]], events: EEvents, behaviors: Behaviors) -> None:
     """
     Parse behavior by creating discovered events and creating the corresponding transitions
     :param src: behavior input to be parsed, example: [['pressed', 'released'], ['released', 'pressed']]
@@ -60,7 +60,7 @@ def _parse_behavior(src: List[List[str]], events: EEvents, behaviors: Behaviors)
         behaviors.create(e1, e2)
 
 
-def _parse_components(src: Mapping[str, str], components: Components) -> NoReturn:
+def _parse_components(src: Mapping[str, str], components: Components) -> None:
     """
 
     :param src: Example: {'ledA': 'Led', 'ledB': 'Led', 'b': 'Button', 't': 'Timer'},
@@ -72,7 +72,7 @@ def _parse_components(src: Mapping[str, str], components: Components) -> NoRetur
         components.create(component_name, device_name)
 
 
-def _parse_triggers(src: Mapping, events: EEvents, components: Components, triggers: Triggers) -> NoReturn:
+def _parse_triggers(src: Mapping, events: EEvents, components: Components, triggers: Triggers) -> None:
     for trigger_event_name in src:
         trigger_rule = _parse_trigger_rule(src[trigger_event_name], components)
 

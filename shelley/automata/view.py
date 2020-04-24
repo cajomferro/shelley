@@ -12,11 +12,11 @@ def automaton2dot(automaton: Dict) -> graphviz.Digraph:
     nodes.add(automaton["start_state"])
     nodes.union(automaton["accepted_states"])
     accepted = set(automaton["accepted_states"])
-    dot.node("", shape="point") # start point
+    dot.node("", shape="point")  # start point
     for node in sorted(nodes):
         kwargs = {"shape": "circle"}
         if node == automaton["start_state"]:
-            start_node_lbl = str(node)
+            start_node_lbl: str = str(node)
         # if node == automaton["start_state"] and node in accepted:
         #     kwargs["shape"] = "doubleoctagon"
         # elif node == automaton["start_state"]:
@@ -33,7 +33,7 @@ def automaton2dot(automaton: Dict) -> graphviz.Digraph:
             edges[pair] = outs = []
         outs.append(edge["char"])
     # Create an edge per edge
-    dot.edge("", start_node_lbl, label="") # arrow for start state
+    dot.edge("", start_node_lbl, label="")  # arrow for start state
     for ((src, dst), chars) in sorted(edges.items()):
         chars = sorted(map(str, chars))
         dot.edge(src, dst, label=", ".join(chars))

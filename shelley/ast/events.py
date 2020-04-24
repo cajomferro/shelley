@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import ABC
-from typing import TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, TypeVar, Optional
 from .node import Node
 from .util import MyCollection
 # from . import events, find_instance_by_name
@@ -23,10 +23,6 @@ class GenericEvent(Node):
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_ievent(self)
-
-    #    @abstractmethod -> fix this!
-    def accept(self, visitor: Visitor) -> None:
-        pass
 
     # def check(self, events: Set[GenericEvent]):
     #     self.check_is_duplicated(events)
@@ -81,8 +77,8 @@ T = TypeVar('T', IEvent, EEvent, GenericEvent)
 
 class Events(ABC, MyCollection[T]):
 
-    def find_by_name(self, name: str) -> GenericEvent:
-        re = None
+    def find_by_name(self, name: str) -> Optional[GenericEvent]:
+        re: Optional[GenericEvent] = None
         try:
             re = next(x for x in self._data if x.name == name)
         except StopIteration:

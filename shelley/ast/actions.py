@@ -1,12 +1,12 @@
 from __future__ import annotations
-from typing import Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass
 
 from .util import MyCollection
 from .node import Node
 
 if TYPE_CHECKING:
-    from ast.visitors import Visitor
+    from .visitors import Visitor
 
 
 @dataclass(order=True)
@@ -16,9 +16,9 @@ class Action(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_action(self)
 
-    def check(self, actions: Set[Action]):
-        self.check_is_duplicated(actions)
-        actions.append(self)
+    # def check(self, actions: Set[Action]):
+    #     self.check_is_duplicated(actions)
+    #     actions.append(self)
 
     def __str__(self):
         return self.name
@@ -66,8 +66,8 @@ class Actions(Node, MyCollection[Action]):
             raise ActionsListDuplicatedError()
         return action
 
-    def find_by_name(self, name: str) -> Action:
-        re = None  # type: Action
+    def find_by_name(self, name: str) -> Optional[Action]:
+        re: Optional[Action] = None
         try:
             re = next(x for x in self._data if x.name == name)
         except StopIteration:

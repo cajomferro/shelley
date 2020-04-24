@@ -1,15 +1,16 @@
 import logging
 import pickle
-import typing
 import yaml
 import os
 from pathlib import Path
 
 from karakuri import regular
 
+from .context import shelley
+from shelley.automata import CheckedDevice
+
 from .exceptions import CompilationError
 from . import settings
-from shelley.automata import CheckedDevice
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -33,7 +34,7 @@ def _test_extension_deserialize(path: Path, binary=False):
 #             settings.EXT_SHELLEY_SOURCE_YAML, ext, path))
 
 
-def _serialize_checked_device(path: Path, device: dict) -> typing.NoReturn:
+def _serialize_checked_device(path: Path, device: dict) -> None:
     with path.open(mode='w') as f:
         yaml.dump(device, f)
 
@@ -45,7 +46,7 @@ def _deserialize_checked_device(path: Path) -> CheckedDevice:
     return CheckedDevice(nfa)
 
 
-def _serialize_checked_device_binary(path: Path, device: dict) -> typing.NoReturn:
+def _serialize_checked_device_binary(path: Path, device: dict) -> None:
     with path.open(mode='wb') as f:
         pickle.dump(device, f, pickle.HIGHEST_PROTOCOL)
 
@@ -57,7 +58,7 @@ def _deserialize_checked_device_binary(path: Path) -> CheckedDevice:
     return CheckedDevice(nfa)
 
 
-def serialize(path: Path, device: dict, binary=False) -> typing.NoReturn:
+def serialize(path: Path, device: dict, binary=False) -> None:
     try:
         if binary:
             _serialize_checked_device_binary(path, device)
@@ -88,12 +89,12 @@ def deserialize(path: Path, binary=False) -> CheckedDevice:
         raise CompilationError("Invalid device!")
     return device
 
-# def _serialize_checked_device_with_yaml(path: Path, device: CheckedDevice) -> typing.NoReturn:
+# def _serialize_checked_device_with_yaml(path: Path, device: CheckedDevice) -> None:
 #     with open(path, 'w') as f:
 #         yaml.dump(device.nfa.as_dict(), f)
 #
 #
-# def _serialize_checked_device_with_pickle(path: Path, device: CheckedDevice) -> typing.NoReturn:
+# def _serialize_checked_device_with_pickle(path: Path, device: CheckedDevice) -> None:
 #     with open(path, 'wb') as f:
 #         pickle.dump(device.nfa.as_dict(), f, pickle.HIGHEST_PROTOCOL)
 #

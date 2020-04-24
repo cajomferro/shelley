@@ -115,5 +115,5 @@ class DDeskLamp(Device):
         super().__init__(self.name, actions, i_events, e_events, start_events, behaviours, triggers, uses, components)
 
 
-def create_device_desk_lamp():
+def create_device_desk_lamp() -> DDeskLamp:
     return DDeskLamp()

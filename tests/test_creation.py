@@ -99,35 +99,6 @@ def test_create_ievents():
     assert (events.find_by_name(enowwhere.name) is None)
 
 
-def test_create_ievents():
-    events = EEvents()
-
-    # create and add to Actions
-    eon = events.create("on")
-    assert (events.count() == 1)
-
-    # create and reject duplicated on Events
-    with pytest.raises(EventsListDuplicatedError):
-        events.create("on")
-
-    # create and then add to Events
-    eoff = EEvent("off")
-    events.add(eoff)
-    assert (events.count() == 2)
-
-    enowwhere = EEvent("nowhere")
-
-    assert (eon != eoff)
-
-    assert (events.contains(eon) is True)
-    assert (events.contains(eoff) is True)
-    assert (events.contains(enowwhere) is False)
-
-    assert (events.find_by_name(eon.name) == eon)
-    assert (events.find_by_name(eoff.name) == eoff)
-    assert (events.find_by_name(enowwhere.name) is None)
-
-
 def test_create_mixevents():
     eevent1 = EEvent("on")
     eevent2 = IEvent("on")

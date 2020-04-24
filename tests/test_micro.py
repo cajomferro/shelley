@@ -1,9 +1,9 @@
-from typing import Any, List
+from typing import Any, List, Dict, Mapping
 import yaml
 from pathlib import Path
 from karakuri.regular import Concat, Char, Union, NIL, concat, NFA, DFA, nfa_to_dfa, dfa_to_nfa
 from .context import shelley
-from shelley.automata import AssembledMicroBehavior, AssembledDevice, Device, \
+from shelley.automata import AssembledMicroBehavior, AssembledDevice, CheckedDevice, Device, \
     build_external_behavior, build_components, MicroState
 
 COMPILED_PATH = Path.cwd() / "tests" / "output" / "test-micro"
@@ -21,7 +21,7 @@ LEVEL2 = "level2"
 OFF = "off"
 
 
-def _remove_compiled_files(outdir: Path = None):
+def _remove_compiled_files(outdir: Path):
     for file in outdir.glob("*.sc[y,b]"):
         file.unlink()
 
@@ -34,7 +34,7 @@ def _remove_compiled_dir():
         pass
 
 
-def get_basic_devices():
+def get_basic_devices() -> Mapping[str, Device]:
     return dict(
         Led=Device(
             start_events=['on'],
@@ -63,7 +63,7 @@ def get_basic_devices():
     )
 
 
-def get_basic_known_devices():
+def get_basic_known_devices() -> Mapping[str, CheckedDevice]:
     return dict((k, AssembledDevice.make(d, {}).external) for (k, d) in get_basic_devices().items())
 
 
@@ -121,16 +121,8 @@ dev = Device(
         "l": "Led",
     },
     triggers={
-        LEVEL1:
-            Concat.from_list(map(Char, [
-                B_P,
-                LA_ON
-            ])),
-        OFF:
-            Concat.from_list(map(Char, [
-                B_P,
-                LA_OFF
-            ]))
+        LEVEL1: Concat.from_list([Char(B_P), Char(LA_ON)]),
+        OFF: Concat.from_list([Char(B_P), Char(LA_OFF)])
     },
 )
 
@@ -142,7 +134,7 @@ def _encode(example_name: str):
     print("\nmacro nfa flatten=False", external_behavior.as_dict(flatten=False))
     print("macro nfa flatten=True", external_behavior.as_dict(flatten=True))
 
-    components_behaviors: dict[str, NFA] = dict(build_components(dev.components, get_basic_known_devices()))
+    components_behaviors: Dict[str, NFA] = dict(build_components(dev.components, get_basic_known_devices()))
     for key, value in components_behaviors.items():
         print(value.as_dict(flatten=False))
 

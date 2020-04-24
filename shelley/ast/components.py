@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Dict, List
+from typing import TYPE_CHECKING, Dict, List, Optional
 from dataclasses import dataclass
 
 from .util import MyCollection
@@ -78,8 +78,8 @@ class ComponentsDeviceNotDeclaredError(Exception):
 
 
 class Components(Node, MyCollection[Component]):
-    components_to_devices = None  # type: Dict[str, str]
-    _data = None  # type: List[Component]
+    components_to_devices: Dict[str, str]
+    _data: List[Component]
 
     def __init__(self):
         self.components_to_devices = dict()
@@ -97,8 +97,8 @@ class Components(Node, MyCollection[Component]):
     def get_device_name(self, component_name) -> str:
         return self.components_to_devices[component_name]
 
-    def find_by_name(self, name: str) -> Component:
-        re = None  # type: Component
+    def find_by_name(self, name: str) -> Optional[Component]:
+        re: Optional[Component] = None
         try:
             re = next(x for x in self._data if x.name == name)
         except StopIteration:

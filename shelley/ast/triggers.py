@@ -91,7 +91,7 @@ class Triggers(Node, MyCollection[Trigger]):
         return self.find_by_event(event_name).trigger_rule
 
     def find_by_event(self, event_name: str) -> Trigger:
-        re = None
+        re: Trigger
         try:
             re = next(x for x in self._data if x.event.name == event_name)
         except StopIteration:

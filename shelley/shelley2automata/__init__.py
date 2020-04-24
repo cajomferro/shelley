@@ -11,7 +11,8 @@ from shelley.ast.visitors.trules2regex import TRules2RegexVisitor
 def get_regex_dict(triggers: Triggers) -> Dict[str, Regex]:
     visitor = TRules2RegexVisitor()
     triggers.accept(visitor)
-    return visitor.regex_dict
+    regex_dict: Dict[str, Regex] = visitor.regex_dict
+    return regex_dict
 
 
 def shelley2automata(shelley_device: ShelleyDevice) -> AutomataDevice:

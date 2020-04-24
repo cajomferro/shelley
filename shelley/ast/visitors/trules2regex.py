@@ -8,8 +8,8 @@ from karakuri.regular import Regex, Char, Concat, Union, NIL
 
 
 class TRules2RegexVisitor(TriggersVisitor):
-    regex_dict = None  # type: Dict[str, Regex]
-    current_regex = None  # type: Regex
+    regex_dict: Dict[str, Regex]
+    current_regex: Regex
 
     def __init__(self):
         self.regex_dict = dict()

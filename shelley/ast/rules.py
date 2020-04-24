@@ -64,9 +64,6 @@ class TriggerRuleEvent(TriggerRule):
                 "Event '{0}' not declared for device {1}!".format(self.event.name,
                                                                   self.component.name))
 
-    def __str__(self):
-        return "{0}.{1}".format(self.event.name, self.component.name)
-
     # def __init__(self, component: Component, event: GenericEvent):
     #     assert (component.name is not None and event is not None)
     #     self.component = component

@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Dict
 
 from . import Visitor
 from shelley.ast.devices import Device
@@ -12,8 +11,8 @@ from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRul
 
 
 class PrettyPrintVisitor(Visitor):
-    components = None  # type:Components
-    result = None
+    components: Components
+    result: str
 
     def __init__(self, components: Components = None):
         self.components = components

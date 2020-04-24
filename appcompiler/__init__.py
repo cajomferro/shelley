@@ -1,7 +1,6 @@
 import logging
-import yaml
 import os
-import typing
+from typing import List, Dict, Optional
 import argparse
 from pathlib import Path
 from karakuri import regular
@@ -30,7 +29,11 @@ logger = logging.getLogger(__name__)
 #     parser.add_argument("-b", "--binary", help="generate binary files", action='store_true')
 #     return parser
 
-def create_parser():
+def get_args() -> argparse.Namespace:
+    return create_parser().parse_args()
+
+
+def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description='Compile shelley files')
     parser.add_argument("-v", "--verbosity", help="increase output verbosity", action='store_true')
     parser.add_argument("-u", "--uses", nargs='*', default=[], help="path to used device")
@@ -61,9 +64,9 @@ def get_dest_path(args_binary: bool, args_output_dir: str, args_src_filepath: st
     return dest_path
 
 
-def _get_known_devices(device: ShelleyDevice, uses_list: typing.List[str], binary=False) -> typing.Mapping[
+def _get_known_devices(device: ShelleyDevice, uses_list: List[str], binary=False) -> Dict[
     str, CheckedDevice]:
-    known_devices: typing.Mapping[str, CheckedDevice] = dict()
+    known_devices: Dict[str, CheckedDevice] = {}
     for u in uses_list:
         try:
             device_path, device_name = u.split(settings.USE_DEVICE_NAME_SEP)
@@ -88,7 +91,7 @@ def _get_ext(binary=False) -> str:
     return settings.EXT_SHELLEY_COMPILED_BIN if binary else settings.EXT_SHELLEY_COMPILED_YAML
 
 
-def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = None, binary=False,
+def compile_shelley(src_path: Path, uses: List[str], dst_path: Optional[Path] = None, binary=False,
                     intermediate=False) -> Path:
     """
 
@@ -111,7 +114,7 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
 
     logger.debug('Compiling device: {0}'.format(shelley_device.name))
 
-    known_devices: typing.Mapping[str, CheckedDevice] = _get_known_devices(shelley_device, uses, binary)
+    known_devices: Dict[str, CheckedDevice] = _get_known_devices(shelley_device, uses, binary)
     automata_device = shelley2automata(shelley_device)
 
     dev = AssembledDevice.make(automata_device, known_devices)
@@ -150,7 +153,3 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
     logger.debug('Compiled file: {0}'.format(dst_path))
 
     return dst_path
-
-
-def get_args() -> argparse.Namespace:
-    return create_parser().parse_args()

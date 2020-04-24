@@ -30,5 +30,5 @@ class DTimer(Device):
         super().__init__(self.name, actions, i_events, e_events, start_events, behaviours, triggers)
 
 
-def create_device_timer():
+def create_device_timer() -> DTimer:
     return DTimer()

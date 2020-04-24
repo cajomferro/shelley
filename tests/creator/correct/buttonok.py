@@ -24,5 +24,5 @@ class DButton(Device):
         super().__init__(self.name, actions, i_events, e_events, start_events, behaviors, triggers)
 
 
-def create_device_button():
+def create_device_button() -> DButton:
     return DButton()

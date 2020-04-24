@@ -1,5 +1,5 @@
 import logging
-import os
+import argparse
 import sys
 
 from .context import shelley
@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def main(args):
+def main(args: argparse.Namespace):
     if args.verbosity:
         settings.VERBOSE = True
         logger.setLevel(logging.DEBUG)

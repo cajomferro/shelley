@@ -11,7 +11,7 @@ def parse_internal_events(input: str) -> IEvents:
 
     matches = re.finditer(regex, input, re.MULTILINE)
 
-    events = IEvents()  # type: Events[IEvent]
+    events: IEvents = IEvents()
     for match in matches:
         events.add(IEvent(match.group(2).strip()))
 
@@ -27,7 +27,7 @@ def parse_external_events(input: str) -> EEvents:
 
     matches = re.finditer(regex, input, re.MULTILINE)
 
-    events = EEvents()  # type: Events[EEvent]
+    events: EEvents = EEvents()
     for match in matches:
         events.add(EEvent(match.group(2).strip()))
 

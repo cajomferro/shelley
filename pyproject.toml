@@ -9,7 +9,7 @@ license = "MIT"
 python = "^3.7"
 pyyaml = "^5.3.1"
 graphviz = "^0.14"
-karukuri = {git = "https://gitlab.com/cogumbreiro/karukuri.git", rev = "6b80aed6e176f67629db58db9f0e6de990a66d91"}
+karukuri = {git = "https://gitlab.com/cogumbreiro/karukuri.git", rev = "ad663048380a892f0290aa1605f164e881322e70"}
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.770"

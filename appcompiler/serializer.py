@@ -3,6 +3,7 @@ import pickle
 import yaml
 import os
 from pathlib import Path
+from typing import Any
 
 from karakuri import regular
 
@@ -42,7 +43,7 @@ def _serialize_checked_device(path: Path, device: dict) -> None:
 def _deserialize_checked_device(path: Path) -> CheckedDevice:
     with path.open(mode='r') as f:
         yaml_load = yaml.safe_load(f)
-    nfa = regular.NFA.from_dict(yaml_load)
+    nfa = regular.NFA[Any,str].from_dict(yaml_load)
     return CheckedDevice(nfa)
 
 
@@ -54,7 +55,7 @@ def _serialize_checked_device_binary(path: Path, device: dict) -> None:
 def _deserialize_checked_device_binary(path: Path) -> CheckedDevice:
     with path.open(mode='rb') as f:
         load = pickle.load(f)
-    nfa = regular.NFA.from_dict(load)
+    nfa = regular.NFA[Any,str].from_dict(load)
     return CheckedDevice(nfa)
 
 

@@ -23,7 +23,7 @@ class CheckedDevice:
     nfa: NFA[Any, str]
 
 
-KnownDevices = Mapping[str, CheckedDevice]
+TKnownDevices = Mapping[str, CheckedDevice]
 
 
 @dataclass(frozen=True)
@@ -116,7 +116,7 @@ def build_external_behavior(behavior: Iterable[Tuple[str, str]], start_events: L
                accepted_states=states)
 
 
-def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
+def instantiate(nfa: NFA, prefix: str) -> NFA:
     """
     The NFA definition of a device doesn't have a prefixed alphabet. However, when declaring components,
     we are referring to device instantiations (e.g., a device of type Button called 'buttonX').
@@ -143,11 +143,11 @@ def prefix_nfa(nfa: NFA, prefix: str) -> NFA:
     )
 
 
-def build_components(components: Dict[str, str], known_devices: KnownDevices) -> Iterator[
+def build_components(components: Dict[str, str], known_devices: TKnownDevices) -> Iterator[
     Tuple[str, NFA]]:
     """
     Build a structure of components that is a map of component name to device instance with a prefixed alphabet
-    :func:`.prefix_nfa`
+    :func:`.instantiate`
 
     :param components: map of component name to device type
         Example:  components = {"t": "Timer", "b": "Button"}
@@ -159,16 +159,13 @@ def build_components(components: Dict[str, str], known_devices: KnownDevices) ->
         Example: "t": Timer(..t.started..t.timeout..), "b": Button(..b.pressed..b.released..)
     """
     for (name, ty) in components.items():
-        yield name, prefix_nfa(known_devices[ty].nfa, name + ".")
+        yield name, instantiate(known_devices[ty].nfa, name + ".")
 
 
-def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False, minimize: bool = False) -> DFA[
-    Any, str]:
+def merge_components(components: Iterable[NFA[Any, str]]) -> DFA[Any, str]:
     """
     Merge all components by using the shuffle operation
     :param components: list of components as NFAs (see :func:`.build_components`)
-    :param flatten:
-    :param minimize:
     :return: shuffled components DFA
     """
     # Get the first component
@@ -178,11 +175,8 @@ def merge_components(components: Iterable[NFA[Any, str]], flatten: bool = False,
     for d in rst:
         dev = dev.shuffle(d)
 
-    # Convert the given NFA into a minimized DFA # TODO: is this related to the minimize parameter?
+    # Convert the given NFA into a DFA
     dev_dfa = nfa_to_dfa(dev)
-
-    if flatten:
-        return dev_dfa.flatten(minimize=minimize)
 
     return dev_dfa
 
@@ -295,7 +289,7 @@ class MicroBehavior:
     def make(cls, external_behavior: NFA[Any, str], triggers: Dict[str, Regex[str]],
              alphabet: Optional[Collection[str]] = None) -> "MicroBehavior":
         """
-        Encode behavior
+        Micro behavior
         
         How:
             - convert external behavior (NFA) and triggers (REGEX) to DFAs (because ... ???)
@@ -314,7 +308,7 @@ class MicroBehavior:
         # make sure we don't use external_behavior in the rest of the code
         del external_behavior
 
-        def tsx(src, char):
+        def tsx(src: DecodedState, char: str):
             if isinstance(src, MacroState):
                 if char is not None:
                     return frozenset()
@@ -328,7 +322,7 @@ class MicroBehavior:
                     ))
                 return frozenset(result)
             elif isinstance(src, MicroState):
-                dfa = det_triggers[src.event]  # TODO: shadows name 'dfa' from outer scope, is this correct?
+                dfa = det_triggers[src.event]
                 if dfa.accepted_states(src.micro) and char is None:
                     return frozenset([src.advance_macro()])
                 elif char in dfa.alphabet:
@@ -344,8 +338,8 @@ class MicroBehavior:
         if alphabet is None:
             # Infer the alphabet from each trigger
             alphabet = set()
-            for dfa in det_triggers.values():
-                alphabet.update(dfa.alphabet)
+            for t_dfa in det_triggers.values():
+                alphabet.update(t_dfa.alphabet)
 
         nfa = NFA[typing.Union[MacroState, MicroState], str](
             alphabet=alphabet,
@@ -363,7 +357,7 @@ class TriggerIntegrationFailure:
     component_errors: Dict[str, Tuple[MacroTrace, int]]
 
     @classmethod
-    def make(cls, micro: MicroBehavior, dfa: DFA[Any, str], known_devices: KnownDevices,
+    def make(cls, micro: MicroBehavior, dfa: DFA[Any, str], known_devices: TKnownDevices,
              components: Dict[str, str]) -> "TriggerIntegrationFailure":
         # We could not assemble the device
         # We compute the smallest error
@@ -405,7 +399,7 @@ class AssembledMicroBehavior:
     def nfa(self) -> NFA[AmbiguousState, str]:
         return self.micro.nfa
 
-    def get_failure(self, known_devices: KnownDevices, components: Dict[str, str]) -> Optional[TFailure]:
+    def get_failure(self, known_devices: TKnownDevices, components: Dict[str, str]) -> Optional[TFailure]:
         # Fill in the failure field
         failure: Optional[TFailure] = self.micro.failure
         if failure is None and not self.impossible.is_empty():
@@ -415,8 +409,7 @@ class AssembledMicroBehavior:
 
     @classmethod
     def make(cls, components: List[NFA[Any, str]], external_behavior: NFA[Any, str],
-             triggers: Dict[str, Regex[str]],
-             minimize=False, flatten=False) -> "AssembledMicroBehavior":
+             triggers: Dict[str, Regex[str]]) -> "AssembledMicroBehavior":
         """
         Build internal behavior by using components, external behavior and triggers
         How:
@@ -432,7 +425,7 @@ class AssembledMicroBehavior:
         if len(components) == 0:
             raise ValueError("Should not be creating an internal behavior with 0 components")
 
-        all_possible: DFA[Any, str] = merge_components(components, flatten, minimize)  # shuffle operation
+        all_possible: DFA[Any, str] = merge_components(components)  # shuffle operation
 
         internal_behavior = MicroBehavior.make(external_behavior, triggers, all_possible.alphabet)
         # Ensure that the all possible behaviors in dev contain the encoded behavior

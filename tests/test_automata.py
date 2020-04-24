@@ -256,8 +256,7 @@ def test_ambiguity_1():
     assert not res.micro.is_valid
     fail = res.micro.failure
     assert fail.micro_trace == (B_P,)
-    assert fail.macro_traces == (
-    (LEVEL2,), (LEVEL1,))  # TODO: sometimes this test fails other passes: order might not be this!
+    assert sorted(fail.macro_traces) == sorted([(LEVEL2,), (LEVEL1,)])
 
 
 def test_ok_1():
@@ -371,7 +370,7 @@ def test_prefix_nfa():
         start_state=0,
         accepted_states=[0, 1],
     )
-    assert prefix_nfa(led, "ledA.") == create_prefixed_led_a()
+    assert instantiate(led, "ledA.") == create_prefixed_led_a()
 
 
 def test_build_components():

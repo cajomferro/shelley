@@ -124,7 +124,7 @@ def compile_shelley(src_path: Path, uses: typing.List[str], dst_path: Path = Non
         # test micro traces
         check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
 
-        serialize(dst_path, dev.external.nfa.as_dict(), binary)
+        serialize(dst_path, dev.external.nfa.as_dict(flatten=True), binary)
 
         if intermediate is True and dev.internal is not None:
             micro: AssembledMicroBehavior = dev.internal

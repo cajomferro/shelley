@@ -3,8 +3,8 @@ import yaml
 from pathlib import Path
 from karakuri.regular import Concat, Char, Union, NIL, concat, NFA, DFA, nfa_to_dfa, dfa_to_nfa
 from .context import shelley
-from shelley.automata import AssembledMicroBehavior, AssembledDevice, Device, build_external_behavior, build_components, \
-    merge_components, MicroState
+from shelley.automata import AssembledMicroBehavior, AssembledDevice, Device, \
+    build_external_behavior, build_components, MicroState
 
 COMPILED_PATH = Path.cwd() / "tests" / "output" / "test-micro"
 
@@ -139,7 +139,8 @@ def _encode(example_name: str):
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
 
     external_behavior: NFA = build_external_behavior(dev.behavior, dev.start_events, dev.events)
-    print(external_behavior.as_dict(flatten=False))
+    print("\nmacro nfa flatten=False", external_behavior.as_dict(flatten=False))
+    print("macro nfa flatten=True", external_behavior.as_dict(flatten=True))
 
     components_behaviors: dict[str, NFA] = dict(build_components(dev.components, get_basic_known_devices()))
     for key, value in components_behaviors.items():

@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any, cast
 import argparse
 from pathlib import Path
 from karakuri import regular
@@ -144,7 +144,7 @@ def compile_shelley(src_path: Path, uses: List[str], dst_path: Optional[Path] = 
 
             # generate internal minimized dfa without traps (must be converted to NFA)
             path = src_path.parent / (src_path.stem + "-internal-dfa" + "." + _get_ext(binary))
-            nfa = regular.dfa_to_nfa(micro.dfa.minimize()).remove_all_sink_states()
+            nfa = regular.dfa_to_nfa(cast(regular.DFA[Any,str], micro.dfa.minimize())).remove_all_sink_states()
             serialize(path, nfa.as_dict(), binary)
 
     else:

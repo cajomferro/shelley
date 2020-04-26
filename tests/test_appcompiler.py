@@ -1,6 +1,6 @@
 import os
 import pytest
-from typing import Optional, Dict
+from typing import Optional, Mapping, Dict
 from pathlib import Path
 import argparse
 
@@ -151,7 +151,7 @@ def test_composite_device() -> None:
 
 ### TEST SERIALIZER ###
 
-def _serialize(name:str, known_devices:Optional[Dict[str,ShelleyDevice]]=None, binary:bool=False) -> CheckedDevice:
+def _serialize(name:str, known_devices:Optional[Mapping[str,CheckedDevice]]=None, binary:bool=False) -> CheckedDevice:
     if known_devices is None:
         known_devices = {}
     path = _get_compiled_path(name, binary=binary)

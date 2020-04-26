@@ -14,7 +14,7 @@ def _get_path(device_name: str) -> Path:
     return Path('tests/input/') / '{0}.yml'.format(device_name)
 
 
-def test_button():
+def test_button() -> None:
     expected = AutomataDevice(
         start_events=['pressed'],
         events=['pressed', 'released'],
@@ -31,7 +31,7 @@ def test_button():
     assert expected == shelley2automata(yaml2shelley.get_shelley_from_yaml(_get_path('button')))
 
 
-def test_led():
+def test_led() -> None:
     expected = AutomataDevice(
         start_events=['on'],
         events=['on', 'off'],
@@ -48,7 +48,7 @@ def test_led():
     assert expected == shelley2automata(yaml2shelley.get_shelley_from_yaml(_get_path('led')))
 
 
-def test_timer():
+def test_timer() -> None:
     expected = AutomataDevice(
         start_events=['started'],
         events=['started', 'canceled', 'timeout'],
@@ -68,7 +68,7 @@ def test_timer():
     assert expected == shelley2automata(yaml2shelley.get_shelley_from_yaml(_get_path('timer')))
 
 
-def test_smartbutton1():
+def test_smartbutton1() -> None:
     expected = AutomataDevice(
         start_events=['on'],
         events=['on'],
@@ -83,7 +83,7 @@ def test_smartbutton1():
     assert expected == shelley2automata(yaml2shelley.get_shelley_from_yaml(_get_path('smartbutton1')))
 
 
-def test_desklamp():
+def test_desklamp() -> None:
     expected_str = """standby2: (b.pressed ; b.released ; t.canceled + t.timeout) ; (ledB.off ; ledA.off + ledA.off ; ledB.off)"""
 
     expected = AutomataDevice(

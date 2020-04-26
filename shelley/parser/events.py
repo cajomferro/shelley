@@ -2,6 +2,15 @@ from typing import Tuple
 from shelley.ast.events import EEvent, IEvent, IEvents, EEvents
 import re
 
+__all__ = (
+    "EEvent",
+    "IEvent",
+    "IEvents",
+    "EEvents",
+    "parse_internal_events",
+    "parse_external_events",
+    "parse",
+)
 
 def parse_internal_events(input: str) -> IEvents:
     """
@@ -41,7 +50,7 @@ def parse(input: str) -> Tuple[IEvents, EEvents]:
     return ievents, eevents
 
 
-def test_parse():
+def test_parse() -> None:
     input_str = "internal started, internal canceled, external timeout"
     ievents, eevents = parse(input_str)
     print([elem.name for elem in ievents._data])

@@ -1,7 +1,5 @@
 import pytest
 
-from .context import shelley
-
 from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
     nfa_to_dfa, Star, NIL, VOID, DFA
 from shelley.automata import *
@@ -11,7 +9,7 @@ B_P = "b.pressed"
 B_R = "b.released"
 
 
-def create_prefixed_button():
+def create_prefixed_button() -> NFA:
     return NFA(
         # states=[0, 1],
         alphabet=[B_P, B_R],
@@ -28,7 +26,7 @@ LA_ON = "ledA.on"
 LA_OFF = "ledA.off"
 
 
-def create_prefixed_led_a():
+def create_prefixed_led_a() -> NFA:
     return NFA(
         # states=[0, 1],
         alphabet=[LA_ON, LA_OFF],
@@ -45,7 +43,7 @@ LB_ON = "ledB.on"
 LB_OFF = "ledB.off"
 
 
-def create_prefixed_led_b():
+def create_prefixed_led_b() -> NFA:
     return NFA(
         # states=[0, 1],
         alphabet=[LB_ON, LB_OFF],
@@ -63,7 +61,7 @@ T_C = "t.canceled"
 T_S = "t.started"
 
 
-def create_prefixed_timer():
+def create_prefixed_timer() -> NFA:
     return NFA(
         # states=[0, 1],
         alphabet=[T_T, T_C, T_S],
@@ -82,7 +80,7 @@ STANDBY1 = "standby1"
 STANDBY2 = "standby2"
 
 
-def create_hello_world():
+def create_hello_world() -> NFA:
     return NFA(
         alphabet=[LEVEL1, LEVEL2, STANDBY1, STANDBY2],
         transition_func=NFA.transition_edges([
@@ -96,7 +94,7 @@ def create_hello_world():
     )
 
 
-def create_prefixed_led_and_button():
+def create_prefixed_led_and_button() -> NFA:
     """
     This example should be a sub-behavior of shuffling button with led-a.
     
@@ -117,7 +115,7 @@ def create_prefixed_led_and_button():
     )
 
 
-def test_button():
+def test_button() -> None:
     button = create_prefixed_button()
     assert button.accepts([])
     assert button.accepts([B_P, B_R])
@@ -125,7 +123,7 @@ def test_button():
     assert not button.accepts([B_R])
 
 
-def test_shuffle():
+def test_shuffle() -> None:
     button = create_prefixed_button()
     led_a = create_prefixed_led_a()
     both = button.shuffle(led_a)
@@ -144,7 +142,7 @@ def test_shuffle():
     assert not both.accepts([LA_ON, B_P, LA_OFF, B_P])
 
 
-def test_led_and_button():
+def test_led_and_button() -> None:
     both = create_prefixed_led_and_button()
     # Both should accept all behaviors of the button
     assert both.accepts([])
@@ -161,7 +159,7 @@ def test_led_and_button():
     assert not both.accepts([LA_ON, B_P, LA_OFF])
 
 
-def test_contains():
+def test_contains() -> None:
     button = create_prefixed_button()
     led_a = create_prefixed_led_a()
     both = button.shuffle(led_a)
@@ -169,7 +167,7 @@ def test_contains():
     assert nfa_to_dfa(both).contains(nfa_to_dfa(behavior))
 
 
-def test_hello_world():
+def test_hello_world() -> None:
     HELLO_WORLD_TRIGGERS = {
         LEVEL1:
             Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
@@ -199,7 +197,7 @@ def test_hello_world():
     assert be.is_valid
 
 
-def test_encode_1():
+def test_encode_1() -> None:
     behavior = Union(
         Char(LEVEL1),
         Star(Concat(Char(LEVEL1), Char(LEVEL2)))
@@ -213,7 +211,7 @@ def test_encode_1():
     assert expected.contains(be)
 
 
-def test_encode_behavior2_1():
+def test_encode_behavior2_1() -> None:
     behavior = Union(
         Char(LEVEL1),
         Star(Concat(Char(LEVEL1), Char(LEVEL2)))
@@ -230,7 +228,7 @@ def test_encode_behavior2_1():
     assert given.is_equivalent_to(expected)
 
 
-def test_encode2():
+def test_encode2() -> None:
     behavior = Star(Concat(Char(LEVEL1), Char(LEVEL2)))
     triggers = {
         LEVEL1: Concat(Char(B_P), Char(B_P)),
@@ -242,7 +240,7 @@ def test_encode2():
     assert be.contains(expected)
 
 
-def test_ambiguity_1():
+def test_ambiguity_1() -> None:
     behavior = Union(
         Char(LEVEL1),
         Star(Concat(Char(LEVEL1), Char(LEVEL2)))
@@ -259,7 +257,7 @@ def test_ambiguity_1():
     assert sorted(fail.macro_traces) == sorted([(LEVEL2,), (LEVEL1,)])
 
 
-def test_ok_1():
+def test_ok_1() -> None:
     behavior = Union(
         Char(LEVEL1),
         Star(Concat(Char(LEVEL1), Char(LEVEL2)))
@@ -272,7 +270,7 @@ def test_ok_1():
     assert AssembledMicroBehavior.make([create_prefixed_button()], n_behavior, triggers).is_valid
 
 
-def test_fail_hello_world():
+def test_fail_hello_world() -> None:
     hello = create_hello_world()
     assert hello.accepts([])
     triggers = {
@@ -306,7 +304,7 @@ def test_fail_hello_world():
     assert not res.impossible.accepts([])
 
 
-def test_smallest_error():
+def test_smallest_error() -> None:
     hello = create_hello_world()
     triggers = {
         LEVEL1:
@@ -352,7 +350,7 @@ def test_smallest_error():
     }
 
 
-def test_demultiplex():
+def test_demultiplex() -> None:
     assert demultiplex(["a.a1", "b.b1", "c.c1", "b.b2", "a.a2"]) == {
         "a": ["a1", "a2"],
         "b": ["b1", "b2"],
@@ -360,7 +358,7 @@ def test_demultiplex():
     }
 
 
-def test_prefix_nfa():
+def test_prefix_nfa() -> None:
     led = NFA(
         alphabet=["on", "off"],
         transition_func=NFA.transition_edges([
@@ -373,7 +371,7 @@ def test_prefix_nfa():
     assert instantiate(led, "ledA.") == create_prefixed_led_a()
 
 
-def test_build_components():
+def test_build_components() -> None:
     led = NFA(
         alphabet=["on", "off"],
         transition_func=NFA.transition_edges([
@@ -401,7 +399,7 @@ def test_build_components():
         assert ex == giv
 
 
-def test_build_components2():
+def test_build_components2() -> None:
     timer = NFA(
         # states=[0, 1],
         alphabet=["timeout", "canceled", "started"],
@@ -442,7 +440,7 @@ def test_build_components2():
         assert ex == giv
 
 
-def test_build_nfa_transitions():
+def test_build_nfa_transitions() -> None:
     start_events = ['level1']
     behavior = [
         ('level1', 'standby1'),
@@ -463,7 +461,7 @@ def test_build_nfa_transitions():
     assert actual_tsx == expected_tsx
 
 
-def test_build_behavior():
+def test_build_behavior() -> None:
     start_events = ['level1']
     events = ['level1', 'standby1', 'level2', 'standby2']
     behavior = [
@@ -496,14 +494,14 @@ def test_build_behavior():
         nfa_to_dfa(create_hello_world()))
 
 
-def test_build_behavior_empty_start_events():
+def test_build_behavior_empty_start_events() -> None:
     with pytest.raises(ValueError) as exc_info:
         build_external_behavior([], [], [], "start")
 
     assert str(exc_info.value) == "At least one start event must be specified."
 
 
-def test_build_behavior_same_name_start_event():
+def test_build_behavior_same_name_start_event() -> None:
     with pytest.raises(ValueError) as exc_info:
         build_external_behavior([], ["xxx"], ["xxx", "yyy"], "yyy")
 
@@ -514,7 +512,7 @@ def test_build_behavior_same_name_start_event():
 #### TEST DEVICES ####
 ######################
 
-def test_device_button():
+def test_device_button() -> None:
     device = Device(
         start_events=['b.pressed'],
         events=['b.pressed', 'b.released'],
@@ -533,7 +531,7 @@ def test_device_button():
     assert nfa_to_dfa(create_prefixed_button()).is_equivalent_to(nfa_to_dfa(expected))
 
 
-def test_device_led_a():
+def test_device_led_a() -> None:
     device = Device(
         start_events=['ledA.on'],
         events=['ledA.on', 'ledA.off'],
@@ -552,7 +550,7 @@ def test_device_led_a():
     assert nfa_to_dfa(create_prefixed_led_a()).is_equivalent_to(nfa_to_dfa(expected))
 
 
-def test_device_led_b():
+def test_device_led_b() -> None:
     device = Device(
         start_events=['ledB.on'],
         events=['ledB.on', 'ledB.off'],
@@ -571,7 +569,7 @@ def test_device_led_b():
     assert nfa_to_dfa(create_prefixed_led_b()).is_equivalent_to(nfa_to_dfa(expected))
 
 
-def test_device_timer():
+def test_device_timer() -> None:
     device = Device(
         start_events=['t.started'],
         events=['t.started', 't.canceled', 't.timeout'],
@@ -593,7 +591,7 @@ def test_device_timer():
     assert nfa_to_dfa(create_prefixed_timer()).is_equivalent_to(nfa_to_dfa(expected))
 
 
-def test_device_hello_world():
+def test_device_hello_world() -> None:
     device = Device(
         start_events=['level1'],
         events=['level1', 'level2', 'standby1', 'standby2'],
@@ -617,7 +615,7 @@ def test_device_hello_world():
     assert nfa_to_dfa(create_hello_world()).is_equivalent_to(nfa_to_dfa(expected))
 
 
-def get_basic_devices():
+def get_basic_devices() -> Dict[str,Device]:
     return dict(
         Led=Device(
             start_events=['on'],
@@ -664,11 +662,11 @@ def get_basic_devices():
     )
 
 
-def get_basic_known_devices():
+def get_basic_known_devices() -> Dict[str,AssembledDevice]:
     return dict((k, AssembledDevice.make(d, {}).external) for (k, d) in get_basic_devices().items())
 
 
-def test_invalid_behavior_1():
+def test_invalid_behavior_1() -> None:
     device = Device(
         start_events=['level1'],
         events=['level1', 'level2', 'standby1', 'standby2'],
@@ -719,7 +717,7 @@ def test_invalid_behavior_1():
     }
 
 
-def test_invalid_behavior_2():
+def test_invalid_behavior_2() -> None:
     device = Device(
         start_events=['level1'],
         events=['level1', 'level2', 'standby1', 'standby2'],
@@ -738,7 +736,7 @@ def test_invalid_behavior_2():
         },
         triggers={
             LEVEL1:
-                Concat.from_list(map(Char, [
+                Concat[str].from_list(map(Char[str], [
                     B_R,  # <--- ERROR HERE: should be B_P
                     B_P,  # <--- ERROR HERE: should be B_P
                     B_R,  # <--- ERROR HERE: should be B_P
@@ -771,7 +769,7 @@ def test_invalid_behavior_2():
     }
 
 
-def test_device_led_and_button():
+def test_device_led_and_button() -> None:
     device = Device(
         start_events=['ledA.on'],
         events=['ledA.on', 'ledA.off', 'b.pressed', 'b.released'],

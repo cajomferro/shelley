@@ -3,11 +3,10 @@ import pickle
 import yaml
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Dict
 
 from karakuri import regular
 
-from .context import shelley
 from shelley.automata import CheckedDevice
 
 from .exceptions import CompilationError
@@ -17,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def _test_extension_deserialize(path: Path, binary=False):
+def _test_extension_deserialize(path: Path, binary:bool=False) -> None:
     ext = os.path.splitext(path)[1].split(".")[1]
     if binary:
         expected = settings.EXT_SHELLEY_COMPILED_BIN
@@ -35,7 +34,7 @@ def _test_extension_deserialize(path: Path, binary=False):
 #             settings.EXT_SHELLEY_SOURCE_YAML, ext, path))
 
 
-def _serialize_checked_device(path: Path, device: dict) -> None:
+def _serialize_checked_device(path: Path, device: Dict[Any,Any]) -> None:
     with path.open(mode='w') as f:
         yaml.dump(device, f)
 
@@ -47,7 +46,7 @@ def _deserialize_checked_device(path: Path) -> CheckedDevice:
     return CheckedDevice(nfa)
 
 
-def _serialize_checked_device_binary(path: Path, device: dict) -> None:
+def _serialize_checked_device_binary(path: Path, device: Dict[Any,Any]) -> None:
     with path.open(mode='wb') as f:
         pickle.dump(device, f, pickle.HIGHEST_PROTOCOL)
 
@@ -59,7 +58,7 @@ def _deserialize_checked_device_binary(path: Path) -> CheckedDevice:
     return CheckedDevice(nfa)
 
 
-def serialize(path: Path, device: dict, binary=False) -> None:
+def serialize(path: Path, device: Dict[Any,Any], binary:bool=False) -> None:
     try:
         if binary:
             _serialize_checked_device_binary(path, device)
@@ -73,7 +72,7 @@ def serialize(path: Path, device: dict, binary=False) -> None:
         raise CompilationError("Invalid device!")
 
 
-def deserialize(path: Path, binary=False) -> CheckedDevice:
+def deserialize(path: Path, binary:bool=False) -> CheckedDevice:
     _test_extension_deserialize(path, binary)
     try:
         if binary:

@@ -2,8 +2,6 @@ import yaml
 import os
 import argparse
 
-from .context import shelley
-
 from shelley.automata.view import automaton2dot
 
 
@@ -18,7 +16,7 @@ def get_args() -> argparse.Namespace:
     return create_parser().parse_args()
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     with open(args.input, 'r') as f:
         d = yaml.load(f, Loader=yaml.FullLoader)
 

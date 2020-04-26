@@ -1,4 +1,4 @@
-from .context import shelley
+import shelley
 
 from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
 from shelley.ast.visitors.wfsyntax import CheckWFSyntaxVisitor

@@ -2,7 +2,7 @@ from typing import Any, List, Dict, Mapping
 import yaml
 from pathlib import Path
 from karakuri.regular import Concat, Char, Union, NIL, concat, NFA, DFA, nfa_to_dfa, dfa_to_nfa
-from .context import shelley
+import shelley
 from shelley.automata import AssembledMicroBehavior, AssembledDevice, CheckedDevice, Device, \
     build_external_behavior, build_components, MicroState
 

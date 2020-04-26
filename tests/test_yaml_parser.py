@@ -1,5 +1,5 @@
 from pathlib import Path
-from .context import shelley
+import shelley
 from shelley.ast.devices import Device
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
 from shelley import yaml2shelley

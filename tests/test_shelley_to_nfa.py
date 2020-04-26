@@ -1,6 +1,6 @@
 # Shelley to NFA[S,A] --> S: tipo do estado (str ou int), A: tipo do alfabeto (str)
 
-from .context import shelley
+import shelley
 
 from pathlib import Path
 from karakuri.regular import Char, Concat, Union, NIL

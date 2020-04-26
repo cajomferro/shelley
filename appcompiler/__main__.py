@@ -2,16 +2,17 @@ import logging
 import argparse
 import sys
 
-from .context import shelley
+import shelley
 
 from . import settings
-from . import compile_shelley, get_args, CompilationError
+from .exceptions import CompilationError
+from . import compile_shelley, get_args
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def main(args: argparse.Namespace):
+def main(args: argparse.Namespace) -> None:
     if args.verbosity:
         settings.VERBOSE = True
         logger.setLevel(logging.DEBUG)

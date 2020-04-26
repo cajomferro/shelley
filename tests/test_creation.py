@@ -1,4 +1,4 @@
-from .context import shelley
+import shelley
 import pytest
 
 from .creator.correct import DTimer, DButton, DLed
@@ -9,7 +9,7 @@ from shelley.ast.triggers import Trigger, Triggers, TriggersListDuplicatedError
 from shelley.ast.rules import TriggerRuleFired
 
 
-def test_create_triggers():
+def test_create_triggers() -> None:
     event_a = GenericEvent("a")
     event_b = GenericEvent("a")
     triggers = Triggers()
@@ -25,7 +25,7 @@ def test_create_triggers():
     assert triggers.count() == 1
 
 
-def test_create_components():
+def test_create_components() -> None:
     components = Components()
     component_ledA = components.create("ledA", DLed.name)
     component_ledB = components.create("ledB", DLed.name)
@@ -41,7 +41,7 @@ def test_create_components():
         component_dup = components.create("ledA", DLed.name)
 
 
-def test_create_action():
+def test_create_action() -> None:
     actions = Actions()
 
     # create and add to Actions
@@ -70,7 +70,7 @@ def test_create_action():
     assert (actions.find_by_name(action4.name) is None)
 
 
-def test_create_ievents():
+def test_create_ievents() -> None:
     events = IEvents()
 
     # create and add to Actions
@@ -99,7 +99,7 @@ def test_create_ievents():
     assert (events.find_by_name(enowwhere.name) is None)
 
 
-def test_create_mixevents():
+def test_create_mixevents() -> None:
     eevent1 = EEvent("on")
     eevent2 = IEvent("on")
 

@@ -1,11 +1,11 @@
 import os
 import pytest
-from typing import Optional
+from typing import Optional, Dict
 from pathlib import Path
+import argparse
 
-from .context import shelley
-from .context import appcompiler
-
+import appcompiler
+import shelley
 from shelley.automata import Device as AutomataDevice, AssembledDevice, CheckedDevice, check_traces
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
@@ -15,7 +15,7 @@ EXAMPLES_PATH = Path('tests/input')
 COMPILED_PATH = Path('tests/input/compiled')
 
 
-def _remove_compiled_dir():
+def _remove_compiled_dir() -> None:
     _remove_compiled_files(COMPILED_PATH)
     try:
         COMPILED_PATH.rmdir()
@@ -23,7 +23,7 @@ def _remove_compiled_dir():
         pass
 
 
-def _remove_compiled_files(outdir: Path):
+def _remove_compiled_files(outdir: Path) -> None:
     for file in outdir.glob("*.sc[y,b]"):
         file.unlink()
 
@@ -34,7 +34,7 @@ def _get_shelley_device(name: str) -> ShelleyDevice:
     return yaml2shelley.get_shelley_from_yaml(path)
 
 
-def _get_compiled_path(name: str, binary=False) -> Path:
+def _get_compiled_path(name: str, binary:bool=False) -> Path:
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     if binary:
         ext = appcompiler.settings.EXT_SHELLEY_COMPILED_BIN  # scb
@@ -43,20 +43,20 @@ def _get_compiled_path(name: str, binary=False) -> Path:
     return Path.cwd() / COMPILED_PATH / '{0}.{1}'.format(name, ext)
 
 
-def get_path(p):
+def get_path(p:Path) -> str:
     assert isinstance(p, Path)
     return str(COMPILED_PATH / (p.stem + '.scy'))
 
 
-def mk_use(**kwargs):
+def mk_use(**kwargs:Path) -> str:
     assert len(kwargs) == 1
     for key, val in kwargs.items():
         assert isinstance(val, Path)
         assert isinstance(key, str)
         return str(val) + ":" + key
+    raise ValueError()
 
-
-def make_args(src_path, **kwargs):
+def make_args(src_path:Path, **kwargs:Path) -> argparse.Namespace:
     assert isinstance(src_path, Path)
     uses = []
     for k, v in kwargs.items():
@@ -70,7 +70,7 @@ def make_args(src_path, **kwargs):
 
 ### TEST ASSEMBLE DEVICE ###
 
-def test_assemble_button():
+def test_assemble_button() -> None:
     shelley_device: ShelleyDevice = _get_shelley_device('button')
     automata: AutomataDevice = shelley2automata(shelley_device)
 
@@ -79,7 +79,7 @@ def test_assemble_button():
     assert type(assembled_button.external) == CheckedDevice
 
 
-def test_assemble_smart_button():
+def test_assemble_smart_button() -> None:
     checked_button = AssembledDevice.make(shelley2automata(_get_shelley_device('button')), {}).external
     assert type(checked_button) == CheckedDevice
 
@@ -97,7 +97,7 @@ def test_assemble_smart_button():
     assert str(exc_info.value) == "Unaccepted valid trace: good: ['b.released', 'b.pressed']"
 
 
-def test_assemble_desklamp():
+def test_assemble_desklamp() -> None:
     dev = shelley2automata(_get_shelley_device('desklamp'))
     known_devices = {'Led': AssembledDevice.make(shelley2automata(_get_shelley_device('led')), {}).external,
                      'Button': AssembledDevice.make(shelley2automata(_get_shelley_device('button')), {}).external,
@@ -109,7 +109,7 @@ def test_assemble_desklamp():
 
 ### TEST ARGPARSE ###
 
-def test_single_device():
+def test_single_device() -> None:
     device = EXAMPLES_PATH / 'button.yml'
     args = make_args(device)
     assert args.device == device
@@ -117,7 +117,7 @@ def test_single_device():
     assert args.uses == []
 
 
-def test_single_device_binary():
+def test_single_device_binary() -> None:
     device = EXAMPLES_PATH / 'button.yml'
     parser = appcompiler.create_parser()
     args = parser.parse_args(['-b', '-d', str(device)])
@@ -127,7 +127,7 @@ def test_single_device_binary():
     assert args.binary is True
 
 
-def test_single_device_user_defined_outdir():
+def test_single_device_user_defined_outdir() -> None:
     device = EXAMPLES_PATH / 'button.yml'
     output = EXAMPLES_PATH / 'compiled' / 'button.scy'
     parser = appcompiler.create_parser()
@@ -137,7 +137,7 @@ def test_single_device_user_defined_outdir():
     assert args.uses == []
 
 
-def test_composite_device():
+def test_composite_device() -> None:
     device = EXAMPLES_PATH / 'desklamp.yml'
     args = make_args(device, Button=EXAMPLES_PATH / 'button.scy', Led=EXAMPLES_PATH / 'led.scy',
                      Timer=EXAMPLES_PATH / 'timer.scy')
@@ -151,7 +151,7 @@ def test_composite_device():
 
 ### TEST SERIALIZER ###
 
-def _serialize(name, known_devices=None, binary=False) -> CheckedDevice:
+def _serialize(name:str, known_devices:Optional[Dict[str,ShelleyDevice]]=None, binary:bool=False) -> CheckedDevice:
     if known_devices is None:
         known_devices = {}
     path = _get_compiled_path(name, binary=binary)
@@ -160,7 +160,7 @@ def _serialize(name, known_devices=None, binary=False) -> CheckedDevice:
     return assembled_device.external
 
 
-def _test_serializer_button(binary=False):
+def _test_serializer_button(binary:bool=False) -> None:
     name = 'button'
 
     # serialize and deserialize (yaml)
@@ -171,7 +171,7 @@ def _test_serializer_button(binary=False):
     assert deserialized_device == checked_device
 
 
-def _test_serializer_smartbutton1(binary=False):
+def _test_serializer_smartbutton1(binary:bool=False) -> None:
     # serialize and deserialize button
 
     _serialize('button', binary=binary)
@@ -191,36 +191,36 @@ def _test_serializer_smartbutton1(binary=False):
     assert deserialized_device == checked_device
 
 
-def test_serializer_button():
+def test_serializer_button() -> None:
     _test_serializer_button(binary=False)
     _remove_compiled_files(COMPILED_PATH)
 
 
-def test_serializer_button_binary():
+def test_serializer_button_binary() -> None:
     _test_serializer_button(binary=True)
     _remove_compiled_files(COMPILED_PATH)
 
 
-def test_serializer_smartbutton1():
+def test_serializer_smartbutton1() -> None:
     _test_serializer_smartbutton1(binary=False)
     _remove_compiled_files(COMPILED_PATH)
 
 
-def test_serializer_smartbutton1_binary():
+def test_serializer_smartbutton1_binary() -> None:
     _test_serializer_smartbutton1(binary=True)
     _remove_compiled_files(COMPILED_PATH)
 
 
 ### TEST COMPILER ###
 
-def _compile_simple_device(device_name):
+def _compile_simple_device(device_name:str) -> Path:
     src_path = EXAMPLES_PATH / (device_name + ".yml")
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     args = make_args(src_path)
     return appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
 
-def test_not_found_device():
+def test_not_found_device() -> None:
     src_path = os.path.join(EXAMPLES_PATH, 'XbuttonX.yml')
     parser = appcompiler.create_parser()
     args = parser.parse_args(['-d', src_path])
@@ -229,7 +229,7 @@ def test_not_found_device():
         appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
 
 
-def test_compile_buton_ok():
+def test_compile_buton_ok() -> None:
     path = _compile_simple_device('button')
     assert path.exists()
 
@@ -239,7 +239,7 @@ def test_compile_buton_ok():
 ### smartbutton
 
 
-def test_smartbutton_dependency_missing():
+def test_smartbutton_dependency_missing() -> None:
     assert not COMPILED_PATH.exists()
 
     src_path = EXAMPLES_PATH / 'smartbutton1.yml'
@@ -253,7 +253,7 @@ def test_smartbutton_dependency_missing():
     _remove_compiled_dir()
 
 
-def test_smartbutton_dependency_not_found():
+def test_smartbutton_dependency_not_found() -> None:
     assert not COMPILED_PATH.exists()
     COMPILED_PATH.mkdir()
     src_path = EXAMPLES_PATH / 'smartbutton1.yml'
@@ -266,7 +266,7 @@ def test_smartbutton_dependency_not_found():
     _remove_compiled_dir()
 
 
-def test_smartbutton_ok():
+def test_smartbutton_ok() -> None:
     # assert not COMPILED_PATH.exists()
     _compile_simple_device('button')
 
@@ -278,7 +278,7 @@ def test_smartbutton_ok():
     _remove_compiled_dir()
 
 
-def test_compile_desklamp_dependency_not_found():
+def test_compile_desklamp_dependency_not_found() -> None:
     COMPILED_PATH.mkdir(exist_ok=True, parents=True)
 
     src_path = EXAMPLES_PATH / 'desklamp.yml'
@@ -296,7 +296,7 @@ def test_compile_desklamp_dependency_not_found():
     _remove_compiled_dir()
 
 
-def test_compile_desklamp_dependency_not_found_2():
+def test_compile_desklamp_dependency_not_found_2() -> None:
     # assert not COMPILED_PATH.exists()
     _compile_simple_device('button')
     # _compile_simple_device('led', COMPILED_PATH)
@@ -317,7 +317,7 @@ def test_compile_desklamp_dependency_not_found_2():
     _remove_compiled_dir()
 
 
-def test_compile_desklamp_ok():
+def test_compile_desklamp_ok() -> None:
     # assert not COMPILED_PATH.exists()
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     _compile_simple_device('button')
@@ -332,7 +332,7 @@ def test_compile_desklamp_ok():
     _remove_compiled_dir()
 
 
-def test_compile_ambiguous():
+def test_compile_ambiguous() -> None:
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     _compile_simple_device('simple_button')
 

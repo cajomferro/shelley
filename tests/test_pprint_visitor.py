@@ -1,9 +1,10 @@
 import shelley
-
+from typing import Dict
+from shelley.ast.devices import Device
 from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
 
-declared_devices = {}
+declared_devices:Dict[str,Device]  = {}
 
 d_led = create_device_led()
 declared_devices[d_led.name] = d_led
@@ -17,7 +18,7 @@ declared_devices[d_timer.name] = d_timer
 d_desk_lamp = create_device_desk_lamp()
 
 
-def test_pprint_led():
+def test_pprint_led() -> None:
     visitor = PrettyPrintVisitor()
     d_led.accept(visitor)
     expected_str = \
@@ -44,19 +45,19 @@ def test_pprint_led():
     assert (visitor.result == expected_str) # this can be wrong because Set doesn't guarantee elements ordering
 
 
-def test_pprint_button():
+def test_pprint_button() -> None:
     visitor = PrettyPrintVisitor()
     d_button.accept(visitor)
     print(visitor.result)
 
 
-def test_pprint_timer():
+def test_pprint_timer() -> None:
     visitor = PrettyPrintVisitor()
     d_timer.accept(visitor)
     print(visitor.result)
 
 
-def test_pprint_desklamp():
+def test_pprint_desklamp() -> None:
     visitor = PrettyPrintVisitor(components=d_desk_lamp.components)
     d_desk_lamp.accept(visitor)
     print(visitor.result)

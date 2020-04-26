@@ -1,9 +1,11 @@
 import shelley
+from typing import Dict
+from shelley.ast.devices import Device
 
 from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
 from shelley.ast.visitors.wfsyntax import CheckWFSyntaxVisitor
 
-declared_devices = {}
+declared_devices:Dict[str,Device] = {}
 
 d_led = create_device_led()
 declared_devices[d_led.name] = d_led
@@ -17,14 +19,14 @@ declared_devices[d_timer.name] = d_timer
 d_desk_lamp = create_device_desk_lamp()
 
 
-def test_triggers():
+def test_triggers() -> None:
     visitor = CheckWFSyntaxVisitor(d_desk_lamp, declared_devices)
 
     for trigger in d_desk_lamp.triggers.list():
         trigger.trigger_rule.accept(visitor)
 
 
-def test_check_wf_syntax():
+def test_check_wf_syntax() -> None:
     visitor = CheckWFSyntaxVisitor(d_desk_lamp, declared_devices)
     for device in [d_desk_lamp]:
         device.accept(visitor)

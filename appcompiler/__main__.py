@@ -2,8 +2,6 @@ import logging
 import argparse
 import sys
 
-import shelley
-
 from . import settings
 from .exceptions import CompilationError
 from . import compile_shelley, get_args

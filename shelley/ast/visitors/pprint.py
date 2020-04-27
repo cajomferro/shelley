@@ -1,6 +1,7 @@
 from __future__ import annotations
+from typing import Optional
 
-from . import Visitor
+from shelley.ast.visitors import Visitor
 from shelley.ast.devices import Device
 from shelley.ast.actions import Action, Actions
 from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
@@ -14,7 +15,9 @@ class PrettyPrintVisitor(Visitor):
     components: Components
     result: str
 
-    def __init__(self, components: Components = None):
+    def __init__(self, components: Optional[Components] = None):
+        if components is None:
+            components = Components()
         self.components = components
         self.result = ""
 
@@ -134,5 +137,5 @@ class PrettyPrintVisitor(Visitor):
         self.result += "  triggers:\n"
         element.triggers.accept(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.result

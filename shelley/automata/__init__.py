@@ -1,14 +1,11 @@
 from typing import List, Dict, Iterable, Tuple, Any, Optional, Collection, \
-    Mapping, Set, Iterator, Callable, AbstractSet
-import typing
-from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, NIL, Concat, Star, Regex, nfa_to_dfa, \
-    DFA, dfa_to_nfa, Nil, Void, RegexHandler, SubstHandler, VOID
+    Mapping, Set, Iterator, Callable, AbstractSet, Union, cast
+from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Regex, nfa_to_dfa, DFA, SubstHandler
 from dataclasses import dataclass, field
-import copy
-import itertools
 from karakuri import hml
 
 __all__ = "Device", "AssembledDevice", "check_traces", "CheckedDevice"
+
 
 @dataclass
 class Device:
@@ -49,7 +46,7 @@ TNFATransitions = Dict[Tuple[str, Optional[str]], Set[str]]
 
 
 def _build_nfa_transitions(behavior: Iterable[Tuple[str, str]], start_events: List[str],
-                           start_state="$START") -> TNFATransitions:
+                           start_state: str = "$START") -> TNFATransitions:
     """
     Build the NFA transition table given the device behavior and start events.
     How:
@@ -83,7 +80,7 @@ def _build_nfa_transitions(behavior: Iterable[Tuple[str, str]], start_events: Li
 
 # XXX: make the start_state not be a string
 def build_external_behavior(behavior: Iterable[Tuple[str, str]], start_events: List[str], events: List[str],
-                            start_state="$START") -> NFA[Any, str]:
+                            start_state: str = "$START") -> NFA[Any, str]:
     """
     Build the external NFA that represents the device behavior (i.e., its macro event transitions)
     How:
@@ -205,14 +202,14 @@ class MicroState(DecodedState):
     # The current micro state
     micro: AbstractSet[str]
 
-    def advance_micro(self, micro: AbstractSet[str]):
+    def advance_micro(self, micro: AbstractSet[str]) -> "MicroState":
         return MicroState(macro=self.macro, event=self.event, micro=micro)
 
     def advance_macro(self) -> MacroState:
         return MacroState(self.macro, self.event)
 
 
-def is_macro_state(st):
+def is_macro_state(st) -> bool:
     return isinstance(st, MacroState)
 
 
@@ -239,7 +236,7 @@ class AmbiguityFailure:
     macro_traces: Tuple[MacroTrace, MacroTrace]
 
     @classmethod
-    def make(cls, micro_trace: MicroTrace, dfa: DFA[Any, str]):
+    def make(cls, micro_trace: MicroTrace, dfa: DFA[Any, str]) -> "AmbiguityFailure":
         macro_traces = None
         rest = []
         seq = micro_trace
@@ -265,7 +262,7 @@ class MicroBehavior:
     failure: Optional[AmbiguityFailure] = field(init=False)
     is_valid: bool = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.dfa = nfa_to_dfa(self.nfa)
         err_trace = self.dfa.find_shortest_path(is_macro_ambiguous)
         self.is_valid = err_trace is None
@@ -330,7 +327,7 @@ class MicroBehavior:
             else:
                 raise ValueError("Unknown state", src, char)
 
-        def is_final(st):
+        def is_final(st) -> bool:
             return isinstance(st, MacroState) and det_behavior.accepted_states(st.state)
 
         if alphabet is None:
@@ -376,7 +373,7 @@ class TriggerIntegrationFailure:
         return cls(dec_seq, macro_trace, errs)
 
 
-TFailure = typing.Union[TriggerIntegrationFailure, AmbiguityFailure]
+TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure]
 
 
 @dataclass
@@ -386,7 +383,7 @@ class AssembledMicroBehavior:
     micro: MicroBehavior
     is_valid: bool = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         self.is_valid = self.micro.is_valid and self.impossible.is_empty()
 
     @property
@@ -417,8 +414,6 @@ class AssembledMicroBehavior:
         :param external_behavior: device external behavior as NFA
         :param triggers: device triggers as REGEX
             Example:
-        :param minimize:
-        :param flatten:
         """
         if len(components) == 0:
             raise ValueError("Should not be creating an internal behavior with 0 components")
@@ -460,12 +455,12 @@ def demultiplex(seq: Iterable[str]) -> Mapping[str, List[str]]:
     return sequences
 
 
-FormulaOrTrace = typing.Union[List[str], hml.Formula[str]]
+FormulaOrTrace = Union[List[str], hml.Formula[str]]
 
 
 def parse_formula(data: Any) -> FormulaOrTrace:
     if isinstance(data, list):
-        return typing.cast(List[str], data)
+        return cast(List[str], data)
     return hml.Formula.deserialize(data)
 
 
@@ -480,7 +475,7 @@ def check_traces(mc: Callable[[FormulaOrTrace], bool], tests: Mapping[str, Mappi
             raise ValueError(f"Unexpected invalid trace: {key}: {trace}")
 
 
-def model_check(nfa: NFA[Any, str], word_or_formula: typing.Union[List[str], hml.Formula[str]]) -> bool:
+def model_check(nfa: NFA[Any, str], word_or_formula: Union[List[str], hml.Formula[str]]) -> bool:
     if isinstance(word_or_formula, list):
         return nfa.accepts(word_or_formula)
     else:
@@ -494,17 +489,17 @@ class AssembledDevice:
     external: CheckedDevice
     internal: Optional[AssembledMicroBehavior]
     is_valid: bool = field(init=False)
-    failure: Optional[typing.Union[AmbiguityFailure, TriggerIntegrationFailure]]
+    failure: Optional[Union[AmbiguityFailure, TriggerIntegrationFailure]]
 
     def __post_init__(self):
         self.is_valid = self.failure is None
 
-    def internal_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]) -> bool:
+    def internal_model_check(self, word_or_formula: Union[List[str], hml.Formula[str]]) -> bool:
         if self.internal is None:
             raise ValueError("Cannot call internal_model_checker if there is no internal behavior")
         return model_check(self.internal.nfa, word_or_formula)
 
-    def external_model_check(self, word_or_formula: typing.Union[List[str], hml.Formula[str]]):
+    def external_model_check(self, word_or_formula: Union[List[str], hml.Formula[str]]):
         return model_check(self.external.nfa, word_or_formula)
 
     @classmethod

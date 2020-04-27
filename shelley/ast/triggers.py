@@ -1,11 +1,11 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass, field
 
 from .util import MyCollection
 from .node import Node
 from .rules import TriggerRule
-from .events import EEvent, GenericEvent
+from .events import GenericEvent
 
 if TYPE_CHECKING:
     from .visitors import Visitor
@@ -83,11 +83,12 @@ class Triggers(Node, MyCollection[Trigger]):
             raise TriggersListDuplicatedError()
         return trigger
 
-    def get_rule(self, event_name) -> TriggerRule:
-        return self.find_by_event(event_name).trigger_rule
+    def get_rule(self, event_name: str) -> Optional[TriggerRule]:
+        trigger: Optional[Trigger] = self.find_by_event(event_name)
+        return trigger.trigger_rule if trigger is not None else None
 
-    def find_by_event(self, event_name: str) -> Trigger:
-        re: Trigger
+    def find_by_event(self, event_name: str) -> Optional[Trigger]:
+        re: Optional[Trigger] = None
         try:
             re = next(x for x in self._data if x.event.name == event_name)
         except StopIteration:

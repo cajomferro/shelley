@@ -6,7 +6,7 @@ import shelley
 from shelley.automata import AssembledMicroBehavior, AssembledDevice, CheckedDevice, Device, \
     build_external_behavior, build_components, MicroState
 
-COMPILED_PATH = Path.cwd() / "tests" / "output" / "test-micro"
+COMPILED_PATH = Path.cwd() / "output" / "test-micro"
 
 B_P = "b.pressed"
 

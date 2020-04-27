@@ -2,6 +2,13 @@
 Shelley checker
 ***************
 
+Installation
+############
+
+.. code-block:: shell
+
+   poetry install
+
 Run tools
 ############
 
@@ -22,4 +29,17 @@ Run tools
 
 .. warning:: To compile composite devices, please compile all dependency components first.
 
+Useful poetry commands
+############
 
+.. code-block:: shell
+
+    # show env info (useful for configuring your preferred IDE)
+    # Example configurations for PyCharm: https://www.reddit.com/r/pycharm/comments/elga2z/using_pycharm_for_poetrybased_projects/
+    poetry env info
+
+
+    # these are all equivalent
+    poetry run python -m shelleyc
+    poetry run shelleyc
+    shelleyc

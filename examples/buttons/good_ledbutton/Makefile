@@ -1,6 +1,5 @@
-PYTHON = PYTHONPATH=../../../ python3
-SHELLYC = $(PYTHON) -m shelleyc
-SHELLYVIZ = $(PYTHON) -m shelleyv
+SHELLEYC = shelleyc
+SHELLEYVIZ = shelleyv
 
 all: scy pdf
 
@@ -10,13 +9,13 @@ scy: ledbutton.scy
 
 ledbutton.scy: ledbutton.yml simple_button.scy led.scy
 	# This is ok: led is more strict but ledbutton is also more strict
-	$(SHELLYC) -d $< -u simple_button.scy\:SimpleButton led.scy\:Led
+	$(SHELLEYC) -d $< -u simple_button.scy\:SimpleButton led.scy\:Led
 
 %.scy: %.yml
-	$(SHELLYC) -d $<
+	$(SHELLEYC) -d $<
 
 %.gv: %.scy
-	$(SHELLYVIZ) $< -o $@
+	$(SHELLEYVIZ) $< -o $@
 
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<

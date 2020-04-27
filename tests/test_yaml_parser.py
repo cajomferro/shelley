@@ -4,7 +4,7 @@ from shelley import yaml2shelley
 
 
 def _get_path(device_name: str) -> Path:
-    return Path('tests/input/') / '{0}.yml'.format(device_name)
+    return Path('input/') / '{0}.yml'.format(device_name)
 
 
 def test_button() -> None:

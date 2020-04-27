@@ -1,6 +1,5 @@
-PYTHON = PYTHONPATH=../../../ python3
-SHELLYC = $(PYTHON) -m shelleyc
-SHELLYVIZ = $(PYTHON) -m shelleyv
+SHELLEYC = shelleyc
+SHELLEYVIZ = shelleyv
 
 all: scy pdf
 
@@ -9,14 +8,14 @@ pdf: simple_button.pdf led_strict.pdf desklamp.pdf
 scy: desklamp.scy
 
 desklamp.scy: desklamp.yml led_strict.scy simple_button.scy
-	$(SHELLYC) -d $< -u simple_button.scy\:SimpleButton led_strict.scy\:LedStrict
+	$(SHELLEYC) -d $< -u simple_button.scy\:SimpleButton led_strict.scy\:LedStrict
 
 %.scy: %.yml
-	$(SHELLYC) -d $< -o $@
+	$(SHELLEYC) -d $< -o $@
 	test -f $<
 
 %.gv: %.scy
-	$(SHELLYVIZ) $< -o $@
+	$(SHELLEYVIZ) $< -o $@
 
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<

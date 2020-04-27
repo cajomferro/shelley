@@ -1,6 +1,5 @@
-PYTHON = PYTHONPATH=../../../ python3
-SHELLYC = $(PYTHON) -m shelleyc
-SHELLYVIZ = $(PYTHON) -m shelleyv
+SHELLEYC = shelleyc
+SHELLEYVIZ = shelleyv
 
 all: scy pdf
 
@@ -10,13 +9,13 @@ scy: smartbutton.scy
 
 smartbutton.scy: smartbutton.yml singleclick.scy
 	# Invalid device: TriggerIntegrationFailure
-	! $(SHELLYC) -d $< -u singleclick.scy\:SingleClickButton
+	! $(SHELLEYC) -d $< -u singleclick.scy\:SingleClickButton
 
 %.scy: %.yml
-	$(SHELLYC) -d $<
+	$(SHELLEYC) -d $<
 
 %.gv: %.scy
-	$(SHELLYVIZ) $< -o $@
+	$(SHELLEYVIZ) $< -o $@
 
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<

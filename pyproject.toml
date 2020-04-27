@@ -21,5 +21,5 @@ requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
 
 [tool.poetry.scripts]
-shelleyc = "shelleyc.__main__:main"
-shelleyv = "shelleyv.__main__:main"
+shelleyc = "shelleyc.main:main"
+shelleyv = "shelleyv.main:main"

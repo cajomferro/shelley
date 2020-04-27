@@ -1,14 +1,14 @@
-PYTHON = PYTHONPATH=../../../ python3
-SHELLYC = $(PYTHON) -m shelleyc
+SHELLEYC = shelleyc
+SHELLEYVIZ = shelleyv
 
 all: desklamp.scy
 
 %.scy: %.yaml
-	$(SHELLYC) -d $<
+	$(SHELLEYC) -d $<
 
 desklamp.scy: desklamp.yaml timer.scy led.scy button.scy
 	# Negate the result, since this should fail
-	! $(SHELLYC) -d $< -u button.scy\:Button led.scy\:Led timer.scy\:Timer
+	! $(SHELLEYC) -d $< -u button.scy\:Button led.scy\:Led timer.scy\:Timer
 
 clean:
 	rm -f *.scy

@@ -1,6 +1,5 @@
-PYTHON = PYTHONPATH=../../../ python3
-SHELLYC = $(PYTHON) -m shelleyc
-SHELLYVIZ = $(PYTHON) -m shelleyv
+SHELLEYC = shelleyc
+SHELLEYVIZ = shelleyv
 
 all: scy pdf
 
@@ -9,13 +8,13 @@ pdf: singleclick.pdf timer.pdf smartbutton.pdf
 scy: smartbutton.scy
 
 smartbutton.scy: smartbutton.yml singleclick.scy timer.scy
-	$(SHELLYC) -d $< -u singleclick.scy\:SingleClickButton timer.scy\:Timer
+	$(SHELLEYC) -d $< -u singleclick.scy\:SingleClickButton timer.scy\:Timer
 
 %.scy: %.yml
-	$(SHELLYC) -d $<
+	$(SHELLEYC) -d $<
 
 %.gv: %.scy
-	$(SHELLYVIZ) $< -o $@
+	$(SHELLEYVIZ) $< -o $@
 
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<

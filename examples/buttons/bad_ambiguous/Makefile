@@ -1,6 +1,5 @@
-PYTHON = PYTHONPATH=../../../ python3
-SHELLYC = $(PYTHON) -m shelleyc
-SHELLYVIZ = $(PYTHON) -m shelleyv
+SHELLEYC = shelleyc
+SHELLEYVIZ = shelleyv
 
 all: scy pdf
 
@@ -10,13 +9,13 @@ scy: ambiguous.scy
 
 ambiguous.scy: ambiguous.yml simple.scy
 	# Invalid device: AmbiguousTriggersFailure
-	! $(SHELLYC) -d $< -u simple.scy\:SimpleButton
+	! $(SHELLEYC) -d $< -u simple.scy\:SimpleButton
 
 %.scy: %.yml
-	$(SHELLYC) -d $<
+	$(SHELLEYC) -d $<
 
 %.gv: %.scy
-	$(SHELLYVIZ) $< -o $@
+	$(SHELLEYVIZ) $< -o $@
 
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<

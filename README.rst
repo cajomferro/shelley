@@ -10,7 +10,7 @@ Installation
    poetry install
 
 Run tools
-############
+#########
 
 .. code-block:: shell
 
@@ -30,7 +30,7 @@ Run tools
 .. warning:: To compile composite devices, please compile all dependency components first.
 
 Useful poetry commands
-############
+######################
 
 .. code-block:: shell
 

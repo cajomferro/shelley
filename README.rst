@@ -2,31 +2,23 @@
 Shelley checker
 ***************
 
-Run compiler
+Run tools
 ############
 
 .. code-block:: shell
 
    # show all otions
-   python3 -m appcompiler -h
+   shelleyc -h
 
    # compile a device without dependencies (uses)
-   python3 -m appcompiler -d examples/button.yml
+   shelleyc -d examples/button.yml
 
    # compile a device with dependencies (uses)
-   python3 -m appcompiler -u examples/button.scy:Button examples/led.scy:Led examples/timer.scy:Timer -d examples/desklamp.yml
-
-   # user-defined output folder (-o), verbose (-v)
-   python3 -m appcompiler -o examples/compiled  -u examples/compiled/button.scy:Button examples/compiled/led.scy:Led examples/compiled/timer.scy:Timer -d examples/desklamp.yml -v
-
-   # compile a device in binary mode
-   python3 -m appcompiler -b -d examples/button.yml
+   shelleyc -u examples/button.scy:Button examples/led.scy:Led examples/timer.scy:Timer -d examples/desklamp.yml
 
    # visualize a compiled device using xdot
-   python3 -m appvizviewer -i examples/desklamp/desklamp.scy -p | xdot -
-
-   # export compiled device as a state diagram to pdf, png, svg, etc.
-   python3 -m appvizviewer -i examples/desklamp/desklamp.scy -f pdf
+   shelleyv -o examples/desklamp/desklamp.gv examples/desklamp/desklamp.scy
+   dot -Tpdf -o examples/desklamp/desklamp.pdf examples/desklamp/desklamp.gv
 
 .. warning:: To compile composite devices, please compile all dependency components first.
 

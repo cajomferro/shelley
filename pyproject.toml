@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Check system integration"
 authors = ["Carlos Mão de Ferro", "Tiago Cogumbreiro", "Francisco Martins"]
 license = "MIT"
+readme = 'README.rst'
 
 [tool.poetry.dependencies]
 python = "^3.7"

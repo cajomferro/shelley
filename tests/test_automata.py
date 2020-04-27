@@ -1,8 +1,8 @@
 import pytest
-
-from karakuri.regular import NFA, nfa_to_regex, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
-    nfa_to_dfa, Star, NIL, VOID, DFA
-from shelley.automata import *
+from typing import Dict
+from karakuri.regular import NFA, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
+    nfa_to_dfa, Star, NIL
+from shelley.automata import  Device, AssembledDevice, CheckedDevice
 from shelley import automata
 
 B_P = "b.pressed"
@@ -193,7 +193,7 @@ def test_hello_world() -> None:
         create_prefixed_timer()
     ]
     behavior = create_hello_world()
-    be = AssembledMicroBehavior.make(components, behavior, HELLO_WORLD_TRIGGERS)
+    be = automata.AssembledMicroBehavior.make(components, behavior, HELLO_WORLD_TRIGGERS)
     assert be.is_valid
 
 
@@ -206,7 +206,7 @@ def test_encode_1() -> None:
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
-    be = nfa_to_dfa(encode_behavior(regex_to_nfa(behavior), triggers))
+    be = nfa_to_dfa(automata.encode_behavior(regex_to_nfa(behavior), triggers))
     expected = nfa_to_dfa(regex_to_nfa(Star(Char(B_P)))).flatten(minimize=True)
     assert expected.contains(be)
 
@@ -221,8 +221,8 @@ def test_encode_behavior2_1() -> None:
         LEVEL2: Char(B_R),
     }
     n_behavior = regex_to_nfa(behavior)
-    expected = nfa_to_dfa(encode_behavior(n_behavior, triggers))
-    result = MicroBehavior.make(n_behavior, triggers)
+    expected = nfa_to_dfa(automata.encode_behavior(n_behavior, triggers))
+    result = automata.MicroBehavior.make(n_behavior, triggers)
     assert result.is_valid
     given = result.dfa.minimize()
     assert given.is_equivalent_to(expected)
@@ -234,7 +234,7 @@ def test_encode2() -> None:
         LEVEL1: Concat(Char(B_P), Char(B_P)),
         LEVEL2: NIL,
     }
-    be = nfa_to_dfa(encode_behavior(regex_to_nfa(behavior), triggers))
+    be = nfa_to_dfa(automata.encode_behavior(regex_to_nfa(behavior), triggers))
     expected = nfa_to_dfa(regex_to_nfa(Star(Concat(Char(B_P), Char(B_P))))).flatten(minimize=True)
     assert expected.contains(be)
     assert be.contains(expected)
@@ -250,7 +250,7 @@ def test_ambiguity_1() -> None:
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
-    res = AssembledMicroBehavior.make([create_prefixed_button()], n_behavior, triggers)
+    res = automata.AssembledMicroBehavior.make([create_prefixed_button()], n_behavior, triggers)
     assert not res.micro.is_valid
     fail = res.micro.failure
     assert fail.micro_trace == (B_P,)
@@ -267,7 +267,7 @@ def test_ok_1() -> None:
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    assert AssembledMicroBehavior.make([create_prefixed_button()], n_behavior, triggers).is_valid
+    assert automata.AssembledMicroBehavior.make([create_prefixed_button()], n_behavior, triggers).is_valid
 
 
 def test_fail_hello_world() -> None:
@@ -297,9 +297,9 @@ def test_fail_hello_world() -> None:
         create_prefixed_led_b(),
         create_prefixed_timer()
     ]
-    be = encode_behavior(hello, triggers)
+    be = automata.encode_behavior(hello, triggers)
     assert be.accepts([])
-    res = AssembledMicroBehavior.make(components, hello, triggers)
+    res = automata.AssembledMicroBehavior.make(components, hello, triggers)
     assert not res.is_valid
     assert not res.impossible.accepts([])
 
@@ -335,7 +335,7 @@ def test_smallest_error() -> None:
         create_prefixed_led_b(),
         create_prefixed_timer()
     ]
-    res = AssembledMicroBehavior.make(components, hello, triggers)
+    res = automata.AssembledMicroBehavior.make(components, hello, triggers)
     assert not res.is_valid
     assert res.micro.is_valid
     fail = res.impossible
@@ -343,7 +343,7 @@ def test_smallest_error() -> None:
     assert fail.accepts(err)
     assert err is not None
     assert err == (B_P, B_P, LA_ON, T_S)
-    assert demultiplex(err) == {
+    assert automata.demultiplex(err) == {
         "b": ["pressed", "pressed"],
         "ledA": ["on"],
         "t": ["started"],
@@ -351,7 +351,7 @@ def test_smallest_error() -> None:
 
 
 def test_demultiplex() -> None:
-    assert demultiplex(["a.a1", "b.b1", "c.c1", "b.b2", "a.a2"]) == {
+    assert automata.demultiplex(["a.a1", "b.b1", "c.c1", "b.b2", "a.a2"]) == {
         "a": ["a1", "a2"],
         "b": ["b1", "b2"],
         "c": ["c1"],
@@ -368,7 +368,7 @@ def test_prefix_nfa() -> None:
         start_state=0,
         accepted_states=[0, 1],
     )
-    assert instantiate(led, "ledA.") == create_prefixed_led_a()
+    assert automata.instantiate(led, "ledA.") == create_prefixed_led_a()
 
 
 def test_build_components() -> None:
@@ -388,7 +388,7 @@ def test_build_components() -> None:
     known_devs = {
         "LED": CheckedDevice(led),
     }
-    given = dict(build_components(comps, known_devs))
+    given = dict(automata.build_components(comps, known_devs))
     expected = {
         "ledA": create_prefixed_led_a(),
         "ledB": create_prefixed_led_b(),
@@ -429,7 +429,7 @@ def test_build_components2() -> None:
         "Timer": CheckedDevice(timer),
         "Button": CheckedDevice(button),
     }
-    given = dict(build_components(comps, known_devs))
+    given = dict(automata.build_components(comps, known_devs))
     expected = {
         "t": create_prefixed_timer(),
         "b": create_prefixed_button(),
@@ -488,22 +488,22 @@ def test_build_behavior() -> None:
                    start_state="start",
                    accepted_states=accepted,
                    )
-    assert build_external_behavior(behavior, start_events, events, "start") == expected
+    assert automata.build_external_behavior(behavior, start_events, events, "start") == expected
     # Make sure this is equivalent to HELLO WORLD
-    assert nfa_to_dfa(build_external_behavior(behavior, start_events, events)).is_equivalent_to(
+    assert nfa_to_dfa(automata.build_external_behavior(behavior, start_events, events)).is_equivalent_to(
         nfa_to_dfa(create_hello_world()))
 
 
 def test_build_behavior_empty_start_events() -> None:
     with pytest.raises(ValueError) as exc_info:
-        build_external_behavior([], [], [], "start")
+        automata.build_external_behavior([], [], [], "start")
 
     assert str(exc_info.value) == "At least one start event must be specified."
 
 
 def test_build_behavior_same_name_start_event() -> None:
     with pytest.raises(ValueError) as exc_info:
-        build_external_behavior([], ["xxx"], ["xxx", "yyy"], "yyy")
+        automata.build_external_behavior([], ["xxx"], ["xxx", "yyy"], "yyy")
 
     assert str(exc_info.value) == "Start state 'yyy' cannot have the same name as an event."
 
@@ -615,7 +615,7 @@ def test_device_hello_world() -> None:
     assert nfa_to_dfa(create_hello_world()).is_equivalent_to(nfa_to_dfa(expected))
 
 
-def get_basic_devices() -> Dict[str,Device]:
+def get_basic_devices() -> Dict[str, Device]:
     return dict(
         Led=Device(
             start_events=['on'],
@@ -662,7 +662,7 @@ def get_basic_devices() -> Dict[str,Device]:
     )
 
 
-def get_basic_known_devices() -> Dict[str,AssembledDevice]:
+def get_basic_known_devices() -> Dict[str, AssembledDevice]:
     return dict((k, AssembledDevice.make(d, {}).external) for (k, d) in get_basic_devices().items())
 
 
@@ -709,7 +709,7 @@ def test_invalid_behavior_1() -> None:
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
-    assert isinstance(given.failure, TriggerIntegrationFailure)
+    assert isinstance(given.failure, automata.TriggerIntegrationFailure)
     assert given.failure.macro_trace == (LEVEL1,)
     assert given.failure.micro_trace == (B_P, B_P, LA_ON, T_S)
     assert given.failure.component_errors == {
@@ -761,7 +761,7 @@ def test_invalid_behavior_2() -> None:
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
-    assert isinstance(given.failure, TriggerIntegrationFailure)
+    assert isinstance(given.failure, automata.TriggerIntegrationFailure)
     assert given.failure.micro_trace == (B_R, B_P, B_R, LA_ON, T_S)
     assert given.failure.macro_trace == (LEVEL1,)
     assert given.failure.component_errors == {

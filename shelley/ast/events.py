@@ -1,9 +1,7 @@
 from __future__ import annotations
-from abc import ABC
 from typing import TYPE_CHECKING, TypeVar, Optional
 from .node import Node
 from .util import MyCollection
-# from . import events, find_instance_by_name
 from dataclasses import dataclass
 
 if TYPE_CHECKING:
@@ -72,10 +70,10 @@ class EEvent(GenericEvent):
         visitor.visit_eevent(self)
 
 
-T = TypeVar('T', IEvent, EEvent, GenericEvent)
+X = TypeVar('X', IEvent, EEvent, GenericEvent)
 
 
-class Events(MyCollection[T]):
+class Events(MyCollection[X]):
 
     def find_by_name(self, name: str) -> Optional[GenericEvent]:
         re: Optional[GenericEvent] = None
@@ -85,13 +83,13 @@ class Events(MyCollection[T]):
             pass
         return re
 
-    def merge(self, events: Events) -> Events:
-        merged_events: Events = Events()
+    def merge(self, events: Events[X]) -> Events[X]:
+        merged_events: Events[X] = Events()
         merged_events._data = self._data + events._data
         return merged_events
 
 
-class IEvents(Node, Events):
+class IEvents(Node, Events[IEvent]):
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_ievents(self)
@@ -105,7 +103,7 @@ class IEvents(Node, Events):
         return event
 
 
-class EEvents(Node, Events):
+class EEvents(Node, Events[EEvent]):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_eevents(self)
 

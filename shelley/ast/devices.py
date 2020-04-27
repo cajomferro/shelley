@@ -73,15 +73,15 @@ class Device(Node):
 
         visitor.visit_device(self)
 
-    def check_is_duplicated(self, devices: List[Device]):
+    def check_is_duplicated(self, devices: List[Device]) -> None:
         if self in devices:
             raise DevicesListDuplicatedError(
                 "Duplicated device with name '{0}'".format(self.name))
 
-    def get_all_events(self) -> Events:
+    def get_all_events(self):
         return self.external_events.merge(self.internal_events)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Device):
             # don't attempt to compare against unrelated types
             raise Exception("Instance is not of Device type")

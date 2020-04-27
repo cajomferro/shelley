@@ -11,7 +11,7 @@ class TRules2RegexVisitor(TriggersVisitor):
     regex_dict: Dict[str, Regex]
     current_regex: Regex
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.regex_dict = dict()
         self.current_regex = NIL
 

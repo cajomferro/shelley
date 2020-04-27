@@ -5,8 +5,6 @@ import argparse
 from pathlib import Path
 from karakuri import regular
 
-import shelley
-
 from . import settings
 from .exceptions import CompilationError
 from .serializer import serialize, deserialize

@@ -4,7 +4,7 @@ from typing import Optional, Mapping, Dict
 from pathlib import Path
 import argparse
 
-import appcompiler
+import shelleyc
 from shelley.automata import Device as AutomataDevice, AssembledDevice, CheckedDevice, check_traces
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
@@ -29,16 +29,16 @@ def _remove_compiled_files(outdir: Path) -> None:
 
 def _get_shelley_device(name: str) -> ShelleyDevice:
     path = Path.cwd() / EXAMPLES_PATH / '{name}.{ext}'.format(name=name,
-                                                              ext=appcompiler.settings.EXT_SHELLEY_SOURCE_YAML[0])
+                                                              ext=shelleyc.settings.EXT_SHELLEY_SOURCE_YAML[0])
     return yaml2shelley.get_shelley_from_yaml(path)
 
 
 def _get_compiled_path(name: str, binary:bool=False) -> Path:
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     if binary:
-        ext = appcompiler.settings.EXT_SHELLEY_COMPILED_BIN  # scb
+        ext = shelleyc.settings.EXT_SHELLEY_COMPILED_BIN  # scb
     else:
-        ext = appcompiler.settings.EXT_SHELLEY_COMPILED_YAML  # scy
+        ext = shelleyc.settings.EXT_SHELLEY_COMPILED_YAML  # scy
     return Path.cwd() / COMPILED_PATH / '{0}.{1}'.format(name, ext)
 
 
@@ -60,7 +60,7 @@ def make_args(src_path:Path, **kwargs:Path) -> argparse.Namespace:
     uses = []
     for k, v in kwargs.items():
         uses.append(str(v) + ":" + k)
-    parser = appcompiler.create_parser()
+    parser = shelleyc.create_parser()
     if len(uses) > 0:
         uses = ['--uses'] + list(sorted(uses))
     return parser.parse_args(
@@ -118,7 +118,7 @@ def test_single_device() -> None:
 
 def test_single_device_binary() -> None:
     device = EXAMPLES_PATH / 'button.yml'
-    parser = appcompiler.create_parser()
+    parser = shelleyc.create_parser()
     args = parser.parse_args(['-b', '-d', str(device)])
     assert args.device == device
     assert args.output is None
@@ -129,7 +129,7 @@ def test_single_device_binary() -> None:
 def test_single_device_user_defined_outdir() -> None:
     device = EXAMPLES_PATH / 'button.yml'
     output = EXAMPLES_PATH / 'compiled' / 'button.scy'
-    parser = appcompiler.create_parser()
+    parser = shelleyc.create_parser()
     args = make_args(device)
     assert args.device == device
     assert args.output == output
@@ -155,7 +155,7 @@ def _serialize(name:str, known_devices:Optional[Mapping[str,CheckedDevice]]=None
         known_devices = {}
     path = _get_compiled_path(name, binary=binary)
     assembled_device: AssembledDevice = AssembledDevice.make(shelley2automata(_get_shelley_device(name)), known_devices)
-    appcompiler.serializer.serialize(path, assembled_device.external.nfa.as_dict(flatten=False), binary)
+    shelleyc.serializer.serialize(path, assembled_device.external.nfa.as_dict(flatten=False), binary)
     return assembled_device.external
 
 
@@ -165,7 +165,7 @@ def _test_serializer_button(binary:bool=False) -> None:
     # serialize and deserialize (yaml)
     path = _get_compiled_path(name, binary=binary)
     checked_device = _serialize(name, binary=binary)
-    deserialized_device = appcompiler.serializer.deserialize(path, binary)
+    deserialized_device = shelleyc.serializer.deserialize(path, binary)
 
     assert deserialized_device == checked_device
 
@@ -176,7 +176,7 @@ def _test_serializer_smartbutton1(binary:bool=False) -> None:
     _serialize('button', binary=binary)
     button_path = _get_compiled_path('button', binary=binary)
 
-    button_device = appcompiler.serializer.deserialize(button_path, binary)
+    button_device = shelleyc.serializer.deserialize(button_path, binary)
 
     known_devices = {
         'Button': button_device
@@ -185,7 +185,7 @@ def _test_serializer_smartbutton1(binary:bool=False) -> None:
     # serialize and deserialize smartbutton
     path = _get_compiled_path('smartbutton1', binary=binary)
     checked_device = _serialize('smartbutton1', known_devices, binary=binary)
-    deserialized_device = appcompiler.serializer.deserialize(path, binary)
+    deserialized_device = shelleyc.serializer.deserialize(path, binary)
 
     assert deserialized_device == checked_device
 
@@ -216,16 +216,16 @@ def _compile_simple_device(device_name:str) -> Path:
     src_path = EXAMPLES_PATH / (device_name + ".yml")
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     args = make_args(src_path)
-    return appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+    return shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
 
 
 def test_not_found_device() -> None:
     src_path = os.path.join(EXAMPLES_PATH, 'XbuttonX.yml')
-    parser = appcompiler.create_parser()
+    parser = shelleyc.create_parser()
     args = parser.parse_args(['-d', src_path])
 
     with pytest.raises(FileNotFoundError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
 
 
 def test_compile_buton_ok() -> None:
@@ -244,8 +244,8 @@ def test_smartbutton_dependency_missing() -> None:
     src_path = EXAMPLES_PATH / 'smartbutton1.yml'
     args = make_args(src_path)
 
-    with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     assert str(exc_info.value) == "Device SmartButton expects ['Button'] but found []!"
 
@@ -257,8 +257,8 @@ def test_smartbutton_dependency_not_found() -> None:
     COMPILED_PATH.mkdir()
     src_path = EXAMPLES_PATH / 'smartbutton1.yml'
     args = make_args(src_path, Button=COMPILED_PATH / 'button.scy')
-    with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     assert str(exc_info.value) == "Use device not found: input/compiled/button.scy. Please compile it first!"
 
@@ -272,7 +272,7 @@ def test_smartbutton_ok() -> None:
     src_path = EXAMPLES_PATH / 'smartbutton1.yml'
     args = make_args(src_path, Button=COMPILED_PATH / 'button.scy')
 
-    appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+    shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     _remove_compiled_dir()
 
@@ -287,8 +287,8 @@ def test_compile_desklamp_dependency_not_found() -> None:
                      Timer=COMPILED_PATH / 'timer.scy'
                      )
 
-    with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     assert str(exc_info.value) == "Use device not found: input/compiled/button.scy. Please compile it first!"
 
@@ -308,8 +308,8 @@ def test_compile_desklamp_dependency_not_found_2() -> None:
                      Timer=COMPILED_PATH / 'timer.scy'
                      )
 
-    with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     assert str(exc_info.value) == "Use device not found: input/compiled/led.scy. Please compile it first!"
 
@@ -326,7 +326,7 @@ def test_compile_desklamp_ok() -> None:
     src_path = EXAMPLES_PATH / 'desklamp.yml'
     args = make_args(src_path, Button=COMPILED_PATH / 'button.scy', Led=COMPILED_PATH / 'led.scy',
                      Timer=COMPILED_PATH / 'timer.scy')
-    appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+    shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     _remove_compiled_dir()
 
@@ -338,8 +338,8 @@ def test_compile_ambiguous() -> None:
     src_path = EXAMPLES_PATH / 'ambiguous.yml'
     args = make_args(src_path, SimpleButton=COMPILED_PATH / 'simple_button.scy')
 
-    with pytest.raises(appcompiler.exceptions.CompilationError) as exc_info:
-        appcompiler.compile_shelley(args.device, args.uses, args.output, args.binary)
+    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     assert "Invalid device: AmbiguityFailure" in str(exc_info.value)
 

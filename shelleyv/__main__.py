@@ -16,7 +16,9 @@ def get_args() -> argparse.Namespace:
     return create_parser().parse_args()
 
 
-def main(args: argparse.Namespace) -> None:
+def main() -> None:
+    args: argparse.Namespace = get_args()
+
     with open(args.input, 'r') as f:
         d = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -27,4 +29,4 @@ def main(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    main(get_args())
+    main()

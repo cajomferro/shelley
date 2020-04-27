@@ -1,5 +1,0 @@
-graphviz
-pytest
-pyyaml
-mypy
-git+http://gitlab.com/cogumbreiro/karukuri.git

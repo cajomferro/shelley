@@ -1,5 +1,5 @@
 PYTHON = PYTHONPATH=../../../ python3
-SHELLYC = $(PYTHON) -m appcompiler
+SHELLYC = $(PYTHON) -m shelleyc
 
 all: desklamp.scy
 

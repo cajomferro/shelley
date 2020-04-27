@@ -11,3 +11,4 @@ _local
 *.sc*
 *.gv*
 *.pdf
+shelley.egg-info

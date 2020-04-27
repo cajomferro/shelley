@@ -10,7 +10,9 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def main(args: argparse.Namespace) -> None:
+def main() -> None:
+    args: argparse.Namespace = get_args()
+
     if args.verbosity:
         settings.VERBOSE = True
         logger.setLevel(logging.DEBUG)
@@ -30,4 +32,4 @@ def main(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    main(get_args())
+    main()

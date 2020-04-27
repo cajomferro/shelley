@@ -1,6 +1,6 @@
 PYTHON = PYTHONPATH=../../../ python3
-SHELLYC = $(PYTHON) -m appcompiler
-SHELLYVIZ = $(PYTHON) -m appvizviewer
+SHELLYC = $(PYTHON) -m shelleyc
+SHELLYVIZ = $(PYTHON) -m shelleyv
 
 all: scy pdf
 

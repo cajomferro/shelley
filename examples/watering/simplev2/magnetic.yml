@@ -1,0 +1,21 @@
+# A magnetic contact switch
+# https://www.adafruit.com/product/375
+
+device:
+  name: Magnetic
+  start_events: [unlocked, locked]
+  behavior:
+    - [locked, unlocked]
+    - [unlocked, locked]
+
+test_macro:
+  ok:
+    valid1: [unlocked, locked, unlocked, locked]
+    valid2: [locked, unlocked, locked, unlocked]
+    valid3: [locked]
+    valid4: [unlocked]
+    empty: []
+  fail:
+    invalid1: [unlocked, unlocked]
+    invalid2: [locked, locked]
+

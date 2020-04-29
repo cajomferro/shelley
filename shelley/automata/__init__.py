@@ -302,9 +302,10 @@ class MicroBehavior:
     def __post_init__(self) -> None:
         self.dfa = nfa_to_dfa(self.nfa)
         err_trace = self.dfa.find_shortest_path(is_macro_ambiguous)
+        self.is_valid = err_trace is None
         self.failure = (
             None
-            if err_trace is None # is valid
+            if err_trace is None  # is valid
             else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
         )
 

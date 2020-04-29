@@ -1,0 +1,43 @@
+device:
+  name: Controller
+  start_events: [start]
+  behavior:
+    #- [start, update]
+    - [start, activateAllValves]
+    - [activateAllValves, update]
+    #- [activateAllValves, deactivateAllValves]
+    #- [deactivateAllValves, update]
+    - [update, deactivateAllValves]
+    - [deactivateAllValves, sleep]
+    - [sleep, start]
+  components:
+    v1: Valve
+    v2: Valve
+    v3: Valve
+    v4: Valve
+    m: Magnetic
+    r: Radio
+    lp: LowPower
+  triggers:
+    start:
+      - xor:
+        - [m.locked, m.unlocked]
+        - [lp.wakeup]
+    update: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable]
+    activateAllValves: [v1.on, v2.on, v3.on, v4.on]
+    deactivateAllValves: [v1.off, v2.off, v3.off, v4.off]
+    sleep:
+      - xor:
+        - [lp.setup, lp.sleep]
+        - [lp.sleep]
+
+test_micro:
+  ok:
+    valid1: [m.locked, m.unlocked, v1.on, v2.on, v3.on, v4.on, r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable, v1.off, v2.off, v3.off, v4.off, lp.setup, lp.sleep]
+    valid2: [lp.wakeup, v1.on, v2.on, v3.on, v4.on, r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable, v1.off, v2.off, v3.off, v4.off, lp.setup, lp.sleep]
+    valid3: [m.locked, m.unlocked, v1.on, v2.on, v3.on, v4.on, r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable, v1.off, v2.off, v3.off, v4.off, lp.sleep]
+    valid4: [m.locked, m.unlocked]
+  fail:
+    invalid1: [m.locked, m.unlocked, v1.on, v2.on, v3.on, v4.on, r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive]
+    invalid2: [m.locked, m.unlocked, v1.on, v2.on, v3.on, v4.on, r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, lp.sleep]
+    invalid3: false

@@ -1,0 +1,10 @@
+device:
+  name: LowPower
+  start_events: [setup, wakeup, sleep]
+  behavior:
+    - [setup, sleep]
+    - [sleep, wakeup]
+    - [wakeup, sleep]
+    - [wakeup, setup]
+    - [sleep, setup]
+    - [sleep, sleep]

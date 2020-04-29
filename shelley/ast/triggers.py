@@ -26,6 +26,7 @@ class Trigger(Node):
         """
         visitor.visit_trigger(self)
 
+
 class TriggersListEmptyError(Exception):
     pass
 

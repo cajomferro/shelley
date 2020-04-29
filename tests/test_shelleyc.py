@@ -114,7 +114,7 @@ def test_assemble_smart_button() -> None:
 
     assert (
         str(exc_info.value)
-        == "Unaccepted valid trace: good: ['b.released', 'b.pressed']"
+        == "Unaccepted valid trace 'good': ['b.released', 'b.pressed']"
     )
 
 

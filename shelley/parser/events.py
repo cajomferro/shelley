@@ -12,6 +12,7 @@ __all__ = (
     "parse",
 )
 
+
 def parse_internal_events(input: str) -> IEvents:
     """
     :param events:

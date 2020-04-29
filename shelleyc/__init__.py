@@ -9,7 +9,12 @@ from . import settings
 from .exceptions import CompilationError
 from .serializer import serialize, deserialize
 
-from shelley.automata import CheckedDevice, AssembledDevice, check_traces, AssembledMicroBehavior
+from shelley.automata import (
+    CheckedDevice,
+    AssembledDevice,
+    check_traces,
+    AssembledMicroBehavior,
+)
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley
@@ -23,18 +28,36 @@ def get_args() -> argparse.Namespace:
 
 
 def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description='Compile shelley files')
-    parser.add_argument("-v", "--verbosity", help="increase output verbosity", action='store_true')
-    parser.add_argument("-u", "--uses", nargs='*', default=[], help="path to used device")
+    parser = argparse.ArgumentParser(description="Compile shelley files")
+    parser.add_argument(
+        "-v", "--verbosity", help="increase output verbosity", action="store_true"
+    )
+    parser.add_argument(
+        "-u", "--uses", nargs="*", default=[], help="path to used device"
+    )
     parser.add_argument("-o", "--output", type=Path, help="path to store compile file")
-    parser.add_argument("-b", "--binary", help="generate binary files", action='store_true')
-    parser.add_argument("-d", '--device', type=Path, help="Path to the input example yaml file", required=True)
-    parser.add_argument("-i", '--intermediate', help="export intermediate structures representations",
-                        action='store_true')
+    parser.add_argument(
+        "-b", "--binary", help="generate binary files", action="store_true"
+    )
+    parser.add_argument(
+        "-d",
+        "--device",
+        type=Path,
+        help="Path to the input example yaml file",
+        required=True,
+    )
+    parser.add_argument(
+        "-i",
+        "--intermediate",
+        help="export intermediate structures representations",
+        action="store_true",
+    )
     return parser
 
 
-def get_dest_path(args_binary: bool, args_output_dir: str, args_src_filepath: str, device_name: str) -> str:
+def get_dest_path(
+    args_binary: bool, args_output_dir: str, args_src_filepath: str, device_name: str
+) -> str:
     if args_output_dir is None:
         output_dir = os.path.dirname(args_src_filepath)
     else:  # if --output is specified, create folder if doesn't exist yet
@@ -46,15 +69,21 @@ def get_dest_path(args_binary: bool, args_output_dir: str, args_src_filepath: st
 
     dest_path: str
     if args_binary:
-        dest_path = os.path.join(output_dir, '{0}.{1}'.format(device_name, settings.EXT_SHELLEY_COMPILED_BIN))
+        dest_path = os.path.join(
+            output_dir, "{0}.{1}".format(device_name, settings.EXT_SHELLEY_COMPILED_BIN)
+        )
     else:
-        dest_path = os.path.join(output_dir, '{0}.{1}'.format(device_name, settings.EXT_SHELLEY_COMPILED_YAML))
+        dest_path = os.path.join(
+            output_dir,
+            "{0}.{1}".format(device_name, settings.EXT_SHELLEY_COMPILED_YAML),
+        )
 
     return dest_path
 
 
-def _get_known_devices(device: ShelleyDevice, uses_list: List[str], binary: bool = False) -> Dict[
-    str, CheckedDevice]:
+def _get_known_devices(
+    device: ShelleyDevice, uses_list: List[str], binary: bool = False
+) -> Dict[str, CheckedDevice]:
     known_devices: Dict[str, CheckedDevice] = {}
     for u in uses_list:
         try:
@@ -62,26 +91,48 @@ def _get_known_devices(device: ShelleyDevice, uses_list: List[str], binary: bool
         except ValueError as error:
             if settings.VERBOSE:
                 logger.exception(error)
-            raise CompilationError('Invalid dependency: {0}. Perhaps missing device name?'.format(u))
+            raise CompilationError(
+                "Invalid dependency: {0}. Perhaps missing device name?".format(u)
+            )
         known_devices[device_name] = deserialize(Path(device_path), binary)
 
     if len(device.uses) != len(known_devices):
-        raise CompilationError('Device {name} expects {uses} but found {known_devices}!'.format(
-            name=device.name, uses=device.uses, known_devices=list(known_devices.keys())))
+        raise CompilationError(
+            "Device {name} expects {uses} but found {known_devices}!".format(
+                name=device.name,
+                uses=device.uses,
+                known_devices=list(known_devices.keys()),
+            )
+        )
 
-    for dname in device.uses:  # check that all uses match the specified dependencies on the command
+    for (
+        dname
+    ) in (
+        device.uses
+    ):  # check that all uses match the specified dependencies on the command
         if dname not in known_devices:
-            raise CompilationError('Device dependency not specified: {0}!'.format(dname))
+            raise CompilationError(
+                "Device dependency not specified: {0}!".format(dname)
+            )
 
     return known_devices
 
 
 def _get_ext(binary: bool = False) -> str:
-    return settings.EXT_SHELLEY_COMPILED_BIN if binary else settings.EXT_SHELLEY_COMPILED_YAML
+    return (
+        settings.EXT_SHELLEY_COMPILED_BIN
+        if binary
+        else settings.EXT_SHELLEY_COMPILED_YAML
+    )
 
 
-def compile_shelley(src_path: Path, uses: List[str], dst_path: Optional[Path] = None, binary: bool = False,
-                    intermediate: bool = False) -> Path:
+def compile_shelley(
+    src_path: Path,
+    uses: List[str],
+    dst_path: Optional[Path] = None,
+    binary: bool = False,
+    intermediate: bool = False,
+) -> Path:
     """
 
     :param src_path: Shelley device src path to be compiled (YAML file)
@@ -96,14 +147,16 @@ def compile_shelley(src_path: Path, uses: List[str], dst_path: Optional[Path] = 
     except yaml2shelley.ShelleyParserError as error:
         if settings.VERBOSE:
             logger.exception(error)
-        raise CompilationError('Shelley parser error: {0}'.format(str(error)))
+        raise CompilationError("Shelley parser error: {0}".format(str(error)))
 
     if dst_path is None:
         dst_path = src_path.parent / (src_path.stem + "." + _get_ext(binary))
 
-    logger.debug('Compiling device: {0}'.format(shelley_device.name))
+    logger.debug("Compiling device: {0}".format(shelley_device.name))
 
-    known_devices: Dict[str, CheckedDevice] = _get_known_devices(shelley_device, uses, binary)
+    known_devices: Dict[str, CheckedDevice] = _get_known_devices(
+        shelley_device, uses, binary
+    )
     automata_device = shelley2automata(shelley_device)
 
     dev = AssembledDevice.make(automata_device, known_devices)
@@ -125,23 +178,33 @@ def compile_shelley(src_path: Path, uses: List[str], dst_path: Optional[Path] = 
             micro: AssembledMicroBehavior = dev.internal
 
             # generate shuffling of all components
-            path = src_path.parent / (src_path.stem + "-shuffle-dfa" + "." + _get_ext(binary))
-            shuffle = regular.dfa_to_nfa(micro.possible).remove_all_sink_states()  # without traps
+            path = src_path.parent / (
+                src_path.stem + "-shuffle-dfa" + "." + _get_ext(binary)
+            )
+            shuffle = regular.dfa_to_nfa(
+                micro.possible
+            ).remove_all_sink_states()  # without traps
             serialize(path, shuffle.as_dict(), binary)
 
             # generate internal nfa without epsilon and without traps
-            path = src_path.parent / (src_path.stem + "-internal-nfa" + "." + _get_ext(binary))
+            path = src_path.parent / (
+                src_path.stem + "-internal-nfa" + "." + _get_ext(binary)
+            )
             nfa = micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
             serialize(path, nfa.as_dict(), binary)
 
             # generate internal minimized dfa without traps (must be converted to NFA)
-            path = src_path.parent / (src_path.stem + "-internal-dfa" + "." + _get_ext(binary))
-            nfa = regular.dfa_to_nfa(cast(regular.DFA[Any, str], micro.dfa.minimize())).remove_all_sink_states()
+            path = src_path.parent / (
+                src_path.stem + "-internal-dfa" + "." + _get_ext(binary)
+            )
+            nfa = regular.dfa_to_nfa(
+                cast(regular.DFA[Any, str], micro.dfa.minimize())
+            ).remove_all_sink_states()
             serialize(path, nfa.as_dict(), binary)
 
     else:
         raise CompilationError("Invalid device: {0}".format(dev.failure))
 
-    logger.debug('Compiled file: {0}'.format(dst_path))
+    logger.debug("Compiled file: {0}".format(dst_path))
 
     return dst_path

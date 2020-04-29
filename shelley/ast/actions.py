@@ -57,7 +57,6 @@ class ActionsListDuplicatedError(Exception):
 
 
 class Actions(Node, MyCollection[Action]):
-
     def create(self, action_name: str) -> Action:
         action = Action(action_name)
         if action not in self._data:

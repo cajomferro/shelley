@@ -7,7 +7,12 @@ from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
 from shelley.ast.behaviors import Behavior, Behaviors
 from shelley.ast.components import Component, Components
 from shelley.ast.triggers import Trigger, Triggers
-from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
+from shelley.ast.rules import (
+    TriggerRuleSequence,
+    TriggerRuleChoice,
+    TriggerRuleEvent,
+    TriggerRuleFired,
+)
 
 
 class TriggersVisitor(Visitor):

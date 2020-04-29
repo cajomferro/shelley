@@ -6,7 +6,9 @@ from shelley.automata.view import automaton2dot
 
 
 def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description='Vizualize compiled files as state diagrams')
+    parser = argparse.ArgumentParser(
+        description="Vizualize compiled files as state diagrams"
+    )
     parser.add_argument("input", help="Path to the compiled yaml file (.scy or .scb)")
     parser.add_argument("-o", "--output", help="Path to the generated dot file")
     return parser
@@ -19,12 +21,12 @@ def get_args() -> argparse.Namespace:
 def main() -> None:
     args: argparse.Namespace = get_args()
 
-    with open(args.input, 'r') as f:
+    with open(args.input, "r") as f:
         d = yaml.load(f, Loader=yaml.FullLoader)
 
     dot = automaton2dot(d)
 
-    with open(args.output, 'w') as fp:
+    with open(args.output, "w") as fp:
         print(dot, file=fp)
 
 

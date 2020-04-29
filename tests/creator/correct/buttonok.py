@@ -7,12 +7,14 @@ from shelley.ast.triggers import Triggers
 
 
 class DButton(Device):
-    name = 'Button'
+    name = "Button"
 
     def __init__(self) -> None:
-        i_events, e_events = parse_events('external begin, external pressed,external released')
+        i_events, e_events = parse_events(
+            "external begin, external pressed,external released"
+        )
         actions = parse_actions("")
-        start_events = ['begin']
+        start_events = ["begin"]
         behaviours_str = "begin -> pressed,pressed -> released,released -> pressed"
         behaviors = parse_behaviours(behaviours_str, i_events.merge(e_events), actions)
 
@@ -21,7 +23,9 @@ class DButton(Device):
         triggers.create(e_events.find_by_name("pressed"), TriggerRuleFired())
         triggers.create(e_events.find_by_name("released"), TriggerRuleFired())
 
-        super().__init__(self.name, actions, i_events, e_events, start_events, behaviors, triggers)
+        super().__init__(
+            self.name, actions, i_events, e_events, start_events, behaviors, triggers
+        )
 
 
 def create_device_button() -> DButton:

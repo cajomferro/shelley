@@ -14,7 +14,9 @@ if TYPE_CHECKING:
 @dataclass(order=True)
 class Trigger(Node):
     event: GenericEvent
-    trigger_rule: TriggerRule = field(compare=False)  # do not use this field for comparing triggers
+    trigger_rule: TriggerRule = field(
+        compare=False
+    )  # do not use this field for comparing triggers
 
     def accept(self, visitor: Visitor) -> None:
         """
@@ -74,7 +76,6 @@ class TriggerRulesListEmptyError(Exception):
 
 
 class Triggers(Node, MyCollection[Trigger]):
-
     def create(self, event: GenericEvent, rule: TriggerRule) -> Trigger:
         trigger = Trigger(event, rule)
         if trigger not in self._data:

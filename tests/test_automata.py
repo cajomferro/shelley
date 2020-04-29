@@ -1,8 +1,18 @@
 import pytest
 from typing import Dict
-from karakuri.regular import NFA, regex_to_nfa, Union, Char, Concat, concat, shuffle as And, \
-    nfa_to_dfa, Star, NIL
-from shelley.automata import  Device, AssembledDevice, CheckedDevice
+from karakuri.regular import (
+    NFA,
+    regex_to_nfa,
+    Union,
+    Char,
+    Concat,
+    concat,
+    shuffle as And,
+    nfa_to_dfa,
+    Star,
+    NIL,
+)
+from shelley.automata import Device, AssembledDevice, CheckedDevice
 from shelley import automata
 
 B_P = "b.pressed"
@@ -13,10 +23,7 @@ def create_prefixed_button() -> NFA:
     return NFA(
         # states=[0, 1],
         alphabet=[B_P, B_R],
-        transition_func=NFA.transition_edges([
-            (0, [B_P], 1),
-            (1, [B_R], 0),
-        ]),
+        transition_func=NFA.transition_edges([(0, [B_P], 1), (1, [B_R], 0),]),
         start_state=0,
         accepted_states=[0, 1],
     )
@@ -30,10 +37,7 @@ def create_prefixed_led_a() -> NFA:
     return NFA(
         # states=[0, 1],
         alphabet=[LA_ON, LA_OFF],
-        transition_func=NFA.transition_edges([
-            (0, [LA_ON], 1),
-            (1, [LA_OFF], 0),
-        ]),
+        transition_func=NFA.transition_edges([(0, [LA_ON], 1), (1, [LA_OFF], 0),]),
         start_state=0,
         accepted_states=[0, 1],
     )
@@ -47,10 +51,7 @@ def create_prefixed_led_b() -> NFA:
     return NFA(
         # states=[0, 1],
         alphabet=[LB_ON, LB_OFF],
-        transition_func=NFA.transition_edges([
-            (0, [LB_ON], 1),
-            (1, [LB_OFF], 0),
-        ]),
+        transition_func=NFA.transition_edges([(0, [LB_ON], 1), (1, [LB_OFF], 0),]),
         start_state=0,
         accepted_states=[0, 1],
     )
@@ -65,10 +66,7 @@ def create_prefixed_timer() -> NFA:
     return NFA(
         # states=[0, 1],
         alphabet=[T_T, T_C, T_S],
-        transition_func=NFA.transition_edges([
-            (0, [T_S], 1),
-            (1, [T_C, T_T], 0),
-        ]),
+        transition_func=NFA.transition_edges([(0, [T_S], 1), (1, [T_C, T_T], 0),]),
         start_state=0,
         accepted_states=[0, 1],
     )
@@ -83,12 +81,14 @@ STANDBY2 = "standby2"
 def create_hello_world() -> NFA:
     return NFA(
         alphabet=[LEVEL1, LEVEL2, STANDBY1, STANDBY2],
-        transition_func=NFA.transition_edges([
-            (0, [LEVEL1], 1),
-            (1, [LEVEL2], 2),
-            (1, [STANDBY1], 0),
-            (2, [STANDBY2], 0),
-        ]),
+        transition_func=NFA.transition_edges(
+            [
+                (0, [LEVEL1], 1),
+                (1, [LEVEL2], 2),
+                (1, [STANDBY1], 0),
+                (2, [STANDBY2], 0),
+            ]
+        ),
         start_state=0,
         accepted_states=lambda x: 0 <= x <= 2,
     )
@@ -104,12 +104,9 @@ def create_prefixed_led_and_button() -> NFA:
     return NFA(
         # states=[0, 1, 2],
         alphabet=[LA_ON, LA_OFF, B_R, B_P],
-        transition_func=NFA.transition_edges([
-            (0, [LA_ON], 1),
-            (1, [LA_OFF], 0),
-            (1, [B_P], 2),
-            (2, [B_R], 1),
-        ]),
+        transition_func=NFA.transition_edges(
+            [(0, [LA_ON], 1), (1, [LA_OFF], 0), (1, [B_P], 2), (2, [B_R], 1),]
+        ),
         start_state=0,
         accepted_states=[0, 1, 2],
     )
@@ -169,39 +166,31 @@ def test_contains() -> None:
 
 def test_hello_world() -> None:
     HELLO_WORLD_TRIGGERS = {
-        LEVEL1:
-            Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
-        LEVEL2:
-            Concat.from_list([
-                Char(B_P),
-                Char(B_R),
-                And(Char(T_C), Char(LB_ON)),
-                Char(T_S),
-            ]),
-        STANDBY1:
-            concat(Char(T_T), Char(LA_OFF)),
-        STANDBY2:
-            concat(
-                Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
-                And(Char(LB_OFF), Char(LA_OFF)),
-            ),
+        LEVEL1: Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
+        LEVEL2: Concat.from_list(
+            [Char(B_P), Char(B_R), And(Char(T_C), Char(LB_ON)), Char(T_S),]
+        ),
+        STANDBY1: concat(Char(T_T), Char(LA_OFF)),
+        STANDBY2: concat(
+            Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+            And(Char(LB_OFF), Char(LA_OFF)),
+        ),
     }
     components = [
         create_prefixed_button(),
         create_prefixed_led_a(),
         create_prefixed_led_b(),
-        create_prefixed_timer()
+        create_prefixed_timer(),
     ]
     behavior = create_hello_world()
-    be = automata.AssembledMicroBehavior.make(components, behavior, HELLO_WORLD_TRIGGERS)
+    be = automata.AssembledMicroBehavior.make(
+        components, behavior, HELLO_WORLD_TRIGGERS
+    )
     assert be.is_valid
 
 
 def test_encode_1() -> None:
-    behavior = Union(
-        Char(LEVEL1),
-        Star(Concat(Char(LEVEL1), Char(LEVEL2)))
-    )
+    behavior = Union(Char(LEVEL1), Star(Concat(Char(LEVEL1), Char(LEVEL2))))
     triggers = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
@@ -212,10 +201,7 @@ def test_encode_1() -> None:
 
 
 def test_encode_behavior2_1() -> None:
-    behavior = Union(
-        Char(LEVEL1),
-        Star(Concat(Char(LEVEL1), Char(LEVEL2)))
-    )
+    behavior = Union(Char(LEVEL1), Star(Concat(Char(LEVEL1), Char(LEVEL2))))
     triggers = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
@@ -235,22 +221,23 @@ def test_encode2() -> None:
         LEVEL2: NIL,
     }
     be = nfa_to_dfa(automata.encode_behavior(regex_to_nfa(behavior), triggers))
-    expected = nfa_to_dfa(regex_to_nfa(Star(Concat(Char(B_P), Char(B_P))))).flatten(minimize=True)
+    expected = nfa_to_dfa(regex_to_nfa(Star(Concat(Char(B_P), Char(B_P))))).flatten(
+        minimize=True
+    )
     assert expected.contains(be)
     assert be.contains(expected)
 
 
 def test_ambiguity_1() -> None:
-    behavior = Union(
-        Char(LEVEL1),
-        Star(Concat(Char(LEVEL1), Char(LEVEL2)))
-    )
+    behavior = Union(Char(LEVEL1), Star(Concat(Char(LEVEL1), Char(LEVEL2))))
     n_behavior = regex_to_nfa(behavior)
     triggers = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
-    res = automata.AssembledMicroBehavior.make([create_prefixed_button()], n_behavior, triggers)
+    res = automata.AssembledMicroBehavior.make(
+        [create_prefixed_button()], n_behavior, triggers
+    )
     assert not res.micro.is_valid
     fail = res.micro.failure
     assert fail.micro_trace == (B_P,)
@@ -258,44 +245,36 @@ def test_ambiguity_1() -> None:
 
 
 def test_ok_1() -> None:
-    behavior = Union(
-        Char(LEVEL1),
-        Star(Concat(Char(LEVEL1), Char(LEVEL2)))
-    )
+    behavior = Union(Char(LEVEL1), Star(Concat(Char(LEVEL1), Char(LEVEL2))))
     n_behavior = regex_to_nfa(behavior)
     triggers = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    assert automata.AssembledMicroBehavior.make([create_prefixed_button()], n_behavior, triggers).is_valid
+    assert automata.AssembledMicroBehavior.make(
+        [create_prefixed_button()], n_behavior, triggers
+    ).is_valid
 
 
 def test_fail_hello_world() -> None:
     hello = create_hello_world()
     assert hello.accepts([])
     triggers = {
-        LEVEL1:
-            Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
-        LEVEL2:
-            Concat.from_list([
-                Char(B_R),
-                Char(B_P),
-                And(Char(T_C), Char(LB_ON)),
-                Char(T_S),
-            ]),
-        STANDBY1:
-            concat(Char(T_T), Char(LA_OFF)),
-        STANDBY2:
-            concat(
-                Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
-                And(Char(LB_OFF), Char(LA_OFF)),
-            ),
+        LEVEL1: Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
+        LEVEL2: Concat.from_list(
+            [Char(B_R), Char(B_P), And(Char(T_C), Char(LB_ON)), Char(T_S),]
+        ),
+        STANDBY1: concat(Char(T_T), Char(LA_OFF)),
+        STANDBY2: concat(
+            Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+            And(Char(LB_OFF), Char(LA_OFF)),
+        ),
     }
     components = [
         create_prefixed_button(),
         create_prefixed_led_a(),
         create_prefixed_led_b(),
-        create_prefixed_timer()
+        create_prefixed_timer(),
     ]
     be = automata.encode_behavior(hello, triggers)
     assert be.accepts([])
@@ -307,33 +286,28 @@ def test_fail_hello_world() -> None:
 def test_smallest_error() -> None:
     hello = create_hello_world()
     triggers = {
-        LEVEL1:
-            Concat.from_list(map(Char, [
-                B_P,
-                B_P,  # <--- ERROR HERE: should be B_R
-                LA_ON,
-                T_S
-            ])),
-        LEVEL2:
-            Concat.from_list([
+        LEVEL1: Concat.from_list(
+            map(Char, [B_P, B_P, LA_ON, T_S])  # <--- ERROR HERE: should be B_R
+        ),
+        LEVEL2: Concat.from_list(
+            [
                 Char(B_P),  #
                 Char(B_R),  # Omitted string
                 And(Char(T_C), Char(LB_ON)),
                 Char(T_S),
-            ]),
-        STANDBY1:
-            concat(Char(T_T), Char(LA_OFF)),
-        STANDBY2:
-            concat(
-                Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
-                And(Char(LB_OFF), Char(LA_OFF)),
-            ),
+            ]
+        ),
+        STANDBY1: concat(Char(T_T), Char(LA_OFF)),
+        STANDBY2: concat(
+            Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+            And(Char(LB_OFF), Char(LA_OFF)),
+        ),
     }
     components = [
         create_prefixed_button(),
         create_prefixed_led_a(),
         create_prefixed_led_b(),
-        create_prefixed_timer()
+        create_prefixed_timer(),
     ]
     res = automata.AssembledMicroBehavior.make(components, hello, triggers)
     assert not res.is_valid
@@ -361,10 +335,7 @@ def test_demultiplex() -> None:
 def test_prefix_nfa() -> None:
     led = NFA(
         alphabet=["on", "off"],
-        transition_func=NFA.transition_edges([
-            (0, ["on"], 1),
-            (1, ["off"], 0),
-        ]),
+        transition_func=NFA.transition_edges([(0, ["on"], 1), (1, ["off"], 0),]),
         start_state=0,
         accepted_states=[0, 1],
     )
@@ -374,10 +345,7 @@ def test_prefix_nfa() -> None:
 def test_build_components() -> None:
     led = NFA(
         alphabet=["on", "off"],
-        transition_func=NFA.transition_edges([
-            (0, ["on"], 1),
-            (1, ["off"], 0),
-        ]),
+        transition_func=NFA.transition_edges([(0, ["on"], 1), (1, ["off"], 0),]),
         start_state=0,
         accepted_states=[0, 1],
     )
@@ -403,20 +371,18 @@ def test_build_components2() -> None:
     timer = NFA(
         # states=[0, 1],
         alphabet=["timeout", "canceled", "started"],
-        transition_func=NFA.transition_edges([
-            (0, ["started"], 1),
-            (1, ["canceled", "timeout"], 0),
-        ]),
+        transition_func=NFA.transition_edges(
+            [(0, ["started"], 1), (1, ["canceled", "timeout"], 0),]
+        ),
         start_state=0,
         accepted_states=[0, 1],
     )
 
     button = NFA(
         alphabet=["pressed", "released"],
-        transition_func=NFA.transition_edges([
-            (0, ["pressed"], 1),
-            (1, ["released"], 0),
-        ]),
+        transition_func=NFA.transition_edges(
+            [(0, ["pressed"], 1), (1, ["released"], 0),]
+        ),
         start_state=0,
         accepted_states=[0, 1],
     )
@@ -441,20 +407,22 @@ def test_build_components2() -> None:
 
 
 def test_build_nfa_transitions() -> None:
-    start_events = ['level1']
+    start_events = ["level1"]
     behavior = [
-        ('level1', 'standby1'),
-        ('level1', 'level2'),
-        ('level2', 'standby2'),
-        ('standby1', 'level1'),
-        ('standby2', 'level1')
+        ("level1", "standby1"),
+        ("level1", "level2"),
+        ("level2", "standby2"),
+        ("standby1", "level1"),
+        ("standby2", "level1"),
     ]
-    expected_tsx = {('level1', 'standby1'): {'standby1'},
-                    ('level1', 'level2'): {'level2'},
-                    ('level2', 'standby2'): {'standby2'},
-                    ('standby1', 'level1'): {'level1'},
-                    ('standby2', 'level1'): {'level1'},
-                    ('$START', 'level1'): {'level1'}}
+    expected_tsx = {
+        ("level1", "standby1"): {"standby1"},
+        ("level1", "level2"): {"level2"},
+        ("level2", "standby2"): {"standby2"},
+        ("standby1", "level1"): {"level1"},
+        ("standby2", "level1"): {"level1"},
+        ("$START", "level1"): {"level1"},
+    }
 
     actual_tsx = automata._build_nfa_transitions(behavior, start_events)
 
@@ -462,36 +430,41 @@ def test_build_nfa_transitions() -> None:
 
 
 def test_build_behavior() -> None:
-    start_events = ['level1']
-    events = ['level1', 'standby1', 'level2', 'standby2']
+    start_events = ["level1"]
+    events = ["level1", "standby1", "level2", "standby2"]
     behavior = [
-        ('level1', 'standby1'),
-        ('level1', 'level2'),
-        ('level2', 'standby2'),
-        ('standby1', 'level1'),
-        ('standby2', 'level1')
+        ("level1", "standby1"),
+        ("level1", "level2"),
+        ("level2", "standby2"),
+        ("standby1", "level1"),
+        ("standby2", "level1"),
     ]
     tsx = [
         # Start events:
-        ('start', 'level1', 'level1'),
+        ("start", "level1", "level1"),
         # (level1, standby1)
-        ('level1', 'standby1', 'standby1'),
-        ('level1', 'level2', 'level2'),
-        ('level2', 'standby2', 'standby2'),
-        ('standby1', 'level1', 'level1'),
-        ('standby2', 'level1', 'level1'),
+        ("level1", "standby1", "standby1"),
+        ("level1", "level2", "level2"),
+        ("level2", "standby2", "standby2"),
+        ("standby1", "level1", "level1"),
+        ("standby2", "level1", "level1"),
     ]
     accepted = set(x for x in events)
     accepted.add("start")
-    expected = NFA(alphabet=set(events),
-                   transition_func=NFA.transition_edges_split(tsx),
-                   start_state="start",
-                   accepted_states=accepted,
-                   )
-    assert automata.build_external_behavior(behavior, start_events, events, "start") == expected
+    expected = NFA(
+        alphabet=set(events),
+        transition_func=NFA.transition_edges_split(tsx),
+        start_state="start",
+        accepted_states=accepted,
+    )
+    assert (
+        automata.build_external_behavior(behavior, start_events, events, "start")
+        == expected
+    )
     # Make sure this is equivalent to HELLO WORLD
-    assert nfa_to_dfa(automata.build_external_behavior(behavior, start_events, events)).is_equivalent_to(
-        nfa_to_dfa(create_hello_world()))
+    assert nfa_to_dfa(
+        automata.build_external_behavior(behavior, start_events, events)
+    ).is_equivalent_to(nfa_to_dfa(create_hello_world()))
 
 
 def test_build_behavior_empty_start_events() -> None:
@@ -505,26 +478,24 @@ def test_build_behavior_same_name_start_event() -> None:
     with pytest.raises(ValueError) as exc_info:
         automata.build_external_behavior([], ["xxx"], ["xxx", "yyy"], "yyy")
 
-    assert str(exc_info.value) == "Start state 'yyy' cannot have the same name as an event."
+    assert (
+        str(exc_info.value)
+        == "Start state 'yyy' cannot have the same name as an event."
+    )
 
 
 ######################
 #### TEST DEVICES ####
 ######################
 
+
 def test_device_button() -> None:
     device = Device(
-        start_events=['b.pressed'],
-        events=['b.pressed', 'b.released'],
-        behavior=[
-            ('b.pressed', 'b.released'),
-            ('b.released', 'b.pressed'),
-        ],
+        start_events=["b.pressed"],
+        events=["b.pressed", "b.released"],
+        behavior=[("b.pressed", "b.released"), ("b.released", "b.pressed"),],
         components={},
-        triggers={
-            'b.pressed': NIL,
-            'b.released': NIL,
-        },
+        triggers={"b.pressed": NIL, "b.released": NIL,},
     )
     expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
@@ -533,17 +504,11 @@ def test_device_button() -> None:
 
 def test_device_led_a() -> None:
     device = Device(
-        start_events=['ledA.on'],
-        events=['ledA.on', 'ledA.off'],
-        behavior=[
-            ('ledA.on', 'ledA.off'),
-            ('ledA.off', 'ledA.on'),
-        ],
+        start_events=["ledA.on"],
+        events=["ledA.on", "ledA.off"],
+        behavior=[("ledA.on", "ledA.off"), ("ledA.off", "ledA.on"),],
         components={},
-        triggers={
-            'ledA.on': NIL,
-            'ledA.off': NIL,
-        },
+        triggers={"ledA.on": NIL, "ledA.off": NIL,},
     )
     expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
@@ -552,17 +517,11 @@ def test_device_led_a() -> None:
 
 def test_device_led_b() -> None:
     device = Device(
-        start_events=['ledB.on'],
-        events=['ledB.on', 'ledB.off'],
-        behavior=[
-            ('ledB.on', 'ledB.off'),
-            ('ledB.off', 'ledB.on'),
-        ],
+        start_events=["ledB.on"],
+        events=["ledB.on", "ledB.off"],
+        behavior=[("ledB.on", "ledB.off"), ("ledB.off", "ledB.on"),],
         components={},
-        triggers={
-            'ledB.on': NIL,
-            'ledB.off': NIL,
-        },
+        triggers={"ledB.on": NIL, "ledB.off": NIL,},
     )
     expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
@@ -571,20 +530,16 @@ def test_device_led_b() -> None:
 
 def test_device_timer() -> None:
     device = Device(
-        start_events=['t.started'],
-        events=['t.started', 't.canceled', 't.timeout'],
+        start_events=["t.started"],
+        events=["t.started", "t.canceled", "t.timeout"],
         behavior=[
-            ('t.started', 't.canceled'),
-            ('t.started', 't.timeout'),
-            ('t.canceled', 't.started'),
-            ('t.timeout', 't.started')
+            ("t.started", "t.canceled"),
+            ("t.started", "t.timeout"),
+            ("t.canceled", "t.started"),
+            ("t.timeout", "t.started"),
         ],
         components={},
-        triggers={
-            't.started': NIL,
-            't.canceled': NIL,
-            't.timeout': NIL
-        },
+        triggers={"t.started": NIL, "t.canceled": NIL, "t.timeout": NIL},
     )
     expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
@@ -593,22 +548,17 @@ def test_device_timer() -> None:
 
 def test_device_hello_world() -> None:
     device = Device(
-        start_events=['level1'],
-        events=['level1', 'level2', 'standby1', 'standby2'],
+        start_events=["level1"],
+        events=["level1", "level2", "standby1", "standby2"],
         behavior=[
-            ('level1', 'standby1'),
-            ('level1', 'level2'),
-            ('level2', 'standby2'),
-            ('standby1', 'level1'),
-            ('standby2', 'level1')
+            ("level1", "standby1"),
+            ("level1", "level2"),
+            ("level2", "standby2"),
+            ("standby1", "level1"),
+            ("standby2", "level1"),
         ],
         components={},
-        triggers={
-            'level1': NIL,
-            'level2': NIL,
-            'standby1': NIL,
-            'standby2': NIL
-        },
+        triggers={"level1": NIL, "level2": NIL, "standby1": NIL, "standby2": NIL},
     )
     expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
@@ -618,93 +568,65 @@ def test_device_hello_world() -> None:
 def get_basic_devices() -> Dict[str, Device]:
     return dict(
         Led=Device(
-            start_events=['on'],
-            events=['on', 'off'],
-            behavior=[
-                ('on', 'off'),
-                ('off', 'on'),
-            ],
+            start_events=["on"],
+            events=["on", "off"],
+            behavior=[("on", "off"), ("off", "on"),],
             components={},
-            triggers={
-                'on': NIL,
-                'off': NIL,
-            },
+            triggers={"on": NIL, "off": NIL,},
         ),
         Button=Device(
-            start_events=['pressed'],
-            events=['pressed', 'released'],
-            behavior=[
-                ('pressed', 'released'),
-                ('released', 'pressed'),
-            ],
+            start_events=["pressed"],
+            events=["pressed", "released"],
+            behavior=[("pressed", "released"), ("released", "pressed"),],
             components={},
-            triggers={
-                'pressed': NIL,
-                'released': NIL,
-            },
+            triggers={"pressed": NIL, "released": NIL,},
         ),
         Timer=Device(
-            start_events=['started'],
-            events=['started', 'canceled', 'timeout'],
+            start_events=["started"],
+            events=["started", "canceled", "timeout"],
             behavior=[
-                ('started', 'canceled'),
-                ('started', 'timeout'),
-                ('canceled', 'started'),
-                ('timeout', 'started')
+                ("started", "canceled"),
+                ("started", "timeout"),
+                ("canceled", "started"),
+                ("timeout", "started"),
             ],
             components={},
-            triggers={
-                'started': NIL,
-                'canceled': NIL,
-                'timeout': NIL
-            },
-        )
+            triggers={"started": NIL, "canceled": NIL, "timeout": NIL},
+        ),
     )
 
 
 def get_basic_known_devices() -> Dict[str, AssembledDevice]:
-    return dict((k, AssembledDevice.make(d, {}).external) for (k, d) in get_basic_devices().items())
+    return dict(
+        (k, AssembledDevice.make(d, {}).external)
+        for (k, d) in get_basic_devices().items()
+    )
 
 
 def test_invalid_behavior_1() -> None:
     device = Device(
-        start_events=['level1'],
-        events=['level1', 'level2', 'standby1', 'standby2'],
+        start_events=["level1"],
+        events=["level1", "level2", "standby1", "standby2"],
         behavior=[
-            ('level1', 'standby1'),
-            ('level1', 'level2'),
-            ('level2', 'standby2'),
-            ('standby1', 'level1'),
-            ('standby2', 'level1')
+            ("level1", "standby1"),
+            ("level1", "level2"),
+            ("level2", "standby2"),
+            ("standby1", "level1"),
+            ("standby2", "level1"),
         ],
-        components={
-            "b": "Button",
-            "ledA": "Led",
-            "ledB": "Led",
-            "t": "Timer",
-        },
+        components={"b": "Button", "ledA": "Led", "ledB": "Led", "t": "Timer",},
         triggers={
-            LEVEL1:
-                Concat.from_list(map(Char, [
-                    B_P,
-                    B_P,  # <--- ERROR HERE: should be B_R
-                    LA_ON,
-                    T_S
-                ])),
-            LEVEL2:
-                Concat.from_list([
-                    Char(B_P),
-                    Char(B_R),
-                    And(Char(T_C), Char(LB_ON)),
-                    Char(T_S),
-                ]),
-            STANDBY1:
-                concat(Char(T_T), Char(LA_OFF)),
-            STANDBY2:
-                concat(
-                    Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
-                    And(Char(LB_OFF), Char(LA_OFF)),
-                ),
+            LEVEL1: Concat.from_list(
+                map(Char, [B_P, B_P, LA_ON, T_S])  # <--- ERROR HERE: should be B_R
+            ),
+            LEVEL2: Concat.from_list(
+                [Char(B_P), Char(B_R), And(Char(T_C), Char(LB_ON)), Char(T_S),]
+            ),
+            STANDBY1: concat(Char(T_T), Char(LA_OFF)),
+            STANDBY2: concat(
+                Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+                And(Char(LB_OFF), Char(LA_OFF)),
+            ),
         },
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
@@ -719,44 +641,37 @@ def test_invalid_behavior_1() -> None:
 
 def test_invalid_behavior_2() -> None:
     device = Device(
-        start_events=['level1'],
-        events=['level1', 'level2', 'standby1', 'standby2'],
+        start_events=["level1"],
+        events=["level1", "level2", "standby1", "standby2"],
         behavior=[
-            ('level1', 'standby1'),
-            ('level1', 'level2'),
-            ('level2', 'standby2'),
-            ('standby1', 'level1'),
-            ('standby2', 'level1')
+            ("level1", "standby1"),
+            ("level1", "level2"),
+            ("level2", "standby2"),
+            ("standby1", "level1"),
+            ("standby2", "level1"),
         ],
-        components={
-            "b": "Button",
-            "ledA": "Led",
-            "ledB": "Led",
-            "t": "Timer",
-        },
+        components={"b": "Button", "ledA": "Led", "ledB": "Led", "t": "Timer",},
         triggers={
-            LEVEL1:
-                Concat[str].from_list(map(Char[str], [
-                    B_R,  # <--- ERROR HERE: should be B_P
-                    B_P,  # <--- ERROR HERE: should be B_P
-                    B_R,  # <--- ERROR HERE: should be B_P
-                    LA_ON,
-                    T_S
-                ])),
-            LEVEL2:
-                Concat.from_list([
-                    Char(B_P),
-                    Char(B_R),
-                    And(Char(T_C), Char(LB_ON)),
-                    Char(T_S),
-                ]),
-            STANDBY1:
-                concat(Char(T_T), Char(LA_OFF)),
-            STANDBY2:
-                concat(
-                    Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
-                    And(Char(LB_OFF), Char(LA_OFF)),
-                ),
+            LEVEL1: Concat[str].from_list(
+                map(
+                    Char[str],
+                    [
+                        B_R,  # <--- ERROR HERE: should be B_P
+                        B_P,  # <--- ERROR HERE: should be B_P
+                        B_R,  # <--- ERROR HERE: should be B_P
+                        LA_ON,
+                        T_S,
+                    ],
+                )
+            ),
+            LEVEL2: Concat.from_list(
+                [Char(B_P), Char(B_R), And(Char(T_C), Char(LB_ON)), Char(T_S),]
+            ),
+            STANDBY1: concat(Char(T_T), Char(LA_OFF)),
+            STANDBY2: concat(
+                Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+                And(Char(LB_OFF), Char(LA_OFF)),
+            ),
         },
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
@@ -771,24 +686,21 @@ def test_invalid_behavior_2() -> None:
 
 def test_device_led_and_button() -> None:
     device = Device(
-        start_events=['ledA.on'],
-        events=['ledA.on', 'ledA.off', 'b.pressed', 'b.released'],
+        start_events=["ledA.on"],
+        events=["ledA.on", "ledA.off", "b.pressed", "b.released"],
         behavior=[
-            ('ledA.on', 'ledA.off'),
-            ('ledA.on', 'b.pressed'),
-            ('b.pressed', 'b.released'),
-            ('b.released', 'ledA.off'),
-            ('b.released', 'b.pressed'),
-            ('ledA.off', 'ledA.on')
+            ("ledA.on", "ledA.off"),
+            ("ledA.on", "b.pressed"),
+            ("b.pressed", "b.released"),
+            ("b.released", "ledA.off"),
+            ("b.released", "b.pressed"),
+            ("ledA.off", "ledA.on"),
         ],
         components={},
-        triggers={
-            'ledA.on': NIL,
-            'ledA.off': NIL,
-            'b.pressed': NIL,
-            'b.released': NIL
-        },
+        triggers={"ledA.on": NIL, "ledA.off": NIL, "b.pressed": NIL, "b.released": NIL},
     )
     expected = AssembledDevice.make(device, {}).external.nfa.flatten()
 
-    assert nfa_to_dfa(create_prefixed_led_and_button()).is_equivalent_to(nfa_to_dfa(expected))
+    assert nfa_to_dfa(create_prefixed_led_and_button()).is_equivalent_to(
+        nfa_to_dfa(expected)
+    )

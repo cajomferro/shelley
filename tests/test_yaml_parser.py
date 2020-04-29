@@ -4,14 +4,16 @@ from shelley import yaml2shelley
 
 
 def _get_path(device_name: str) -> Path:
-    return Path('input/') / '{0}.yml'.format(device_name)
+    return Path("input/") / "{0}.yml".format(device_name)
 
 
 def test_button() -> None:
-    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('button'))
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path("button"))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
-    assert visitor.result.strip() == """Device Button:
+    assert (
+        visitor.result.strip()
+        == """Device Button:
   external events:
     pressed, released
   start events:
@@ -22,25 +24,37 @@ def test_button() -> None:
   triggers:
     pressed: fired
     released: fired"""
+    )
 
-    assert shelley_device.test_macro['ok'] == {
-        "valid1": ["pressed", "released", "pressed", "released", "pressed", "released", "pressed", "released"],
+    assert shelley_device.test_macro["ok"] == {
+        "valid1": [
+            "pressed",
+            "released",
+            "pressed",
+            "released",
+            "pressed",
+            "released",
+            "pressed",
+            "released",
+        ],
         "valid2": ["pressed"],
         "valid3": ["pressed", "released"],
         "valid4": ["pressed", "released", "pressed"],
-        "empty": []
+        "empty": [],
     }
-    assert shelley_device.test_macro['fail'] == {
+    assert shelley_device.test_macro["fail"] == {
         "invalid1": ["released", "pressed"],
-        "invalid2": ["released"]
+        "invalid2": ["released"],
     }
 
 
 def test_led() -> None:
-    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('led'))
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path("led"))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
-    assert visitor.result.strip() == """Device Led:
+    assert (
+        visitor.result.strip()
+        == """Device Led:
   external events:
     on, off
   start events:
@@ -51,13 +65,16 @@ def test_led() -> None:
   triggers:
     on: fired
     off: fired"""
+    )
 
 
 def test_timer() -> None:
-    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('timer'))
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path("timer"))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
-    assert visitor.result.strip() == """Device Timer:
+    assert (
+        visitor.result.strip()
+        == """Device Timer:
   external events:
     started, canceled, timeout
   start events:
@@ -71,14 +88,17 @@ def test_timer() -> None:
     started: fired
     canceled: fired
     timeout: fired"""
+    )
 
 
 def test_sendok() -> None:
-    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('sendok'))
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path("sendok"))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
-    assert visitor.result.strip() == """Device SendOK uses Button, Led:
+    assert (
+        visitor.result.strip()
+        == """Device SendOK uses Button, Led:
   external events:
     send, ok, off
   start events:
@@ -94,13 +114,16 @@ def test_sendok() -> None:
     send: ( b1.pressed ; b1.released )
     ok: ( ( lred.on ; lred.off ) xor ( lgreen.on ; lgreen.off ) )
     off: ( b2.pressed ; b2.released )"""
+    )
 
 
 def test_smartbutton_1() -> None:
-    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('smartbutton1'))
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path("smartbutton1"))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
-    assert visitor.result.strip() == """Device SmartButton uses Button:
+    assert (
+        visitor.result.strip()
+        == """Device SmartButton uses Button:
   external events:
     on
   start events:
@@ -111,23 +134,22 @@ def test_smartbutton_1() -> None:
     Button b
   triggers:
     on: ( b.pressed ; b.released )"""
+    )
 
-    assert shelley_device.test_macro['ok'] == {
+    assert shelley_device.test_macro["ok"] == {
         "valid1": ["on"],
         "valid2": ["on", "on", "on", "on"],
-        "empty": []
+        "empty": [],
     }
-    assert shelley_device.test_macro['fail'] == {
-        "invalid1": ["off"]
-    }
+    assert shelley_device.test_macro["fail"] == {"invalid1": ["off"]}
 
-    assert shelley_device.test_micro['ok'] == {
+    assert shelley_device.test_micro["ok"] == {
         "valid1": ["b.pressed", "b.released"],
         "valid2": ["b.pressed", "b.released", "b.pressed", "b.released"],
         "valid3": ["b.pressed", "b.released", "b.pressed", "b.released"],
-        "empty": []
+        "empty": [],
     }
-    assert shelley_device.test_micro['fail'] == {
+    assert shelley_device.test_micro["fail"] == {
         "invalid1": ["b.released", "b.pressed"],
         "invalid2": ["b.pressed", "b.pressed"],
         "invalid3": ["b.released", "b.released"],
@@ -138,11 +160,13 @@ def test_smartbutton_1() -> None:
 
 
 def test_desklamp() -> None:
-    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('desklamp'))
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path("desklamp"))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
-    assert visitor.result.strip() == """Device DeskLamp uses Led, Button, Timer:
+    assert (
+        visitor.result.strip()
+        == """Device DeskLamp uses Led, Button, Timer:
   external events:
     level1, standby1, level2, standby2
   start events:
@@ -160,14 +184,17 @@ def test_desklamp() -> None:
     level2: ( b.pressed ; ( b.released ; ( ( ( t.canceled ; ledB.on ) xor ( ledB.on ; t.canceled ) ) ; t.started ) ) )
     standby1: ( t.timeout ; ledA.off )
     standby2: ( ( ( b.pressed ; ( b.released ; t.canceled ) ) xor t.timeout ) ; ( ( ledB.off ; ledA.off ) xor ( ledA.off ; ledB.off ) ) )"""
+    )
 
 
 def test_ambiguous() -> None:
-    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('ambiguous'))
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path("ambiguous"))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
-    assert visitor.result.strip() == """Device 3Buttons uses SimpleButton:
+    assert (
+        visitor.result.strip()
+        == """Device 3Buttons uses SimpleButton:
   external events:
     button1AndOther, button3OrOthers
   start events:
@@ -182,17 +209,20 @@ def test_ambiguous() -> None:
   triggers:
     button1AndOther: ( ( ( b1.pressed ; b2.pressed ) xor ( b1.pressed ; b3.pressed ) ) xor ( ( b2.pressed ; b1.pressed ) xor ( b3.pressed ; b1.pressed ) ) )
     button3OrOthers: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )"""
+    )
 
 
 def test_ambiguous_variant() -> None:
     """
     Syntax variant that uses XOR LEFT RIGHT
     """
-    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path('ambiguous_variant'))
+    shelley_device = yaml2shelley.get_shelley_from_yaml(_get_path("ambiguous_variant"))
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
-    assert visitor.result.strip() == """Device 3Buttons uses SimpleButton:
+    assert (
+        visitor.result.strip()
+        == """Device 3Buttons uses SimpleButton:
   external events:
     button1AndOther, button3OrOthersv2, button3OrOthers
   start events:
@@ -209,3 +239,4 @@ def test_ambiguous_variant() -> None:
     button1AndOther: ( ( b1.pressed ; ( b2.pressed xor b3.pressed ) ) xor ( ( b2.pressed xor b3.pressed ) ; b1.pressed ) )
     button3OrOthers: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )
     button3OrOthersv2: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )"""
+    )

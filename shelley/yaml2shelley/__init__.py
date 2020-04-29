@@ -9,7 +9,13 @@ from shelley.ast.behaviors import Behaviors
 from shelley.ast.devices import Device
 from shelley.ast.components import Components
 from shelley.ast.triggers import Triggers
-from shelley.ast.rules import TriggerRule, TriggerRuleEvent, TriggerRuleChoice, TriggerRuleSequence, TriggerRuleFired
+from shelley.ast.rules import (
+    TriggerRule,
+    TriggerRuleEvent,
+    TriggerRuleChoice,
+    TriggerRuleSequence,
+    TriggerRuleFired,
+)
 
 
 class ShelleyParserError(Exception):
@@ -38,7 +44,10 @@ class ShelleyParserError(Exception):
 #         behaviors.create(e1, e2)
 #     return behaviors
 
-def _parse_behavior(src: List[List[str]], events: EEvents, behaviors: Behaviors) -> None:
+
+def _parse_behavior(
+    src: List[List[str]], events: EEvents, behaviors: Behaviors
+) -> None:
     """
     Parse behavior by creating discovered events and creating the corresponding transitions
     :param src: behavior input to be parsed, example: [['pressed', 'released'], ['released', 'pressed']]
@@ -50,7 +59,9 @@ def _parse_behavior(src: List[List[str]], events: EEvents, behaviors: Behaviors)
         try:
             right = beh_transition[1]
         except IndexError:
-            raise ShelleyParserError("Missing behaviour right side: [{0}, ???]".format(left))
+            raise ShelleyParserError(
+                "Missing behaviour right side: [{0}, ???]".format(left)
+            )
         e1 = events.find_by_name(left)
         if e1 is None:
             e1 = events.create(left)
@@ -72,18 +83,24 @@ def _parse_components(src: Mapping[str, str], components: Components) -> None:
         components.create(component_name, device_name)
 
 
-def _parse_triggers(src: Mapping, events: EEvents, components: Components, triggers: Triggers) -> None:
+def _parse_triggers(
+    src: Mapping, events: EEvents, components: Components, triggers: Triggers
+) -> None:
     for trigger_event_name in src:
         trigger_rule = _parse_trigger_rule(src[trigger_event_name], components)
 
         event = events.find_by_name(trigger_event_name)
         if event is None:
-            raise ShelleyParserError("Trigger event '{0}' has not been declared".format(trigger_event_name))
+            raise ShelleyParserError(
+                "Trigger event '{0}' has not been declared".format(trigger_event_name)
+            )
         triggers.create(event, trigger_rule)
 
     for event_name in events.list_str():
         if triggers.find_by_event(event_name) is None:
-            raise ShelleyParserError("Missing trigger for event '{0}'".format(event_name))
+            raise ShelleyParserError(
+                "Missing trigger for event '{0}'".format(event_name)
+            )
 
 
 def _parse_trigger_rule(src, components: Components) -> TriggerRule:
@@ -100,13 +117,13 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
         right = _parse_trigger_rule(src, components)
         return TriggerRuleSequence(left, right)
     elif isinstance(src, dict):
-        if 'xor' in src:
-            xor_options: List = src['xor']
+        if "xor" in src:
+            xor_options: List = src["xor"]
             left_option = xor_options[0]
             right_option = xor_options[1]
-            if isinstance(left_option, dict) and 'left' in left_option:
-                left = _parse_trigger_rule(left_option['left'], components)
-                right = _parse_trigger_rule(right_option['right'], components)
+            if isinstance(left_option, dict) and "left" in left_option:
+                left = _parse_trigger_rule(left_option["left"], components)
+                right = _parse_trigger_rule(right_option["right"], components)
                 return TriggerRuleChoice(left, right)
             else:
                 left = _parse_trigger_rule(left_option, components)
@@ -131,7 +148,7 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
 
 def _create_device_from_yaml(yaml_code) -> Device:
     try:
-        device_name = yaml_code['device']['name']
+        device_name = yaml_code["device"]["name"]
     except KeyError:
         raise ShelleyParserError("Device must have a name")
 
@@ -141,34 +158,34 @@ def _create_device_from_yaml(yaml_code) -> Device:
     #     raise Exception("Device must have events")
 
     try:
-        device_start_events = yaml_code['device']['start_events']
+        device_start_events = yaml_code["device"]["start_events"]
     except KeyError:
         raise ShelleyParserError("Please specify at least one start event")
 
     try:
-        device_behavior = yaml_code['device']['behavior']
+        device_behavior = yaml_code["device"]["behavior"]
     except KeyError:
         raise ShelleyParserError("Device must have a behavior")
 
     try:
-        device_components = yaml_code['device']['components']
+        device_components = yaml_code["device"]["components"]
     except KeyError:
         device_components = dict()
 
     try:
-        device_triggers = yaml_code['device']['triggers']
+        device_triggers = yaml_code["device"]["triggers"]
     except KeyError:
         device_triggers = dict()
 
     try:
-        test_macro = yaml_code['test_macro']
+        test_macro = yaml_code["test_macro"]
     except KeyError:
-        test_macro = {'ok': dict(), 'fail': dict()}
+        test_macro = {"ok": dict(), "fail": dict()}
 
     try:
-        test_micro = yaml_code['test_micro']
+        test_micro = yaml_code["test_micro"]
     except KeyError:
-        test_micro = {'ok': dict(), 'fail': dict()}
+        test_micro = {"ok": dict(), "fail": dict()}
 
     events: EEvents = EEvents()
     behaviors: Behaviors = Behaviors()
@@ -177,20 +194,31 @@ def _create_device_from_yaml(yaml_code) -> Device:
     _parse_behavior(device_behavior, events, behaviors)
     _parse_components(device_components, components)
 
-    if len(device_triggers) == 0 and len(device_components) == 0:  # auto-create triggers for simple devices
+    if (
+        len(device_triggers) == 0 and len(device_components) == 0
+    ):  # auto-create triggers for simple devices
         for event in events.list():
             triggers.create(event, TriggerRuleFired())
     elif len(device_triggers) == 0 and len(device_components) > 0:
         raise ShelleyParserError("Device with components must also have triggers!")
     else:
-        _parse_triggers(copy.deepcopy(device_triggers), events, components,
-                        triggers)  # deep copy because i will consume some list elements (not really important)
+        _parse_triggers(
+            copy.deepcopy(device_triggers), events, components, triggers
+        )  # deep copy because i will consume some list elements (not really important)
 
     # if len(tests) > 0:
     #     parse_tests(tests)
 
-    device = Device(device_name, Actions(), IEvents(), events, device_start_events, behaviors, triggers,
-                    components=components)
+    device = Device(
+        device_name,
+        Actions(),
+        IEvents(),
+        events,
+        device_start_events,
+        behaviors,
+        triggers,
+        components=components,
+    )
 
     device.test_macro = test_macro
     device.test_micro = test_micro
@@ -199,6 +227,6 @@ def _create_device_from_yaml(yaml_code) -> Device:
 
 
 def get_shelley_from_yaml(path: pathlib.Path) -> Device:
-    with path.open(mode='r') as stream:
+    with path.open(mode="r") as stream:
         yaml_code = yaml.load(stream, MySafeLoader)
     return _create_device_from_yaml(yaml_code)

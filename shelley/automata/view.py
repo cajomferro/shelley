@@ -25,7 +25,7 @@ def automaton2dot(automaton: Dict) -> graphviz.Digraph:
             kwargs["shape"] = "doublecircle"
         dot.node(str(node), **kwargs)
     # Group by edges:
-    edges:Dict = {}
+    edges: Dict = {}
     for edge in automaton["edges"]:
         pair = str(edge["src"]), str(edge["dst"])
         outs = edges.get(pair, None)

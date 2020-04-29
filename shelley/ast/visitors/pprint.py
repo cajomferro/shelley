@@ -8,7 +8,12 @@ from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
 from shelley.ast.behaviors import Behavior, Behaviors
 from shelley.ast.components import Component, Components
 from shelley.ast.triggers import Trigger, Triggers
-from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
+from shelley.ast.rules import (
+    TriggerRuleSequence,
+    TriggerRuleChoice,
+    TriggerRuleEvent,
+    TriggerRuleFired,
+)
 
 
 class PrettyPrintVisitor(Visitor):
@@ -65,7 +70,9 @@ class PrettyPrintVisitor(Visitor):
 
     def visit_behaviour(self, element: Behavior) -> None:
         if element.action is not None:
-            self.result += "    {0} -> {1}() {2}\n".format(element.e1.name, element.action.name, element.e2.name)
+            self.result += "    {0} -> {1}() {2}\n".format(
+                element.e1.name, element.action.name, element.e2.name
+            )
         else:
             self.result += "    {0} -> {1}\n".format(element.e1.name, element.e2.name)
 
@@ -108,8 +115,10 @@ class PrettyPrintVisitor(Visitor):
         if len(element.uses) > 0:
             uses_str = ""
             for device_name in element.uses:
-                uses_str += (device_name + ", ")
-            self.result += "Device {0} uses {1}:\n".format(element.name, uses_str[0:-2])  # remove extra ", "
+                uses_str += device_name + ", "
+            self.result += "Device {0} uses {1}:\n".format(
+                element.name, uses_str[0:-2]
+            )  # remove extra ", "
         else:
             self.result += "Device {0}:\n".format(element.name)
 
@@ -125,7 +134,7 @@ class PrettyPrintVisitor(Visitor):
         self.result += "  start events:\n    "
         start_events_str = ""
         for event_name in element.start_events:
-            start_events_str += (event_name + ", ")
+            start_events_str += event_name + ", "
         self.result += "{}\n".format(start_events_str[0:-2])  # remove extra ", "
 
         self.result += "  behaviours:\n"

@@ -12,16 +12,16 @@ from .timerok import DTimer
 
 
 class DDeskLamp(Device):
-    name = 'DeskLamp'
+    name = "DeskLamp"
 
     def __init__(self) -> None:
         i_events, e_events = parse_events(
-            "external begin, external level1, external level2, external standby1, external standby2")
+            "external begin, external level1, external level2, external standby1, external standby2"
+        )
         actions = parse_actions("")
-        start_events = ['begin']
+        start_events = ["begin"]
 
-        behaviours_str = \
-            """
+        behaviours_str = """
             begin -> level1
             level1 -> standby1
             level1 -> level2
@@ -47,63 +47,74 @@ class DDeskLamp(Device):
         #   ((b.pressed; b.released; t.canceled) xor t.timeout); (ledB.off and ledA.off)
 
         t_begin_rules = TriggerRuleSequence(
-            TriggerRuleEvent(component_b, EEvent('begin')),
+            TriggerRuleEvent(component_b, EEvent("begin")),
             TriggerRuleSequence(
-                TriggerRuleEvent(component_ledA, EEvent('begin')),
+                TriggerRuleEvent(component_ledA, EEvent("begin")),
                 TriggerRuleSequence(
-                    TriggerRuleEvent(component_ledB, EEvent('begin')),
-                    TriggerRuleEvent(component_t, EEvent('begin')))))
+                    TriggerRuleEvent(component_ledB, EEvent("begin")),
+                    TriggerRuleEvent(component_t, EEvent("begin")),
+                ),
+            ),
+        )
 
         t_level1_rules = TriggerRuleSequence(
-            TriggerRuleEvent(component_b, EEvent('pressed')),
+            TriggerRuleEvent(component_b, EEvent("pressed")),
             TriggerRuleSequence(
-                TriggerRuleEvent(component_b, EEvent('released')),
+                TriggerRuleEvent(component_b, EEvent("released")),
                 TriggerRuleSequence(
-                    TriggerRuleEvent(component_ledA, IEvent('on')),
-                    TriggerRuleEvent(component_t, IEvent('started')))))
+                    TriggerRuleEvent(component_ledA, IEvent("on")),
+                    TriggerRuleEvent(component_t, IEvent("started")),
+                ),
+            ),
+        )
 
         t_level2_rules = TriggerRuleSequence(
-            TriggerRuleEvent(component_b, EEvent('pressed')),
+            TriggerRuleEvent(component_b, EEvent("pressed")),
             TriggerRuleSequence(
-                TriggerRuleEvent(component_b, EEvent('released')),
+                TriggerRuleEvent(component_b, EEvent("released")),
                 TriggerRuleSequence(
                     TriggerRuleChoice(
                         TriggerRuleSequence(
-                            TriggerRuleEvent(component_t, IEvent('canceled')),
-                            TriggerRuleEvent(component_ledB, IEvent('on'))
+                            TriggerRuleEvent(component_t, IEvent("canceled")),
+                            TriggerRuleEvent(component_ledB, IEvent("on")),
                         ),
                         TriggerRuleSequence(
-                            TriggerRuleEvent(component_ledB, IEvent('on')),
-                            TriggerRuleEvent(component_t, IEvent('canceled'))
-                        )
+                            TriggerRuleEvent(component_ledB, IEvent("on")),
+                            TriggerRuleEvent(component_t, IEvent("canceled")),
+                        ),
                     ),
-                    TriggerRuleEvent(component_t, IEvent('started'))
-                )
-            )
+                    TriggerRuleEvent(component_t, IEvent("started")),
+                ),
+            ),
         )
 
         t_standby1_rules = TriggerRuleSequence(
-            TriggerRuleEvent(component_t, EEvent('timeout')),
-            TriggerRuleEvent(component_ledA, IEvent('off')))
+            TriggerRuleEvent(component_t, EEvent("timeout")),
+            TriggerRuleEvent(component_ledA, IEvent("off")),
+        )
 
         t_standby2_rules = TriggerRuleSequence(
             TriggerRuleChoice(
                 TriggerRuleSequence(
-                    TriggerRuleEvent(component_b, EEvent('pressed')),
+                    TriggerRuleEvent(component_b, EEvent("pressed")),
                     TriggerRuleSequence(
-                        TriggerRuleEvent(component_b, EEvent('released')),
-                        TriggerRuleEvent(component_t, IEvent('canceled')))),
-                TriggerRuleEvent(component_t, EEvent('timeout'))),
-
+                        TriggerRuleEvent(component_b, EEvent("released")),
+                        TriggerRuleEvent(component_t, IEvent("canceled")),
+                    ),
+                ),
+                TriggerRuleEvent(component_t, EEvent("timeout")),
+            ),
             TriggerRuleChoice(
                 TriggerRuleSequence(
-                    TriggerRuleEvent(component_ledB, IEvent('off')),
-                    TriggerRuleEvent(component_ledA, IEvent('off'))
+                    TriggerRuleEvent(component_ledB, IEvent("off")),
+                    TriggerRuleEvent(component_ledA, IEvent("off")),
                 ),
                 TriggerRuleSequence(
-                    TriggerRuleEvent(component_ledA, IEvent('off')),
-                    TriggerRuleEvent(component_ledB, IEvent('off'))
-                )))
+                    TriggerRuleEvent(component_ledA, IEvent("off")),
+                    TriggerRuleEvent(component_ledB, IEvent("off")),
+                ),
+            ),
+        )
 
         triggers = Triggers()
         triggers.create(e_events.find_by_name("begin"), t_begin_rules)
@@ -112,7 +123,17 @@ class DDeskLamp(Device):
         triggers.create(e_events.find_by_name("standby1"), t_standby1_rules)
         triggers.create(e_events.find_by_name("standby2"), t_standby2_rules)
 
-        super().__init__(self.name, actions, i_events, e_events, start_events, behaviours, triggers, uses, components)
+        super().__init__(
+            self.name,
+            actions,
+            i_events,
+            e_events,
+            start_events,
+            behaviours,
+            triggers,
+            uses,
+            components,
+        )
 
 
 def create_device_desk_lamp() -> DDeskLamp:

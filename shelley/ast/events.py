@@ -70,11 +70,10 @@ class EEvent(GenericEvent):
         visitor.visit_eevent(self)
 
 
-X = TypeVar('X', IEvent, EEvent, GenericEvent)
+X = TypeVar("X", IEvent, EEvent, GenericEvent)
 
 
 class Events(MyCollection[X]):
-
     def find_by_name(self, name: str) -> Optional[GenericEvent]:
         re: Optional[GenericEvent] = None
         try:
@@ -90,7 +89,6 @@ class Events(MyCollection[X]):
 
 
 class IEvents(Node, Events[IEvent]):
-
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_ievents(self)
 

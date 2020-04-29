@@ -10,12 +10,12 @@ from yaml.resolver import *
 # Create custom safe constructor class that inherits from SafeConstructor
 class MySafeConstructor(SafeConstructor):
     bool_values = {
-        'yes': 'yes',
-        'no': 'no',
-        'true': True,
-        'false': False,
-        'on': 'on',
-        'off': 'off',
+        "yes": "yes",
+        "no": "no",
+        "true": True,
+        "false": False,
+        "on": "on",
+        "off": "off",
     }
 
     # Create new method handle boolean logic
@@ -25,11 +25,10 @@ class MySafeConstructor(SafeConstructor):
 
 
 # Inject the above boolean logic into the custom constuctor
-MySafeConstructor.add_constructor('tag:yaml.org,2002:bool', MySafeConstructor.add_bool) # type: ignore
+MySafeConstructor.add_constructor("tag:yaml.org,2002:bool", MySafeConstructor.add_bool)  # type: ignore
 
 
 class MySafeLoader(Reader, Scanner, Parser, Composer, MySafeConstructor, Resolver):
-
     def __init__(self, stream) -> None:
         Reader.__init__(self, stream)
         Scanner.__init__(self)

@@ -66,8 +66,11 @@ class Behavior(Node):
     # def __hash__(self):
     #     return id(self.uuid)
     def __str__(self):
-        return "{0} -> {1}".format(self.e1.name, self.e2.name) if self.action is None else "{0} -> {1}() {2}".format(
-            self.e1.name, self.action.name, self.e2.name)
+        return (
+            "{0} -> {1}".format(self.e1.name, self.e2.name)
+            if self.action is None
+            else "{0} -> {1}() {2}".format(self.e1.name, self.action.name, self.e2.name)
+        )
 
 
 class BehaviorMissingActionForInternalEvent(Exception):
@@ -99,8 +102,9 @@ class BehaviorsMissingBegin(Exception):
 
 
 class Behaviors(Node, MyCollection[Behavior]):
-
-    def create(self, e1: GenericEvent, e2: GenericEvent, a: Optional[Action] = None) -> Behavior:
+    def create(
+        self, e1: GenericEvent, e2: GenericEvent, a: Optional[Action] = None
+    ) -> Behavior:
         behavior = Behavior(e1, e2, a)
         if behavior not in self._data:
             self._data.append(behavior)
@@ -114,14 +118,18 @@ class Behaviors(Node, MyCollection[Behavior]):
     def find_by_event_pair(self, e1_name: str, e2_name: str) -> Behavior:
         re: Behavior
         try:
-            re = next(x for x in self._data if x.e1.name == e1_name and x.e2.name == e2_name)
+            re = next(
+                x for x in self._data if x.e1.name == e1_name and x.e2.name == e2_name
+            )
         except StopIteration:
             pass
         return re
 
     def as_list_tuples(self, include_actions=False):
         if include_actions:
-            re = [(str(elem.e1), str(elem.action), str(elem.e2)) for elem in self.list()]
+            re = [
+                (str(elem.e1), str(elem.action), str(elem.e2)) for elem in self.list()
+            ]
         else:
             re = [(str(elem.e1), str(elem.e2)) for elem in self.list()]
         return re

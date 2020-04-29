@@ -1,5 +1,3 @@
-
-
 # class DDeskLampDuplicatedTrigger(Device):
 #     name = 'DeskLamp'
 #

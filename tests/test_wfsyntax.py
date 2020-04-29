@@ -2,10 +2,15 @@ import shelley
 from typing import Dict
 from shelley.ast.devices import Device
 
-from .creator.correct import create_device_led, create_device_button, create_device_timer, create_device_desk_lamp
+from .creator.correct import (
+    create_device_led,
+    create_device_button,
+    create_device_timer,
+    create_device_desk_lamp,
+)
 from shelley.ast.visitors.wfsyntax import CheckWFSyntaxVisitor
 
-declared_devices:Dict[str,Device] = {}
+declared_devices: Dict[str, Device] = {}
 
 d_led = create_device_led()
 declared_devices[d_led.name] = d_led

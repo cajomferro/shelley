@@ -25,6 +25,7 @@ class Device(Node):
     """
     \\hard{D} -> categoria sintática
     """
+
     name: str
     actions: Actions
     internal_events: IEvents
@@ -37,15 +38,18 @@ class Device(Node):
     test_macro: Mapping[str, Mapping[str, List[str]]]
     test_micro: Mapping[str, Mapping[str, List[str]]]
 
-    def __init__(self, name: str,
-                 actions: Actions,
-                 internal_events: IEvents,
-                 external_events: EEvents,
-                 start_events: List[str],
-                 behaviors: Behaviors,
-                 triggers: Triggers,
-                 uses: Optional[List[str]] = None,
-                 components: Optional[Components] = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        actions: Actions,
+        internal_events: IEvents,
+        external_events: EEvents,
+        start_events: List[str],
+        behaviors: Behaviors,
+        triggers: Triggers,
+        uses: Optional[List[str]] = None,
+        components: Optional[Components] = None,
+    ) -> None:
         if uses is None:
             uses = []
         if components is None:
@@ -76,7 +80,8 @@ class Device(Node):
     def check_is_duplicated(self, devices: List[Device]) -> None:
         if self in devices:
             raise DevicesListDuplicatedError(
-                "Duplicated device with name '{0}'".format(self.name))
+                "Duplicated device with name '{0}'".format(self.name)
+            )
 
     def get_all_events(self):
         return self.external_events.merge(self.internal_events)

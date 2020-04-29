@@ -8,7 +8,12 @@ from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
 from shelley.ast.behaviors import Behavior, Behaviors
 from shelley.ast.components import Component, Components
 from shelley.ast.triggers import Trigger, Triggers, TriggersEventUndeclaredError
-from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
+from shelley.ast.rules import (
+    TriggerRuleSequence,
+    TriggerRuleChoice,
+    TriggerRuleEvent,
+    TriggerRuleFired,
+)
 
 
 class CheckWFSyntaxVisitor(Visitor):
@@ -34,7 +39,11 @@ class CheckWFSyntaxVisitor(Visitor):
         element.right_trigger_rule.accept(self)
 
     def visit_component(self, element: Component) -> None:
-        element.check(self.device.uses, self.declared_devices, self.device.components.get_device_name(element.name))
+        element.check(
+            self.device.uses,
+            self.declared_devices,
+            self.device.components.get_device_name(element.name),
+        )
 
     def visit_trigger(self, element: Trigger) -> None:
         # this should never happen, because Triggers cannot have duplicated events

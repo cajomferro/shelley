@@ -3,7 +3,12 @@ from typing import Dict, Set, Tuple, List
 
 from .triggers import TriggersVisitor
 from shelley.ast.triggers import Trigger, Triggers
-from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
+from shelley.ast.rules import (
+    TriggerRuleSequence,
+    TriggerRuleChoice,
+    TriggerRuleEvent,
+    TriggerRuleFired,
+)
 from karakuri.regular import Regex, Char, Concat, Union, NIL
 
 
@@ -46,6 +51,7 @@ class TRules2RegexVisitor(TriggersVisitor):
 
     def __str__(self):
         return self.regex_dict
+
 
 #
 # class CountStatesVisitor(Visitor):

@@ -40,7 +40,9 @@ class TriggerRuleEvent(TriggerRule):
 
         visitor.visit_trigger_rule_event(self)
 
-    def check_wf_syntax(self, devices: Dict[str, Device], components: Components) -> None:
+    def check_wf_syntax(
+        self, devices: Dict[str, Device], components: Components
+    ) -> None:
         """
         Concrete Components may have special methods that don't exist in their
         base class or interface. The Visitor is still able to use these methods
@@ -51,18 +53,22 @@ class TriggerRuleEvent(TriggerRule):
 
         if device_name not in devices:
             raise TriggerRuleDeviceNotDeclaredError(
-                "Device type '{0}' has not been declared!".format(self.component.name))
+                "Device type '{0}' has not been declared!".format(self.component.name)
+            )
 
         device = devices[device_name]
 
         if device is None:
             raise TriggerRuleDeviceNotDeclaredError(
-                "Reference for device type '{0}' is None!".format(self.component.name))
+                "Reference for device type '{0}' is None!".format(self.component.name)
+            )
 
         if self.event not in device.get_all_events()._data:
             raise TriggerRuleEventNotDeclaredError(
-                "Event '{0}' not declared for device {1}!".format(self.event.name,
-                                                                  self.component.name))
+                "Event '{0}' not declared for device {1}!".format(
+                    self.event.name, self.component.name
+                )
+            )
 
     # def __init__(self, component: Component, event: GenericEvent):
     #     assert (component.name is not None and event is not None)

@@ -30,7 +30,9 @@ def parse(input: str, events: Events, actions: Actions) -> Behaviors:
 
 
 def test_parse():
-    i_events, e_events = parse_events('internal started, internal canceled, external timeout, external begin')
+    i_events, e_events = parse_events(
+        "internal started, internal canceled, external timeout, external begin"
+    )
 
     actions = parse_actions("start,cancel")
 

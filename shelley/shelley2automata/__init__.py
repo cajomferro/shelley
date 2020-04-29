@@ -16,8 +16,10 @@ def get_regex_dict(triggers: Triggers) -> Dict[str, Regex]:
 
 
 def shelley2automata(shelley_device: ShelleyDevice) -> AutomataDevice:
-    return AutomataDevice(start_events=shelley_device.start_events,
-                          events=shelley_device.get_all_events().list_str(),
-                          behavior=shelley_device.behaviors.as_list_tuples(),
-                          components=shelley_device.components.components_to_devices,
-                          triggers=get_regex_dict(shelley_device.triggers))
+    return AutomataDevice(
+        start_events=shelley_device.start_events,
+        events=shelley_device.get_all_events().list_str(),
+        behavior=shelley_device.behaviors.as_list_tuples(),
+        components=shelley_device.components.components_to_devices,
+        triggers=get_regex_dict(shelley_device.triggers),
+    )

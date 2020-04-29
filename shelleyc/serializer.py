@@ -16,15 +16,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def _test_extension_deserialize(path: Path, binary:bool=False) -> None:
+def _test_extension_deserialize(path: Path, binary: bool = False) -> None:
     ext = os.path.splitext(path)[1].split(".")[1]
     if binary:
         expected = settings.EXT_SHELLEY_COMPILED_BIN
     else:
         expected = settings.EXT_SHELLEY_COMPILED_YAML
     if ext != expected:
-        raise CompilationError('Invalid file: {2}. Expecting extension .{0} but found {1}!'.format(
-            expected, ext, path))
+        raise CompilationError(
+            "Invalid file: {2}. Expecting extension .{0} but found {1}!".format(
+                expected, ext, path
+            )
+        )
 
 
 # def _test_extension_serialize(path: Path, binary=False):
@@ -34,31 +37,31 @@ def _test_extension_deserialize(path: Path, binary:bool=False) -> None:
 #             settings.EXT_SHELLEY_SOURCE_YAML, ext, path))
 
 
-def _serialize_checked_device(path: Path, device: Dict[Any,Any]) -> None:
-    with path.open(mode='w') as f:
+def _serialize_checked_device(path: Path, device: Dict[Any, Any]) -> None:
+    with path.open(mode="w") as f:
         yaml.dump(device, f)
 
 
 def _deserialize_checked_device(path: Path) -> CheckedDevice:
-    with path.open(mode='r') as f:
+    with path.open(mode="r") as f:
         yaml_load = yaml.safe_load(f)
-    nfa = regular.NFA[Any,str].from_dict(yaml_load)
+    nfa = regular.NFA[Any, str].from_dict(yaml_load)
     return CheckedDevice(nfa)
 
 
-def _serialize_checked_device_binary(path: Path, device: Dict[Any,Any]) -> None:
-    with path.open(mode='wb') as f:
+def _serialize_checked_device_binary(path: Path, device: Dict[Any, Any]) -> None:
+    with path.open(mode="wb") as f:
         pickle.dump(device, f, pickle.HIGHEST_PROTOCOL)
 
 
 def _deserialize_checked_device_binary(path: Path) -> CheckedDevice:
-    with path.open(mode='rb') as f:
+    with path.open(mode="rb") as f:
         load = pickle.load(f)
-    nfa = regular.NFA[Any,str].from_dict(load)
+    nfa = regular.NFA[Any, str].from_dict(load)
     return CheckedDevice(nfa)
 
 
-def serialize(path: Path, device: Dict[Any,Any], binary:bool=False) -> None:
+def serialize(path: Path, device: Dict[Any, Any], binary: bool = False) -> None:
     try:
         if binary:
             _serialize_checked_device_binary(path, device)
@@ -72,7 +75,7 @@ def serialize(path: Path, device: Dict[Any,Any], binary:bool=False) -> None:
         raise CompilationError("Invalid device!")
 
 
-def deserialize(path: Path, binary:bool=False) -> CheckedDevice:
+def deserialize(path: Path, binary: bool = False) -> CheckedDevice:
     _test_extension_deserialize(path, binary)
     try:
         if binary:
@@ -82,12 +85,15 @@ def deserialize(path: Path, binary:bool=False) -> CheckedDevice:
     except FileNotFoundError as error:
         if settings.VERBOSE:
             logger.exception(error)
-        raise CompilationError("Use device not found: {0}. Please compile it first!".format(path))
+        raise CompilationError(
+            "Use device not found: {0}. Please compile it first!".format(path)
+        )
     except Exception as error:
         if settings.VERBOSE:
             logger.exception(error)
         raise CompilationError("Invalid device!")
     return device
+
 
 # def _serialize_checked_device_with_yaml(path: Path, device: CheckedDevice) -> None:
 #     with open(path, 'w') as f:

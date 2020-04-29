@@ -1,5 +1,4 @@
 import yaml
-import os
 import argparse
 
 from shelley.automata.view import automaton2dot

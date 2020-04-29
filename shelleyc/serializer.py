@@ -9,8 +9,8 @@ from karakuri import regular
 
 from shelley.automata import CheckedDevice
 
-from .exceptions import CompilationError
-from . import settings
+from shelleyc.exceptions import CompilationError
+from shelleyc import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

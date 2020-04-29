@@ -5,9 +5,9 @@ import argparse
 from pathlib import Path
 from karakuri import regular
 
-from . import settings
-from .exceptions import CompilationError
-from .serializer import serialize, deserialize
+from shelleyc import settings
+from shelleyc.exceptions import CompilationError
+from shelleyc.serializer import serialize, deserialize
 
 from shelley.automata import (
     CheckedDevice,

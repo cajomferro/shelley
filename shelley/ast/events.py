@@ -1,8 +1,8 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
-from shelley.ast.node import Node
-from shelley.ast.util import MyCollection
 from dataclasses import dataclass
+from shelley.ast.util import MyCollection
+from shelley.ast.node import Node
 
 if TYPE_CHECKING:
     from shelley.ast.visitors import Visitor
@@ -43,8 +43,12 @@ class Events(MyCollection[GenericEvent]):
         merged_events._data = self._data + events._data
         return merged_events
 
+    # TODO: improve this, do we really need this class?! (this method is not on any visitor and it shouldn't be right?)
+    def accept(self, visitor: Visitor) -> None:
+        pass
 
-class IEvents(Node, Events):
+
+class IEvents(Events):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_ievents(self)
 
@@ -57,7 +61,7 @@ class IEvents(Node, Events):
         return event
 
 
-class EEvents(Node, Events):
+class EEvents(Events):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_eevents(self)
 

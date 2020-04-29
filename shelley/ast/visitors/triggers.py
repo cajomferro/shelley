@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from . import Visitor
+from shelley.ast.visitors import Visitor
 from shelley.ast.devices import Device
 from shelley.ast.actions import Action, Actions
 from shelley.ast.events import EEvent, IEvent, EEvents, IEvents

@@ -1,10 +1,16 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+from abc import abstractmethod
 from typing import List, TypeVar, Generic
+from shelley.ast.node import Node
+
+if TYPE_CHECKING:
+    from shelley.ast.visitors import Visitor
 
 T = TypeVar("T")
 
 
-class MyCollection(Generic[T]):
+class MyCollection(Node, Generic[T]):
     _data: List[T]
 
     def __init__(self) -> None:
@@ -31,8 +37,12 @@ class MyCollection(Generic[T]):
     def list(self) -> List[T]:
         return self._data
 
-    def list_str(self):
+    def list_str(self) -> List[str]:
         return [str(elem) for elem in self._data]
+
+    @abstractmethod
+    def accept(self, visitor: Visitor) -> None:
+        pass
 
 
 class ListDuplicatedError(Exception):

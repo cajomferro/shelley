@@ -2,9 +2,9 @@ import logging
 import argparse
 import sys
 
-from . import settings
-from .exceptions import CompilationError
-from . import compile_shelley, get_args
+from shelleyc import settings
+from shelleyc.exceptions import CompilationError
+from shelleyc import compile_shelley, get_args
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

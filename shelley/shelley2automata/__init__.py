@@ -1,5 +1,4 @@
 from typing import Dict
-
 from karakuri.regular import Regex
 
 from shelley.automata import Device as AutomataDevice

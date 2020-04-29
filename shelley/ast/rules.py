@@ -3,13 +3,13 @@ from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict
 from dataclasses import dataclass
 
-from .node import Node
-from .events import GenericEvent
-from .components import Component, Components
+from shelley.ast.node import Node
+from shelley.ast.events import GenericEvent
+from shelley.ast.components import Component, Components
 
 if TYPE_CHECKING:
-    from .visitors import Visitor
-    from .devices import Device
+    from shelley.ast.visitors import Visitor
+    from shelley.ast.devices import Device
 
 
 class TriggerRule(Node):

@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Dict, Set, Tuple, List
+from typing import Dict
 
-from .triggers import TriggersVisitor
+from shelley.ast.visitors.triggers import TriggersVisitor
 from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import (
     TriggerRuleSequence,

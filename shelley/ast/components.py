@@ -2,13 +2,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Dict, List, Optional
 from dataclasses import dataclass
 
-from .util import MyCollection
-from .node import Node
+from shelley.ast.util import MyCollection
+from shelley.ast.node import Node
 
 # https://stackoverflow.com/questions/39740632/python-type-hinting-without-cyclic-imports
 if TYPE_CHECKING:
-    from .visitors import Visitor
-    from .devices import Device
+    from shelley.ast.visitors import Visitor
+    from shelley.ast.devices import Device
 
 
 @dataclass(order=True)
@@ -80,7 +80,7 @@ class ComponentsDeviceNotDeclaredError(Exception):
     pass
 
 
-class Components(Node, MyCollection[Component]):
+class Components(MyCollection[Component]):
     components_to_devices: Dict[str, str]
 
     def __init__(self) -> None:

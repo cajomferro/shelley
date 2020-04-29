@@ -1,14 +1,14 @@
 from __future__ import annotations
-from typing import List, Set, TYPE_CHECKING, Optional
+from typing import List, TYPE_CHECKING, Optional, Tuple, Union
 from dataclasses import dataclass
 
-from .util import MyCollection
-from .node import Node
-from .events import GenericEvent, EEvent, IEvent
-from .actions import Action
+from shelley.ast.util import MyCollection
+from shelley.ast.node import Node
+from shelley.ast.events import GenericEvent
+from shelley.ast.actions import Action
 
 if TYPE_CHECKING:
-    from .visitors import Visitor
+    from shelley.ast.visitors import Visitor
 
 
 @dataclass(order=True)
@@ -20,51 +20,6 @@ class Behavior(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_behaviour(self)
 
-    # def check(self, actions: Set[Action], events: Set[GenericEvent], behaviours: List[Behavior]):
-    #     self.check_action_is_declared(actions)
-    #     self.check_event_is_declared(events)
-    #     self.check_is_duplicated(behaviours)
-    #     behaviours.append(self)
-    #
-    # def check_action_is_declared(self, actions: Set[Action]):
-    #     if isinstance(self.e2, IEvent) and self.action not in actions:
-    #         raise BehaviorActionForInternalEventUndeclared(
-    #             "Action '{0}' not declared for internal event '{1}'".format(self.action.name,
-    #                                                                         self.e2.name))
-    #
-    # def check_event_is_declared(self, events: Set[GenericEvent]):
-    #
-    #     if self.e1 not in events:
-    #         raise BehaviorEventUndeclared(
-    #             "Left event '{0}' was not declared".format(self.e2.name))
-    #
-    #     if self.e2 not in events:
-    #         raise BehaviorEventUndeclared(
-    #             "Right event '{0}' was not declared".format(self.e2.name))
-    #
-    # def check_is_duplicated(self, behaviours: List[Behavior]):
-    #     if self in behaviours:
-    #         raise BehaviorsListDuplicatedError(
-    #             "Duplicated behaviour: {0} -> {1}".format(self.e1.name, self.e2.name))
-
-    # def __init__(self, e1: GenericEvent, e2: GenericEvent, action: Action = None):
-    #     self.e1 = e1
-    #     self.e2 = e2
-    #     self.action = action
-    #     if isinstance(self.e2, IEvent) and self.action is None:
-    #         raise BehaviourMissingActionForInternalEvent("Behaviour with internal event must specify an action")
-    #     if isinstance(self.e2, EEvent) and self.action is not None:
-    #         raise BehaviourUnexpectedActionForExternalEvent("Behaviour with external event does not require an action")
-    #
-    # def __eq__(self, other):
-    #     if not isinstance(other, Behaviour):
-    #         # don't attempt to compare against unrelated types
-    #         raise Exception("Instance is not of Behaviour type")
-    #
-    #     return self.e1.name == other.e1.name and self.e2.name == other.e2.name
-    #
-    # def __hash__(self):
-    #     return id(self.uuid)
     def __str__(self):
         return (
             "{0} -> {1}".format(self.e1.name, self.e2.name)
@@ -101,7 +56,7 @@ class BehaviorsMissingBegin(Exception):
     pass
 
 
-class Behaviors(Node, MyCollection[Behavior]):
+class Behaviors(MyCollection[Behavior]):
     def create(
         self, e1: GenericEvent, e2: GenericEvent, a: Optional[Action] = None
     ) -> Behavior:
@@ -115,8 +70,8 @@ class Behaviors(Node, MyCollection[Behavior]):
     def contains_events_pair(self, e1_name: str, e2_name: str) -> bool:
         return False if self.find_by_event_pair(e1_name, e2_name) is None else True
 
-    def find_by_event_pair(self, e1_name: str, e2_name: str) -> Behavior:
-        re: Behavior
+    def find_by_event_pair(self, e1_name: str, e2_name: str) -> Optional[Behavior]:
+        re: Optional[Behavior] = None
         try:
             re = next(
                 x for x in self._data if x.e1.name == e1_name and x.e2.name == e2_name
@@ -125,13 +80,11 @@ class Behaviors(Node, MyCollection[Behavior]):
             pass
         return re
 
-    def as_list_tuples(self, include_actions=False):
-        if include_actions:
-            re = [
-                (str(elem.e1), str(elem.action), str(elem.e2)) for elem in self.list()
-            ]
-        else:
-            re = [(str(elem.e1), str(elem.e2)) for elem in self.list()]
+    def as_list_tuples(self,) -> List[Tuple[str, str]]:
+        return [(str(elem.e1), str(elem.e2)) for elem in self.list()]
+
+    def as_list_tuples_with_actions(self) -> List[Tuple[str, str, str]]:
+        re = [(str(elem.e1), str(elem.action), str(elem.e2)) for elem in self.list()]
         return re
 
     def accept(self, visitor: Visitor) -> None:

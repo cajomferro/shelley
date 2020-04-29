@@ -107,6 +107,7 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
     if isinstance(src, str):
         c_name, e_name = src.split(".")
         component = components.find_by_name(c_name)
+        assert component is not None
         return TriggerRuleEvent(component, EEvent(e_name))
     elif isinstance(src, list) and len(src) == 0:
         raise ShelleyParserError("Trigger must not be empty!")
@@ -129,6 +130,10 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
                 left = _parse_trigger_rule(left_option, components)
                 right = _parse_trigger_rule(right_option, components)
                 return TriggerRuleChoice(left, right)
+        else:
+            raise ShelleyParserError("Unknown option for trigger: ", src)
+    else:
+        raise ShelleyParserError("Unknown option for trigger: ", src)
 
 
 # def parse_tests(tests: Mapping):

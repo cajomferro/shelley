@@ -1,8 +1,8 @@
-from shelley.ast.behaviors import Behavior, Behaviors
-from shelley.ast.events import GenericEvent, Events
-from shelley.ast.actions import Action, Actions
-from .events import parse as parse_events
-from .actions import parse as parse_actions
+from shelley.ast.behaviors import Behaviors
+from shelley.ast.events import Events
+from shelley.ast.actions import Actions
+from shelley.parser.events import parse as parse_events
+from shelley.parser.actions import parse as parse_actions
 import re
 
 
@@ -19,11 +19,13 @@ def parse(input: str, events: Events, actions: Actions) -> Behaviors:
         if match.group(4) is not None:
             e1 = events.find_by_name(match.group(1).strip())
             e2 = events.find_by_name(match.group(4).strip())
+            assert e1 is not None and e2 is not None
             behaviors.create(e1, e2)
         else:
             e1 = events.find_by_name(match.group(1).strip())
             e2 = events.find_by_name(match.group(3).strip())
             a = actions.find_by_name(match.group(2).strip())
+            assert e1 is not None and e2 is not None
             behaviors.create(e1, e2, a)
 
     return behaviors

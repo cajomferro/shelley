@@ -1,15 +1,15 @@
 from __future__ import annotations
 from typing import Mapping, List, TYPE_CHECKING, Optional
 
-from .node import Node
-from .actions import Actions
-from .behaviors import Behaviors
-from .components import Components
-from .triggers import Triggers
-from .events import IEvents, EEvents, Events
+from shelley.ast.node import Node
+from shelley.ast.actions import Actions
+from shelley.ast.behaviors import Behaviors
+from shelley.ast.components import Components
+from shelley.ast.triggers import Triggers
+from shelley.ast.events import IEvents, EEvents, Events
 
 if TYPE_CHECKING:
-    from .visitors import Visitor
+    from shelley.ast.visitors import Visitor
 
 
 def discover_uses(components: Components) -> List[str]:
@@ -83,7 +83,7 @@ class Device(Node):
                 "Duplicated device with name '{0}'".format(self.name)
             )
 
-    def get_all_events(self):
+    def get_all_events(self) -> Events:
         return self.external_events.merge(self.internal_events)
 
     def __eq__(self, other: object) -> bool:

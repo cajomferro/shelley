@@ -1,4 +1,4 @@
-from shelley.ast.actions import Action, Actions
+from shelley.ast.actions import Actions
 import re
 
 

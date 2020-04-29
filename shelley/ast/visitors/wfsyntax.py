@@ -1,13 +1,13 @@
 from __future__ import annotations
-from typing import Dict, Set
+from typing import Dict
 
-from . import Visitor
+from shelley.ast.visitors import Visitor
 from shelley.ast.devices import Device
 from shelley.ast.actions import Action, Actions
 from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
 from shelley.ast.behaviors import Behavior, Behaviors
 from shelley.ast.components import Component, Components
-from shelley.ast.triggers import Trigger, Triggers, TriggersEventUndeclaredError
+from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import (
     TriggerRuleSequence,
     TriggerRuleChoice,

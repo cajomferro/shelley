@@ -2,13 +2,13 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 from dataclasses import dataclass, field
 
-from .util import MyCollection
-from .node import Node
-from .rules import TriggerRule
-from .events import GenericEvent
+from shelley.ast.util import MyCollection
+from shelley.ast.node import Node
+from shelley.ast.rules import TriggerRule
+from shelley.ast.events import GenericEvent
 
 if TYPE_CHECKING:
-    from .visitors import Visitor
+    from shelley.ast.visitors import Visitor
 
 
 @dataclass(order=True)
@@ -24,40 +24,7 @@ class Trigger(Node):
         current class name. This way we let the visitor know the class of the
         component it works with.
         """
-
         visitor.visit_trigger(self)
-
-    # def check(self, eevents: List[EEvent], triggers: List[Trigger]):
-    #     self.check_event_is_declared(eevents)
-    #     #self.check_is_duplicated(triggers)
-    #     #triggers.append(self)
-    #
-    # def check_event_is_declared(self, eevents: List[EEvent]):
-    #     if self.event not in eevents:
-    #         raise TriggersEventUndeclaredError(
-    #             "Left event '{0}' must be declared in events section!".format(self.event.name))
-
-    # def check_is_duplicated(self, triggers: List[Trigger]):
-    #     if self in triggers:
-    #         raise TriggersListDuplicatedError(
-    #             "Duplicated trigger with event '{0}'".format(self.event.name))
-
-    # def __init__(self, event: EEvent, trigger_rule: TriggerRule):
-    #     self.event = event
-    #     self.trigger_rule = trigger_rule
-    #
-    # def __eq__(self, other):
-    #     """
-    #     Triggers are equal if the event name is the same
-    #     :param other:
-    #     :return:
-    #     """
-    #     if not isinstance(other, Trigger):
-    #         # don't attempt to compare against unrelated types
-    #         raise Exception("Instance is not of Trigger type")
-    #
-    #     return self.event.name == other.event.name
-
 
 class TriggersListEmptyError(Exception):
     pass
@@ -75,7 +42,7 @@ class TriggerRulesListEmptyError(Exception):
     pass
 
 
-class Triggers(Node, MyCollection[Trigger]):
+class Triggers(MyCollection[Trigger]):
     def create(self, event: GenericEvent, rule: TriggerRule) -> Trigger:
         trigger = Trigger(event, rule)
         if trigger not in self._data:

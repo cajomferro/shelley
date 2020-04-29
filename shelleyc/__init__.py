@@ -17,6 +17,7 @@ from shelley import yaml2shelley
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def get_args() -> argparse.Namespace:
     return create_parser().parse_args()
 
@@ -52,7 +53,7 @@ def get_dest_path(args_binary: bool, args_output_dir: str, args_src_filepath: st
     return dest_path
 
 
-def _get_known_devices(device: ShelleyDevice, uses_list: List[str], binary:bool=False) -> Dict[
+def _get_known_devices(device: ShelleyDevice, uses_list: List[str], binary: bool = False) -> Dict[
     str, CheckedDevice]:
     known_devices: Dict[str, CheckedDevice] = {}
     for u in uses_list:
@@ -75,12 +76,12 @@ def _get_known_devices(device: ShelleyDevice, uses_list: List[str], binary:bool=
     return known_devices
 
 
-def _get_ext(binary:bool=False) -> str:
+def _get_ext(binary: bool = False) -> str:
     return settings.EXT_SHELLEY_COMPILED_BIN if binary else settings.EXT_SHELLEY_COMPILED_YAML
 
 
-def compile_shelley(src_path: Path, uses: List[str], dst_path: Optional[Path] = None, binary:bool=False,
-                    intermediate:bool=False) -> Path:
+def compile_shelley(src_path: Path, uses: List[str], dst_path: Optional[Path] = None, binary: bool = False,
+                    intermediate: bool = False) -> Path:
     """
 
     :param src_path: Shelley device src path to be compiled (YAML file)
@@ -135,7 +136,7 @@ def compile_shelley(src_path: Path, uses: List[str], dst_path: Optional[Path] = 
 
             # generate internal minimized dfa without traps (must be converted to NFA)
             path = src_path.parent / (src_path.stem + "-internal-dfa" + "." + _get_ext(binary))
-            nfa = regular.dfa_to_nfa(cast(regular.DFA[Any,str], micro.dfa.minimize())).remove_all_sink_states()
+            nfa = regular.dfa_to_nfa(cast(regular.DFA[Any, str], micro.dfa.minimize())).remove_all_sink_states()
             serialize(path, nfa.as_dict(), binary)
 
     else:

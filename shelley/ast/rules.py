@@ -1,4 +1,5 @@
 from __future__ import annotations
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict
 from dataclasses import dataclass
 
@@ -12,7 +13,9 @@ if TYPE_CHECKING:
 
 
 class TriggerRule(Node):
-    pass
+    @abstractmethod
+    def accept(self, visitor: Visitor) -> None:
+        pass
 
 
 class TriggerRuleFired(TriggerRule):

@@ -17,7 +17,7 @@ Run tools
 
 .. code-block:: shell
 
-   # show all otions
+   # show all options
    shelleyc -h
 
    # compile a device without dependencies (uses)

@@ -15,6 +15,12 @@ all:
 	$(MAKE) -C buttons/good_ledbuttonstrict
 	$(MAKE) -C buttons/bad_ledbuttonstrict
 
+	$(MAKE) -C watering/v1
+	$(MAKE) -C watering/v2
+	$(MAKE) -C watering/v3
+	$(MAKE) -C watering/v4
+	$(MAKE) -C watering/v5
+
 clean:
 	$(MAKE) -C desklamp/bad_desklamp1 clean
 	$(MAKE) -C desklamp/good_desklamp clean
@@ -31,3 +37,16 @@ clean:
 	$(MAKE) -C buttons/good_ledbutton clean
 	$(MAKE) -C buttons/good_ledbuttonstrict clean
 	$(MAKE) -C buttons/bad_ledbuttonstrict clean
+
+	$(MAKE) -C watering/v1 clean
+	$(MAKE) -C watering/v2 clean
+	$(MAKE) -C watering/v3 clean
+	$(MAKE) -C watering/v4 clean
+	$(MAKE) -C watering/v5 clean
+
+watering-timer:
+	time $(MAKE) -C watering/v1 scy
+	time $(MAKE) -C watering/v2 scy
+	time $(MAKE) -C watering/v3 scy
+	time $(MAKE) -C watering/v4 scy
+	time $(MAKE) -C watering/v5 scy

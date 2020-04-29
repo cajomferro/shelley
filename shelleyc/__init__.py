@@ -109,11 +109,14 @@ def compile_shelley(src_path: Path, uses: List[str], dst_path: Optional[Path] = 
 
     if dev.is_valid:
 
-        # test macro traces
-        check_traces(dev.external_model_check, shelley_device.test_macro)  # macro
+        try:
+            # test macro traces
+            check_traces(dev.external_model_check, shelley_device.test_macro)  # macro
 
-        # test micro traces
-        check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
+            # test micro traces
+            check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
+        except ValueError as err:
+            raise CompilationError(str(err))
 
         serialize(dst_path, dev.external.nfa.as_dict(), binary)
 

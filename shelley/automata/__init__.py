@@ -468,11 +468,11 @@ def check_traces(mc: Callable[[FormulaOrTrace], bool], tests: Mapping[str, Mappi
     for key, trace in tests.get('ok', dict()).items():
         formula = parse_formula(trace)
         if not mc(formula):
-            raise ValueError(f"Unaccepted valid trace: {key}: {trace}")
+            raise ValueError(f"Unaccepted valid trace '{key}': {trace}")
 
     for key, trace in tests.get('fail', dict()).items():
         if mc(parse_formula(trace)):
-            raise ValueError(f"Unexpected invalid trace: {key}: {trace}")
+            raise ValueError(f"Unexpected invalid trace '{key}': {trace}")
 
 
 def model_check(nfa: NFA[Any, str], word_or_formula: Union[List[str], hml.Formula[str]]) -> bool:

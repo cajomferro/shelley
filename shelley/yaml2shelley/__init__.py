@@ -91,6 +91,8 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
         c_name, e_name = src.split(".")
         component = components.find_by_name(c_name)
         return TriggerRuleEvent(component, EEvent(e_name))
+    elif isinstance(src, list) and len(src) == 0:
+        raise ShelleyParserError("Trigger must not be empty!")
     elif isinstance(src, list) and len(src) == 1:
         return _parse_trigger_rule(src.pop(0), components)
     elif isinstance(src, list):
@@ -175,9 +177,11 @@ def _create_device_from_yaml(yaml_code) -> Device:
     _parse_behavior(device_behavior, events, behaviors)
     _parse_components(device_components, components)
 
-    if len(device_triggers) == 0:  # auto-create triggers for simple devices
+    if len(device_triggers) == 0 and len(device_components) == 0:  # auto-create triggers for simple devices
         for event in events.list():
             triggers.create(event, TriggerRuleFired())
+    elif len(device_triggers) == 0 and len(device_components) > 0:
+        raise ShelleyParserError("Device with components must also have triggers!")
     else:
         _parse_triggers(copy.deepcopy(device_triggers), events, components,
                         triggers)  # deep copy because i will consume some list elements (not really important)

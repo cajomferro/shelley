@@ -1,0 +1,67 @@
+#device:
+#  name: RadioSimplest
+#  start_events: [send]
+#  behavior:
+#    - [send, ?] # como é que poderia fazer para só enviar 1x?
+#  components:
+#      rs: RadioSimple
+#  triggers:
+#    send: [rs.start, rs.send, rs.receive, rs.stop]
+
+device:
+  name: WiFiHTTP
+  start_events: [started, notconnected]
+  behavior:
+    - [started, send]
+    - [notconnected, started]
+    - [send, stopped]
+    - [send, ok]
+    - [send, error]
+    - [error, send]
+    - [ok, send]
+    - [ok, stopped]
+    - [error, stopped]
+    - [stopped, started]
+    - [stopped, notconnected]
+  components:
+      hc: HTTPClient
+      wc: WiFiClient
+  triggers:
+    started: [wc.joined, wc.connected, hc.connected]
+    notconnected:
+      - xor:
+        - [wc.joined, wc.connected, hc.connect_failed]
+        - xor:
+          - [wc.joined, wc.connection_timeout]
+          - [wc.ssid_failed]
+    send:
+      - xor:
+        - hc.get
+        - hc.post
+    ok: [wc.print_data_ready, hc.response200]
+    error:
+      - xor:
+        - [wc.print_data_ready, hc.response401]
+        - xor:
+          - [wc.print_data_ready, hc.response401]
+          - xor:
+            - [wc.print_data_ready, hc.response404]
+            - xor:
+              - [wc.print_data_ready, hc.response500]
+              - wc.print_timeout
+    stopped: [wc.disconnected, hc.disconnected, wc.ssid_left]
+
+#test_micro:
+#  ok:
+#    valid1: [rs.start, rs.send]
+#    valid2: [rs.start, rs.send, rs.receive, rs.stop]
+#    empty: []
+#  failed:
+#    invalid1: [rs.start]
+#    invalid2: [rs.send]
+#    invalid3: [rs.start, rs.receive, rs.stop]
+#    invalid4: [rs.start, rs.send, s.stop]
+#    invalid5: [rs.start, rs.send, rs.receive]
+#    invalid6: [rs.send, rs.receive, rs.stop]
+#    # invalid7: [rs.start, rs.send, rs.receive, rs.stop, rs.start, rs.send, rs.receive, rs.stop] # comment this to be more strict
+#    invalid8: false

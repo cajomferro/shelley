@@ -1,0 +1,11 @@
+# Water valves handler
+
+device:
+  name: ValveHandler
+  start_events: [start]
+  behavior:
+    - [start, start]
+  components:
+    vh: ValveHandlerTimer
+  triggers:
+    start: [vh.v1, vh.v2, vh.v3, vh.v4]

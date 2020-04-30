@@ -15,15 +15,15 @@ from karakuri.regular import (
 from shelley.automata import Device, AssembledDevice, CheckedDevice
 from shelley import automata
 
-B_P = "b.pressed"
-B_R = "b.released"
+B_P:str = "b.pressed"
+B_R:str = "b.released"
 
 
 def create_prefixed_button() -> NFA:
     return NFA(
         # states=[0, 1],
         alphabet=[B_P, B_R],
-        transition_func=NFA.transition_edges([(0, [B_P], 1), (1, [B_R], 0),]),
+        transition_func=NFA[int,str].transition_edges([(0, set([B_P]), 1), (1, set([B_R]), 0),]),
         start_state=0,
         accepted_states=[0, 1],
     )
@@ -596,7 +596,7 @@ def get_basic_devices() -> Dict[str, Device]:
     )
 
 
-def get_basic_known_devices() -> Dict[str, AssembledDevice]:
+def get_basic_known_devices() -> Dict[str, CheckedDevice]:
     return dict(
         (k, AssembledDevice.make(d, {}).external)
         for (k, d) in get_basic_devices().items()

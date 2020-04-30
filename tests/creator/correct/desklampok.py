@@ -1,4 +1,4 @@
-from shelley.ast.events import EEvent, IEvent
+from shelley.ast.events import EEvent, IEvent, GenericEvent
 from shelley.parser.events import parse as parse_events
 from shelley.parser.actions import parse as parse_actions
 from shelley.parser.behaviors import parse as parse_behaviours
@@ -9,7 +9,7 @@ from shelley.ast.components import Component, Components
 from .ledok import DLed
 from .buttonok import DButton
 from .timerok import DTimer
-
+from typing import cast
 
 class DDeskLamp(Device):
     name = "DeskLamp"
@@ -117,11 +117,17 @@ class DDeskLamp(Device):
         )
 
         triggers = Triggers()
-        triggers.create(e_events.find_by_name("begin"), t_begin_rules)
-        triggers.create(e_events.find_by_name("level1"), t_level1_rules)
-        triggers.create(e_events.find_by_name("level2"), t_level2_rules)
-        triggers.create(e_events.find_by_name("standby1"), t_standby1_rules)
-        triggers.create(e_events.find_by_name("standby2"), t_standby2_rules)
+        ts = [
+            ("begin", t_begin_rules),
+            ("level1", t_level1_rules),
+            ("level2", t_level2_rules),
+            ("standby1", t_standby1_rules),
+            ("standby2", t_standby2_rules),
+        ]
+        for name, rules in ts:
+            ev = e_events.find_by_name(name)
+            assert ev is not None
+            triggers.create(ev, rules)
 
         super().__init__(
             self.name,

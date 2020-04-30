@@ -24,10 +24,10 @@ class DTimer(Device):
         behaviours = parse_behaviours(behaviours_str, i_events.merge(e_events), actions)
 
         triggers = Triggers()
-        triggers.create(e_events.find_by_name("begin"), TriggerRuleFired())
-        triggers.create(i_events.find_by_name("started"), TriggerRuleFired())
-        triggers.create(i_events.find_by_name("canceled"), TriggerRuleFired())
-        triggers.create(e_events.find_by_name("timeout"), TriggerRuleFired())
+        triggers.create(e_events["begin"], TriggerRuleFired())
+        triggers.create(i_events["started"], TriggerRuleFired())
+        triggers.create(i_events["canceled"], TriggerRuleFired())
+        triggers.create(e_events["timeout"], TriggerRuleFired())
 
         super().__init__(
             self.name, actions, i_events, e_events, start_events, behaviours, triggers

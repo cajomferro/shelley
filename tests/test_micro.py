@@ -1,4 +1,4 @@
-from typing import Any, List, Dict, Mapping
+from typing import Any, List, Dict, Mapping, Optional
 import yaml
 from pathlib import Path
 from karakuri.regular import (
@@ -18,8 +18,10 @@ from shelley.automata import (
     AssembledDevice,
     CheckedDevice,
     Device,
+    DecodedState,
     build_external_behavior,
     build_components,
+    MacroState,
     MicroState,
 )
 
@@ -146,7 +148,7 @@ def _encode(example_name: str):
     for key, value in components_behaviors.items():
         print(value.as_dict(flatten=False))
 
-    micro: AssembledMicroBehavior = AssembledMicroBehavior.make(
+    micro_be: AssembledMicroBehavior = AssembledMicroBehavior.make(
         components=list(components_behaviors.values()),
         external_behavior=external_behavior,
         triggers=dev.triggers,
@@ -154,7 +156,7 @@ def _encode(example_name: str):
 
     # shuffle = interleave = all possible
     # all_possible: DFA = merge_components(list(dict(components_behaviors).values()))
-    all_possible: DFA = micro.possible
+    all_possible: DFA = micro_be.possible
     _serialize("{0}-all-possible-dfa".format(example_name), all_possible.as_dict())
     _serialize(
         "{0}-all-possible-dfa-minimized-traps".format(example_name),
@@ -167,35 +169,35 @@ def _encode(example_name: str):
 
     # micro NFA
     micro_nfa_no_epsilon_no_traps = (
-        micro.nfa.remove_epsilon_transitions().remove_all_sink_states().as_dict()
+        micro_be.nfa.remove_epsilon_transitions().remove_all_sink_states().as_dict()
     )
     _serialize(
         "{0}-micro-nfa-no-epsilon-no-traps".format(example_name),
         micro_nfa_no_epsilon_no_traps,
     )
 
-    micro_nfa = micro.nfa.flatten().as_dict()
+    micro_nfa = micro_be.nfa.flatten().as_dict()
     _serialize("{0}-micro-nfa".format(example_name), micro_nfa)
 
-    micro_nfa_no_epsilon = micro.nfa.remove_epsilon_transitions().as_dict()
+    micro_nfa_no_epsilon = micro_be.nfa.remove_epsilon_transitions().as_dict()
     _serialize("{0}-micro-nfa-no-epsilon".format(example_name), micro_nfa_no_epsilon)
 
-    micro_nfa_no_traps = micro.nfa.remove_all_sink_states().as_dict()
+    micro_nfa_no_traps = micro_be.nfa.remove_all_sink_states().as_dict()
     _serialize("{0}-micro-nfa-no-traps".format(example_name), micro_nfa_no_traps)
 
     # micro DFA
-    micro_dfa = micro.dfa.flatten()
+    micro_dfa = micro_be.dfa.flatten()
     _serialize("{0}-micro-dfa".format(example_name), micro_dfa.as_dict())
     assert len([state for state in micro_dfa.states]) == 31
 
-    micro_dfa_minimized = micro.dfa.minimize().flatten()
+    micro_dfa_minimized = micro_be.dfa.minimize().flatten()
     _serialize(
         "{0}-micro-dfa-minimized".format(example_name), micro_dfa_minimized.as_dict()
     )
     assert len([state for state in micro_dfa_minimized.states]) == 5
 
     micro_dfa_minimized_no_traps = dfa_to_nfa(
-        micro.dfa.minimize()
+        micro_be.dfa.minimize()
     ).remove_all_sink_states()
     _serialize(
         "{0}-micro-dfa-minimized-no-traps".format(example_name),
@@ -203,20 +205,20 @@ def _encode(example_name: str):
     )
     assert len([state for state in micro_dfa_minimized_no_traps.states]) == 4
 
-    print("micro nfa states: ", [state for state in micro.nfa.flatten().states])
-    print("micro nfa state len: ", len([state for state in micro.nfa.flatten().states]))
+    print("micro nfa states: ", [state for state in micro_be.nfa.flatten().states])
+    print("micro nfa state len: ", len([state for state in micro_be.nfa.flatten().states]))
 
-    edges = [e for e in micro.nfa.edges]
+    edges = [e for e in micro_be.nfa.edges]
     for src, char, dsts in edges:
         if isinstance(src, MicroState):
             # print(src)
             try:
-                macro = set(src.macro).pop()
+                macro:Optional[str] = set(src.macro).pop()
             except KeyError:
                 macro = None
 
             try:
-                micro = set(src.micro).pop()
+                micro:Optional[str] = set(src.micro).pop()
             except KeyError:
                 micro = None
 
@@ -226,12 +228,14 @@ def _encode(example_name: str):
                 )
             )
 
-        else:
+        elif isinstance(src, MacroState):
             try:
-                state = set(src.state).pop()
+                state:Optional[str] = set(src.state).pop()
             except KeyError:
                 state = None
             print("Macro: {state}".format(state=state))
+        else:
+            assert False
 
 
 def test_encode_behavior_dev():

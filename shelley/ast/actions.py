@@ -37,13 +37,18 @@ class Actions(MyCollection[Action]):
             raise ActionsListDuplicatedError()
         return action
 
+    def __getitem__(self, name:str) -> Action:
+        act = self.find_by_name(name)
+        if act is None:
+            raise KeyError(name)
+        return act
+
     def find_by_name(self, name: str) -> Optional[Action]:
-        re: Optional[Action] = None
-        try:
-            re = next(x for x in self._data if x.name == name)
-        except StopIteration:
-            pass
-        return re
+        # XXX: Use a dictionary to store values, not a list
+        for x in self._data:
+            if x.name == name:
+                return x
+        return None
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_actions(self)

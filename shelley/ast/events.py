@@ -31,12 +31,17 @@ class EEvent(GenericEvent):
 
 class Events(MyCollection[GenericEvent]):
     def find_by_name(self, name: str) -> Optional[GenericEvent]:
-        re: Optional[GenericEvent] = None
-        try:
-            re = next(x for x in self._data if x.name == name)
-        except StopIteration:
-            pass
-        return re
+        # XXX: This should be the standard method: get
+        for x in self._data:
+            if x.name == name:
+                return x
+        return None
+
+    def __getitem__(self, name:str) -> GenericEvent:
+        res = self.find_by_name(name)
+        if res is None:
+            raise KeyError(name)
+        return res
 
     def merge(self, events: Events) -> Events:
         merged_events: Events = Events()

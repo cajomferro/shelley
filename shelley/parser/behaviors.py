@@ -17,15 +17,13 @@ def parse(input: str, events: Events, actions: Actions) -> Behaviors:
     behaviors = Behaviors()
     for match in matches:
         if match.group(4) is not None:
-            e1 = events.find_by_name(match.group(1).strip())
-            e2 = events.find_by_name(match.group(4).strip())
-            assert e1 is not None and e2 is not None
+            e1 = events[match.group(1).strip()]
+            e2 = events[match.group(4).strip()]
             behaviors.create(e1, e2)
         else:
-            e1 = events.find_by_name(match.group(1).strip())
-            e2 = events.find_by_name(match.group(3).strip())
-            a = actions.find_by_name(match.group(2).strip())
-            assert e1 is not None and e2 is not None
+            e1 = events[match.group(1).strip()]
+            e2 = events[match.group(3).strip()]
+            a = actions[match.group(2).strip()]
             behaviors.create(e1, e2, a)
 
     return behaviors

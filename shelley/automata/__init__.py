@@ -26,7 +26,7 @@ from karakuri.regular import (
 from dataclasses import dataclass, field
 from karakuri import hml
 
-__all__ = "Device", "AssembledDevice", "check_traces", "CheckedDevice"
+#__all__ = "Device", "AssembledDevice", "check_traces", "CheckedDevice", "MacroState"
 
 
 @dataclass

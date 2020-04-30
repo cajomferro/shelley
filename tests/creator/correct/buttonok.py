@@ -19,9 +19,15 @@ class DButton(Device):
         behaviors = parse_behaviours(behaviours_str, i_events.merge(e_events), actions)
 
         triggers = Triggers()
-        triggers.create(e_events.find_by_name("begin"), TriggerRuleFired())
-        triggers.create(e_events.find_by_name("pressed"), TriggerRuleFired())
-        triggers.create(e_events.find_by_name("released"), TriggerRuleFired())
+        ts = [
+            ("begin", TriggerRuleFired()),
+            ("pressed", TriggerRuleFired()),
+            ("released", TriggerRuleFired()),
+        ]
+        for name, rules in ts:
+            ev = e_events.find_by_name(name)
+            assert ev is not None
+            triggers.create(ev, rules)
 
         super().__init__(
             self.name, actions, i_events, e_events, start_events, behaviors, triggers

@@ -23,13 +23,7 @@ class MyCollection(Node, Generic[T]):
             raise ListDuplicatedError()
 
     def contains(self, elem: T) -> bool:
-        re = False
-        try:
-            next(x for x in self._data if x == elem)
-            re = True
-        except StopIteration:
-            pass
-        return re
+        return elem in self._data
 
     def count(self) -> int:
         return len(self._data)

@@ -8,7 +8,7 @@ MYPY = $(RUN) mypy
 MYPY_FLAGS = --show-error-context --show-column-numbers --pretty
 BLACK = $(RUN) black
 
-all: check
+all: check test format
 
 deps:
 	$(PO) update

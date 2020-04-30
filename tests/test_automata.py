@@ -1,5 +1,5 @@
 import pytest
-from typing import Dict
+from typing import Dict, cast, List
 from karakuri.regular import (
     NFA,
     regex_to_nfa,
@@ -11,6 +11,7 @@ from karakuri.regular import (
     nfa_to_dfa,
     Star,
     NIL,
+    Regex,
 )
 from shelley.automata import Device, AssembledDevice, CheckedDevice
 from shelley import automata
@@ -79,6 +80,8 @@ STANDBY2 = "standby2"
 
 
 def create_hello_world() -> NFA:
+    def is_final(x:int) -> bool:
+        return 0 <= x <= 2
     return NFA(
         alphabet=[LEVEL1, LEVEL2, STANDBY1, STANDBY2],
         transition_func=NFA.transition_edges(
@@ -90,7 +93,7 @@ def create_hello_world() -> NFA:
             ]
         ),
         start_state=0,
-        accepted_states=lambda x: 0 <= x <= 2,
+        accepted_states=is_final,
     )
 
 
@@ -166,7 +169,7 @@ def test_contains() -> None:
 
 def test_hello_world() -> None:
     HELLO_WORLD_TRIGGERS = {
-        LEVEL1: Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
+        LEVEL1: Concat.from_list(map(Char[str], [B_P, B_R, LA_ON, T_S])),
         LEVEL2: Concat.from_list(
             [Char(B_P), Char(B_R), And(Char(T_C), Char(LB_ON)), Char(T_S),]
         ),
@@ -191,7 +194,7 @@ def test_hello_world() -> None:
 
 def test_encode_1() -> None:
     behavior = Union(Char(LEVEL1), Star(Concat(Char(LEVEL1), Char(LEVEL2))))
-    triggers = {
+    triggers:Dict[str,Regex[str]] = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
@@ -202,7 +205,7 @@ def test_encode_1() -> None:
 
 def test_encode_behavior2_1() -> None:
     behavior = Union(Char(LEVEL1), Star(Concat(Char(LEVEL1), Char(LEVEL2))))
-    triggers = {
+    triggers:Dict[str,Regex[str]] = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
@@ -231,7 +234,7 @@ def test_encode2() -> None:
 def test_ambiguity_1() -> None:
     behavior = Union(Char(LEVEL1), Star(Concat(Char(LEVEL1), Char(LEVEL2))))
     n_behavior = regex_to_nfa(behavior)
-    triggers = {
+    triggers:Dict[str,Regex[str]] = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
@@ -240,6 +243,7 @@ def test_ambiguity_1() -> None:
     )
     assert not res.micro.is_valid
     fail = res.micro.failure
+    assert fail is not None
     assert fail.micro_trace == (B_P,)
     assert sorted(fail.macro_traces) == sorted([(LEVEL2,), (LEVEL1,)])
 
@@ -247,7 +251,7 @@ def test_ambiguity_1() -> None:
 def test_ok_1() -> None:
     behavior = Union(Char(LEVEL1), Star(Concat(Char(LEVEL1), Char(LEVEL2))))
     n_behavior = regex_to_nfa(behavior)
-    triggers = {
+    triggers:Dict[str,Regex[str]] = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
@@ -259,7 +263,7 @@ def test_ok_1() -> None:
 def test_fail_hello_world() -> None:
     hello = create_hello_world()
     assert hello.accepts([])
-    triggers = {
+    triggers:Dict[str,Regex[str]] = {
         LEVEL1: Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
         LEVEL2: Concat.from_list(
             [Char(B_R), Char(B_P), And(Char(T_C), Char(LB_ON)), Char(T_S),]
@@ -280,12 +284,12 @@ def test_fail_hello_world() -> None:
     assert be.accepts([])
     res = automata.AssembledMicroBehavior.make(components, hello, triggers)
     assert not res.is_valid
-    assert not res.impossible.accepts([])
+    assert not res.impossible.accepts(cast(List[str],[]))
 
 
 def test_smallest_error() -> None:
     hello = create_hello_world()
-    triggers = {
+    triggers:Dict[str,Regex[str]] = {
         LEVEL1: Concat.from_list(
             map(Char, [B_P, B_P, LA_ON, T_S])  # <--- ERROR HERE: should be B_R
         ),
@@ -314,6 +318,7 @@ def test_smallest_error() -> None:
     assert res.micro.is_valid
     fail = res.impossible
     err = fail.get_shortest_string()
+    assert err is not None
     assert fail.accepts(err)
     assert err is not None
     assert err == (B_P, B_P, LA_ON, T_S)
@@ -640,6 +645,29 @@ def test_invalid_behavior_1() -> None:
 
 
 def test_invalid_behavior_2() -> None:
+    triggers:Dict[str,Regex[str]] = {
+        LEVEL1: Concat.from_list(
+            map(
+                Char,
+                [
+                    B_R,  # <--- ERROR HERE: should be B_P
+                    B_P,  # <--- ERROR HERE: should be B_P
+                    B_R,  # <--- ERROR HERE: should be B_P
+                    LA_ON,
+                    T_S,
+                ],
+            )
+        ),
+        LEVEL2: Concat.from_list(
+            [Char(B_P), Char(B_R), And(Char(T_C), Char(LB_ON)), Char(T_S),]
+        ),
+        STANDBY1: concat(Char(T_T), Char(LA_OFF)),
+        STANDBY2: concat(
+            Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+            And(Char(LB_OFF), Char(LA_OFF)),
+        ),
+    }
+
     device = Device(
         start_events=["level1"],
         events=["level1", "level2", "standby1", "standby2"],
@@ -651,28 +679,7 @@ def test_invalid_behavior_2() -> None:
             ("standby2", "level1"),
         ],
         components={"b": "Button", "ledA": "Led", "ledB": "Led", "t": "Timer",},
-        triggers={
-            LEVEL1: Concat[str].from_list(
-                map(
-                    Char[str],
-                    [
-                        B_R,  # <--- ERROR HERE: should be B_P
-                        B_P,  # <--- ERROR HERE: should be B_P
-                        B_R,  # <--- ERROR HERE: should be B_P
-                        LA_ON,
-                        T_S,
-                    ],
-                )
-            ),
-            LEVEL2: Concat.from_list(
-                [Char(B_P), Char(B_R), And(Char(T_C), Char(LB_ON)), Char(T_S),]
-            ),
-            STANDBY1: concat(Char(T_T), Char(LA_OFF)),
-            STANDBY2: concat(
-                Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
-                And(Char(LB_OFF), Char(LA_OFF)),
-            ),
-        },
+        triggers=triggers,
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid

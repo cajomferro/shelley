@@ -9,7 +9,7 @@ MYPY_FLAGS = --show-error-context --show-column-numbers --pretty
 
 all: check
 
-init:
+deps:
 	$(PO) update
 
 check:

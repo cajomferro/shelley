@@ -37,7 +37,7 @@ class Actions(MyCollection[Action]):
             raise ActionsListDuplicatedError()
         return action
 
-    def __getitem__(self, name:str) -> Action:
+    def __getitem__(self, name: str) -> Action:
         act = self.find_by_name(name)
         if act is None:
             raise KeyError(name)

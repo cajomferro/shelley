@@ -3,7 +3,7 @@ SHELLEYV = shelleyv
 
 all: scy pdf
 
-pdf: magnetic.pdf radio.pdf radiosimple.pdf radiosimplest.pdf valve.pdf timer.pdf valvehandlertimer.pdf valvehandler.pdf lowpower-strict.pdf httpclient.pdf wificlient.pdf controller.pdf
+pdf: magnetic.pdf radio.pdf radiosimple.pdf radiosimplest.pdf valve.pdf timer.pdf valvehandlertimer.pdf valvehandler.pdf lowpower-strict.pdf httpclient.pdf wificlient.pdf wifihttp.pdf controller.pdf
 
 scy: controller.scy
 

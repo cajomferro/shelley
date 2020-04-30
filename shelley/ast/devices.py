@@ -28,9 +28,7 @@ class Device(Node):
 
     name: str
     actions: Actions
-    internal_events: IEvents
-    external_events: EEvents
-    start_events: List[str]
+    events: EEvents  # TODO: change to Events later
     behaviors: Behaviors
     uses: List[str]
     components: Components
@@ -41,24 +39,22 @@ class Device(Node):
     def __init__(
         self,
         name: str,
-        actions: Actions,
-        internal_events: IEvents,
-        external_events: EEvents,
-        start_events: List[str],
+        events: EEvents,
         behaviors: Behaviors,
         triggers: Triggers,
+        actions: Optional[Actions] = None,
         uses: Optional[List[str]] = None,
         components: Optional[Components] = None,
     ) -> None:
+        if actions is None:
+            actions = Actions()
         if uses is None:
             uses = []
         if components is None:
             components = Components()
         self.name = name
         self.actions = actions
-        self.internal_events = internal_events
-        self.external_events = external_events
-        self.start_events = start_events
+        self.events = events
         self.behaviors = behaviors
         self.uses = uses
         self.components = components

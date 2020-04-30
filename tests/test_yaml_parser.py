@@ -128,6 +128,8 @@ def test_smartbutton_1() -> None:
     on
   start events:
     on
+  final events:
+    on
   behaviours:
     on -> on
   components:

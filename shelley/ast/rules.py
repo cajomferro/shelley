@@ -32,7 +32,7 @@ class TriggerRuleFired(TriggerRule):
 @dataclass(order=True)
 class TriggerRuleEvent(TriggerRule):
     component: Component
-    event: GenericEvent
+    event: str
 
     def accept(self, visitor: Visitor) -> None:
         """

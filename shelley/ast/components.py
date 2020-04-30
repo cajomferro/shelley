@@ -107,5 +107,11 @@ class Components(MyCollection[Component]):
             pass
         return re
 
+    def __getitem__(self, name: str) -> Component:
+        res = self.find_by_name(name)
+        if res is None:
+            raise KeyError(name)
+        return res
+
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_components(self)

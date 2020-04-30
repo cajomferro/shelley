@@ -25,6 +25,7 @@ class MyCollection(Node, Generic[T]):
     def contains(self, elem: T) -> bool:
         return elem in self._data
 
+    # TODO: REMOVE THIS
     def count(self) -> int:
         return len(self._data)
 
@@ -33,6 +34,9 @@ class MyCollection(Node, Generic[T]):
 
     def list_str(self) -> List[str]:
         return [str(elem) for elem in self._data]
+
+    def __len__(self):
+        return len(self._data)
 
     @abstractmethod
     def accept(self, visitor: Visitor) -> None:

@@ -1,9 +1,9 @@
 import yaml
-from typing import List, Mapping
+from typing import List, Mapping, Dict
 import copy
 import pathlib
 from shelley.yaml2shelley.util import MySafeLoader
-from shelley.ast.events import EEvent, EEvents, IEvents
+from shelley.ast.events import EEvent, EEvents, IEvents, Events
 from shelley.ast.actions import Actions
 from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError
 from shelley.ast.devices import Device
@@ -89,21 +89,55 @@ def _parse_components(src: Mapping[str, str], components: Components) -> None:
 def _parse_triggers(
     src: Mapping, events: EEvents, components: Components, triggers: Triggers
 ) -> None:
-    for trigger_event_name in src:
-        trigger_rule = _parse_trigger_rule(src[trigger_event_name], components)
+    """
 
-        event = events.find_by_name(trigger_event_name)
-        if event is None:
-            raise ShelleyParserError(
-                "Trigger event '{0}' has not been declared".format(trigger_event_name)
-            )
+    :param src: events section from yaml as dict
+    :param events: empty list of events to store discovered events
+    :param components:
+    :param triggers:
+    :return:
+    """
+
+    assert len(events) == 0
+    assert len(triggers) == 0
+
+    # if len(src) == 0:
+    #     if len(components) == 0:  # auto-create triggers for simple devices
+    #         for event in events.list():
+    #             triggers.create(event, TriggerRuleFired())
+    #     else:  # there are defined components but no triggers
+    #         raise ShelleyParserError("Device with components must also have triggers!")
+    # else:
+    src_events = copy.deepcopy(src)
+
+    for event_name, event_data in src_events.items():
+        is_start: bool = False
+        is_final: bool = False
+        micro: Dict = {}
+        try:
+            is_start = event_data["start"]
+            is_final = event_data["final"]
+            micro = event_data["micro"]
+        except KeyError:
+            pass
+
+        # TODO: validate triggers and components here?
+
+        event: EEvent = events.create(event_name, is_start, is_final)
+
+        trigger_rule = _parse_trigger_rule(micro, components)
+
+        # raise ShelleyParserError(
+        #     "Trigger event '{0}' has not been declared".format(
+        #         trigger_event_name
+        #     )
         triggers.create(event, trigger_rule)
 
-    for event_name in events.list_str():
-        if triggers.find_by_event(event_name) is None:
-            raise ShelleyParserError(
-                "Missing trigger for event '{0}'".format(event_name)
-            )
+        # for event_name in events.list_str():
+        #     if triggers.find_by_event(event_name) is None:
+        #         raise ShelleyParserError(
+        #             "Missing trigger for event '{0}'".format(event_name)
+        #         )
 
 
 def _parse_trigger_rule(src, components: Components) -> TriggerRule:
@@ -111,10 +145,12 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
         try:
             c_name, e_name = src.split(".")
         except ValueError as err:
-            raise ShelleyParserError("Invalid trigger rule '{0}'. Missing component?".format(src))
-        component = components.find_by_name(c_name)
+            raise ShelleyParserError(
+                "Invalid trigger rule '{0}'. Missing component?".format(src)
+            )
+        component = components[c_name]
         assert component is not None
-        return TriggerRuleEvent(component, EEvent(e_name))
+        return TriggerRuleEvent(component, e_name)
     elif isinstance(src, list) and len(src) == 0:
         raise ShelleyParserError("Trigger must not be empty!")
     elif isinstance(src, list) and len(src) == 1:
@@ -164,14 +200,9 @@ def _create_device_from_yaml(yaml_code) -> Device:
         raise ShelleyParserError("Device must have a name")
 
     # try:
-    #     device_events = yaml_code['device']['events']
+    #     device_start_events = yaml_code["device"]["start_events"]
     # except KeyError:
-    #     raise Exception("Device must have events")
-
-    try:
-        device_start_events = yaml_code["device"]["start_events"]
-    except KeyError:
-        raise ShelleyParserError("Please specify at least one start event")
+    #     raise ShelleyParserError("Please specify at least one start event")
 
     try:
         device_behavior = yaml_code["device"]["behavior"]
@@ -184,7 +215,7 @@ def _create_device_from_yaml(yaml_code) -> Device:
         device_components = dict()
 
     try:
-        device_triggers = yaml_code["device"]["triggers"]
+        device_triggers = yaml_code["device"]["events"]
     except KeyError:
         device_triggers = dict()
 
@@ -222,34 +253,11 @@ def _create_device_from_yaml(yaml_code) -> Device:
     behaviors: Behaviors = Behaviors()
     components: Components = Components()
     triggers: Triggers = Triggers()
-    _parse_behavior(device_behavior, events, behaviors)
     _parse_components(device_components, components)
+    _parse_triggers(copy.deepcopy(device_triggers), events, components, triggers)
+    _parse_behavior(device_behavior, events, behaviors)
 
-    if (
-        len(device_triggers) == 0 and len(device_components) == 0
-    ):  # auto-create triggers for simple devices
-        for event in events.list():
-            triggers.create(event, TriggerRuleFired())
-    elif len(device_triggers) == 0 and len(device_components) > 0:
-        raise ShelleyParserError("Device with components must also have triggers!")
-    else:
-        _parse_triggers(
-            copy.deepcopy(device_triggers), events, components, triggers
-        )  # deep copy because i will consume some list elements (not really important)
-
-    # if len(tests) > 0:
-    #     parse_tests(tests)
-
-    device = Device(
-        device_name,
-        Actions(),
-        IEvents(),
-        events,
-        device_start_events,
-        behaviors,
-        triggers,
-        components=components,
-    )
+    device = Device(device_name, events, behaviors, triggers, components=components,)
 
     device.test_macro = test_macro
     device.test_micro = test_micro

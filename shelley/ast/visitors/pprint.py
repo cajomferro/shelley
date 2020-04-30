@@ -30,7 +30,7 @@ class PrettyPrintVisitor(Visitor):
         self.result += "fired"
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
-        self.result += "{0}.{1} ".format(element.component.name, element.event.name)
+        self.result += "{0}.{1} ".format(element.component.name, element.event)
 
     def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
         self.result += "( "
@@ -125,17 +125,27 @@ class PrettyPrintVisitor(Visitor):
         if element.actions.count() > 0:
             element.actions.accept(self)
 
-        if element.internal_events.count() > 0:
-            element.internal_events.accept(self)
+        # if element.internal_events.count() > 0:
+        #     element.internal_events.accept(self)
 
-        if element.external_events.count() > 0:
-            element.external_events.accept(self)
+        if len(element.events) > 0:
+            element.events.accept(self)
 
         self.result += "  start events:\n    "
         start_events_str = ""
-        for event_name in element.start_events:
+        for event_name in [
+            event.name for event in element.events._data if event.is_start
+        ]:
             start_events_str += event_name + ", "
         self.result += "{}\n".format(start_events_str[0:-2])  # remove extra ", "
+
+        self.result += "  final events:\n    "
+        final_events_str = ""
+        for event_name in [
+            event.name for event in element.events._data if event.is_final
+        ]:
+            final_events_str += event_name + ", "
+        self.result += "{}\n".format(final_events_str[0:-2])  # remove extra ", "
 
         self.result += "  behaviours:\n"
         element.behaviors.accept(self)

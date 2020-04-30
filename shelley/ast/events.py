@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 @dataclass(order=True)
 class GenericEvent(Node):
     name: str
+    is_final: bool
+    is_start: bool
 
     def accept(self, visitor: Visitor) -> None:
         pass
@@ -70,8 +72,8 @@ class EEvents(Events):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_eevents(self)
 
-    def create(self, name: str) -> EEvent:
-        event = EEvent(name)
+    def create(self, name: str, is_start = False, is_final = False) -> EEvent:
+        event = EEvent(name, is_start, is_final)
         if event not in self._data:
             self._data.append(event)
         else:

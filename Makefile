@@ -19,8 +19,8 @@ check:
 test: check
 	$(PYTEST) $(PYTEST_FLAGS) tests
 
-examples: test
-	$(MAKE) -C examples
+examples:
+	$(MAKE) -C examples SHELLEYC="$(RUN) shelleyc" SHELLEYV="$(RUN) shelleyv"
 
 clean:
 	$(MAKE) -C examples clean
@@ -28,4 +28,4 @@ clean:
 format:
 	$(BLACK) .
 
-.PHONY: init check test all
+.PHONY: init check test all examples

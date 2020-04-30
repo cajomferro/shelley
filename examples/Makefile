@@ -20,6 +20,7 @@ all:
 	$(MAKE) -C watering/v3
 	$(MAKE) -C watering/v4
 	$(MAKE) -C watering/v5
+	$(MAKE) -C watering/v6
 
 clean:
 	$(MAKE) -C desklamp/bad_desklamp1 clean
@@ -43,6 +44,7 @@ clean:
 	$(MAKE) -C watering/v3 clean
 	$(MAKE) -C watering/v4 clean
 	$(MAKE) -C watering/v5 clean
+	$(MAKE) -C watering/v6 clean
 
 watering-timer:
 	time $(MAKE) -C watering/v1 scy
@@ -50,3 +52,4 @@ watering-timer:
 	time $(MAKE) -C watering/v3 scy
 	time $(MAKE) -C watering/v4 scy
 	time $(MAKE) -C watering/v5 scy
+	time $(MAKE) -C watering/v6 scy

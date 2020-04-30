@@ -25,7 +25,7 @@ test_macro:
     valid8: [start, HTTPsetup, HTTPconnect, HTTPsend, HTTPsend, HTTPdisconnect, HTTPdisable]
     valid9: [start, HTTPsetup, HTTPconnect, HTTPsend, HTTPreceive, HTTPsend, HTTPdisconnect, HTTPdisable]
     empty: []
-  failed:
+  fail:
     invalid1: [HTTPsetup]
     invalid2: [HTTPconnect]
     invalid3: [HTTPsend]

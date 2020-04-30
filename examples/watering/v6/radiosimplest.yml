@@ -25,7 +25,7 @@ test_micro:
     valid1: [rs.start, rs.send]
     valid2: [rs.start, rs.send, rs.receive, rs.stop]
     empty: []
-  failed:
+  fail:
     invalid1: [rs.start]
     invalid2: [rs.send]
     invalid3: [rs.start, rs.receive, rs.stop]

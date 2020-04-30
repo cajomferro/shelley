@@ -1,5 +1,5 @@
 SHELLEYC = shelleyc
-SHELLEYVIZ = shelleyv
+SHELLEYV = shelleyv
 
 all: scy pdf
 
@@ -15,7 +15,7 @@ smartbutton.scy: smartbutton.yml singleclick.scy
 	$(SHELLEYC) -d $<
 
 %.gv: %.scy
-	$(SHELLEYVIZ) $< -o $@
+	$(SHELLEYV) $< -o $@
 
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<

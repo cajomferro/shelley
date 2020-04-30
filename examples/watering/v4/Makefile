@@ -1,5 +1,5 @@
 SHELLEYC = shelleyc
-SHELLEYVIZ = shelleyv
+SHELLEYV = shelleyv
 
 all: scy pdf
 
@@ -24,7 +24,7 @@ controller.scy: controller.yml valvehandler.scy magnetic.scy radiosimplest.scy l
 	test -f $<
 
 %.gv: %.scy
-	$(SHELLEYVIZ) $< -o $@
+	$(SHELLEYV) $< -o $@
 
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<

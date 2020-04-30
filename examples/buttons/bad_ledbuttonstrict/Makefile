@@ -1,5 +1,5 @@
 SHELLEYC = shelleyc
-SHELLEYVIZ = shelleyv
+SHELLEYV = shelleyv
 
 all: scy pdf
 
@@ -15,7 +15,7 @@ ledbutton.scy: ledbutton.yml simple_button.scy led_strict.scy
 	$(SHELLEYC) -d $<
 
 %.gv: %.scy
-	$(SHELLEYVIZ) $< -o $@
+	$(SHELLEYV) $< -o $@
 
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<

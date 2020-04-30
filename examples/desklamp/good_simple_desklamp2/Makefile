@@ -15,21 +15,21 @@ desklamp.scy: desklamp.yml led_strict.scy simple_button.scy
 	test -f $<
 
 %.gv: %.scy
-	$(SHELLEYVIZ) $< -o $@
+	$(SHELLEYV) $< -o $@
 
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<
 
 desklamp-shuffle-dfa:
-	$(SHELLEYVIZ) -o desklamp-shuffle-dfa.gv desklamp-shuffle-dfa.scy
+	$(SHELLEYV) -o desklamp-shuffle-dfa.gv desklamp-shuffle-dfa.scy
 	dot -Tpdf -o desklamp-shuffle-dfa.pdf desklamp-shuffle-dfa.gv
 
 desklamp-internal-nfa:
-	$(SHELLEYVIZ) -o desklamp-internal-nfa.gv desklamp-internal-nfa.scy
+	$(SHELLEYV) -o desklamp-internal-nfa.gv desklamp-internal-nfa.scy
 	dot -Tpdf -o desklamp-internal-nfa.pdf desklamp-internal-nfa.gv
 
 desklamp-internal-dfa:
-	$(SHELLEYVIZ) -o desklamp-internal-dfa.gv desklamp-internal-dfa.scy
+	$(SHELLEYV) -o desklamp-internal-dfa.gv desklamp-internal-dfa.scy
 	dot -Tpdf -o desklamp-internal-dfa.pdf desklamp-internal-dfa.gv
 
 clean:

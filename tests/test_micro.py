@@ -206,19 +206,21 @@ def _encode(example_name: str):
     assert len([state for state in micro_dfa_minimized_no_traps.states]) == 4
 
     print("micro nfa states: ", [state for state in micro_be.nfa.flatten().states])
-    print("micro nfa state len: ", len([state for state in micro_be.nfa.flatten().states]))
+    print(
+        "micro nfa state len: ", len([state for state in micro_be.nfa.flatten().states])
+    )
 
     edges = [e for e in micro_be.nfa.edges]
     for src, char, dsts in edges:
         if isinstance(src, MicroState):
             # print(src)
             try:
-                macro:Optional[str] = set(src.macro).pop()
+                macro: Optional[str] = set(src.macro).pop()
             except KeyError:
                 macro = None
 
             try:
-                micro:Optional[str] = set(src.micro).pop()
+                micro: Optional[str] = set(src.micro).pop()
             except KeyError:
                 micro = None
 
@@ -230,7 +232,7 @@ def _encode(example_name: str):
 
         elif isinstance(src, MacroState):
             try:
-                state:Optional[str] = set(src.state).pop()
+                state: Optional[str] = set(src.state).pop()
             except KeyError:
                 state = None
             print("Macro: {state}".format(state=state))

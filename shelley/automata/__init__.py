@@ -26,7 +26,7 @@ from karakuri.regular import (
 from dataclasses import dataclass, field
 from karakuri import hml
 
-#__all__ = "Device", "AssembledDevice", "check_traces", "CheckedDevice", "MacroState"
+# __all__ = "Device", "AssembledDevice", "check_traces", "CheckedDevice", "MacroState"
 
 
 @dataclass
@@ -339,7 +339,7 @@ class MicroBehavior:
         """
         assert isinstance(external_behavior, NFA)
         det_behavior: DFA[AbstractSet[str], str] = nfa_to_dfa(external_behavior)
-        det_triggers = dict(
+        det_triggers: Dict[str, DFA[Any, str]] = dict(
             (k, nfa_to_dfa(regex_to_nfa(v))) for k, v in triggers.items()
         )
         # det_triggers and triggers are so close together, make sure we don't mistype
@@ -367,6 +367,7 @@ class MicroBehavior:
                 if dfa.accepted_states(src.micro) and char is None:
                     return frozenset([src.advance_macro()])
                 elif char in dfa.alphabet:
+                    assert char is not None
                     dst = src.advance_micro(dfa.transition_func(src.micro, char))
                     return frozenset([dst])
                 return frozenset()

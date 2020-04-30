@@ -6,10 +6,11 @@ PYTEST = $(RUN) pytest
 PYTEST_FLAGS =
 MYPY = $(RUN) mypy
 MYPY_FLAGS = --show-error-context --show-column-numbers --pretty
+BLACK = $(RUN) black
 
-all: check
+all: check test format
 
-init:
+deps:
 	$(PO) update
 
 check:
@@ -23,5 +24,8 @@ examples: test
 
 clean:
 	$(MAKE) -C examples clean
+
+format:
+	$(BLACK) .
 
 .PHONY: init check test all

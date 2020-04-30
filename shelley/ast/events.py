@@ -37,7 +37,7 @@ class Events(MyCollection[GenericEvent]):
                 return x
         return None
 
-    def __getitem__(self, name:str) -> GenericEvent:
+    def __getitem__(self, name: str) -> GenericEvent:
         res = self.find_by_name(name)
         if res is None:
             raise KeyError(name)

@@ -20,11 +20,9 @@ class DLed(Device):
         behaviours = parse_behaviours(behaviours_str, i_events.merge(e_events), actions)
 
         triggers = Triggers()
-        names = ["begin", "on", "off"]
-        for name in names:
-            ev = e_events.find_by_name(name)
-            assert ev is not None
-            triggers.create(ev, TriggerRuleFired())
+        triggers.create(e_events["begin"], TriggerRuleFired())
+        for name in ["on", "off"]:
+            triggers.create(i_events[name], TriggerRuleFired())
 
         super().__init__(
             self.name, actions, i_events, e_events, start_events, behaviours, triggers

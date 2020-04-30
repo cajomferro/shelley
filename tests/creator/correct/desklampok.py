@@ -11,6 +11,7 @@ from .buttonok import DButton
 from .timerok import DTimer
 from typing import cast
 
+
 class DDeskLamp(Device):
     name = "DeskLamp"
 

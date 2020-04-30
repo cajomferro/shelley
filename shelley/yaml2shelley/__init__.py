@@ -5,7 +5,7 @@ import pathlib
 from shelley.yaml2shelley.util import MySafeLoader
 from shelley.ast.events import EEvent, EEvents, IEvents
 from shelley.ast.actions import Actions
-from shelley.ast.behaviors import Behaviors
+from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError
 from shelley.ast.devices import Device
 from shelley.ast.components import Components
 from shelley.ast.triggers import Triggers
@@ -68,7 +68,10 @@ def _parse_behavior(
         e2 = events.find_by_name(right)
         if e2 is None:
             e2 = events.create(right)
-        behaviors.create(e1, e2)
+        try:
+            behaviors.create(e1, e2)
+        except BehaviorsListDuplicatedError as err:
+            raise ShelleyParserError("Duplicated behavior '{0}'".format(err))
 
 
 def _parse_components(src: Mapping[str, str], components: Components) -> None:
@@ -105,7 +108,10 @@ def _parse_triggers(
 
 def _parse_trigger_rule(src, components: Components) -> TriggerRule:
     if isinstance(src, str):
-        c_name, e_name = src.split(".")
+        try:
+            c_name, e_name = src.split(".")
+        except ValueError as err:
+            raise ShelleyParserError("Invalid trigger rule '{0}'. Missing component?".format(src))
         component = components.find_by_name(c_name)
         assert component is not None
         return TriggerRuleEvent(component, EEvent(e_name))
@@ -188,9 +194,29 @@ def _create_device_from_yaml(yaml_code) -> Device:
         test_macro = {"ok": dict(), "fail": dict()}
 
     try:
+        test_macro["ok"]
+    except KeyError:
+        raise ShelleyParserError("Missing key 'ok' for test macro!")
+
+    try:
+        test_macro["fail"]
+    except KeyError:
+        raise ShelleyParserError("Missing key 'fail' for test macro!")
+
+    try:
         test_micro = yaml_code["test_micro"]
     except KeyError:
         test_micro = {"ok": dict(), "fail": dict()}
+
+    try:
+        test_micro["ok"]
+    except KeyError:
+        raise ShelleyParserError("Missing key 'ok' for test micro!")
+
+    try:
+        test_micro["fail"]
+    except KeyError:
+        raise ShelleyParserError("Missing key 'fail' for test micro!")
 
     events: EEvents = EEvents()
     behaviors: Behaviors = Behaviors()

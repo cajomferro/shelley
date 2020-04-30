@@ -64,7 +64,7 @@ class Behaviors(MyCollection[Behavior]):
         if behavior not in self._data:
             self._data.append(behavior)
         else:
-            raise BehaviorsListDuplicatedError()
+            raise BehaviorsListDuplicatedError(str(behavior))
         return behavior
 
     def contains_events_pair(self, e1_name: str, e2_name: str) -> bool:

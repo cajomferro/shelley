@@ -1,5 +1,5 @@
 import yaml
-from typing import List, Mapping, Dict
+from typing import List, Mapping, Dict, Optional
 import copy
 import pathlib
 from shelley.yaml2shelley.util import MySafeLoader
@@ -111,7 +111,7 @@ def _parse_triggers(
 
     for src_event in src_events:
         if isinstance(src_event, str):
-            events.create(src_event)
+            triggers.create(events.create(src_event), TriggerRuleFired())
         elif isinstance(src_event, dict):
             try:
                 event_name = list(src_event)[0]
@@ -121,7 +121,7 @@ def _parse_triggers(
 
             is_start: bool = False
             is_final: bool = True
-            micro: Dict = {}
+            micro: Optional[Dict] = None
 
             try:
                 is_start = event_data["start"]
@@ -150,28 +150,30 @@ def _parse_triggers(
             except KeyError:
                 pass
 
-            if len(micro) > 0 and len(components) == 0:
+            event: Event = events.create(event_name, is_start, is_final)
+
+            if (
+                micro is not None and len(components) == 0
+            ):  # simple device with micro (not allowed!)
                 raise ShelleyParserError(
                     "Event '{0}' specifies micro behavior but device has no components!".format(
                         event_name
                     )
                 )
-
-            event: Event = events.create(event_name, is_start, is_final)
-
-            if len(micro) > 0:
-
+            elif (
+                micro is None and len(components) == 0
+            ):  # simple device without micro (ok!)
+                triggers.create(event, TriggerRuleFired())
+            elif (
+                micro is None and len(components) > 0
+            ):  # composition device not declaring trigger for this event (ok!)
+                triggers.create(event, TriggerRuleFired())
+            elif (
+                micro is not None and len(components) > 0
+            ):  # composition device declaring trigger for this event (ok!)
                 trigger_rule = _parse_trigger_rule(micro, components)
                 triggers.create(event, trigger_rule)
-            else:
-                pass  # TODO: what happens in this case?!
 
-                # HOW SHALL WE DEAL WITH EVENTS THAT HAVE EMPTY MICRO (WHEN OTHERS DON'T)?
-                # for event_name in events.list_str():
-                #     if triggers.find_by_event(event_name) is None:
-                #         raise ShelleyParserError(
-                #             "Missing trigger for event '{0}'".format(event_name)
-                #         )
         else:
             raise ShelleyParserError(
                 "Invalid syntax for event. Expecting string or dict but found {0}".format(
@@ -180,12 +182,8 @@ def _parse_triggers(
             )
 
     # auto-create triggers
-    #if len(components) == 0:
     for event in events.list():
-        try:
-            triggers.create(event, TriggerRuleFired())
-        except TriggersListDuplicatedError:
-            pass
+        assert triggers.get_rule(event.name) is not None
 
 
 def _parse_trigger_rule(src, components: Components) -> TriggerRule:

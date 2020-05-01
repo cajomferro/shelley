@@ -1,7 +1,6 @@
 device:
   name: Radio
-  start_events: [start]
-  behavior:
+  behavior: # start is start event
     - [start, HTTPsetup]
     - [HTTPsetup,HTTPconnect]
     - [HTTPconnect, HTTPsend]

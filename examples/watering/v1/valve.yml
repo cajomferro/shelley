@@ -2,8 +2,7 @@
 
 device:
   name: Valve
-  start_events: [on]
-  behavior:
+  behavior: # on is start event
     - [on, off]
     - [off, on]
 

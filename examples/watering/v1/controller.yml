@@ -1,6 +1,5 @@
 device:
   name: Controller
-  start_events: [start]
   behavior:
     #- [start, update]
     - [start, activateAllValves]
@@ -18,18 +17,24 @@ device:
     m: Magnetic
     r: Radio
     lp: LowPower
-  triggers:
-    start:
-      - xor:
-        - [m.locked, m.unlocked]
-        - [lp.wakeup]
-    update: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable]
-    activateAllValves: [v1.on, v2.on, v3.on, v4.on]
-    deactivateAllValves: [v1.off, v2.off, v3.off, v4.off]
-    sleep:
-      - xor:
-        - [lp.setup, lp.sleep]
-        - [lp.sleep]
+  events:
+    - start:
+        start: True
+        micro:
+          - xor:
+            - [m.locked, m.unlocked]
+            - [lp.wakeup]
+    - update:
+        micro: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable]
+    - activateAllValves:
+        micro: [v1.on, v2.on, v3.on, v4.on]
+    - deactivateAllValves:
+        micro: [v1.off, v2.off, v3.off, v4.off]
+    - sleep:
+        micro:
+          - xor:
+            - [lp.setup, lp.sleep]
+            - [lp.sleep]
 
 test_micro:
   ok:

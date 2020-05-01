@@ -3,7 +3,11 @@
 
 device:
   name: Magnetic
-  start_events: [unlocked, locked]
+  events:
+    - unlocked:
+        start: True
+    - locked:
+        start: True
   behavior:
     - [locked, unlocked]
     - [unlocked, locked]

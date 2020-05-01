@@ -7,7 +7,7 @@ from shelley.ast.events import Event, Events
 from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError
 from shelley.ast.devices import Device
 from shelley.ast.components import Components
-from shelley.ast.triggers import Triggers
+from shelley.ast.triggers import Triggers, TriggersListDuplicatedError
 from shelley.ast.rules import (
     TriggerRule,
     TriggerRuleEvent,
@@ -21,7 +21,9 @@ class ShelleyParserError(Exception):
     pass
 
 
-def _parse_behavior(src: List[List[str]], events: Events, behaviors: Behaviors) -> None:
+def _parse_behavior(
+    src: List[List[str]], events: Events, behaviors: Behaviors, triggers: Triggers
+) -> None:
     """
     Parse behavior by creating discovered events and creating the corresponding transitions
     :param src: behavior input to be parsed, example: [['pressed', 'released'], ['released', 'pressed']]
@@ -36,12 +38,29 @@ def _parse_behavior(src: List[List[str]], events: Events, behaviors: Behaviors) 
             raise ShelleyParserError(
                 "Missing behaviour right side: [{0}, ???]".format(left)
             )
-        e1 = events.find_by_name(left)
-        if e1 is None:
+
+        # TODO: do we want to force user to declare all events? right now I am creating if not declared
+        # and device has no components. To autocreate events from behaviors when there is components,
+        # it is required to have the notion of a empty trigger rule
+
+        try:
+            e1 = events[left]
+        except KeyError as err:
             e1 = events.create(left)
-        e2 = events.find_by_name(right)
-        if e2 is None:
+            triggers.create(e1, TriggerRuleFired())
+            # raise ShelleyParserError(
+            #     "Behavior uses undeclared event '{0}'".format(left)
+            # )
+
+        try:
+            e2 = events[right]
+        except KeyError as err:
             e2 = events.create(right)
+            triggers.create(e2, TriggerRuleFired())
+            # raise ShelleyParserError(
+            #     "Behavior uses undeclared event '{0}'".format(right)
+            # )
+
         try:
             behaviors.create(e1, e2)
         except BehaviorsListDuplicatedError as err:
@@ -78,11 +97,15 @@ def _parse_triggers(
     #   # there are defined components but no triggers
     #   raise ShelleyParserError("Device with components must also have triggers!")
 
+    # there are no events declared, they will be auto discovered on behavior
+    if len(src) == 0:
+        return
+
     src_events = copy.deepcopy(src)
     if not isinstance(src_events, list):
         raise ShelleyParserError(
-            "Invalid syntax for events. Expecting list but found {0}".format(
-                type(src_events)
+            "Invalid syntax for events. Expecting list but found {0}: {1}".format(
+                type(src_events), src_events
             )
         )
 
@@ -105,14 +128,22 @@ def _parse_triggers(
             except KeyError:
                 pass
             except TypeError:
-                raise ShelleyParserError("Type error for event {0}, field {1}. Bad indentation?".format(event_name, "start"))
+                raise ShelleyParserError(
+                    "Type error for event {0}, field {1}. Bad indentation?".format(
+                        event_name, "start"
+                    )
+                )
 
             try:
                 is_final = event_data["final"]
             except KeyError:
                 pass
             except TypeError:
-                raise ShelleyParserError("Type error for event {0}, field {1}. Bad indentation?".format(event_name, "final"))
+                raise ShelleyParserError(
+                    "Type error for event {0}, field {1}. Bad indentation?".format(
+                        event_name, "final"
+                    )
+                )
 
             try:
                 micro = event_data["micro"]
@@ -132,6 +163,8 @@ def _parse_triggers(
 
                 trigger_rule = _parse_trigger_rule(micro, components)
                 triggers.create(event, trigger_rule)
+            else:
+                pass  # TODO: what happens in this case?!
 
                 # HOW SHALL WE DEAL WITH EVENTS THAT HAVE EMPTY MICRO (WHEN OTHERS DON'T)?
                 # for event_name in events.list_str():
@@ -146,15 +179,13 @@ def _parse_triggers(
                 )
             )
 
-    # auto-create triggers for simple devices
-    if len(components) == 0:
-        for event in events.list():
+    # auto-create triggers
+    #if len(components) == 0:
+    for event in events.list():
+        try:
             triggers.create(event, TriggerRuleFired())
-
-    # if not specified, first event is the start event
-    if len(events.start_events()) == 0:
-        first_event = events.list()[0]
-        first_event.is_start = True
+        except TriggersListDuplicatedError:
+            pass
 
 
 def _parse_trigger_rule(src, components: Components) -> TriggerRule:
@@ -215,6 +246,7 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
         device_triggers = yaml_code["device"]["events"]
     except KeyError:
         device_triggers = dict()
+        # raise ShelleyParserError("Device must have events")
 
     try:
         test_macro = yaml_code["test_macro"]
@@ -252,7 +284,19 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
     triggers: Triggers = Triggers()
     _parse_components(device_components, components)
     _parse_triggers(copy.deepcopy(device_triggers), events, components, triggers)
-    _parse_behavior(device_behavior, events, behaviors)
+    _found_events_count: int = len(events)
+    _parse_behavior(device_behavior, events, behaviors, triggers)
+
+    # TODO: not required if we create empty micro for auto discovered event in behaviors
+    # if len(components) > 0 and len(events) != _found_events_count:
+    #     raise ShelleyParserError(
+    #         "Device with components must explicitly declare all events"
+    #     )
+
+    # if not specified, first event is the start event
+    if len(events.start_events()) == 0:
+        first_event = events.list()[0]
+        first_event.is_start = True
 
     device = Device(device_name, events, behaviors, triggers, components=components,)
 

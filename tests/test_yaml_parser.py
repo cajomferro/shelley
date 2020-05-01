@@ -1,6 +1,8 @@
 import pytest
 from pathlib import Path
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
+from shelley.ast.devices import Device
+from shelley.ast.rules import TriggerRuleFired
 from shelley import yaml2shelley
 
 
@@ -85,6 +87,20 @@ def test_events_start_specified() -> None:
     assert shelley_device.events["released"].is_start
 
 
+def test_events_from_behavior() -> None:
+    yaml_as_dict = {
+        "device": {
+            "name": "Button",
+            "behavior": [["pressed", "released"], ["released", "pressed"]],
+        }
+    }
+
+    shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
+    assert shelley_device.events["pressed"].is_start
+    assert shelley_device.events["pressed"].is_final
+    assert not shelley_device.events["released"].is_start
+    assert shelley_device.events["released"].is_final
+
 def test_events_no_components_but_triggers() -> None:
     yaml_as_dict = {
         "device": {
@@ -101,6 +117,32 @@ def test_events_no_components_but_triggers() -> None:
         "Event 'released' specifies micro behavior but device has no components!"
         == str(exc_info.value)
     )
+
+def test_auto_create_declared_event_without_micro() -> None:
+    yaml_as_dict = {
+        "device": {
+            "name": "SmartButton",
+            "components": {"b": "Button"},
+            "events": ["pressed", {"released": {"micro": ["b.released"]}}],
+            "behavior": [["pressed", "released"], ["released", "pressed"]],
+        }
+    }
+
+    device: Device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
+    assert isinstance(device.triggers.get_rule('pressed'), TriggerRuleFired)
+
+def test_auto_create_undeclared_event_with_micro() -> None:
+    yaml_as_dict = {
+        "device": {
+            "name": "SmartButton",
+            "components": {"b": "Button"},
+            "events": [{"released": {"micro": ["b.released"]}}],
+            "behavior": [["pressed", "released"], ["released", "pressed"]],
+        }
+    }
+
+    device: Device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
+    assert isinstance(device.triggers.get_rule('pressed'), TriggerRuleFired)
 
 
 def test_button() -> None:

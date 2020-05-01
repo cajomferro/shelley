@@ -10,7 +10,41 @@
 
 device:
   name: WiFiHTTP
-  start_events: [started, notconnected]
+  components:
+      hc: HTTPClient
+      wc: WiFiClient
+  events:
+    - started:
+        start: True
+        micro: [wc.joined, wc.connected, hc.connected]
+    - notconnected:
+        start: True
+        micro:
+          xor:
+            - [wc.joined, wc.connected, hc.connect_failed]
+            - xor:
+              - [wc.joined, wc.connection_timeout]
+              - [wc.ssid_failed]
+    - send:
+        micro:
+          xor:
+            - hc.get
+            - hc.post
+    - ok:
+        micro: [wc.print_data_ready, hc.response200]
+    - error:
+        micro:
+          xor:
+            - [wc.print_data_ready, hc.response401]
+            - xor:
+              - [wc.print_data_ready, hc.response401]
+              - xor:
+                - [wc.print_data_ready, hc.response404]
+                - xor:
+                  - [wc.print_data_ready, hc.response500]
+                  - wc.print_timeout
+    - stopped:
+        micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
   behavior:
     - [started, send]
     - [notconnected, started]
@@ -23,33 +57,7 @@ device:
     - [error, stopped]
     - [stopped, started]
     - [stopped, notconnected]
-  components:
-      hc: HTTPClient
-      wc: WiFiClient
-  triggers:
-    started: [wc.joined, wc.connected, hc.connected]
-    notconnected:
-      - xor:
-        - [wc.joined, wc.connected, hc.connect_failed]
-        - xor:
-          - [wc.joined, wc.connection_timeout]
-          - [wc.ssid_failed]
-    send:
-      - xor:
-        - hc.get
-        - hc.post
-    ok: [wc.print_data_ready, hc.response200]
-    error:
-      - xor:
-        - [wc.print_data_ready, hc.response401]
-        - xor:
-          - [wc.print_data_ready, hc.response401]
-          - xor:
-            - [wc.print_data_ready, hc.response404]
-            - xor:
-              - [wc.print_data_ready, hc.response500]
-              - wc.print_timeout
-    stopped: [wc.disconnected, hc.disconnected, wc.ssid_left]
+
 
 #test_micro:
 #  ok:

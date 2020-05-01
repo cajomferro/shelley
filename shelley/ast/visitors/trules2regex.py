@@ -9,7 +9,7 @@ from shelley.ast.rules import (
     TriggerRuleEvent,
     TriggerRuleFired,
 )
-from karakuri.regular import Regex, Char, Concat, Union, NIL
+from karakuri.regular import Regex, Char, Concat, Union, NIL, VOID
 
 
 class TRules2RegexVisitor(TriggersVisitor):
@@ -21,8 +21,7 @@ class TRules2RegexVisitor(TriggersVisitor):
         self.current_regex = NIL
 
     def visit_trigger_rule_fired(self, element: TriggerRuleFired) -> None:
-        # self.current_regex = NIL() # TODO: como processar o fired?
-        pass
+        self.current_regex = NIL
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
         self.current_regex = Char(str(element))

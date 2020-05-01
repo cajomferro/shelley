@@ -86,5 +86,11 @@ class Triggers(Node):
             pass
         return re
 
+    def __getitem__(self, name: str) -> Trigger:
+        res = self.find_by_event(name)
+        if res is None:
+            raise KeyError(name)
+        return res
+
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_triggers(self)

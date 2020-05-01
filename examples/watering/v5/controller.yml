@@ -13,12 +13,17 @@ device:
     m: Magnetic
     rs: RadioSimplest
     lp: LowPower
-  triggers:
-    start: [m.locked, m.unlocked, lp.cancel]
-    wakeup: [lp.wakeup]
-    update: [rs.send, rs.ok]
-    runValves: [v.start]
-    sleep: [lp.setup, lp.sleep]
+  events:
+    - start:
+        micro: [m.locked, m.unlocked, lp.cancel]
+    - wakeup:
+        micro: [lp.wakeup]
+    - update:
+        micro: [rs.send, rs.ok]
+    - runValves:
+        micro: [v.start]
+    - sleep:
+        micro: [lp.setup, lp.sleep]
 
 test_micro:
   ok:

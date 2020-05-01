@@ -13,11 +13,12 @@ radiosimple.scy: radiosimple.yml radio.scy
 radiosimplest.scy: radiosimplest.yml radiosimple.scy
 	$(SHELLEYC) -d $< -u radiosimple.scy\:RadioSimple
 
+valvehandler.scy: valvehandler.yml valve.scy
+	$(SHELLEYC) -d $< -u valve.scy\:Valve
+
 valvehandlertimer.scy: valvehandlertimer.yml valve.scy timer.scy
 	$(SHELLEYC) -d $< -u valve.scy\:Valve timer.scy\:Timer
 
-valvehandler.scy: valvehandler.yml valvehandlertimer.scy
-	$(SHELLEYC) -d $< -u valvehandlertimer.scy\:ValveHandlerTimer
 
 controller.scy: controller.yml valvehandler.scy magnetic.scy radiosimplest.scy lowpower-strict.scy
 	$(SHELLEYC) -d $< -u magnetic.scy\:Magnetic valvehandler.scy\:ValveHandler radiosimplest.scy\:RadioSimplest lowpower-strict.scy\:LowPower

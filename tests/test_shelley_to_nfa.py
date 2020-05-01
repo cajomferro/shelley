@@ -11,7 +11,7 @@ from shelley import yaml2shelley
 
 
 def _get_path(device_name: str) -> Path:
-    return Path("input/") / "{0}.yml".format(device_name)
+    return Path() / "tests" / "input" / "{0}.yml".format(device_name)
 
 
 def test_button() -> None:
@@ -76,7 +76,7 @@ def test_desklamp() -> None:
 
     expected = AutomataDevice(
         start_events=["level1"],
-        events=["level1", "standby1", "level2", "standby2"],
+        events=["level1", "level2", "standby1", "standby2"],
         behavior=[
             ("level1", "standby1"),
             ("level1", "level2"),

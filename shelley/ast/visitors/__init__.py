@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 from shelley.ast.devices import Device
 from shelley.ast.actions import Action, Actions
-from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
+from shelley.ast.events import Event, Events
 from shelley.ast.behaviors import Behavior, Behaviors
 from shelley.ast.components import Component, Components
 from shelley.ast.triggers import Trigger, Triggers
@@ -71,19 +71,11 @@ class Visitor(ABC):
         pass
 
     @abstractmethod
-    def visit_ievent(self, element: IEvent) -> None:
+    def visit_events(self, element: Events) -> None:
         pass
 
     @abstractmethod
-    def visit_ievents(self, element: IEvents) -> None:
-        pass
-
-    @abstractmethod
-    def visit_eevent(self, element: EEvent) -> None:
-        pass
-
-    @abstractmethod
-    def visit_eevents(self, element: EEvents) -> None:
+    def visit_event(self, element: Event) -> None:
         pass
 
     @abstractmethod

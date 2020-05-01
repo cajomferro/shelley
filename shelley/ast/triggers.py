@@ -1,11 +1,10 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List
 from dataclasses import dataclass, field
 
-from shelley.ast.util import MyCollection
 from shelley.ast.node import Node
 from shelley.ast.rules import TriggerRule
-from shelley.ast.events import GenericEvent
+from shelley.ast.events import Event
 
 if TYPE_CHECKING:
     from shelley.ast.visitors import Visitor
@@ -13,7 +12,7 @@ if TYPE_CHECKING:
 
 @dataclass(order=True)
 class Trigger(Node):
-    event: GenericEvent
+    event: Event
     trigger_rule: TriggerRule = field(
         compare=False
     )  # do not use this field for comparing triggers
@@ -43,8 +42,31 @@ class TriggerRulesListEmptyError(Exception):
     pass
 
 
-class Triggers(MyCollection[Trigger]):
-    def create(self, event: GenericEvent, rule: TriggerRule) -> Trigger:
+class Triggers(Node):
+    _data: List[Trigger]
+
+    def __init__(self) -> None:
+        self._data = []
+
+    def add(self, elem: Trigger) -> None:
+        if elem not in self._data:
+            self._data.append(elem)
+        else:
+            raise TriggersListDuplicatedError()
+
+    def contains(self, elem: Trigger) -> bool:
+        return elem in self._data
+
+    def list(self) -> List[Trigger]:
+        return self._data
+
+    def list_str(self) -> List[str]:
+        return [str(elem) for elem in self._data]
+
+    def __len__(self):
+        return len(self._data)
+
+    def create(self, event: Event, rule: TriggerRule) -> Trigger:
         trigger = Trigger(event, rule)
         if trigger not in self._data:
             self._data.append(trigger)

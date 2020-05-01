@@ -6,7 +6,7 @@ from shelley.ast.actions import Actions
 from shelley.ast.behaviors import Behaviors
 from shelley.ast.components import Components
 from shelley.ast.triggers import Triggers
-from shelley.ast.events import IEvents, EEvents, Events
+from shelley.ast.events import Events
 
 if TYPE_CHECKING:
     from shelley.ast.visitors import Visitor
@@ -28,7 +28,7 @@ class Device(Node):
 
     name: str
     actions: Actions
-    events: EEvents  # TODO: change to Events later
+    events: Events  # TODO: change to Events later
     behaviors: Behaviors
     uses: List[str]
     components: Components
@@ -39,7 +39,7 @@ class Device(Node):
     def __init__(
         self,
         name: str,
-        events: EEvents,
+        events: Events,
         behaviors: Behaviors,
         triggers: Triggers,
         actions: Optional[Actions] = None,
@@ -79,8 +79,6 @@ class Device(Node):
                 "Duplicated device with name '{0}'".format(self.name)
             )
 
-    def get_all_events(self) -> Events:
-        return self.external_events.merge(self.internal_events)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Device):

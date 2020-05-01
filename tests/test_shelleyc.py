@@ -15,8 +15,8 @@ from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley
 
-EXAMPLES_PATH = Path("input")
-COMPILED_PATH = Path("input/compiled")
+EXAMPLES_PATH = Path() / "tests" / "input"
+COMPILED_PATH = Path() / "tests" / "input" / "compiled"
 
 
 def _remove_compiled_dir() -> None:
@@ -302,10 +302,9 @@ def test_smartbutton_dependency_not_found() -> None:
     args = make_args(src_path, Button=COMPILED_PATH / "button.scy")
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
         shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
-
     assert (
         str(exc_info.value)
-        == "Use device not found: input/compiled/button.scy. Please compile it first!"
+        == "Use device not found: tests/input/compiled/button.scy. Please compile it first!"
     )
 
     _remove_compiled_dir()
@@ -336,10 +335,9 @@ def test_compile_desklamp_dependency_not_found() -> None:
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
         shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
-
+    print(exc_info.value)
     assert (
-        str(exc_info.value)
-        == "Use device not found: input/compiled/button.scy. Please compile it first!"
+        str(exc_info.value) == "Use device not found: tests/input/compiled/button.scy. Please compile it first!"
     )
 
     _remove_compiled_dir()
@@ -364,7 +362,7 @@ def test_compile_desklamp_dependency_not_found_2() -> None:
 
     assert (
         str(exc_info.value)
-        == "Use device not found: input/compiled/led.scy. Please compile it first!"
+        == "Use device not found: tests/input/compiled/led.scy. Please compile it first!"
     )
 
     _remove_compiled_dir()

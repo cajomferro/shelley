@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Dict
 from dataclasses import dataclass
 
 from shelley.ast.node import Node
-from shelley.ast.events import GenericEvent
 from shelley.ast.components import Component, Components
 
 if TYPE_CHECKING:
@@ -66,28 +65,18 @@ class TriggerRuleEvent(TriggerRule):
                 "Reference for device type '{0}' is None!".format(self.component.name)
             )
 
-        if self.event not in device.get_all_events()._data:
+        # TODO: maybe this code could be simpler
+        try:
+            device.events[self.event]
+        except KeyError:
             raise TriggerRuleEventNotDeclaredError(
                 "Event '{0}' not declared for device {1}!".format(
-                    self.event.name, self.component.name
+                    self.event, self.component.name
                 )
             )
 
-    # def __init__(self, component: Component, event: GenericEvent):
-    #     assert (component.name is not None and event is not None)
-    #     self.component = component
-    #     self.event = event
-    #
-    # def __eq__(self, other):
-    #     if not isinstance(other, TriggerRuleEvent):
-    #         # don't attempt to compare against unrelated types
-    #         raise Exception("Instance is not of TriggerRuleEvent type")
-    #
-    #     return self.component.name == other.component.name and self.event.name == other.event.name
-    #
-
     def __str__(self):
-        return "{0}.{1}".format(self.component.name, self.event.name)
+        return "{0}.{1}".format(self.component.name, self.event)
 
 
 @dataclass(order=True)
@@ -104,17 +93,6 @@ class TriggerRuleSequence(TriggerRule):
 
         visitor.visit_trigger_rule_sequence(self)
 
-    # def __init__(self, left_trigger_rule: TriggerRule, right_trigger_rule: TriggerRule):
-    #     self.left_trigger_rule = left_trigger_rule
-    #     self.right_trigger_rule = right_trigger_rule
-    #
-    # def __eq__(self, other):
-    #     if not isinstance(other, TriggerRuleSequence):
-    #         # don't attempt to compare against unrelated types
-    #         raise Exception("Instance is not of TriggerRuleSequence type")
-    #
-    #     return self.left_trigger_rule == other.left_trigger_rule and self.right_trigger_rule == other.right_trigger_rule
-
 
 @dataclass(order=True)
 class TriggerRuleChoice(TriggerRule):
@@ -129,18 +107,6 @@ class TriggerRuleChoice(TriggerRule):
         """
 
         visitor.visit_trigger_rule_choice(self)
-
-    # def __init__(self, left_trigger_rule: TriggerRule, right_trigger_rule: TriggerRule):
-    #     self.left_trigger_rule = left_trigger_rule
-    #     self.right_trigger_rule = right_trigger_rule
-    #
-    # def __eq__(self, other):
-    #     if not isinstance(other, TriggerRuleChoice):
-    #         # don't attempt to compare against unrelated types
-    #         raise Exception("Instance is not of TriggerRuleChoice type")
-    #
-    #     return self.left_trigger_rule == other.left_trigger_rule and self.right_trigger_rule == other.right_trigger_rule
-    #
 
 
 class TriggerRuleDeviceNotDeclaredError(Exception):

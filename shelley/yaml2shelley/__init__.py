@@ -3,8 +3,7 @@ from typing import List, Mapping, Dict
 import copy
 import pathlib
 from shelley.yaml2shelley.util import MySafeLoader
-from shelley.ast.events import EEvent, EEvents, IEvents, Events
-from shelley.ast.actions import Actions
+from shelley.ast.events import Event, Events
 from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError
 from shelley.ast.devices import Device
 from shelley.ast.components import Components
@@ -22,32 +21,7 @@ class ShelleyParserError(Exception):
     pass
 
 
-# def parse_events(input: List[str]) -> EEvents:
-#     events: EEvents = EEvents()
-#     for event_name in input:
-#         events.add(EEvent(event_name))
-#     return events
-
-# def parse_behavior_with_events(input: List[List[str]], events: EEvents) -> Behaviors:
-#     """
-#     Old version that assumes that events must be declared previously
-#     :param input:
-#     :param events:
-#     :return:
-#     """
-#     behaviors: Behaviors = Behaviors()
-#     for beh_transition in input:
-#         left = beh_transition[0]
-#         right = beh_transition[1]
-#         e1 = events.find_by_name(left)
-#         e2 = events.find_by_name(right)
-#         behaviors.create(e1, e2)
-#     return behaviors
-
-
-def _parse_behavior(
-    src: List[List[str]], events: EEvents, behaviors: Behaviors
-) -> None:
+def _parse_behavior(src: List[List[str]], events: Events, behaviors: Behaviors) -> None:
     """
     Parse behavior by creating discovered events and creating the corresponding transitions
     :param src: behavior input to be parsed, example: [['pressed', 'released'], ['released', 'pressed']]
@@ -87,7 +61,7 @@ def _parse_components(src: Mapping[str, str], components: Components) -> None:
 
 
 def _parse_triggers(
-    src: Mapping, events: EEvents, components: Components, triggers: Triggers
+    src: Mapping, events: Events, components: Components, triggers: Triggers
 ) -> None:
     """
 
@@ -101,43 +75,86 @@ def _parse_triggers(
     assert len(events) == 0
     assert len(triggers) == 0
 
-    # if len(src) == 0:
-    #     if len(components) == 0:  # auto-create triggers for simple devices
-    #         for event in events.list():
-    #             triggers.create(event, TriggerRuleFired())
-    #     else:  # there are defined components but no triggers
-    #         raise ShelleyParserError("Device with components must also have triggers!")
-    # else:
+    #   # there are defined components but no triggers
+    #   raise ShelleyParserError("Device with components must also have triggers!")
+
     src_events = copy.deepcopy(src)
+    if not isinstance(src_events, list):
+        raise ShelleyParserError(
+            "Invalid syntax for events. Expecting list but found {0}".format(
+                type(src_events)
+            )
+        )
 
-    for event_name, event_data in src_events.items():
-        is_start: bool = False
-        is_final: bool = False
-        micro: Dict = {}
-        try:
-            is_start = event_data["start"]
-            is_final = event_data["final"]
-            micro = event_data["micro"]
-        except KeyError:
-            pass
+    for src_event in src_events:
+        if isinstance(src_event, str):
+            events.create(src_event)
+        elif isinstance(src_event, dict):
+            try:
+                event_name = list(src_event)[0]
+                event_data = src_event[event_name]
+            except:
+                raise ShelleyParserError("Invalid syntax for event '{0}'", src_event)
 
-        # TODO: validate triggers and components here?
+            is_start: bool = False
+            is_final: bool = True
+            micro: Dict = {}
 
-        event: EEvent = events.create(event_name, is_start, is_final)
+            try:
+                is_start = event_data["start"]
+            except KeyError:
+                pass
+            except TypeError:
+                raise ShelleyParserError("Type error for event {0}, field {1}. Bad indentation?".format(event_name, "start"))
 
-        trigger_rule = _parse_trigger_rule(micro, components)
+            try:
+                is_final = event_data["final"]
+            except KeyError:
+                pass
+            except TypeError:
+                raise ShelleyParserError("Type error for event {0}, field {1}. Bad indentation?".format(event_name, "final"))
 
-        # raise ShelleyParserError(
-        #     "Trigger event '{0}' has not been declared".format(
-        #         trigger_event_name
-        #     )
-        triggers.create(event, trigger_rule)
+            try:
+                micro = event_data["micro"]
+            except KeyError:
+                pass
 
-        # for event_name in events.list_str():
-        #     if triggers.find_by_event(event_name) is None:
-        #         raise ShelleyParserError(
-        #             "Missing trigger for event '{0}'".format(event_name)
-        #         )
+            if len(micro) > 0 and len(components) == 0:
+                raise ShelleyParserError(
+                    "Event '{0}' specifies micro behavior but device has no components!".format(
+                        event_name
+                    )
+                )
+
+            event: Event = events.create(event_name, is_start, is_final)
+
+            if len(micro) > 0:
+
+                trigger_rule = _parse_trigger_rule(micro, components)
+                triggers.create(event, trigger_rule)
+
+                # HOW SHALL WE DEAL WITH EVENTS THAT HAVE EMPTY MICRO (WHEN OTHERS DON'T)?
+                # for event_name in events.list_str():
+                #     if triggers.find_by_event(event_name) is None:
+                #         raise ShelleyParserError(
+                #             "Missing trigger for event '{0}'".format(event_name)
+                #         )
+        else:
+            raise ShelleyParserError(
+                "Invalid syntax for event. Expecting string or dict but found {0}".format(
+                    src_event
+                )
+            )
+
+    # auto-create triggers for simple devices
+    if len(components) == 0:
+        for event in events.list():
+            triggers.create(event, TriggerRuleFired())
+
+    # if not specified, first event is the start event
+    if len(events.start_events()) == 0:
+        first_event = events.list()[0]
+        first_event.is_start = True
 
 
 def _parse_trigger_rule(src, components: Components) -> TriggerRule:
@@ -178,31 +195,11 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
         raise ShelleyParserError("Unknown option for trigger: ", src)
 
 
-# def parse_tests(tests: Mapping):
-#     try:
-#         testsok = tests['ok']
-#     except KeyError:
-#         testsok = dict()
-#
-#     try:
-#         testsfail = tests['fail']
-#     except KeyError:
-#         testsfail = dict()
-#
-#     for tname in testsok:
-#
-
-
-def _create_device_from_yaml(yaml_code) -> Device:
+def _create_device_from_yaml(yaml_code: Dict) -> Device:
     try:
         device_name = yaml_code["device"]["name"]
     except KeyError:
         raise ShelleyParserError("Device must have a name")
-
-    # try:
-    #     device_start_events = yaml_code["device"]["start_events"]
-    # except KeyError:
-    #     raise ShelleyParserError("Please specify at least one start event")
 
     try:
         device_behavior = yaml_code["device"]["behavior"]
@@ -249,7 +246,7 @@ def _create_device_from_yaml(yaml_code) -> Device:
     except KeyError:
         raise ShelleyParserError("Missing key 'fail' for test micro!")
 
-    events: EEvents = EEvents()
+    events: Events = Events()
     behaviors: Behaviors = Behaviors()
     components: Components = Components()
     triggers: Triggers = Triggers()

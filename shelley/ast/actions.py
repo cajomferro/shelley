@@ -1,8 +1,7 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, List
 from dataclasses import dataclass
 
-from shelley.ast.util import MyCollection
 from shelley.ast.node import Node
 
 if TYPE_CHECKING:
@@ -28,7 +27,30 @@ class ActionsListDuplicatedError(Exception):
     pass
 
 
-class Actions(MyCollection[Action]):
+class Actions(Node):
+    _data: List[Action]
+
+    def __init__(self) -> None:
+        self._data = []
+
+    def add(self, elem: Action) -> None:
+        if elem not in self._data:
+            self._data.append(elem)
+        else:
+            raise ActionsListDuplicatedError()
+
+    def contains(self, elem: Action) -> bool:
+        return elem in self._data
+
+    def list(self) -> List[Action]:
+        return self._data
+
+    def list_str(self) -> List[str]:
+        return [str(elem) for elem in self._data]
+
+    def __len__(self):
+        return len(self._data)
+
     def create(self, action_name: str) -> Action:
         action = Action(action_name)
         if action not in self._data:
@@ -37,18 +59,18 @@ class Actions(MyCollection[Action]):
             raise ActionsListDuplicatedError()
         return action
 
-    def __getitem__(self, name: str) -> Action:
-        act = self.find_by_name(name)
-        if act is None:
-            raise KeyError(name)
-        return act
-
     def find_by_name(self, name: str) -> Optional[Action]:
-        # XXX: Use a dictionary to store values, not a list
+        # XXX: This should be the standard method: get
         for x in self._data:
             if x.name == name:
                 return x
         return None
+
+    def __getitem__(self, name: str) -> Action:
+        res = self.find_by_name(name)
+        if res is None:
+            raise KeyError(name)
+        return res
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_actions(self)

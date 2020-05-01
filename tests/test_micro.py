@@ -25,7 +25,7 @@ from shelley.automata import (
     MicroState,
 )
 
-COMPILED_PATH = Path.cwd() / "output" / "test-micro"
+COMPILED_PATH = Path.cwd() / "_output" / "test-micro"
 
 B_P = "b.pressed"
 

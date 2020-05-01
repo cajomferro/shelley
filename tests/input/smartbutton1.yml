@@ -3,10 +3,10 @@ device:
   components:
     b: Button
   events:
-    on:
-      start: True
-      final: True
-      micro: [ b.pressed, b.released]
+    - on:
+        start: True
+        final: True
+        micro: [ b.pressed, b.released]
   behavior:
     - [on, on]
 

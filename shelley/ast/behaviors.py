@@ -2,9 +2,8 @@ from __future__ import annotations
 from typing import List, TYPE_CHECKING, Optional, Tuple, Union
 from dataclasses import dataclass
 
-from shelley.ast.util import MyCollection
 from shelley.ast.node import Node
-from shelley.ast.events import GenericEvent
+from shelley.ast.events import Event
 from shelley.ast.actions import Action
 
 if TYPE_CHECKING:
@@ -13,8 +12,8 @@ if TYPE_CHECKING:
 
 @dataclass(order=True)
 class Behavior(Node):
-    e1: GenericEvent
-    e2: GenericEvent
+    e1: Event
+    e2: Event
     action: Optional[Action]
 
     def accept(self, visitor: Visitor) -> None:
@@ -56,10 +55,31 @@ class BehaviorsMissingBegin(Exception):
     pass
 
 
-class Behaviors(MyCollection[Behavior]):
-    def create(
-        self, e1: GenericEvent, e2: GenericEvent, a: Optional[Action] = None
-    ) -> Behavior:
+class Behaviors(Node):
+    _data: List[Behavior]
+
+    def __init__(self) -> None:
+        self._data = []
+
+    def add(self, elem: Behavior) -> None:
+        if elem not in self._data:
+            self._data.append(elem)
+        else:
+            raise BehaviorsListDuplicatedError()
+
+    def contains(self, elem: Behavior) -> bool:
+        return elem in self._data
+
+    def list(self) -> List[Behavior]:
+        return self._data
+
+    def list_str(self) -> List[str]:
+        return [str(elem) for elem in self._data]
+
+    def __len__(self):
+        return len(self._data)
+
+    def create(self, e1: Event, e2: Event, a: Optional[Action] = None) -> Behavior:
         behavior = Behavior(e1, e2, a)
         if behavior not in self._data:
             self._data.append(behavior)

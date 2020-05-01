@@ -1,46 +1,28 @@
-import shelley
 from typing import Dict
+from pathlib import Path
+from shelley import yaml2shelley
 from shelley.ast.devices import Device
-from .creator.correct import (
-    create_device_led,
-    create_device_button,
-    create_device_timer,
-    create_device_desk_lamp,
-)
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
 
-declared_devices: Dict[str, Device] = {}
 
-d_led = create_device_led()
-declared_devices[d_led.name] = d_led
-
-d_button = create_device_button()
-declared_devices[d_button.name] = d_button
-
-d_timer = create_device_timer()
-declared_devices[d_timer.name] = d_timer
-
-d_desk_lamp = create_device_desk_lamp()
+def _get_path(device_name: str) -> Path:
+    return Path() / "tests" / "input" / "{0}.yml".format(device_name)
 
 
 def test_pprint_led() -> None:
     visitor = PrettyPrintVisitor()
-    d_led.accept(visitor)
+    yaml2shelley.get_shelley_from_yaml(_get_path("led")).accept(visitor)
     expected_str = """Device Led:
-  actions:
-    turnOn, turnOff
-  internal events:
+  events:
     on, off
-  external events:
-    begin
   start events:
-    begin
+    on
+  final events:
+    on, off
   behaviours:
-    begin -> turnOn() on
-    on -> turnOff() off
-    off -> turnOn() on
+    on -> off
+    off -> on
   triggers:
-    begin: fired
     on: fired
     off: fired
 
@@ -53,28 +35,42 @@ def test_pprint_led() -> None:
 
 def test_pprint_button() -> None:
     visitor = PrettyPrintVisitor()
-    d_button.accept(visitor)
+    yaml2shelley.get_shelley_from_yaml(_get_path("button")).accept(visitor)
     print(visitor.result)
 
 
 def test_pprint_timer() -> None:
     visitor = PrettyPrintVisitor()
-    d_timer.accept(visitor)
+    yaml2shelley.get_shelley_from_yaml(_get_path("timer")).accept(visitor)
     print(visitor.result)
 
 
 def test_pprint_desklamp() -> None:
+    declared_devices: Dict[str, Device] = {}
+
+    d_led: Device = yaml2shelley.get_shelley_from_yaml(_get_path("led"))
+    declared_devices[d_led.name] = d_led
+
+    d_button: Device = yaml2shelley.get_shelley_from_yaml(_get_path("button"))
+    declared_devices[d_button.name] = d_button
+
+    d_timer: Device = yaml2shelley.get_shelley_from_yaml(_get_path("timer"))
+    declared_devices[d_timer.name] = d_timer
+
+    d_desk_lamp: Device = yaml2shelley.get_shelley_from_yaml(_get_path("desklamp"))
+
     visitor = PrettyPrintVisitor(components=d_desk_lamp.components)
     d_desk_lamp.accept(visitor)
     print(visitor.result)
 
     expected_str = """Device DeskLamp uses Led, Button, Timer:
-  external events:
-    begin, level1, level2, standby1, standby2
+  events:
+    level1, level2, standby1, standby2
   start events:
-    begin
+    level1
+  final events:
+    level1, level2, standby1, standby2
   behaviours:
-    begin -> level1
     level1 -> standby1
     level1 -> level2
     level2 -> standby2
@@ -83,7 +79,6 @@ def test_pprint_desklamp() -> None:
   components:
     Led ledA, Led ledB, Button b, Timer t
   triggers:
-    begin: ( b.begin ; ( ledA.begin ; ( ledB.begin ; t.begin ) ) )
     level1: ( b.pressed ; ( b.released ; ( ledA.on ; t.started ) ) )
     level2: ( b.pressed ; ( b.released ; ( ( ( t.canceled ; ledB.on ) xor ( ledB.on ; t.canceled ) ) ; t.started ) ) )
     standby1: ( t.timeout ; ledA.off )

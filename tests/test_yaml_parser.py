@@ -1,10 +1,106 @@
+import pytest
 from pathlib import Path
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
 from shelley import yaml2shelley
 
 
 def _get_path(device_name: str) -> Path:
-    return Path("input/") / "{0}.yml".format(device_name)
+    return Path() / "tests" / "input" / "{0}.yml".format(device_name)
+
+
+#
+# yaml_as_dict = {
+#     "device": {
+#         "name": "Button",
+#         "events": ["pressed", "released"],
+#         "behavior": [["pressed", "released"], ["released", "pressed"]],
+#     },
+#     "test_macro": {
+#         "ok": {
+#             "valid1": [
+#                 "pressed",
+#                 "released",
+#                 "pressed",
+#                 "released",
+#                 "pressed",
+#                 "released",
+#                 "pressed",
+#                 "released",
+#             ],
+#             "valid2": ["pressed"],
+#             "valid3": ["pressed", "released"],
+#             "valid4": ["pressed", "released", "pressed"],
+#             "empty": [],
+#         },
+#         "fail": {"invalid1": ["released", "pressed"], "invalid2": ["released"]},
+#     },
+# }
+
+
+def test_events_invalid_event_syntax() -> None:
+    yaml_as_dict = {
+        "device": {
+            "name": "Button",
+            "events": [["pressed"], "released"],
+            "behavior": [
+                ["pressed", "released"],
+                ["released", "pressed"],
+            ],  # THIS IS WRONG
+        }
+    }
+
+    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
+        yaml2shelley._create_device_from_yaml(yaml_as_dict)
+
+    assert (
+        "Invalid syntax for event. Expecting string or dict but found ['pressed']"
+        == str(exc_info.value)
+    )
+
+
+def test_events_start() -> None:
+    yaml_as_dict = {
+        "device": {
+            "name": "Button",
+            "events": ["pressed", "released"],
+            "behavior": [["pressed", "released"], ["released", "pressed"]],
+        }
+    }
+
+    shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
+    assert shelley_device.events["pressed"].is_start
+
+
+def test_events_start_specified() -> None:
+    yaml_as_dict = {
+        "device": {
+            "name": "Button",
+            "events": ["pressed", {"released": {"start": True}}],
+            "behavior": [["pressed", "released"], ["released", "pressed"]],
+        }
+    }
+
+    shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
+    assert not shelley_device.events["pressed"].is_start
+    assert shelley_device.events["released"].is_start
+
+
+def test_events_no_components_but_triggers() -> None:
+    yaml_as_dict = {
+        "device": {
+            "name": "Button",
+            "events": ["pressed", {"released": {"micro": ["x.xxx"]}}],
+            "behavior": [["pressed", "released"], ["released", "pressed"]],
+        }
+    }
+
+    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
+        yaml2shelley._create_device_from_yaml(yaml_as_dict)
+
+    assert (
+        "Event 'released' specifies micro behavior but device has no components!"
+        == str(exc_info.value)
+    )
 
 
 def test_button() -> None:
@@ -14,10 +110,12 @@ def test_button() -> None:
     assert (
         visitor.result.strip()
         == """Device Button:
-  external events:
+  events:
     pressed, released
   start events:
     pressed
+  final events:
+    pressed, released
   behaviours:
     pressed -> released
     released -> pressed
@@ -55,10 +153,12 @@ def test_led() -> None:
     assert (
         visitor.result.strip()
         == """Device Led:
-  external events:
+  events:
     on, off
   start events:
     on
+  final events:
+    on, off
   behaviours:
     on -> off
     off -> on
@@ -75,10 +175,12 @@ def test_timer() -> None:
     assert (
         visitor.result.strip()
         == """Device Timer:
-  external events:
+  events:
     started, canceled, timeout
   start events:
     started
+  final events:
+    started, canceled, timeout
   behaviours:
     started -> canceled
     started -> timeout
@@ -99,10 +201,12 @@ def test_sendok() -> None:
     assert (
         visitor.result.strip()
         == """Device SendOK uses Button, Led:
-  external events:
+  events:
     send, ok, off
   start events:
     send
+  final events:
+    send, ok, off
   behaviours:
     send -> ok
     send -> off
@@ -124,7 +228,7 @@ def test_smartbutton_1() -> None:
     assert (
         visitor.result.strip()
         == """Device SmartButton uses Button:
-  external events:
+  events:
     on
   start events:
     on
@@ -169,10 +273,12 @@ def test_desklamp() -> None:
     assert (
         visitor.result.strip()
         == """Device DeskLamp uses Led, Button, Timer:
-  external events:
-    level1, standby1, level2, standby2
+  events:
+    level1, level2, standby1, standby2
   start events:
     level1
+  final events:
+    level1, level2, standby1, standby2
   behaviours:
     level1 -> standby1
     level1 -> level2
@@ -197,9 +303,11 @@ def test_ambiguous() -> None:
     assert (
         visitor.result.strip()
         == """Device 3Buttons uses SimpleButton:
-  external events:
+  events:
     button1AndOther, button3OrOthers
   start events:
+    button1AndOther, button3OrOthers
+  final events:
     button1AndOther, button3OrOthers
   behaviours:
     button1AndOther -> button1AndOther
@@ -225,10 +333,12 @@ def test_ambiguous_variant() -> None:
     assert (
         visitor.result.strip()
         == """Device 3Buttons uses SimpleButton:
-  external events:
-    button1AndOther, button3OrOthersv2, button3OrOthers
+  events:
+    button1AndOther, button3OrOthers, button3OrOthersv2
   start events:
     button1AndOther, button3OrOthers
+  final events:
+    button1AndOther, button3OrOthers, button3OrOthersv2
   behaviours:
     button1AndOther -> button3OrOthersv2
     button1AndOther -> button1AndOther

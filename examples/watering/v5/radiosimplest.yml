@@ -10,15 +10,16 @@
 
 device:
   name: RadioSimplest
-  start_events: [send]
   behavior:
     - [send, ok]
     - [ok, send] # comment this to be more strict
   components:
       rs: RadioSimple
-  triggers:
-    send: [rs.start, rs.send]
-    ok: [rs.receive, rs.stop]
+  events:
+    - send:
+        micro: [rs.start, rs.send]
+    - ok:
+        micro: [rs.receive, rs.stop]
 
 test_micro:
   ok:

@@ -1,6 +1,5 @@
 device:
   name: Controller
-  start_events: [start]
   behavior:
     - [start, activateAllValves]
     - [wakeup, activateAllValves]
@@ -17,13 +16,19 @@ device:
     m: Magnetic
     rs: RadioSimplest
     lp: LowPower
-  triggers:
-    start: [m.locked, m.unlocked, lp.cancel]
-    wakeup: [lp.wakeup]
-    update: [rs.send, rs.ok]
-    activateAllValves: [v1.on, v2.on, v3.on, v4.on]
-    deactivateAllValves: [v1.off, v2.off, v3.off, v4.off]
-    sleep: [lp.setup, lp.sleep]
+  events:
+    - start: # start event by default
+        micro: [m.locked, m.unlocked, lp.cancel]
+    - wakeup:
+        micro: [lp.wakeup]
+    - update:
+        micro: [rs.send, rs.ok]
+    - activateAllValves:
+        micro: [v1.on, v2.on, v3.on, v4.on]
+    - deactivateAllValves:
+        micro: [v1.off, v2.off, v3.off, v4.off]
+    - sleep:
+        micro: [lp.setup, lp.sleep]
 
 test_micro:
   ok:

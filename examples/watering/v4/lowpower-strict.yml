@@ -1,6 +1,10 @@
 device:
   name: LowPower
-  start_events: [setup, cancel]
+  events:
+    - setup:
+        start: True
+    - cancel:
+        start: True
   behavior:
     - [setup, sleep]
     - [sleep, wakeup]

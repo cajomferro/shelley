@@ -3,7 +3,11 @@
 
 device:
   name: Magnetic
-  start_events: [unlocked, locked]
+  events:
+    - unlocked:
+        start: True
+    - locked:
+        start: True
   behavior:
     - [locked, unlocked]
     - [unlocked, locked]
@@ -18,4 +22,3 @@ test_macro:
   fail:
     invalid1: [unlocked, unlocked]
     invalid2: [locked, locked]
-

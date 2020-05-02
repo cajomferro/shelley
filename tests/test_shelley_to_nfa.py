@@ -17,6 +17,7 @@ def _get_path(device_name: str) -> Path:
 def test_button() -> None:
     expected = AutomataDevice(
         start_events=["pressed"],
+        final_events=["pressed", "released"],
         events=["pressed", "released"],
         behavior=[("pressed", "released"), ("released", "pressed"),],
         components={},
@@ -30,6 +31,7 @@ def test_button() -> None:
 def test_led() -> None:
     expected = AutomataDevice(
         start_events=["on"],
+        final_events=["on", "off"],
         events=["on", "off"],
         behavior=[("on", "off"), ("off", "on"),],
         components={},
@@ -43,6 +45,7 @@ def test_led() -> None:
 def test_timer() -> None:
     expected = AutomataDevice(
         start_events=["started"],
+        final_events=["started", "canceled", "timeout"],
         events=["started", "canceled", "timeout"],
         behavior=[
             ("started", "canceled"),
@@ -61,6 +64,7 @@ def test_timer() -> None:
 def test_smartbutton1() -> None:
     expected = AutomataDevice(
         start_events=["on"],
+        final_events=["on"],
         events=["on"],
         behavior=[("on", "on")],
         components={"b": "Button"},
@@ -76,6 +80,7 @@ def test_desklamp() -> None:
 
     expected = AutomataDevice(
         start_events=["level1"],
+        final_events=["level1", "level2", "standby1", "standby2"],
         events=["level1", "level2", "standby1", "standby2"],
         behavior=[
             ("level1", "standby1"),

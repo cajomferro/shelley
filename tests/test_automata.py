@@ -500,6 +500,7 @@ def test_build_behavior_same_name_start_event() -> None:
 def test_device_button() -> None:
     device = Device(
         start_events=["b.pressed"],
+        final_events=["b.pressed", "b.released"],
         events=["b.pressed", "b.released"],
         behavior=[("b.pressed", "b.released"), ("b.released", "b.pressed"),],
         components={},
@@ -513,6 +514,7 @@ def test_device_button() -> None:
 def test_device_led_a() -> None:
     device = Device(
         start_events=["ledA.on"],
+        final_events=["ledA.on", "ledA.off"],
         events=["ledA.on", "ledA.off"],
         behavior=[("ledA.on", "ledA.off"), ("ledA.off", "ledA.on"),],
         components={},
@@ -526,6 +528,7 @@ def test_device_led_a() -> None:
 def test_device_led_b() -> None:
     device = Device(
         start_events=["ledB.on"],
+        final_events=["ledB.on", "ledB.off"],
         events=["ledB.on", "ledB.off"],
         behavior=[("ledB.on", "ledB.off"), ("ledB.off", "ledB.on"),],
         components={},
@@ -539,6 +542,7 @@ def test_device_led_b() -> None:
 def test_device_timer() -> None:
     device = Device(
         start_events=["t.started"],
+        final_events=["t.started", "t.canceled", "t.timeout"],
         events=["t.started", "t.canceled", "t.timeout"],
         behavior=[
             ("t.started", "t.canceled"),
@@ -557,6 +561,7 @@ def test_device_timer() -> None:
 def test_device_hello_world() -> None:
     device = Device(
         start_events=["level1"],
+        final_events=["level1", "level2", "standby1", "standby2"],
         events=["level1", "level2", "standby1", "standby2"],
         behavior=[
             ("level1", "standby1"),
@@ -577,6 +582,7 @@ def get_basic_devices() -> Dict[str, Device]:
     return dict(
         Led=Device(
             start_events=["on"],
+            final_events=["on", "off"],
             events=["on", "off"],
             behavior=[("on", "off"), ("off", "on"),],
             components={},
@@ -584,6 +590,7 @@ def get_basic_devices() -> Dict[str, Device]:
         ),
         Button=Device(
             start_events=["pressed"],
+            final_events=["pressed", "released"],
             events=["pressed", "released"],
             behavior=[("pressed", "released"), ("released", "pressed"),],
             components={},
@@ -591,6 +598,7 @@ def get_basic_devices() -> Dict[str, Device]:
         ),
         Timer=Device(
             start_events=["started"],
+            final_events=["started", "canceled", "timeout"],
             events=["started", "canceled", "timeout"],
             behavior=[
                 ("started", "canceled"),
@@ -614,6 +622,7 @@ def get_basic_known_devices() -> Dict[str, CheckedDevice]:
 def test_invalid_behavior_1() -> None:
     device = Device(
         start_events=["level1"],
+        final_events=["level1", "level2", "standby1", "standby2"],
         events=["level1", "level2", "standby1", "standby2"],
         behavior=[
             ("level1", "standby1"),
@@ -673,6 +682,7 @@ def test_invalid_behavior_2() -> None:
 
     device = Device(
         start_events=["level1"],
+        final_events=["level1", "level2", "standby1", "standby2"],
         events=["level1", "level2", "standby1", "standby2"],
         behavior=[
             ("level1", "standby1"),
@@ -697,6 +707,7 @@ def test_invalid_behavior_2() -> None:
 def test_device_led_and_button() -> None:
     device = Device(
         start_events=["ledA.on"],
+        final_events=["ledA.on", "ledA.off", "b.pressed", "b.released"],
         events=["ledA.on", "ledA.off", "b.pressed", "b.released"],
         behavior=[
             ("ledA.on", "ledA.off"),

@@ -32,6 +32,7 @@ from karakuri import hml
 @dataclass
 class Device:
     start_events: List[str]
+    final_events: List[str]
     events: List[str]
     behavior: List[Tuple[str, str]]
     components: Dict[str, str]

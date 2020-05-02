@@ -57,6 +57,7 @@ def get_basic_devices() -> Mapping[str, Device]:
     return dict(
         Led=Device(
             start_events=["on"],
+            final_events=["on", "off"],
             events=["on", "off"],
             behavior=[("on", "off"), ("off", "on"),],
             components={},
@@ -64,6 +65,7 @@ def get_basic_devices() -> Mapping[str, Device]:
         ),
         Button=Device(
             start_events=["pressed"],
+            final_events=["pressed"],
             events=["pressed"],
             behavior=[("pressed", "pressed")],
             components={},
@@ -123,6 +125,7 @@ def _serialize(name: str, data: Any) -> Path:
 # this device is equivalent to example desklamp/good_simple_desklamp2
 dev = Device(
     start_events=["level1"],
+    final_events=["level1", "off"],
     events=["level1", "off"],
     behavior=[("level1", "off"), ("off", "level1")],
     components={"b": "Button", "l": "Led",},

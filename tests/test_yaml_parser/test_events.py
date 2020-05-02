@@ -197,15 +197,15 @@ def test_compile_wifihttp_start_missing_true() -> None:
 
     wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
 
-    wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
-        wifihttp_yml_bad
+    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
+        wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
+            wifihttp_yml_bad
+        )
+
+    assert (
+        "Type error for event started, field start. Expecting bool, found <class 'NoneType'>!"
+        == str(exc_info.value)
     )
-    wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
-
-    wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
-
-    assert wifihttp_assembled.is_valid
-    assert type(wifihttp_assembled.external) == CheckedDevice
 
 
 def test_compile_wifihttp_start_not_bool() -> None:
@@ -233,67 +233,3 @@ def test_compile_wifihttp_start_not_bool() -> None:
         "Type error for event started, field start. Expecting bool, found <class 'str'>!"
         == str(exc_info.value)
     )
-
-
-def test_compile_wifihttp_send_empy_micro() -> None:
-    httpclient_assembled = get_http_client_assembled()
-    wificlient_assembled = get_wifi_client_assembled()
-
-    known_devices = {
-        "HTTPClient": httpclient_assembled.external,
-        "WiFiClient": wificlient_assembled.external,
-    }
-
-    regex = (
-        r"    - send:\n"
-        r"        micro:\n"
-        r"          xor:\n"
-        r"            - hc.get\n"
-        r"            - hc.post"
-    )
-    replace = r"    - send:\n" r"        micro: []\n"  # micro is now a empty list
-
-    wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
-
-    wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
-        wifihttp_yml_bad
-    )
-
-    wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
-
-    wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
-
-    assert wifihttp_assembled.is_valid
-    assert type(wifihttp_assembled.external) == CheckedDevice
-
-
-def test_compile_wifihttp_send_no_micro() -> None:
-    httpclient_assembled = get_http_client_assembled()
-    wificlient_assembled = get_wifi_client_assembled()
-
-    known_devices = {
-        "HTTPClient": httpclient_assembled.external,
-        "WiFiClient": wificlient_assembled.external,
-    }
-
-    regex = (
-        r"    - send:\n"
-        r"        micro:\n"
-        r"          xor:\n"
-        r"            - hc.get\n"
-        r"            - hc.post"
-    )
-    replace = r""  # send will be auto discovered without specifying micro
-
-    wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
-
-    wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
-        wifihttp_yml_bad
-    )
-
-    wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
-
-    wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
-
-    assert wifihttp_assembled.is_valid
-    assert type(wifihttp_assembled.external) == CheckedDevice

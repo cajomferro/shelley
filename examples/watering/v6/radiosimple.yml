@@ -1,6 +1,5 @@
 device:
   name: RadioSimple
-  start_events: [start]
   behavior:
     - [start, send]
     - [send, receive]
@@ -10,11 +9,15 @@ device:
     - [stop, start] # comment this to be more strict
   components:
       r: Radio
-  triggers:
-    start: [r.start, r.HTTPsetup, r.HTTPconnect]
-    send: [r.HTTPsend]
-    receive: [r.HTTPreceive]
-    stop: [r.HTTPdisconnect, r.HTTPdisable]
+  events:
+    - start:
+        micro: [r.start, r.HTTPsetup, r.HTTPconnect]
+    - send:
+        micro: [r.HTTPsend]
+    - receive:
+        micro: [r.HTTPreceive]
+    - stop:
+        micro: [r.HTTPdisconnect, r.HTTPdisable]
 
 test_micro:
   ok:

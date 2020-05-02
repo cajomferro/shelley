@@ -101,6 +101,7 @@ def test_events_from_behavior() -> None:
     assert not shelley_device.events["released"].is_start
     assert shelley_device.events["released"].is_final
 
+
 def test_events_no_components_but_triggers() -> None:
     yaml_as_dict = {
         "device": {
@@ -118,6 +119,7 @@ def test_events_no_components_but_triggers() -> None:
         == str(exc_info.value)
     )
 
+
 def test_auto_create_declared_event_without_micro() -> None:
     yaml_as_dict = {
         "device": {
@@ -128,8 +130,14 @@ def test_auto_create_declared_event_without_micro() -> None:
         }
     }
 
-    device: Device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
-    assert isinstance(device.triggers.get_rule('pressed'), TriggerRuleFired)
+    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
+        yaml2shelley._create_device_from_yaml(yaml_as_dict)
+
+    assert (
+        str(exc_info.value)
+        == "Event 'pressed' doesn't specify micro behavior but device has components!"
+    )
+
 
 def test_auto_create_undeclared_event_with_micro() -> None:
     yaml_as_dict = {
@@ -141,8 +149,13 @@ def test_auto_create_undeclared_event_with_micro() -> None:
         }
     }
 
-    device: Device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
-    assert isinstance(device.triggers.get_rule('pressed'), TriggerRuleFired)
+    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
+        yaml2shelley._create_device_from_yaml(yaml_as_dict)
+
+    assert (
+        "Event 'pressed' doesn't specify micro behavior but device has components!"
+        == str(exc_info.value)
+    )
 
 
 def test_button() -> None:

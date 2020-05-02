@@ -1,15 +1,12 @@
 import pytest
-import re
 from shelley.automata import (
     Device as AutomataDevice,
     AssembledDevice,
     CheckedDevice,
-    check_traces,
 )
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley import yaml2shelley
-
 
 httpclient_yml = """
 device:
@@ -123,7 +120,7 @@ device:
 """
 
 
-def get_wifi_client_assembled() -> AssembledDevice:
+def _get_wifi_client_assembled() -> AssembledDevice:
     wificlient_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
         wificlient_yml
     )
@@ -132,7 +129,7 @@ def get_wifi_client_assembled() -> AssembledDevice:
     return AssembledDevice.make(wificlient_aut, {})
 
 
-def get_http_client_assembled() -> AssembledDevice:
+def _get_http_client_assembled() -> AssembledDevice:
     httpclient_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
         httpclient_yml
     )
@@ -141,33 +138,21 @@ def get_http_client_assembled() -> AssembledDevice:
     return AssembledDevice.make(httpclient_aut, {})
 
 
-def test_compile_httpclient() -> None:
-    httpclient_assembled = get_http_client_assembled()
+httpclient_assembled = _get_http_client_assembled()
+wificlient_assembled = _get_wifi_client_assembled()
 
+
+def test_compile_httpclient() -> None:
     assert httpclient_assembled.is_valid
     assert type(httpclient_assembled.external) == CheckedDevice
 
 
 def test_compile_wificlient() -> None:
-    wificlient_assembled = get_wifi_client_assembled()
-
     assert wificlient_assembled.is_valid
     assert type(wificlient_assembled.external) == CheckedDevice
 
 
-def test_compile_wifihttp_no_known_devices() -> None:
-    wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(wifihttp_yml)
-    wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
-
-    with pytest.raises(KeyError) as exc_info:
-        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, {})
-
-    assert "'HTTPClient'" == str(exc_info.value)
-
-
-def test_compile_wifihttp_ok() -> None:
-    httpclient_assembled = get_http_client_assembled()
-    wificlient_assembled = get_wifi_client_assembled()
+def test_compile_wifihttp() -> None:
 
     known_devices = {
         "HTTPClient": httpclient_assembled.external,
@@ -183,53 +168,11 @@ def test_compile_wifihttp_ok() -> None:
     assert type(wifihttp_assembled.external) == CheckedDevice
 
 
-def test_compile_wifihttp_start_missing_true() -> None:
-    httpclient_assembled = get_http_client_assembled()
-    wificlient_assembled = get_wifi_client_assembled()
+def test_compile_wifihttp_no_known_devices() -> None:
+    wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(wifihttp_yml)
+    wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
 
-    known_devices = {
-        "HTTPClient": httpclient_assembled.external,
-        "WiFiClient": wificlient_assembled.external,
-    }
+    with pytest.raises(KeyError) as exc_info:
+        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, {})
 
-    regex = r"  events:\n" r"    - started:\n" r"        start: True"
-    replace = r"  events:\n" r"    - started:\n" r"        start: "  # Missing True here
-
-    wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
-
-    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
-        wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
-            wifihttp_yml_bad
-        )
-
-    assert (
-        "Type error for event started, field start. Expecting bool, found <class 'NoneType'>!"
-        == str(exc_info.value)
-    )
-
-
-def test_compile_wifihttp_start_not_bool() -> None:
-    httpclient_assembled = get_http_client_assembled()
-    wificlient_assembled = get_wifi_client_assembled()
-
-    known_devices = {
-        "HTTPClient": httpclient_assembled.external,
-        "WiFiClient": wificlient_assembled.external,
-    }
-
-    regex = r"  events:\n" r"    - started:\n" r"        start: True"
-    replace = (
-        r"  events:\n" r"    - started:\n" r"        start: Txrxuxe"
-    )  # Invalid type !
-
-    wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
-
-    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
-        wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
-            wifihttp_yml_bad
-        )
-
-    assert (
-        "Type error for event started, field start. Expecting bool, found <class 'str'>!"
-        == str(exc_info.value)
-    )
+    assert "'HTTPClient'" == str(exc_info.value)

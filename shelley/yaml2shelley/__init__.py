@@ -125,6 +125,7 @@ def _parse_triggers(
 
             try:
                 is_start = event_data["start"]
+                assert type(is_start) == bool
             except KeyError:
                 pass
             except TypeError:
@@ -133,15 +134,28 @@ def _parse_triggers(
                         event_name, "start"
                     )
                 )
+            except AssertionError:
+                raise ShelleyParserError(
+                    "Type error for event {0}, field {1}. Expecting bool, found {2}!".format(
+                        event_name, "start", type(event_data["start"])
+                    )
+                )
 
             try:
                 is_final = event_data["final"]
+                assert type(is_final) == bool
             except KeyError:
                 pass
             except TypeError:
                 raise ShelleyParserError(
                     "Type error for event {0}, field {1}. Bad indentation?".format(
                         event_name, "final"
+                    )
+                )
+            except AssertionError:
+                raise ShelleyParserError(
+                    "Type error for event {0}, field {1}. Expecting bool, found {2}!".format(
+                        event_name, "final", type(event_data["final"])
                     )
                 )
 
@@ -307,4 +321,9 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
 def get_shelley_from_yaml(path: pathlib.Path) -> Device:
     with path.open(mode="r") as stream:
         yaml_code = yaml.load(stream, MySafeLoader)
+    return _create_device_from_yaml(yaml_code)
+
+
+def get_shelley_from_yaml_str(yaml_str: str) -> Device:
+    yaml_code = yaml.load(yaml_str, MySafeLoader)
     return _create_device_from_yaml(yaml_code)

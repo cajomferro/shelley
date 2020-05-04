@@ -35,7 +35,7 @@ def _parse_behavior(
     :param behaviors: empty collection to store behavior transitions
     """
 
-    discovered_events: Set[Event] = set()
+    discovered_events: Set[str] = set()
 
     for beh_transition in src:
         left = beh_transition[0]

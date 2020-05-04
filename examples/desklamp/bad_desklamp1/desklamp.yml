@@ -18,20 +18,25 @@ device:
     ledB: Led
     b: Button
     t: Timer
-  triggers:
-    level1: [b.released, b.pressed, ledA.on, t.started] # THIS IS WRONG
-    level2:
-      - b.pressed
-      - b.released
-      - xor:
-          - [t.canceled, ledB.on]
-          - [ledB.on, t.canceled]
-      - t.started
-    standby1: [t.timeout, ledA.off]
-    standby2:
-      - xor:
-          - [b.pressed, b.released, t.canceled]
-          -  t.timeout
-      - xor:
-            - [ledB.off, ledA.off]
-            - [ledA.off, ledB.off]
+  events:
+    - level1:
+        start: True
+        micro: [b.released, b.pressed, ledA.on, t.started] # THIS IS WRONG
+    - level2:
+        micro:
+          - b.pressed
+          - b.released
+          - xor:
+              - [t.canceled, ledB.on]
+              - [ledB.on, t.canceled]
+          - t.started
+    - standby1:
+        micro: [t.timeout, ledA.off]
+    - standby2:
+        micro:
+          - xor:
+              - [b.pressed, b.released, t.canceled]
+              - t.timeout
+          - xor:
+              - [ledB.off, ledA.off]
+              - [ledA.off, ledB.off]

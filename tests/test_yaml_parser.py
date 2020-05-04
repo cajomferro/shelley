@@ -407,3 +407,24 @@ def test_ambiguous_variant() -> None:
     button3OrOthers: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )
     button3OrOthersv2: ( ( ( b1.pressed ; b2.pressed ) xor ( b2.pressed ; b1.pressed ) ) xor b3.pressed )"""
     )
+
+
+def test_events_triggers_different_number() -> None:
+    yaml_code = """
+device:
+  name: WrongButton
+  behavior:
+    - [on, on]
+  components:
+    b: SingleClickButton
+  events:
+    - on:
+        micro: [ b.pressed, b.released]
+    - off:
+        micro: [ b.pressed, b.released] # ERROR: off is undeclared!
+    """
+
+    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
+        device: Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
+
+    assert str(exc_info.value) == "Events declared not used in behavior: '{'off'}'"

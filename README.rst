@@ -8,6 +8,8 @@ Shelley checker
 Installation
 ############
 
+.. warning:: You will need to install `poetry <https://python-poetry.org/docs/#installation>`_ and graphviz dot tool (for visualizing examples). Make sure you install poetry with the appropriate Python version (>=3.7). For more info on how to install poetry with pyenv `follow this link <https://python-poetry.org/docs/managing-environments/>`_.
+
 .. code-block:: shell
 
    poetry install

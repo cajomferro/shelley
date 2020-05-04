@@ -1,6 +1,5 @@
 device:
   name: LedStrict
-  start_events: [on]
   behavior:
     - [on, off]
     - [off, on]

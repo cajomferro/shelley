@@ -1,6 +1,5 @@
 device:
   name: SmartButton
-  start_events: [buttonPressedOnce, buttonPressedTwice, buttonPressedLong]
   behavior:
     - [buttonPressedOnce, buttonPressedOnce]
     - [buttonPressedOnce, buttonPressedTwice]
@@ -14,11 +13,17 @@ device:
   components:
     b: SingleClickButton
     t: Timer
-  triggers:
-    buttonPressedOnce: [b.pressed, t.started, b.released, t.canceled, t.started, t.timeout]
-    buttonPressedTwice:
-      - [ b.pressed, t.started, b.released, t.canceled, t.started, b.pressed]
-      - xor:
-          - [t.canceled, b.released]
-          - [b.released, t.canceled]
-    buttonPressedLong: [b.pressed, t.started, t.timeout, b.released]
+  events:
+    - buttonPressedOnce:
+        start: True
+        micro: [b.pressed, t.started, b.released, t.canceled, t.started, t.timeout]
+    - buttonPressedTwice:
+        start: True
+        micro:
+          - [ b.pressed, t.started, b.released, t.canceled, t.started, b.pressed]
+          - xor:
+              - [t.canceled, b.released]
+              - [b.released, t.canceled]
+    - buttonPressedLong:
+        start: True
+        micro: [b.pressed, t.started, t.timeout, b.released]

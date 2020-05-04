@@ -3,14 +3,14 @@ SHELLEYVIZ = shelleyv
 
 all: desklamp.scy
 
-%.scy: %.yaml
+%.scy: %.yml
 	$(SHELLEYC) -d $<
 
-desklamp.scy: desklamp.yaml timer.scy led.scy button.scy
+desklamp.scy: desklamp.yml timer.scy led.scy button.scy
 	# Negate the result, since this should fail
 	! $(SHELLEYC) -d $< -u button.scy\:Button led.scy\:Led timer.scy\:Timer
 
 clean:
 	rm -f *.scy
 
-.SUFFIXES: .yaml .scy
+.SUFFIXES: .yml .scy

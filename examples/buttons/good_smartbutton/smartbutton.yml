@@ -1,9 +1,9 @@
 device:
   name: SmartButton
-  start_events: [on]
   behavior:
     - [on, on]
   components:
     b: SingleClickButton
-  triggers:
-    on: [ b.pressed, b.released]
+  events:
+    - on:
+        micro: [ b.pressed, b.released]

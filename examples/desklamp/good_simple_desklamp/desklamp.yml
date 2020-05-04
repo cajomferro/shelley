@@ -1,6 +1,5 @@
 device:
   name: DeskLamp
-  start_events: [level1]
   behavior:
     - [level1, level2]
     - [level2, off]
@@ -9,14 +8,18 @@ device:
     ledA: LedStrict
     ledB: LedStrict
     b: SimpleButton
-  triggers:
-    level1: [b.pressed, ledA.on]
-    level2: [b.pressed, ledB.on]
-    off:
-      - [b.pressed]
-      - xor:
-          - [ledB.off, ledA.off]
-          - [ledA.off, ledB.off]
+  events:
+    - level1:
+        start: True
+        micro: [b.pressed, ledA.on]
+    - level2:
+        micro: [b.pressed, ledB.on]
+    - off:
+        micro:
+          - [b.pressed]
+          - xor:
+              - [ledB.off, ledA.off]
+              - [ledA.off, ledB.off]
 
 test_micro:
   ok:

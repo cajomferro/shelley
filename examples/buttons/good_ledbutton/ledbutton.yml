@@ -1,6 +1,5 @@
 device:
   name: LedButton
-  start_events: [led1, led2]
   behavior:
     - [led1, led1]
     - [led1, led2]
@@ -11,6 +10,10 @@ device:
     led2: Led
     b1: SimpleButton
     b2: SimpleButton
-  triggers:
-    led1: [b1.pressed, led1.on]
-    led2: [b2.pressed, led2.on]
+  events:
+    - led1:
+        start: True
+        micro: [b1.pressed, led1.on]
+    - led2:
+        start: True
+        micro: [b2.pressed, led2.on]

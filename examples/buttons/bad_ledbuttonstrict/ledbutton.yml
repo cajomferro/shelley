@@ -1,6 +1,5 @@
 device:
   name: LedButton
-  start_events: [led1, led2]
   behavior:
     - [led1, led1]
     - [led1, led2]
@@ -11,6 +10,10 @@ device:
     led2: LedStrict # Let's use a strict led here!
     b1: SimpleButton
     b2: SimpleButton
-  triggers: # this is wrong: led1->led1 and led2->led2 are invalid!
-    led1: [b1.pressed, led1.on]
-    led2: [b2.pressed, led2.on]
+  events: # this is wrong: led1->led1 and led2->led2 are invalid!
+    - led1:
+        start: True
+        micro: [b1.pressed, led1.on]
+    - led2:
+        start: True
+        micro: [b2.pressed, led2.on]

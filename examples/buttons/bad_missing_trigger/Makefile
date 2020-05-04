@@ -8,7 +8,7 @@ pdf: singleclick.pdf
 scy: missing_trigger.scy
 
 missing_trigger.scy: missing_trigger.yml singleclick.scy
-	# Shelley parser error: Missing trigger for event 'off'
+	# Shelley parser error: Event 'off' doesn't specify micro behavior but device has components!
 	! $(SHELLEYC) -d $< -u singleclick.scy\:SingleClickButton
 
 %.scy: %.yml

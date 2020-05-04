@@ -1,6 +1,5 @@
 device:
   name: AmbiguousButton
-  start_events: [button1AndOther, button3OrOthers]
   behavior:
     - [button1AndOther, button1AndOther]
     - [button1AndOther, button3OrOthers]
@@ -10,21 +9,25 @@ device:
     b1: SimpleButton
     b2: SimpleButton
     b3: SimpleButton
-  triggers:
-    button1AndOther:
-      - xor:
+  events:
+    - button1AndOther:
+        start: True
+        micro:
           - xor:
-              - [b1.pressed, b2.pressed] # A -> AMBIGUOUS
-              - [b1.pressed, b3.pressed]
+              - xor:
+                  - [b1.pressed, b2.pressed] # A -> AMBIGUOUS
+                  - [b1.pressed, b3.pressed]
+              - xor:
+                  - [b2.pressed, b1.pressed] # B -> AMBIGUOUS
+                  - [b3.pressed, b1.pressed]
+    - button3OrOthers:
+        start: True
+        micro:
           - xor:
-              - [b2.pressed, b1.pressed] # B -> AMBIGUOUS
-              - [b3.pressed, b1.pressed]
-    button3OrOthers:
-      - xor:
-          - xor:
-              - [b1.pressed, b2.pressed] # A -> AMBIGUOUS
-              - [b2.pressed, b1.pressed] # B -> AMBIGUOUS
-          - b3.pressed
+              - xor:
+                  - [b1.pressed, b2.pressed] # A -> AMBIGUOUS
+                  - [b2.pressed, b1.pressed] # B -> AMBIGUOUS
+              - b3.pressed
 
 # button1AndOther <- b1.pressed and (b2.pressed or b3.pressed) <=> b1.pressed; (b2.pressed or b3.pressed) or (b2.pressed or b3.pressed); b1.pressed
 # b1.pressed, b2.pressed

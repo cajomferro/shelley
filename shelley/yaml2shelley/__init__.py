@@ -1,5 +1,5 @@
 import yaml
-from typing import List, Mapping, Dict, Optional, Union
+from typing import List, Mapping, Dict, Optional, Union, Set
 import copy
 import pathlib
 from shelley.yaml2shelley.util import MySafeLoader
@@ -34,6 +34,9 @@ def _parse_behavior(
     :param events: empty collection to store events
     :param behaviors: empty collection to store behavior transitions
     """
+
+    discovered_events: Set[Event] = set()
+
     for beh_transition in src:
         left = beh_transition[0]
         try:
@@ -63,10 +66,19 @@ def _parse_behavior(
             #     "Behavior uses undeclared event '{0}'".format(right)
             # )
 
+        discovered_events.add(e1.name)
+        discovered_events.add(e2.name)
+
         try:
             behaviors.create(e1, e2)
         except BehaviorsListDuplicatedError as err:
             raise ShelleyParserError("Duplicated behavior '{0}'".format(err))
+
+    difference = set(events.list_str()).difference(discovered_events)
+    if len(difference) > 0:
+        raise ShelleyParserError(
+            "Events declared not used in behavior: '{0}'".format(difference)
+        )
 
 
 def _parse_components(src: Mapping[str, str], components: Components) -> None:
@@ -84,7 +96,6 @@ def _parse_components(src: Mapping[str, str], components: Components) -> None:
 def _parse_event(
     src: Union[str, dict], events: Events, components: Components, triggers: Triggers
 ) -> Event:
-
     event: Optional[Event] = None
 
     if isinstance(src, str):
@@ -362,7 +373,7 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
         first_event = events.list()[0]
         first_event.is_start = True
 
-    # we do not triggers without at least one trigger rule
+    # we do not allow triggers without at least one trigger rule
     for event in events.list():
         assert triggers.get_rule(event.name) is not None
 

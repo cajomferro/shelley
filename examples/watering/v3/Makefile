@@ -3,18 +3,13 @@ SHELLEYV = shelleyv
 
 all: scy pdf
 
-pdf: magnetic.pdf radio.pdf radiosimple.pdf radiosimplest.pdf valve.pdf lowpower-strict.pdf controller.pdf
+pdf: httpclient.pdf wificlient.pdf wifihttp.pdf
 
-scy: controller.scy radiosimple.scy
+scy: wifihttp.scy
 
-radiosimple.scy: radiosimple.yml radio.scy
-	$(SHELLEYC) -d $< -u radio.scy\:Radio
+wifihttp.scy: wifihttp.yml wificlient.scy httpclient.scy
+	$(SHELLEYC) -d $< -u wificlient.scy\:WiFiClient httpclient.scy\:HTTPClient
 
-radiosimplest.scy: radiosimplest.yml radiosimple.scy
-	$(SHELLEYC) -d $< -u radiosimple.scy\:RadioSimple
-
-controller.scy: controller.yml valve.scy magnetic.scy radiosimplest.scy lowpower-strict.scy
-	$(SHELLEYC) -d $< -u magnetic.scy\:Magnetic valve.scy\:Valve radiosimplest.scy\:RadioSimplest lowpower-strict.scy\:LowPower
 
 %.scy: %.yml
 	$(SHELLEYC) -d $< -o $@

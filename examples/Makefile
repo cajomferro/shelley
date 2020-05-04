@@ -18,10 +18,10 @@ all:
 	$(MAKE) -C watering/v1
 	$(MAKE) -C watering/v2
 	$(MAKE) -C watering/v2_finalstates
+	$(MAKE) -C watering/v2_valve
+	$(MAKE) -C watering/v2_valvehandler
+	$(MAKE) -C watering/v2_valvehandlertimer
 	$(MAKE) -C watering/v3
-	$(MAKE) -C watering/v4
-	$(MAKE) -C watering/v5
-	$(MAKE) -C watering/v6
 
 clean:
 	$(MAKE) -C desklamp/bad_desklamp1 clean
@@ -43,16 +43,16 @@ clean:
 	$(MAKE) -C watering/v1 clean
 	$(MAKE) -C watering/v2 clean
 	$(MAKE) -C watering/v2_finalstates clean
+	$(MAKE) -C watering/v2_valve clean
+	$(MAKE) -C watering/v2_valvehandler clean
+	$(MAKE) -C watering/v2_valvehandlertimer clean
 	$(MAKE) -C watering/v3 clean
-	$(MAKE) -C watering/v4 clean
-	$(MAKE) -C watering/v5 clean
-	$(MAKE) -C watering/v6 clean
 
 watering-timer:
 	time $(MAKE) -C watering/v1 scy
 	time $(MAKE) -C watering/v2 scy
 	time $(MAKE) -C watering/v2_finalstates scy
+	time $(MAKE) -C watering/v2_valve scy
+	time $(MAKE) -C watering/v2_valvehandler scy
+	time $(MAKE) -C watering/v2_valvehandlertimer scy
 	time $(MAKE) -C watering/v3 scy
-	time $(MAKE) -C watering/v4 scy
-	time $(MAKE) -C watering/v5 scy
-	time $(MAKE) -C watering/v6 scy

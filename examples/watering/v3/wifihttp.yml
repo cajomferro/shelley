@@ -16,9 +16,11 @@ device:
   events:
     - started:
         start: True
+        final: False
         micro: [wc.joined, wc.connected, hc.connected]
     - notconnected:
         start: True
+        final: True
         micro:
           xor:
             - [wc.joined, wc.connected, hc.connect_failed]
@@ -26,13 +28,16 @@ device:
               - [wc.joined, wc.connection_timeout]
               - [wc.ssid_failed]
     - send:
+        final: False
         micro:
           xor:
             - hc.get
             - hc.post
     - ok:
+        final: False
         micro: [wc.print_data_ready, hc.response200]
     - error:
+        final: True
         micro:
           xor:
             - [wc.print_data_ready, hc.response401]
@@ -44,6 +49,7 @@ device:
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
     - stopped:
+        final: True
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
   behavior:
     - [started, send]

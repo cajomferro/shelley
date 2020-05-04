@@ -7,23 +7,42 @@ device:
         start: True
     - ssid_failed:
         start: True
+        final: True
+    - ssid_left:
+        start: True
+        final: True
+    - print_timeout:
+        start: True
+        final: False
+    - print_data_ready:
+        start: True
+        final: False
+    - connected:
+        start: True
+        final: False
+    - disconnected:
+        start: True
+        final: False
+    - connection_timeout:
+        start: True
+        final: True
   behavior:
     - [connection_timeout, connected]
-# before "print_timeout" or "print_data_ready" or "print_disconnected":
-# client.print(String("GET ") + url + " HTTP/1.1\r\n" +
-#                 "Host: " + host + "\r\n" +
-#                 "Connection: close\r\n\r\n");
-#    while (client.available() == 0) {
-#        if (millis() - timeout > 5000) {
-#            Serial.println(">>> Client Timeout !");
-#            client.stop();
-#            return;
-#        }
-#    // Read all the lines of the reply from server and print them to Serial
-#    while(client.available()) {
-#        String line = client.readStringUntil('\r');
-#        Serial.print(line);
-#    }
+    # before "print_timeout" or "print_data_ready" or "print_disconnected":
+    # client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+    #                 "Host: " + host + "\r\n" +
+    #                 "Connection: close\r\n\r\n");
+    #    while (client.available() == 0) {
+    #        if (millis() - timeout > 5000) {
+    #            Serial.println(">>> Client Timeout !");
+    #            client.stop();
+    #            return;
+    #        }
+    #    // Read all the lines of the reply from server and print them to Serial
+    #    while(client.available()) {
+    #        String line = client.readStringUntil('\r');
+    #        Serial.print(line);
+    #    }
     - [ssid_joined, connected]
     - [ssid_joined, ssid_left]
     - [ssid_left, ssid_joined]

@@ -440,6 +440,7 @@ def test_build_nfa_transitions() -> None:
 def test_build_behavior() -> None:
     start_events = ["level1"]
     events = ["level1", "standby1", "level2", "standby2"]
+    final_events = ["level1", "standby1", "level2", "standby2"]
     behavior = [
         ("level1", "standby1"),
         ("level1", "level2"),
@@ -466,25 +467,29 @@ def test_build_behavior() -> None:
         accepted_states=accepted,
     )
     assert (
-        automata.build_external_behavior(behavior, start_events, events, "start")
+        automata.build_external_behavior(
+            behavior, start_events, final_events, events, "start"
+        )
         == expected
     )
     # Make sure this is equivalent to HELLO WORLD
     assert nfa_to_dfa(
-        automata.build_external_behavior(behavior, start_events, events)
+        automata.build_external_behavior(behavior, start_events, final_events, events)
     ).is_equivalent_to(nfa_to_dfa(create_hello_world()))
 
 
 def test_build_behavior_empty_start_events() -> None:
     with pytest.raises(ValueError) as exc_info:
-        automata.build_external_behavior([], [], [], "start")
+        automata.build_external_behavior([], [], [], [], "start")
 
     assert str(exc_info.value) == "At least one start event must be specified."
 
 
 def test_build_behavior_same_name_start_event() -> None:
     with pytest.raises(ValueError) as exc_info:
-        automata.build_external_behavior([], ["xxx"], ["xxx", "yyy"], "yyy")
+        automata.build_external_behavior(
+            [], ["xxx"], ["xxx", "yyy"], ["xxx", "yyy"], "yyy"
+        )
 
     assert (
         str(exc_info.value)

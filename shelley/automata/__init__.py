@@ -108,6 +108,7 @@ def _build_nfa_transitions(
 def build_external_behavior(
     behavior: Iterable[Tuple[str, str]],
     start_events: List[str],
+    final_events: List[str],
     events: List[str],
     start_state: str = "$START",
 ) -> NFA[Any, str]:
@@ -127,13 +128,16 @@ def build_external_behavior(
     if len(start_events) == 0:
         raise ValueError("At least one start event must be specified.")
 
+    if len(final_events) == 0:
+        raise ValueError("At least one final event must be specified.")
+
     if start_state in events:
         raise ValueError(
             f"Start state '{start_state}' cannot have the same name as an event."
         )
 
     # build NFA states
-    states: Set[str] = set(events)
+    states: Set[str] = set(final_events)
     states.add(start_state)
 
     # build NFA transitions (arcs)
@@ -601,7 +605,7 @@ class AssembledDevice:
         """
         ensure_well_formed(dev)
         external_behavior: NFA = build_external_behavior(
-            dev.behavior, dev.start_events, dev.events
+            dev.behavior, dev.start_events, dev.final_events, dev.events
         )
         ext = CheckedDevice(external_behavior)
         micro = None

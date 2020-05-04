@@ -260,13 +260,27 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
     elif isinstance(src, dict):
         if "xor" in src:
             xor_options: List = src["xor"]
+            if len(xor_options) != 2:
+                raise ShelleyParserError(
+                    "Invalid micro rule '{0}'. Branching (xor) requires 2 options!".format(
+                        src
+                    )
+                )
             left_option = xor_options[0]
             right_option = xor_options[1]
             if isinstance(left_option, dict) and "left" in left_option:
+                # syntax variant with explicit left and right options
+                if not ("left" in left_option and "right" in right_option):
+                    raise ShelleyParserError(
+                        "Invalid micro rule '{0}'. Branching (xor) requires left and right options!".format(
+                            src
+                        )
+                    )
                 left = _parse_trigger_rule(left_option["left"], components)
                 right = _parse_trigger_rule(right_option["right"], components)
                 return TriggerRuleChoice(left, right)
             else:
+                # syntax variant without left and right options
                 left = _parse_trigger_rule(left_option, components)
                 right = _parse_trigger_rule(right_option, components)
                 return TriggerRuleChoice(left, right)

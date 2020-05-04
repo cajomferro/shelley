@@ -337,7 +337,8 @@ def test_compile_desklamp_dependency_not_found() -> None:
         shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
     print(exc_info.value)
     assert (
-        str(exc_info.value) == "Use device not found: tests/input/compiled/button.scy. Please compile it first!"
+        str(exc_info.value)
+        == "Use device not found: tests/input/compiled/button.scy. Please compile it first!"
     )
 
     _remove_compiled_dir()

@@ -278,6 +278,90 @@ def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
         wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
 
     assert (
-        "Event 'send' doesn't specify micro behavior but device has components!"
-        == str(exc_info.value)
+        str(exc_info.value)
+        == "Event 'send' doesn't specify micro behavior but device has components!"
+    )
+
+
+def test_compile_wifihttp_invalid_xor_1_option() -> None:
+    """
+    If the device has components and event is declared, it must specify micro
+    :return:
+    """
+
+    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
+        # introduce bad syntax on good yml
+        regex = (
+            r"    - send:\n"
+            r"        micro:\n"
+            r"          xor:\n"
+            r"            - hc.get\n"
+            r"            - hc.post"
+        )
+        replace = (
+            r"    - send:\n"
+            r"        micro:\n"
+            r"          xor:\n"
+            r"            - hc.post"
+        )
+        wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
+
+        # parse yaml and assemble device
+        known_devices = {
+            "HTTPClient": httpclient_assembled.external,
+            "WiFiClient": wificlient_assembled.external,
+        }
+        wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
+            wifihttp_yml_bad
+        )
+        wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
+
+        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
+
+    assert (
+        str(exc_info.value)
+        == "Invalid micro rule '{'xor': ['hc.post']}'. Branching (xor) requires 2 options!"
+    )
+
+
+def test_compile_wifihttp_invalid_xor_3_options() -> None:
+    """
+    If the device has components and event is declared, it must specify micro
+    :return:
+    """
+
+    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
+        # introduce bad syntax on good yml
+        regex = (
+            r"    - send:\n"
+            r"        micro:\n"
+            r"          xor:\n"
+            r"            - hc.get\n"
+            r"            - hc.post"
+        )
+        replace = (
+            r"    - send:\n"
+            r"        micro:\n"
+            r"          xor:\n"
+            r"            - hc.get\n"
+            r"            - hc.get\n"
+            r"            - hc.post"
+        )
+        wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
+
+        # parse yaml and assemble device
+        known_devices = {
+            "HTTPClient": httpclient_assembled.external,
+            "WiFiClient": wificlient_assembled.external,
+        }
+        wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
+            wifihttp_yml_bad
+        )
+        wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
+
+        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
+
+    assert (
+        str(exc_info.value)
+        == "Invalid micro rule '{'xor': ['hc.get', 'hc.get', 'hc.post']}'. Branching (xor) requires 2 options!"
     )

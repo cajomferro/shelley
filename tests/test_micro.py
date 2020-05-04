@@ -140,7 +140,7 @@ def _encode(example_name: str):
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
 
     external_behavior: NFA = build_external_behavior(
-        dev.behavior, dev.start_events, dev.events
+        dev.behavior, dev.start_events, dev.events, dev.events
     )
     print("\nmacro nfa flatten=False", external_behavior.as_dict(flatten=False))
     print("macro nfa flatten=True", external_behavior.as_dict(flatten=True))

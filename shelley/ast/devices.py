@@ -79,7 +79,6 @@ class Device(Node):
                 "Duplicated device with name '{0}'".format(self.name)
             )
 
-
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Device):
             # don't attempt to compare against unrelated types

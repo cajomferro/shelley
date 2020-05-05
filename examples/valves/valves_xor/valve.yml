@@ -1,0 +1,12 @@
+device:
+  name: Valve
+  events:
+    - on:
+        start: True
+    - off:
+        start: True
+  behavior:
+    - [on, off]
+    - [off, on]
+    - [on, on]
+    - [off, off]

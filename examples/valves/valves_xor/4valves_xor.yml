@@ -1,0 +1,19 @@
+device:
+  name: ValveHandler
+  behavior:
+    - [go, go]
+  components:
+    v1: Valve
+    v2: Valve
+    v3: Valve
+    v4: Valve
+  events:
+    - go:
+        micro:
+          xor:
+            - [v1.on, v1.off]
+            - xor:
+                - [v2.on, v2.off]
+                - xor:
+                    - [v3.on, v3.off]
+                    - [v4.on, v4.off]

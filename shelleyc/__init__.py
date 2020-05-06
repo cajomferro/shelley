@@ -4,6 +4,10 @@ from typing import List, Dict, Optional, Any, cast
 import argparse
 from pathlib import Path
 from karakuri import regular
+from dataclasses import asdict,dataclass
+from contextlib import contextmanager
+from timeit import default_timer
+from datetime import timedelta
 
 from shelleyc import settings
 from shelleyc.exceptions import CompilationError
@@ -19,8 +23,28 @@ from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley
 
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+@dataclass
+class ElapsedTime:
+    start:float
+    end:float
+    duration:float
+
+# https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
+@contextmanager
+def elapsed_timer():
+    start_time = default_timer()
+    start, end = start_time, default_timer()
+    tmr = ElapsedTime(start, end, end - start)
+
+    yield tmr
+
+    end_time = default_timer()
+    tmr.end = end_time
+    tmr.duration = end_time - start_time
 
 
 def get_args() -> argparse.Namespace:
@@ -158,8 +182,11 @@ def compile_shelley(
         shelley_device, uses, binary
     )
     automata_device = shelley2automata(shelley_device)
-
-    dev = AssembledDevice.make(automata_device, known_devices)
+    with elapsed_timer() as t:
+        dev = AssembledDevice.make(automata_device, known_devices)
+    stats = asdict(dev.get_stats())
+    stats['duration'] = str(timedelta(seconds=t.duration))
+    print(stats)
 
     if dev.is_valid:
 

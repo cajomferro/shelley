@@ -104,7 +104,7 @@ python-versions = ">=3.0"
 version = "0.0.1"
 
 [package.source]
-reference = "a92e3d2212aac3fac5a5b9a7a4e62ce4e458d905"
+reference = "9208883ee347ea0aa410af66e94ddf8135100e36"
 type = "git"
 url = "https://gitlab.com/cogumbreiro/karukuri.git"
 [[package]]
@@ -295,7 +295,7 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "3cd5fc24cf1f7c13eeef8c4e864efc0240463c9584d5b3e2198e824299e50906"
+content-hash = "214a9bc650ed74e302bfef43f2f0cd10803f4da37063bcbbc8c4208b562bbc60"
 python-versions = "^3.7"
 
 [metadata.files]

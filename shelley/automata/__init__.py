@@ -260,6 +260,7 @@ def get_macro_states(st: AbstractSet[DecodedState]):
 
 
 def is_macro_ambiguous(st: AbstractSet[DecodedState]) -> bool:
+    
     count = 0
     for _ in get_macro_states(st):
         count += 1
@@ -494,7 +495,7 @@ class AssembledMicroBehavior:
             external_behavior, triggers, all_possible.alphabet
         )
         # Ensure that the all possible behaviors in dev contain the encoded behavior
-        invalid_behavior = internal_behavior.dfa.subtract(all_possible)
+        invalid_behavior = internal_behavior.dfa.minimize().subtract(all_possible)
         # Ready to create the object
         return cls(
             possible=all_possible, impossible=invalid_behavior, micro=internal_behavior,
@@ -566,6 +567,12 @@ def model_check(
         return not prop.intersection(model).is_empty()
 
 
+@dataclass(frozen=True)
+class AssembledDeviceStats:
+    macro_size:int
+    micro_size:int
+    micro_max_size:int
+
 @dataclass
 class AssembledDevice:
     external: CheckedDevice
@@ -575,6 +582,13 @@ class AssembledDevice:
 
     def __post_init__(self):
         self.is_valid = self.failure is None
+
+    def get_stats(self):
+        return AssembledDeviceStats(
+            macro_size=len(self.external.nfa),
+            micro_size=0 if self.internal is None else len(self.internal.dfa),
+            micro_max_size=0 if self.internal is None else len(self.internal.possible),
+        )
 
     def internal_model_check(
         self, word_or_formula: Union[List[str], hml.Formula[str]]

@@ -10,7 +10,6 @@ scy: wifihttp.scy
 wifihttp.scy: wifihttp.yml wificlient.scy httpclient.scy
 	$(SHELLEYC) -d $< -u wificlient.scy\:WiFiClient httpclient.scy\:HTTPClient
 
-
 %.scy: %.yml
 	$(SHELLEYC) -d $< -o $@
 	test -f $<

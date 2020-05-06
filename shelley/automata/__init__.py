@@ -465,7 +465,7 @@ class AssembledMicroBehavior:
     ) -> Optional[TFailure]:
         # Fill in the failure field
         failure: Optional[TFailure] = self.micro.failure
-        if failure is None and not self.impossible.is_empty():
+        if failure is None and not self.is_valid:
             failure = TriggerIntegrationFailure.make(
                 self.micro, self.impossible, known_devices, components
             )

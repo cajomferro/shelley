@@ -25,9 +25,13 @@ from karakuri.regular import (
 )
 from dataclasses import dataclass, field
 from karakuri import hml
+from contextlib import contextmanager
+# https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
+from timeit import default_timer as timer
+from datetime import timedelta
 
-# __all__ = "Device", "AssembledDevice", "check_traces", "CheckedDevice", "MacroState"
-
+def get_elapsed_time(start:float) -> timedelta:
+    return timedelta(seconds=timer() - start)
 
 @dataclass
 class Device:
@@ -255,14 +259,9 @@ def is_macro_state(st) -> bool:
     return isinstance(st, MacroState)
 
 
-def get_macro_states(st: AbstractSet[DecodedState]):
-    return filter(is_macro_state, st)
-
-
 def is_macro_ambiguous(st: AbstractSet[DecodedState]) -> bool:
-    
     count = 0
-    for _ in get_macro_states(st):
+    for _ in filter(is_macro_state, st):
         count += 1
         if count > 1:
             return True
@@ -304,8 +303,10 @@ class MicroBehavior:
     dfa: DFA[Any, str] = field(init=False)
     failure: Optional[AmbiguityFailure] = field(init=False)
     is_valid: bool = field(init=False)
+    validation_time: timedelta = field(init=False)
 
     def __post_init__(self) -> None:
+        start = timer()
         self.dfa = nfa_to_dfa(self.nfa)
         err_trace = self.dfa.find_shortest_path(is_macro_ambiguous)
         self.is_valid = err_trace is None
@@ -314,6 +315,7 @@ class MicroBehavior:
             if err_trace is None  # is valid
             else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
         )
+        self.validation_time = get_elapsed_time(start)
 
     def convert_micro_to_macro(self, seq: Iterable[str]) -> Tuple[MacroTrace, ...]:
         rest: List[MacroTrace] = [()]
@@ -446,7 +448,9 @@ class AssembledMicroBehavior:
     is_valid: bool = field(init=False)
 
     def __post_init__(self) -> None:
+        start = timer()
         self.is_valid = self.micro.is_valid and self.impossible.is_empty()
+        self.validation_time = get_elapsed_time(start)
 
     @property
     def dfa(self) -> DFA[Any, str]:
@@ -568,10 +572,18 @@ def model_check(
 
 
 @dataclass(frozen=True)
-class AssembledDeviceStats:
+class DeviceStats:
     macro_size:int
     micro_size:int
     micro_max_size:int
+    ambiguity_check_time:Optional[timedelta]
+    integration_check_time:Optional[timedelta]
+    total_check_time:timedelta = field(init=False)
+
+    def __post_init__(self):
+        t1 = timedelta(0) if self.ambiguity_check_time is None else self.ambiguity_check_time
+        t2 = timedelta(0) if self.integration_check_time is None else self.integration_check_time
+        object.__setattr__(self, "total_check_time", t1 + t2)
 
 @dataclass
 class AssembledDevice:
@@ -584,7 +596,9 @@ class AssembledDevice:
         self.is_valid = self.failure is None
 
     def get_stats(self):
-        return AssembledDeviceStats(
+        return DeviceStats(
+            ambiguity_check_time=None if self.internal is None or self.internal.micro is None else self.internal.micro.validation_time,
+            integration_check_time=None if self.internal is None else self.internal.validation_time,
             macro_size=len(self.external.nfa),
             micro_size=0 if self.internal is None else len(self.internal.dfa),
             micro_max_size=0 if self.internal is None else len(self.internal.possible),

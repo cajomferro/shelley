@@ -13,9 +13,9 @@ def save_timings(fp: IO[str], device: AssembledDevice) -> None:
     for k in timings:
         # convert timedelta to strings
         timings[k] = str(timings[k])
-    json.dump(timings, fp, indent=3)
+    json.dump(timings, fp)
 
 
 def save_statistics(fp: IO[str], device: AssembledDevice) -> None:
     # Print out stats (may take a long time)
-    json.dump(asdict(device.get_stats()), fp, indent=3)
+    json.dump(asdict(device.get_stats()), fp)

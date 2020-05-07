@@ -162,11 +162,18 @@ def compile_shelley(
     )
     automata_device = shelley2automata(shelley_device)
     dev = AssembledDevice.make(automata_device, known_devices)
-    stats = asdict(dev.get_stats())
-    for k in stats:
-        if k.endswith('time'):
-            stats[k] = str(stats[k])
-    print(stats)
+
+    # Print out the timings
+    # The keys of the dictionary are timedelta objects, which we must
+    # convert to strings so that humans can understand what they are
+    timings = asdict(dev.get_timings())
+    for k in timings:
+        # convert timedelta to strings
+        timings[k] = str(timings[k])
+    print(timings)
+
+    # Print out stats (may take a long time)
+    print(asdict(dev.get_stats()))
 
     if dev.is_valid:
 

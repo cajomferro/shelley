@@ -570,12 +570,8 @@ def model_check(
         model = nfa_to_dfa(nfa)
         return not prop.intersection(model).is_empty()
 
-
 @dataclass(frozen=True)
-class DeviceStats:
-    macro_size:int
-    micro_size:int
-    micro_max_size:int
+class Timings:
     ambiguity_check_time:Optional[timedelta]
     integration_check_time:Optional[timedelta]
     total_check_time:timedelta = field(init=False)
@@ -584,6 +580,13 @@ class DeviceStats:
         t1 = timedelta(0) if self.ambiguity_check_time is None else self.ambiguity_check_time
         t2 = timedelta(0) if self.integration_check_time is None else self.integration_check_time
         object.__setattr__(self, "total_check_time", t1 + t2)
+
+
+@dataclass(frozen=True)
+class DeviceStats:
+    macro_size:int
+    micro_size:int
+    micro_max_size:int
 
 @dataclass
 class AssembledDevice:
@@ -595,10 +598,14 @@ class AssembledDevice:
     def __post_init__(self):
         self.is_valid = self.failure is None
 
-    def get_stats(self):
-        return DeviceStats(
+    def get_timings(self):
+        return Timings(
             ambiguity_check_time=None if self.internal is None or self.internal.micro is None else self.internal.micro.validation_time,
             integration_check_time=None if self.internal is None else self.internal.validation_time,
+        )
+
+    def get_stats(self):
+        return DeviceStats(
             macro_size=len(self.external.nfa),
             micro_size=0 if self.internal is None else len(self.internal.dfa),
             micro_max_size=0 if self.internal is None else len(self.internal.possible),

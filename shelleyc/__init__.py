@@ -1,14 +1,16 @@
+import sys
 import logging
 import os
-from typing import List, Dict, Optional, Any, cast
+from typing import List, Dict, Optional, Any, cast, IO
 import argparse
 from pathlib import Path
 from karakuri import regular
-from dataclasses import asdict
+
 
 from shelleyc import settings
 from shelleyc.exceptions import CompilationError
 from shelleyc.serializer import serialize, deserialize
+from shelleyc.stats import save_statistics, save_timings
 
 from shelley.automata import (
     CheckedDevice,
@@ -23,7 +25,6 @@ from shelley import yaml2shelley
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
 
 
 def get_args() -> argparse.Namespace:
@@ -55,6 +56,21 @@ def create_parser() -> argparse.ArgumentParser:
         help="export intermediate structures representations",
         action="store_true",
     )
+    parser.add_argument(
+        "--dump-stats",
+        type=argparse.FileType("w"),
+        nargs="?",
+        const=sys.stdout,
+        help="path to CSV file to dump verification statistics",
+    )
+    parser.add_argument(
+        "--dump-timings",
+        type=argparse.FileType("w"),
+        nargs="?",
+        const=sys.stdout,
+        help="path to CSV file to dump verification timings",
+    )
+
     return parser
 
 
@@ -135,6 +151,8 @@ def compile_shelley(
     dst_path: Optional[Path] = None,
     binary: bool = False,
     intermediate: bool = False,
+    dump_stats: Optional[IO[str]] = None,
+    dump_timings: Optional[IO[str]] = None,
 ) -> Path:
     """
 
@@ -163,20 +181,13 @@ def compile_shelley(
     automata_device = shelley2automata(shelley_device)
     dev = AssembledDevice.make(automata_device, known_devices)
 
-    # Print out the timings
-    # The keys of the dictionary are timedelta objects, which we must
-    # convert to strings so that humans can understand what they are
-    timings = asdict(dev.get_timings())
-    for k in timings:
-        # convert timedelta to strings
-        timings[k] = str(timings[k])
-    print(timings)
+    if dump_stats is not None:
+        save_statistics(dump_stats, dev)
 
-    # Print out stats (may take a long time)
-    print(asdict(dev.get_stats()))
+    if dump_timings is not None:
+        save_timings(dump_timings, dev)
 
     if dev.is_valid:
-
         try:
             # test macro traces
             check_traces(dev.external_model_check, shelley_device.test_macro)  # macro

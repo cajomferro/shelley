@@ -1,5 +1,8 @@
-USE_DEVICE_NAME_SEP = ":"
-EXT_SHELLEY_SOURCE_YAML = ["yml", "yaml"]
-EXT_SHELLEY_COMPILED_YAML = "scy"
-EXT_SHELLEY_COMPILED_BIN = "scb"
-VERBOSE = False
+from typing import Optional, List
+from pathlib import Path
+
+USE_DEVICE_NAME_SEP: str = ":"
+EXT_SHELLEY_SOURCE_YAML: List[str] = ["yml", "yaml"]
+EXT_SHELLEY_COMPILED_YAML: str = "scy"
+EXT_SHELLEY_COMPILED_BIN: str = "scb"
+VERBOSE: bool = False

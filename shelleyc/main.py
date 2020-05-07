@@ -13,11 +13,9 @@ logger = logging.getLogger(__name__)
 def main() -> None:
     args: argparse.Namespace = get_args()
 
-    if args.verbosity:
-        settings.VERBOSE = True
+    settings.VERBOSE = args.verbosity
+    if settings.VERBOSE:
         logger.setLevel(logging.DEBUG)
-
-    # src_basename = os.path.splitext(os.path.basename(src_filepath))[0]
 
     logger.debug("Input yaml file: {0}".format(args.device))
 
@@ -28,6 +26,8 @@ def main() -> None:
             args.output,
             binary=args.binary,
             intermediate=args.intermediate,
+            dump_stats=args.dump_stats,
+            dump_timings=args.dump_timings,
         )
     except CompilationError as error:
         if settings.VERBOSE:

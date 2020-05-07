@@ -26,12 +26,15 @@ from karakuri.regular import (
 from dataclasses import dataclass, field
 from karakuri import hml
 from contextlib import contextmanager
+
 # https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
 from timeit import default_timer as timer
 from datetime import timedelta
 
-def get_elapsed_time(start:float) -> timedelta:
+
+def get_elapsed_time(start: float) -> timedelta:
     return timedelta(seconds=timer() - start)
+
 
 @dataclass
 class Device:
@@ -570,23 +573,33 @@ def model_check(
         model = nfa_to_dfa(nfa)
         return not prop.intersection(model).is_empty()
 
+
 @dataclass(frozen=True)
 class Timings:
-    ambiguity_check_time:Optional[timedelta]
-    integration_check_time:Optional[timedelta]
-    total_check_time:timedelta = field(init=False)
+    ambiguity_check_time: Optional[timedelta]
+    integration_check_time: Optional[timedelta]
+    total_check_time: timedelta = field(init=False)
 
     def __post_init__(self):
-        t1 = timedelta(0) if self.ambiguity_check_time is None else self.ambiguity_check_time
-        t2 = timedelta(0) if self.integration_check_time is None else self.integration_check_time
+        t1 = (
+            timedelta(0)
+            if self.ambiguity_check_time is None
+            else self.ambiguity_check_time
+        )
+        t2 = (
+            timedelta(0)
+            if self.integration_check_time is None
+            else self.integration_check_time
+        )
         object.__setattr__(self, "total_check_time", t1 + t2)
 
 
 @dataclass(frozen=True)
 class DeviceStats:
-    macro_size:int
-    micro_size:int
-    micro_max_size:int
+    macro_size: int
+    micro_size: int
+    micro_max_size: int
+
 
 @dataclass
 class AssembledDevice:
@@ -598,13 +611,17 @@ class AssembledDevice:
     def __post_init__(self):
         self.is_valid = self.failure is None
 
-    def get_timings(self):
+    def get_timings(self) -> Timings:
         return Timings(
-            ambiguity_check_time=None if self.internal is None or self.internal.micro is None else self.internal.micro.validation_time,
-            integration_check_time=None if self.internal is None else self.internal.validation_time,
+            ambiguity_check_time=None
+            if self.internal is None or self.internal.micro is None
+            else self.internal.micro.validation_time,
+            integration_check_time=None
+            if self.internal is None
+            else self.internal.validation_time,
         )
 
-    def get_stats(self):
+    def get_stats(self) -> DeviceStats:
         return DeviceStats(
             macro_size=len(self.external.nfa),
             micro_size=0 if self.internal is None else len(self.internal.dfa),

@@ -8,7 +8,6 @@ device:
     - [runValves, sleep]
     - [sleep, start]
     - [sleep, wakeup]
-    - [bad, bad]
   components:
     v: ValveHandlerTimer
     m: Magnetic
@@ -26,9 +25,6 @@ device:
         micro: [v.v1, v.v2, v.v3, v.v4]
     - sleep:
         micro: [lp.setup, lp.sleep]
-    - bad:
-        start: True
-        micro: [v.badbadbad]
 
 test_micro:
   ok:
@@ -36,7 +32,6 @@ test_micro:
     valid2: [m.locked, m.unlocked, lp.cancel, rs.send, rs.ok, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel]
     valid3: [m.locked, m.unlocked, lp.cancel, rs.send, rs.ok, v.v1, v.v2, v.v3, v.v4]
     valid4: [m.locked, m.unlocked, lp.cancel]
-    validbad: [v.badbadbad]
   fail:
     invalid1a: [m.locked, m.unlocked, lp.cancel, rs.send, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing rs.ok on macro behavior update
     invalid1b: [m.locked, m.unlocked, rs.send, rs.ok, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'lp.cancel' on macro behavior 'start'

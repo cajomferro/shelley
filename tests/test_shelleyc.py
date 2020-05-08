@@ -1,10 +1,9 @@
 import os
 import pytest
-from typing import Optional, Mapping, Dict
+from typing import Optional, Mapping
 from pathlib import Path
 import argparse
 
-import shelleyc
 from shelley.automata import (
     Device as AutomataDevice,
     AssembledDevice,
@@ -13,7 +12,7 @@ from shelley.automata import (
 )
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
-from shelley import yaml2shelley
+from shelley import yaml2shelley, shelleyc
 
 EXAMPLES_PATH = Path() / "tests" / "input"
 COMPILED_PATH = Path() / "tests" / "input" / "compiled"

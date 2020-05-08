@@ -12,3 +12,4 @@ _local
 *.gv*
 *.pdf
 shelley.egg-info
+dist

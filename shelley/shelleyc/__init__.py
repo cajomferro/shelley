@@ -7,10 +7,10 @@ from pathlib import Path
 from karakuri import regular
 
 
-from shelleyc import settings
-from shelleyc.exceptions import CompilationError
-from shelleyc.serializer import serialize, deserialize
-from shelleyc.stats import save_statistics, save_timings
+from shelley.shelleyc import settings
+from shelley.shelleyc.exceptions import CompilationError
+from shelley.shelleyc.serializer import serialize, deserialize
+from shelley.shelleyc.stats import save_statistics, save_timings
 
 from shelley.automata import (
     CheckedDevice,

@@ -16,7 +16,7 @@ deps:
 check:
 	$(MYPY) $(MYPY_FLAGS) .
 
-test: check
+test: #check
 	$(PYTEST) $(PYTEST_FLAGS) tests
 
 examples:

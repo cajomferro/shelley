@@ -1,5 +1,4 @@
-from typing import Optional, List
-from pathlib import Path
+from typing import List
 
 USE_DEVICE_NAME_SEP: str = ":"
 EXT_SHELLEY_SOURCE_YAML: List[str] = ["yml", "yaml"]

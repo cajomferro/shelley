@@ -145,15 +145,19 @@ def test_single_device() -> None:
     assert args.output == COMPILED_PATH / "button.scy"
     assert args.uses == []
 
+
 def test_no_output() -> None:
     devicepath: Path = EXAMPLES_PATH / "button.yml"
     outpath: Path = EXAMPLES_PATH / "button.scy"
     parser = shelleyc.create_parser()
-    args : argparse.Namespace = parser.parse_args(["-d", str(devicepath), "-o", str(outpath), "--no-output"])
+    args: argparse.Namespace = parser.parse_args(
+        ["-d", str(devicepath), "-o", str(outpath), "--no-output"]
+    )
     assert args.device == devicepath
     assert args.output == outpath
     assert args.uses == []
     assert args.no_output == True
+
 
 def test_single_device_binary() -> None:
     device = EXAMPLES_PATH / "button.yml"
@@ -276,7 +280,9 @@ def test_not_found_device() -> None:
     args = parser.parse_args(["-d", src_path])
 
     with pytest.raises(FileNotFoundError) as exc_info:
-        shelleyc.compile_shelley(args.device, args.uses, dst_path=args.output, binary=args.binary)
+        shelleyc.compile_shelley(
+            args.device, args.uses, dst_path=args.output, binary=args.binary
+        )
 
 
 def test_compile_buton_ok() -> None:
@@ -285,6 +291,7 @@ def test_compile_buton_ok() -> None:
 
     _remove_compiled_dir()
 
+
 def test_compile_buton_no_output() -> None:
     src_path: Path = EXAMPLES_PATH / "button.yml"
     outpath: Path = COMPILED_PATH / "button.scy"
@@ -292,8 +299,16 @@ def test_compile_buton_no_output() -> None:
     assert src_path.exists()
     assert not outpath.exists()
     parser = shelleyc.create_parser()
-    args: argparse.Namespace = parser.parse_args(["-d", str(src_path), "-o", str(outpath), "--no-output"])
-    shelleyc.compile_shelley(args.device, args.uses, dst_path=args.output, binary=args.binary, no_output=args.no_output)
+    args: argparse.Namespace = parser.parse_args(
+        ["-d", str(src_path), "-o", str(outpath), "--no-output"]
+    )
+    shelleyc.compile_shelley(
+        args.device,
+        args.uses,
+        dst_path=args.output,
+        binary=args.binary,
+        no_output=args.no_output,
+    )
     assert src_path.exists()
     assert not outpath.exists()
     _remove_compiled_dir()

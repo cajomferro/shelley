@@ -8,7 +8,7 @@ def automaton2dot(automaton: Dict) -> graphviz.Digraph:
     :return:
     """
     dot = graphviz.Digraph()
-    dot.graph_attr['rankdir'] = 'LR'
+    dot.graph_attr["rankdir"] = "LR"
     nodes = set(k for edge in automaton["edges"] for k in (edge["src"], edge["dst"]))
     nodes.add(automaton["start_state"])
     nodes.union(automaton["accepted_states"])

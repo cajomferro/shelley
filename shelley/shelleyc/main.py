@@ -28,7 +28,7 @@ def main() -> None:
             intermediate=args.intermediate,
             dump_stats=args.dump_stats,
             dump_timings=args.dump_timings,
-            no_output=args.no_output
+            no_output=args.no_output,
         )
     except CompilationError as error:
         if settings.VERBOSE:

@@ -502,7 +502,7 @@ class AssembledMicroBehavior:
             external_behavior, triggers, all_possible.alphabet
         )
         # Ensure that the all possible behaviors in dev contain the encoded behavior
-        invalid_behavior = internal_behavior.dfa.minimize().subtract(all_possible)
+        invalid_behavior = internal_behavior.dfa.subtract(all_possible)
         # Ready to create the object
         return cls(
             possible=all_possible, impossible=invalid_behavior, micro=internal_behavior,

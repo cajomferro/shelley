@@ -286,7 +286,7 @@ class AmbiguityFailure:
         rest = []
         seq = micro_trace
         for st in dfa.get_derivation(seq):
-            sts = set(get_macro_states(st))
+            sts = set(filter(is_macro_state, st))
             if len(sts) == 1:
                 (m,) = sts
                 rest.append(m.event)
@@ -323,7 +323,7 @@ class MicroBehavior:
     def convert_micro_to_macro(self, seq: Iterable[str]) -> Tuple[MacroTrace, ...]:
         rest: List[MacroTrace] = [()]
         for st in self.dfa.get_derivation(seq):
-            sts = set(get_macro_states(st))
+            sts = set(filter(is_macro_state, st))
             if len(sts) > 0:
                 new_rest = list(x + (st.event,) for x in rest for st in sts)
                 rest = new_rest

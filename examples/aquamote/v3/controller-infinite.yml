@@ -11,7 +11,7 @@ device:
   components:
     v: ValveHandlerTimer
     m: Magnetic
-    radio: Radio
+    radio: WiFiHTTP
     lp: LowPower
   events:
     - start:
@@ -23,8 +23,7 @@ device:
         micro: [lp.wakeup]
     - update:
         final: False
-#        micro: [radio.started, radio.send, radio.ok, radio.stop]
-        micro: [radio.ok]
+        micro: [radio.started, radio.send, radio.ok, radio.stop]
     - runValves:
         final: False
         micro: [v.v1, v.v2, v.v3, v.v4]

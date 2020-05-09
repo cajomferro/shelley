@@ -11,7 +11,7 @@ device:
   components:
     v: ValveHandlerTimer
     m: Magnetic
-    rs: RadioSimplest
+    radio: WiFiHTTP
     lp: LowPower
   events:
     - start:
@@ -23,7 +23,7 @@ device:
         micro: [lp.wakeup]
     - update:
         final: False
-        micro: [rs.send, rs.ok]
+        micro: [radio.started]
     - runValves:
         final: False
         micro: [v.v1, v.v2, v.v3, v.v4]
@@ -33,8 +33,8 @@ device:
 
 test_micro:
   ok:
-    valid1: [m.locked, m.unlocked, lp.cancel, rs.send, rs.ok, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
-    valid2: [m.locked, m.unlocked, lp.cancel, rs.send, rs.ok, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel, rs.send, rs.ok, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
+    valid1: [m.locked, m.unlocked, lp.cancel, radio.started, radio.send, radio.ok, radio.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
+    valid2: [m.locked, m.unlocked, lp.cancel, radio.started, radio.send, radio.ok, radio.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel, radio.started, radio.send, radio.ok, radio.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
   fail:
     invalid1a: [m.locked, m.unlocked, lp.cancel, rs.send, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing rs.ok on macro behavior update
     invalid1b: [m.locked, m.unlocked, rs.send, rs.ok, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'lp.cancel' on macro behavior 'start'

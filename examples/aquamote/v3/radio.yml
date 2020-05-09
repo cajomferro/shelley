@@ -1,0 +1,20 @@
+# https://docs.python.org/3.3/library/http.client.html
+# disconnected event might be external (device error) or internal (user called disconnect() function)
+device:
+  name: Radio
+  components:
+      wh: WiFiHTTP
+  events:
+    - ok:
+        start: True
+        final: True
+        micro: [wh.started, wh.send, wh.ok, wh.stop]
+    - failed:
+        start: True
+        final: True
+        micro: [wh.notconnected]
+  behavior:
+    - [ok, failed]
+    - [ok, ok]
+    - [failed, ok]
+    - [failed, failed]

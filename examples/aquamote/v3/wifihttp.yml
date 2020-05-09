@@ -54,6 +54,7 @@ device:
   behavior:
     - [started, send]
     - [notconnected, started]
+    - [notconnected, notconnected]
     - [send, stopped]
     - [send, ok]
     - [send, error]

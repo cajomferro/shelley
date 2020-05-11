@@ -1,7 +1,34 @@
 device:
   name: Timer
+  events:
+    - started:
+        start: True
+        final: False
+    - canceled:
+        start: False
+        final: True
+    - timeout:
+        start: False
+        final: True
   behavior:
     - [started, canceled]
     - [started, timeout]
     - [canceled, started]
     - [timeout, started]
+
+test_macro:
+  ok:
+    valid1: [started, canceled]
+    valid2: [started, timeout]
+    valid3: [started, timeout, started, canceled]
+    valid4: [started, canceled, started, timeout]
+    valid5: true
+  fail:
+    # This is an incomplete trace, and is therefore reject
+    invalid1: [started]
+    invalid2: [timeout]
+    invalid3: [canceled]
+    invalid4: [started, canceled, started]
+    invalid5: [started, timeout, started]
+    invalid6: [started, timeout, started, canceled, started]
+    invalid7: false

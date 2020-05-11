@@ -73,7 +73,6 @@ test_macro:
     invalid4: [response404]
     invalid5: [response500]
     invalid6: [disconnected]
-    invalid7: [connected_failed]
     get2x_noresponse: [connected, get, get, response200, disconnected] # response200 missing
     get2x_nodisconnected: [connected, get, response404, get, response200] # response200 is not final state, disconnected missing
     invalid_final: [connected]

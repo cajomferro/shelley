@@ -566,7 +566,11 @@ def check_traces(
 def model_check(
     nfa: NFA[Any, str], word_or_formula: Union[List[str], hml.Formula[str]]
 ) -> bool:
+
     if isinstance(word_or_formula, list):
+        for string in word_or_formula:
+            if string not in nfa.alphabet:
+                raise ValueError(f"Undeclared event in trace: '{string}'")
         return nfa.accepts(word_or_formula)
     else:
         prop = nfa_to_dfa(word_or_formula.interpret(nfa.alphabet))

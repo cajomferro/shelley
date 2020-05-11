@@ -23,8 +23,7 @@ from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shelleyc")
 
 
 def get_args() -> argparse.Namespace:
@@ -195,9 +194,11 @@ def compile_shelley(
     if dev.is_valid:
         try:
             # test macro traces
+            logger.debug("Checking macro traces")
             check_traces(dev.external_model_check, shelley_device.test_macro)  # macro
 
             # test micro traces
+            logger.debug("Checking micro traces")
             check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
         except ValueError as err:
             raise CompilationError(str(err))
@@ -208,6 +209,7 @@ def compile_shelley(
             if intermediate is True and dev.internal is not None:
                 micro: AssembledMicroBehavior = dev.internal
 
+                logger.debug("Exporting shuffle dfa")
                 # generate shuffling of all components
                 path = src_path.parent / (
                     src_path.stem + "-shuffle-dfa" + "." + _get_ext(binary)
@@ -217,6 +219,7 @@ def compile_shelley(
                 ).remove_all_sink_states()  # without traps
                 serialize(path, shuffle.as_dict(), binary)
 
+                logger.debug("Exporting internal nfa")
                 # generate internal nfa without epsilon and without traps
                 path = src_path.parent / (
                     src_path.stem + "-internal-nfa" + "." + _get_ext(binary)
@@ -224,6 +227,7 @@ def compile_shelley(
                 nfa = micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
                 serialize(path, nfa.as_dict(), binary)
 
+                logger.debug("Exporting internal dfa")
                 # generate internal minimized dfa without traps (must be converted to NFA)
                 path = src_path.parent / (
                     src_path.stem + "-internal-dfa" + "." + _get_ext(binary)

@@ -7,7 +7,7 @@ from shelley.shelleyc.exceptions import CompilationError
 from shelley.shelleyc import compile_shelley, get_args
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("shelleyc")
 
 
 def main() -> None:

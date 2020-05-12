@@ -4,15 +4,12 @@ from dataclasses import asdict
 
 from shelley.automata import AssembledDevice
 
-
 def save_timings(fp: IO[str], device: AssembledDevice) -> None:
     # Print out the timings
     # The keys of the dictionary are timedelta objects, which we must
     # convert to strings so that humans can understand what they are
     timings = asdict(device.get_timings())
-    for k in timings:
-        # convert timedelta to strings
-        timings[k] = str(timings[k])
+    timings = dict((k, v.total_seconds()) for k, v in timings.items())
     json.dump(timings, fp)
 
 

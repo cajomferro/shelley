@@ -302,7 +302,7 @@ def test_smartbutton_1() -> None:
         "valid2": ["on", "on", "on", "on"],
         "empty": [],
     }
-    assert shelley_device.test_macro["fail"] == {"invalid1": ["off"]}
+    assert shelley_device.test_macro["fail"] == {"invalid1": False}
 
     assert shelley_device.test_micro["ok"] == {
         "valid1": ["b.pressed", "b.released"],

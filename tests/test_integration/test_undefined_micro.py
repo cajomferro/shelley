@@ -11,7 +11,7 @@ from shelley.ast.devices import Device as ShelleyDevice
 from shelley import yaml2shelley
 
 
-simple_yml = """
+simple_yml: str = """
 device:
   name: Simple
   behavior:
@@ -19,7 +19,7 @@ device:
     - [off, on]
 """
 
-composition_yml = """
+composition_yml_src: str = """
 device:
   name: Composition
   components:
@@ -39,6 +39,10 @@ device:
     - [stop, go]
     - [bad, bad]
 
+
+"""
+
+composition_yml_tests = """
 test_macro:
   ok:
     valid1: [go, stop]
@@ -62,6 +66,8 @@ test_micro:
     invalid2: [s.off, s.on]
 """
 
+composition_yml = composition_yml_src + composition_yml_tests
+
 
 def _get_simple_assembled() -> AssembledDevice:
     simple_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(simple_yml)
@@ -72,6 +78,42 @@ def _get_simple_assembled() -> AssembledDevice:
 
 simple_assembled = _get_simple_assembled()
 
+
+def test_bad_tests() -> None:
+    """
+    If the device has components and event is undeclared, it means it doesn't have micro hence is invalid
+    :return:
+    """
+
+    with pytest.raises(ValueError) as exc_info:
+
+        # parse yaml and assemble device
+        known_devices = {"Simple": simple_assembled.external}
+        composition_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
+            composition_yml
+        )
+        composition_aut: AutomataDevice = shelley2automata.shelley2automata(
+            composition_shy
+        )
+
+        composition_assembled = AssembledDevice.make(composition_aut, known_devices)
+
+        assert composition_assembled.is_valid
+        assert type(composition_assembled.external) == CheckedDevice
+
+        # test macro traces
+        check_traces(
+            composition_assembled.external_model_check, composition_shy.test_macro
+        )
+
+        # test micro traces
+        check_traces(
+            composition_assembled.internal_model_check, composition_shy.test_micro
+        )
+
+    assert "Undeclared event in trace: 's.badbadbad'" == str(exc_info.value)
+
+
 # TODO: this test should raise a shelleyc error!
 def test_bad() -> None:
     """
@@ -79,22 +121,13 @@ def test_bad() -> None:
     :return:
     """
 
-    # with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
-    # # introduce bad syntax on good yml
-    # regex = (
-    #     r"    - send:\n"
-    #     r"        micro:\n"
-    #     r"          xor:\n"
-    #     r"            - hc.get\n"
-    #     r"            - hc.post"
-    # )
-    # replace = r""  # send will be auto discovered without specifying micro
-    # composition_yml_bad = re.sub(regex, replace, composition_yml)
+    # TODO: this test should raise a shelleyc error!
+    # with pytest.raises(ValueError) as exc_info:
 
     # parse yaml and assemble device
     known_devices = {"Simple": simple_assembled.external}
     composition_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
-        composition_yml
+        composition_yml_src
     )
     composition_aut: AutomataDevice = shelley2automata.shelley2automata(composition_shy)
 
@@ -110,6 +143,6 @@ def test_bad() -> None:
     check_traces(composition_assembled.internal_model_check, composition_shy.test_micro)
 
     # assert (
-    #     "Event 'send' doesn't specify micro behavior but device has components!"
+    #     "Undeclared event in trace: 's.badbadbad'"
     #     == str(exc_info.value)
     # )

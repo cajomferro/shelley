@@ -17,7 +17,7 @@ test_macro:
     valid2: [on, on, on, on]
     empty: []
   fail:
-    invalid1: [off]
+    invalid1: False
 
 test_micro:
   ok:

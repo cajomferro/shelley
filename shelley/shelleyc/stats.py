@@ -4,6 +4,7 @@ from dataclasses import asdict
 
 from shelley.automata import AssembledDevice
 
+
 def save_timings(fp: IO[str], device: AssembledDevice) -> None:
     # Print out the timings
     # The keys of the dictionary are timedelta objects, which we must

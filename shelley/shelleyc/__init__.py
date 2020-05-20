@@ -237,7 +237,7 @@ def compile_shelley(
         ).remove_all_sink_states()
         serialize(path, nfa.as_dict(), binary)
 
-    else:
+    if not dev.is_valid:
         raise CompilationError("Invalid device: {0}".format(dev.failure))
 
     logger.debug("Compiled file: {0}".format(dst_path))

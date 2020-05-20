@@ -1,5 +1,59 @@
 import graphviz
 from typing import Dict
+from graphviz import Digraph
+from karakuri import regular
+
+def render_state(name):
+    if isinstance(name, int):
+        return f"q_{{ {name} }}"
+
+def render_edge(name):
+    return f'{{\\tt {name} }}'
+
+def dfa2tex(data,
+          get_graph=None,
+          state_name=render_state,
+          transition_name=render_edge,
+          initial_orientation=None,
+          fig_only=False,
+          char_sep=","):
+    m = regular.NFA.from_dict(data)
+    dot = Digraph()
+    dot.attr(d2tfigpreamble=r'\tikzstyle{every state}=[thick,fill=gray!20]',
+             rankdir="LR")
+    dot.node_attr["style"] = "state"
+    dot.edge_attr["lblstyle"] = "auto,align=left"
+    dot.edge_attr["style"] = "thick"
+    if fig_only:
+        dot.attr(d2toptions='--figonly')
+    else:
+        dot.attr(d2tdocpreamble=r'\usetikzlibrary{automata}')
+
+
+    initial = ["initial"]
+    if initial_orientation is not None:
+        initial.append(initial_orientation)
+
+    nodes, edges = get_graph(m) if get_graph is not None else m.as_graph()
+
+    for state in sorted(nodes):
+        kwargs = dict()
+        style = ['state']
+        if m.accepted_states(state):
+            style.append('accepting')
+        if state == m.start_state:
+            style.append(" ".join(initial))
+        kwargs["style"] = ",".join(style)
+        dot.node(state_name(state), **kwargs)
+
+    for ((src, dst), chars) in sorted(edges.items()):
+        chars = sorted(map(transition_name, chars))
+        dot.edge(state_name(src),
+                 state_name(dst),
+                 label=char_sep.join(chars),
+                 **kwargs)
+
+    return dot
 
 
 def automaton2dot(automaton: Dict) -> graphviz.Digraph:

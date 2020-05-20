@@ -206,7 +206,7 @@ def compile_shelley(
     if not no_output:
         serialize(dst_path, dev.external.nfa.as_dict(), binary)
 
-    if intermediate is True and dev.internal is not None:
+    if intermediate and dev.internal is not None:
         micro: AssembledMicroBehavior = dev.internal
 
         logger.debug("Exporting shuffle dfa")

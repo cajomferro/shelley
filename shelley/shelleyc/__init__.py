@@ -74,6 +74,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="validate only, do not create compiled files, useful for benchmarking",
         action="store_true",
     )
+    parser.add_argument(
+        "--fast-check",
+        help="perform a fast check (no error reporting)",
+        action="store_true",
+    )
     return parser
 
 
@@ -157,6 +162,7 @@ def compile_shelley(
     dump_stats: Optional[IO[str]] = None,
     dump_timings: Optional[IO[str]] = None,
     no_output: bool = False,
+    fast_check: bool = False,
 ) -> Path:
     """
 
@@ -183,7 +189,7 @@ def compile_shelley(
         shelley_device, uses, binary
     )
     automata_device = shelley2automata(shelley_device)
-    dev = AssembledDevice.make(automata_device, known_devices)
+    dev = AssembledDevice.make(automata_device, known_devices, fast_check=fast_check)
 
     if dump_stats is not None:
         save_statistics(dump_stats, dev)

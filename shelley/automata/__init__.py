@@ -13,7 +13,7 @@ from typing import (
     AbstractSet,
     Union,
     cast,
-    TypeVar
+    TypeVar,
 )
 from karakuri.regular import (
     NFA,
@@ -299,9 +299,13 @@ class AmbiguityFailure:
         if macro_traces is None:
             raise ValueError("Ambiguity expected")
         return cls(micro_trace, macro_traces)
-S = TypeVar('S')
-A = TypeVar('A')
-def project_nfa(nfa: NFA[S, A], alphabet:Collection[A]) -> NFA[S,A]:
+
+
+S = TypeVar("S")
+A = TypeVar("A")
+
+
+def project_nfa(nfa: NFA[S, A], alphabet: Collection[A]) -> NFA[S, A]:
     old_tsx = nfa.transition_func
     remaining = set(nfa.alphabet)
     remaining.difference_update(alphabet)
@@ -311,6 +315,7 @@ def project_nfa(nfa: NFA[S, A], alphabet:Collection[A]) -> NFA[S,A]:
             result = set()
             for other_char in remaining:
                 result.update(old_tsx(st, other_char))
+            result.update(old_tsx(st, None))
             return result
         elif char in alphabet:
             return old_tsx(st, char)
@@ -323,6 +328,7 @@ def project_nfa(nfa: NFA[S, A], alphabet:Collection[A]) -> NFA[S,A]:
         start_state=nfa.start_state,
         accepted_states=nfa.accepted_states,
     )
+
 
 @dataclass
 class MicroBehavior:
@@ -429,6 +435,11 @@ class MicroBehavior:
 
 @dataclass
 class TriggerIntegrationFailure:
+    pass
+
+
+@dataclass
+class FullTriggerIntegrationFailure(TriggerIntegrationFailure):
     micro_trace: MicroTrace
     macro_trace: MacroTrace
     component_errors: Dict[str, Tuple[MacroTrace, int]]
@@ -479,15 +490,42 @@ class Projection:
         self.is_valid = self.component.contains(self.projected)
         self.validation_time = get_elapsed_time(start)
 
+    def __equals__(self, other: Any) -> bool:
+        if other is None or not isinstance(other, Projection):
+            return False
+        return self.projected == other.projected and self.component == other.component
+
+    def is_equivalent_to(self, other: "Projection") -> bool:
+        return self.projected.is_equivalent_to(
+            other.projected
+        ) and self.component.is_equivalent_to(other.component)
+
     @classmethod
-    def make(cls, micro:MicroBehavior, component:NFA[Any,str]) -> "Projection":
+    def make(cls, micro: NFA[Any, str], component: NFA[Any, str]) -> "Projection":
         """
         Restrict the language of a micro behavior using a component's alphabet
         """
         return cls(
             component=nfa_to_dfa(component),
-            projected=nfa_to_dfa(project_nfa(micro.nfa, component.alphabet))
+            projected=nfa_to_dfa(project_nfa(micro, component.alphabet)),
         )
+
+
+@dataclass
+class BriefTriggerIntegrationFailure(TriggerIntegrationFailure):
+    micro_trace: MicroTrace
+
+    @classmethod
+    def make(cls, proj: Projection) -> "TriggerIntegrationFailure":
+        invalid = proj.projected.subtract(proj.component)
+        # We could not assemble the device
+        # We compute the smallest error
+        dec_seq: Optional[MicroTrace] = invalid.get_shortest_string()
+        assert (
+            dec_seq is not None
+        ), "dec_seq can only be none if failure is empty, which cannot be"
+        return cls(micro_trace=dec_seq)
+
 
 @dataclass
 class AssembledMicroBehavior2:
@@ -519,7 +557,9 @@ class AssembledMicroBehavior2:
         # Fill in the failure field
         failure: Optional[TFailure] = self.micro.failure
         if failure is None and not self.is_valid:
-            raise NotImplementedError()
+            for proj in self.projections:
+                if not proj.is_valid:
+                    return BriefTriggerIntegrationFailure.make(proj)
         return failure
 
     @classmethod
@@ -537,9 +577,7 @@ class AssembledMicroBehavior2:
         for c in components:
             alphabet.update(c.alphabet)
         micro = MicroBehavior.make(external_behavior, triggers, alphabet)
-        projs = list(
-            Projection.make(micro=micro, component=x) for x in components
-        )
+        projs = list(Projection.make(micro=micro.nfa, component=c) for c in components)
         return cls(projections=projs, micro=micro)
 
 
@@ -570,7 +608,7 @@ class AssembledMicroBehavior:
         # Fill in the failure field
         failure: Optional[TFailure] = self.micro.failure
         if failure is None and not self.is_valid:
-            failure = TriggerIntegrationFailure.make(
+            failure = FullTriggerIntegrationFailure.make(
                 self.micro, self.impossible, known_devices, components
             )
         return failure

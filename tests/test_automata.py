@@ -2,6 +2,7 @@ import pytest
 from typing import Dict, cast, List, Any
 from karakuri.regular import (
     NFA,
+    DFA,
     regex_to_nfa,
     Union,
     Char,
@@ -18,7 +19,8 @@ from shelley.automata import (
     AssembledDevice,
     CheckedDevice,
     AssembledMicroBehavior2,
-    project_nfa
+    project_nfa,
+    Projection,
 )
 from shelley import automata
 
@@ -659,7 +661,7 @@ def test_invalid_behavior_1() -> None:
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
-    assert isinstance(given.failure, automata.TriggerIntegrationFailure)
+    assert isinstance(given.failure, automata.FullTriggerIntegrationFailure)
     assert given.failure.macro_trace == (LEVEL1,)
     assert given.failure.micro_trace == (B_P, B_P, LA_ON, T_S)
     assert given.failure.component_errors == {
@@ -670,16 +672,7 @@ def test_invalid_behavior_1() -> None:
 def test_invalid_behavior_2() -> None:
     triggers: Dict[str, Regex[str]] = {
         LEVEL1: Concat.from_list(
-            map(
-                Char,
-                [
-                    B_R,  # <--- ERROR HERE: should be B_P
-                    B_P,  # <--- ERROR HERE: should be B_P
-                    B_R,  # <--- ERROR HERE: should be B_P
-                    LA_ON,
-                    T_S,
-                ],
-            )
+            map(Char, [B_R, B_P, B_R, LA_ON, T_S,],)  # <--- ERROR HERE: should be B_P
         ),
         LEVEL2: Concat.from_list(
             [Char(B_P), Char(B_R), And(Char(T_C), Char(LB_ON)), Char(T_S),]
@@ -707,51 +700,257 @@ def test_invalid_behavior_2() -> None:
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
-    assert isinstance(given.failure, automata.TriggerIntegrationFailure)
+    assert isinstance(given.failure, automata.FullTriggerIntegrationFailure)
     assert given.failure.micro_trace == (B_R, B_P, B_R, LA_ON, T_S)
     assert given.failure.macro_trace == (LEVEL1,)
     assert given.failure.component_errors == {
         "b": (("released", "pressed", "released"), 0),
     }
-    fast_check = AssembledDevice.make(device, get_basic_known_devices(), fast_check=True)
+    fast_check = AssembledDevice.make(
+        device, get_basic_known_devices(), fast_check=True
+    )
     assert isinstance(fast_check.internal, AssembledMicroBehavior2)
-    print(fast_check.internal.projections[0].projected)
+    print(fast_check.internal.projections[0].projected.minimize())
     assert not fast_check.is_valid
+
+
+def test_projection_2() -> None:
+    expected_nfa = NFA[int, str](
+        alphabet=["b.pressed", "b.released"],
+        transition_func=NFA.transition_table(
+            {(0, "b.released"): frozenset([1]), (1, "b.pressed"): frozenset([2]),}
+        ),
+        accepted_states=[0, 1, 2],
+        start_state=0,
+    )
+
+    def tsx(st, a):
+        if st == 0:
+            if a == B_P:
+                return 3
+            elif a == B_R:
+                return 1
+        elif st == 1:
+            if a == B_P:
+                return 2
+            elif a == B_R:
+                return 3
+        elif st == 2 or st == 3:
+            if a == B_P or a == B_R:
+                return 3
+        raise ValueError(st, a)
+
+    expected_dfa = DFA[int, str]([B_P, B_R], tsx, 0, [0, 1, 2])
+    assert expected_dfa.is_equivalent_to(nfa_to_dfa(expected_nfa))
+    assert [B_R, B_P] in expected_dfa
+    assert [B_P, B_R] not in expected_dfa
+    assert expected_nfa == project_nfa(expected_nfa, expected_nfa.alphabet)
+
+
+def test_projection_class() -> None:
+    micro_nfa = NFA[int, str](
+        alphabet=["b.pressed", "b.released"],
+        transition_func=NFA.transition_table(
+            {(0, "b.released"): frozenset([1]), (1, "b.pressed"): frozenset([2]),}
+        ),
+        accepted_states=[0, 1, 2],
+        start_state=0,
+    )
+    micro_dfa = nfa_to_dfa(micro_nfa)
+    button_nfa = NFA[int, str](
+        alphabet=["b.pressed", "b.released"],
+        transition_func=NFA.transition_table(
+            {(0, "b.pressed"): frozenset([1]), (1, "b.released"): frozenset([0]),}
+        ),
+        accepted_states=[0, 1, 2],
+        start_state=0,
+    )
+    button_dfa = nfa_to_dfa(button_nfa)
+    # We build a projection directly
+    proj = Projection.make(micro_nfa, button_nfa)
+    assert project_nfa(micro_nfa, button_nfa.alphabet) == micro_nfa
+    assert proj.component == button_dfa, "component was set incorrectly"
+    assert proj.projected == micro_dfa, "projected was set incorrectly"
+    assert not proj.is_valid
+
+
+def test_invalid_behavior_4() -> None:
+    triggers: Dict[str, Regex[str]] = {
+        LEVEL1: Char(B_R),
+        LEVEL2: Char(B_P),
+    }
+    device = Device(
+        start_events=["level1"],
+        final_events=["level1", "level2",],
+        events=["level1", "level2",],
+        behavior=[("level1", "level2"),],
+        components={"b": "Button",},
+        triggers=triggers,
+    )
+    given = AssembledDevice.make(device, get_basic_known_devices())
+    assert not given.is_valid
+    ################################################
+    # Let us make sure we get the internal behaviour
+    # This is the expected internal NFA:
+    micro_nfa = NFA[int, str](
+        alphabet=["b.pressed", "b.released"],
+        transition_func=NFA.transition_table(
+            {(0, "b.released"): frozenset([1]), (1, "b.pressed"): frozenset([2]),}
+        ),
+        accepted_states=[0, 1, 2],
+        start_state=0,
+    )
+    micro_dfa = nfa_to_dfa(micro_nfa)
+    assert given.internal is not None
+    assert given.internal.dfa.is_equivalent_to(micro_dfa)
+    ################################################
+    # Now that we checked our assumptions let us setup the fast algorithm:
+    fast_check = AssembledDevice.make(
+        device, get_basic_known_devices(), fast_check=True
+    )
+    assert isinstance(fast_check.internal, AssembledMicroBehavior2)
+    ################################################
+    # 1. The internal behaviour should remain the same
+    assert fast_check.internal.dfa.is_equivalent_to(
+        micro_dfa
+    ), "micro behaviour with fast-check should remain the same"
+    ################################################
+    # 2. We now test the projected button
+    proj_btn = fast_check.internal.projections[0]
+    ################################################
+    # 2.1 We test if componet for button was correctly initialized
+    # This is the expected NFA of the button container:
+    button_nfa = NFA[int, str](
+        alphabet=["b.pressed", "b.released"],
+        transition_func=NFA.transition_table(
+            {(0, "b.pressed"): frozenset([1]), (1, "b.released"): frozenset([0]),}
+        ),
+        accepted_states=[0, 1, 2],
+        start_state=0,
+    )
+    button_dfa = nfa_to_dfa(button_nfa)
+    ################################################
+    # We build a projection directly
+    # Test if the component was set correctly
+    print("INTERNAL DFA:", given.internal.dfa.minimize())
+    print(
+        "PROJECTED INTERNAL:",
+        nfa_to_dfa(project_nfa(given.internal.nfa, button_nfa.alphabet)).minimize(),
+    )
+    assert project_nfa(given.internal.nfa, button_nfa.alphabet) == given.internal.nfa
+    assert proj_btn.component.is_equivalent_to(
+        button_dfa
+    ), "component was set incorrectly"
+    print("Projected:", proj_btn.projected.minimize())
+    print("Expected:", micro_dfa.minimize())
+    assert proj_btn.projected.is_equivalent_to(
+        micro_dfa
+    ), "projected was set incorrectly"
+    converted = nfa_to_dfa(project_nfa(micro_nfa, button_nfa.alphabet))
+    print("Converted", converted.minimize())
+    assert converted.is_equivalent_to(proj_btn.projected)
+    ################################################
+    # 2.3 Next we test the projected DFA
+    assert proj_btn.projected.is_equivalent_to(
+        micro_dfa
+    ), "projection should not alter the behaviour"
+    ################################################
+    # Finally the result should not be valid
+    assert not fast_check.is_valid
+
+
+def test_invalid_behavior_3() -> None:
+    # Projected triggers to Button
+    triggers: Dict[str, Regex[str]] = {
+        LEVEL1: Concat.from_list(
+            map(Char, [B_R, B_P, B_R,],)  # <--- ERROR HERE: should be B_P
+        ),
+        LEVEL2: Concat.from_list([Char(B_P), Char(B_R),]),
+        STANDBY2: Concat.from_list(map(Char, [B_P, B_R])),
+    }
+
+    device = Device(
+        start_events=["level1"],
+        final_events=["level1", "level2", "standby2"],
+        events=["level1", "level2", "standby2"],
+        behavior=[
+            ("level1", "level2"),
+            ("level2", "standby2"),
+            ("standby2", "level1"),
+        ],
+        components={"b": "Button",},
+        triggers=triggers,
+    )
+    given = AssembledDevice.make(device, get_basic_known_devices())
+    assert not given.is_valid
+    fast_check = AssembledDevice.make(
+        device, get_basic_known_devices(), fast_check=True
+    )
+    assert isinstance(fast_check.internal, AssembledMicroBehavior2)
+    print(fast_check.internal.projections[0].projected.minimize())
+    assert not fast_check.is_valid
+
+
+def test_valid_behavior_3() -> None:
+    # Projected triggers to Button
+    triggers: Dict[str, Regex[str]] = {
+        LEVEL1: Concat.from_list(map(Char, [B_P, B_R, B_P, B_R,],)),
+    }
+
+    device = Device(
+        start_events=["level1"],
+        final_events=["level1"],
+        events=["level1"],
+        behavior=[],
+        components={"b": "Button",},
+        triggers=triggers,
+    )
+    given = AssembledDevice.make(device, get_basic_known_devices())
+    assert given.is_valid
+    fast_check = AssembledDevice.make(
+        device, get_basic_known_devices(), fast_check=True
+    )
+    assert isinstance(fast_check.internal, AssembledMicroBehavior2)
+    assert fast_check.is_valid
+
 
 def test_projection() -> None:
     n1 = NFA(
         alphabet="abc",
-        transition_func=NFA.transition_table({
-            (0, 'a'): frozenset([0, 2]),
-            (0, 'b'): frozenset([3]),
-            (0, 'c'): frozenset([1]),
-            (1, 'a'): frozenset([0]),
-            (1, 'c'): frozenset([3]),
-            (2, 'b'): frozenset([3]),
-            (3, 'a'): frozenset([3]),
-            (3, 'c'): frozenset([1]),
-        }),
+        transition_func=NFA.transition_table(
+            {
+                (0, "a"): frozenset([0, 2]),
+                (0, "b"): frozenset([3]),
+                (0, "c"): frozenset([1]),
+                (1, "a"): frozenset([0]),
+                (1, "c"): frozenset([3]),
+                (2, "b"): frozenset([3]),
+                (3, "a"): frozenset([3]),
+                (3, "c"): frozenset([1]),
+            }
+        ),
         start_state=0,
-        accepted_states=[2]
+        accepted_states=[2],
     )
     given = project_nfa(n1, "ac")
     expected = NFA(
         alphabet="abc",
-        transition_func=NFA.transition_table({
-            (0, 'a'): frozenset([0, 2]),
-            (0, None): frozenset([3]),
-            (0, 'c'): frozenset([1]),
-            (1, 'a'): frozenset([0]),
-            (1, 'c'): frozenset([3]),
-            (2, None): frozenset([3]),
-            (3, 'a'): frozenset([3]),
-            (3, 'c'): frozenset([1]),
-        }),
+        transition_func=NFA.transition_table(
+            {
+                (0, "a"): frozenset([0, 2]),
+                (0, None): frozenset([3]),
+                (0, "c"): frozenset([1]),
+                (1, "a"): frozenset([0]),
+                (1, "c"): frozenset([3]),
+                (2, None): frozenset([3]),
+                (3, "a"): frozenset([3]),
+                (3, "c"): frozenset([1]),
+            }
+        ),
         start_state=0,
-        accepted_states=[2]
+        accepted_states=[2],
     )
     assert expected == given
-
 
 
 def test_device_led_and_button() -> None:

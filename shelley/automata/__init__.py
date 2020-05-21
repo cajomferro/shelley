@@ -13,6 +13,7 @@ from typing import (
     AbstractSet,
     Union,
     cast,
+    TypeVar
 )
 from karakuri.regular import (
     NFA,
@@ -298,7 +299,30 @@ class AmbiguityFailure:
         if macro_traces is None:
             raise ValueError("Ambiguity expected")
         return cls(micro_trace, macro_traces)
+S = TypeVar('S')
+A = TypeVar('A')
+def project_nfa(nfa: NFA[S, A], alphabet:Collection[A]) -> NFA[S,A]:
+    old_tsx = nfa.transition_func
+    remaining = set(nfa.alphabet)
+    remaining.difference_update(alphabet)
 
+    def tsx(st, char):
+        if char is None:
+            result = set()
+            for other_char in remaining:
+                result.update(old_tsx(st, other_char))
+            return result
+        elif char in alphabet:
+            return old_tsx(st, char)
+        else:
+            return frozenset()
+
+    return NFA(
+        alphabet=alphabet,
+        transition_func=tsx,
+        start_state=nfa.start_state,
+        accepted_states=nfa.accepted_states,
+    )
 
 @dataclass
 class MicroBehavior:
@@ -307,29 +331,6 @@ class MicroBehavior:
     failure: Optional[AmbiguityFailure] = field(init=False)
     is_valid: bool = field(init=False)
     validation_time: timedelta = field(init=False)
-
-    def project(self, component: NFA[Any, str]) -> NFA[Any, str]:
-        old_tsx = self.nfa.transition_func
-        remaining = set(self.nfa.alphabet)
-        remaining.difference_update(component.alphabet)
-
-        def tsx(st, char):
-            if char is None:
-                result = set()
-                for other_char in remaining:
-                    result.update(old_tsx(st, other_char))
-                return result
-            elif char not in component.alphabet:
-                return frozenset()
-            else:
-                return old_tsx(st, char)
-
-        return NFA(
-            alphabet=component.alphabet,
-            transition_func=tsx,
-            start_state=self.nfa.start_state,
-            accepted_states=self.nfa.accepted_states,
-        )
 
     def __post_init__(self) -> None:
         start = timer()
@@ -478,6 +479,15 @@ class Projection:
         self.is_valid = self.component.contains(self.projected)
         self.validation_time = get_elapsed_time(start)
 
+    @classmethod
+    def make(cls, micro:MicroBehavior, component:NFA[Any,str]) -> "Projection":
+        """
+        Restrict the language of a micro behavior using a component's alphabet
+        """
+        return cls(
+            component=nfa_to_dfa(component),
+            projected=nfa_to_dfa(project_nfa(micro.nfa, component.alphabet))
+        )
 
 @dataclass
 class AssembledMicroBehavior2:
@@ -528,10 +538,9 @@ class AssembledMicroBehavior2:
             alphabet.update(c.alphabet)
         micro = MicroBehavior.make(external_behavior, triggers, alphabet)
         projs = list(
-            Projection(component=nfa_to_dfa(x), projected=nfa_to_dfa(micro.project(x)))
-            for x in components
+            Projection.make(micro=micro, component=x) for x in components
         )
-        return cls(projections=projs, micro=micro,)
+        return cls(projections=projs, micro=micro)
 
 
 @dataclass

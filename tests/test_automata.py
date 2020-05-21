@@ -1,5 +1,5 @@
 import pytest
-from typing import Dict, cast, List
+from typing import Dict, cast, List, Any
 from karakuri.regular import (
     NFA,
     regex_to_nfa,
@@ -13,7 +13,13 @@ from karakuri.regular import (
     NIL,
     Regex,
 )
-from shelley.automata import Device, AssembledDevice, CheckedDevice
+from shelley.automata import (
+    Device,
+    AssembledDevice,
+    CheckedDevice,
+    AssembledMicroBehavior2,
+    project_nfa
+)
 from shelley import automata
 
 B_P: str = "b.pressed"
@@ -707,6 +713,45 @@ def test_invalid_behavior_2() -> None:
     assert given.failure.component_errors == {
         "b": (("released", "pressed", "released"), 0),
     }
+    fast_check = AssembledDevice.make(device, get_basic_known_devices(), fast_check=True)
+    assert isinstance(fast_check.internal, AssembledMicroBehavior2)
+    print(fast_check.internal.projections[0].projected)
+    assert not fast_check.is_valid
+
+def test_projection() -> None:
+    n1 = NFA(
+        alphabet="abc",
+        transition_func=NFA.transition_table({
+            (0, 'a'): frozenset([0, 2]),
+            (0, 'b'): frozenset([3]),
+            (0, 'c'): frozenset([1]),
+            (1, 'a'): frozenset([0]),
+            (1, 'c'): frozenset([3]),
+            (2, 'b'): frozenset([3]),
+            (3, 'a'): frozenset([3]),
+            (3, 'c'): frozenset([1]),
+        }),
+        start_state=0,
+        accepted_states=[2]
+    )
+    given = project_nfa(n1, "ac")
+    expected = NFA(
+        alphabet="abc",
+        transition_func=NFA.transition_table({
+            (0, 'a'): frozenset([0, 2]),
+            (0, None): frozenset([3]),
+            (0, 'c'): frozenset([1]),
+            (1, 'a'): frozenset([0]),
+            (1, 'c'): frozenset([3]),
+            (2, None): frozenset([3]),
+            (3, 'a'): frozenset([3]),
+            (3, 'c'): frozenset([1]),
+        }),
+        start_state=0,
+        accepted_states=[2]
+    )
+    assert expected == given
+
 
 
 def test_device_led_and_button() -> None:

@@ -11,7 +11,7 @@ valve.scy: valve.yml
 	time $(SHELLEYC) -d $< -o valve.scy
 
 %.scy: %.yml valve.scy
-	time $(SHELLEYC) -d $< -u valve.scy\:Valve -o $@
+	$(SHELLEYC) --dump-timings -d $< -u valve.scy\:Valve -o $@
 	test -f $<
 
 %.scy: %.yml

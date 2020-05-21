@@ -493,6 +493,7 @@ class AssembledMicroBehavior2:
             if not x.is_valid:
                 invalid_count += 1
             self.validation_time += x.validation_time
+        self.is_valid = invalid_count == 0
 
     @property
     def dfa(self) -> DFA[Any, str]:
@@ -699,7 +700,7 @@ class DeviceStats:
 @dataclass
 class AssembledDevice:
     external: CheckedDevice
-    internal: Optional[AssembledMicroBehavior]
+    internal: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]]
     is_valid: bool = field(init=False)
     failure: Optional[Union[AmbiguityFailure, TriggerIntegrationFailure]]
 
@@ -717,6 +718,8 @@ class AssembledDevice:
         )
 
     def get_stats(self) -> DeviceStats:
+        if isinstance(self.internal, AssembledMicroBehavior2):
+            raise NotImplementedError()
         return DeviceStats(
             macro_size=len(self.external.nfa),
             micro_size=0 if self.internal is None else len(self.internal.dfa),
@@ -737,7 +740,10 @@ class AssembledDevice:
 
     @classmethod
     def make(
-        cls, dev: Device, known_devices: Mapping[str, CheckedDevice]
+        cls,
+        dev: Device,
+        known_devices: Mapping[str, CheckedDevice],
+        fast_check: bool = False,
     ) -> "AssembledDevice":
         """
         In order to assemble a device, the following steps are required:
@@ -755,18 +761,26 @@ class AssembledDevice:
             dev.behavior, dev.start_events, dev.final_events, dev.events
         )
         ext = CheckedDevice(external_behavior)
-        micro = None
+        micro: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]] = None
         fail = None
         if len(dev.components) > 0:
             # Since there are components, we must assemble them
             components_behaviors: List[NFA] = list(
                 dict(build_components(dev.components, known_devices)).values()
             )
-            micro = AssembledMicroBehavior.make(
-                components=components_behaviors,
-                external_behavior=external_behavior,
-                triggers=dev.triggers,
-            )
+            if fast_check:
+                micro = AssembledMicroBehavior2.make(
+                    components=components_behaviors,
+                    external_behavior=external_behavior,
+                    triggers=dev.triggers,
+                )
+            else:
+                micro = AssembledMicroBehavior.make(
+                    components=components_behaviors,
+                    external_behavior=external_behavior,
+                    triggers=dev.triggers,
+                )
+
             fail = micro.get_failure(known_devices, dev.components)
 
         return cls(external=ext, internal=micro, failure=fail)

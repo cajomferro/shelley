@@ -206,8 +206,12 @@ def compile_shelley(
     if not no_output:
         serialize(dst_path, dev.external.nfa.as_dict(), binary)
 
-    if intermediate and dev.internal is not None:
-        micro: AssembledMicroBehavior = dev.internal
+    if (
+        intermediate
+        and dev.internal is not None
+        and isinstance(dev.internal, AssembledMicroBehavior)
+    ):
+        micro = dev.internal
 
         logger.debug("Exporting shuffle dfa")
         # generate shuffling of all components

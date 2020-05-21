@@ -308,6 +308,29 @@ class MicroBehavior:
     is_valid: bool = field(init=False)
     validation_time: timedelta = field(init=False)
 
+    def project(self, component: NFA[Any, str]) -> NFA[Any, str]:
+        old_tsx = self.nfa.transition_func
+        remaining = set(self.nfa.alphabet)
+        remaining.difference_update(component.alphabet)
+
+        def tsx(st, char):
+            if char is None:
+                result = set()
+                for other_char in remaining:
+                    result.update(old_tsx(st, other_char))
+                return result
+            elif char not in component.alphabet:
+                return frozenset()
+            else:
+                return old_tsx(st, char)
+
+        return NFA(
+            alphabet=component.alphabet,
+            transition_func=tsx,
+            start_state=self.nfa.start_state,
+            accepted_states=self.nfa.accepted_states,
+        )
+
     def __post_init__(self) -> None:
         start = timer()
         self.dfa = nfa_to_dfa(self.nfa)
@@ -444,11 +467,79 @@ TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure]
 
 
 @dataclass
+class Projection:
+    projected: DFA[Any, str]
+    component: DFA[Any, str]
+    is_valid: bool = field(init=False)
+    validation_time: timedelta = field(init=False)
+
+    def __post_init__(self) -> None:
+        start = timer()
+        self.is_valid = self.component.contains(self.projected)
+        self.validation_time = get_elapsed_time(start)
+
+
+@dataclass
+class AssembledMicroBehavior2:
+    projections: List[Projection]
+    micro: MicroBehavior
+    is_valid: bool = field(init=False)
+    validation_time: timedelta = field(init=False)
+
+    def __post_init__(self) -> None:
+        invalid_count = 0
+        self.validation_time = timedelta()
+        for x in self.projections:
+            if not x.is_valid:
+                invalid_count += 1
+            self.validation_time += x.validation_time
+
+    @property
+    def dfa(self) -> DFA[Any, str]:
+        return self.micro.dfa
+
+    @property
+    def nfa(self) -> NFA[DecodedState, str]:
+        return self.micro.nfa
+
+    def get_failure(
+        self, known_devices: TKnownDevices, components: Dict[str, str]
+    ) -> Optional[TFailure]:
+        # Fill in the failure field
+        failure: Optional[TFailure] = self.micro.failure
+        if failure is None and not self.is_valid:
+            raise NotImplementedError()
+        return failure
+
+    @classmethod
+    def make(
+        cls,
+        components: List[NFA[Any, str]],
+        external_behavior: NFA[Any, str],
+        triggers: Dict[str, Regex[str]],
+    ) -> "AssembledMicroBehavior2":
+        if len(components) == 0:
+            raise ValueError(
+                "Should not be creating an internal behavior with 0 components"
+            )
+        alphabet: Set[str] = set()
+        for c in components:
+            alphabet.update(c.alphabet)
+        micro = MicroBehavior.make(external_behavior, triggers, alphabet)
+        projs = list(
+            Projection(component=nfa_to_dfa(x), projected=nfa_to_dfa(micro.project(x)))
+            for x in components
+        )
+        return cls(projections=projs, micro=micro,)
+
+
+@dataclass
 class AssembledMicroBehavior:
     possible: DFA[Any, str]
     impossible: DFA[Any, str]
     micro: MicroBehavior
     is_valid: bool = field(init=False)
+    validation_time: timedelta = field(init=False)
 
     def __post_init__(self) -> None:
         start = timer()

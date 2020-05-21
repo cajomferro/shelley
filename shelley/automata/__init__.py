@@ -628,8 +628,8 @@ class AssembledDevice:
     def get_stats(self) -> DeviceStats:
         return DeviceStats(
             macro_size=len(self.external.nfa),
-            micro_size=0 if self.internal is None else len(self.internal.dfa),
-            micro_max_size=0 if self.internal is None else len(self.internal.possible),
+            micro_size=0 if self.internal is None else len(self.internal.dfa.minimize()),
+            micro_max_size=0 if self.internal is None else len(self.internal.possible.minimize()),
         )
 
     def internal_model_check(

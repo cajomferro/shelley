@@ -13,6 +13,7 @@ from typing import (
     AbstractSet,
     Union,
     cast,
+    TypeVar
 )
 from karakuri.regular import (
     NFA,
@@ -298,7 +299,30 @@ class AmbiguityFailure:
         if macro_traces is None:
             raise ValueError("Ambiguity expected")
         return cls(micro_trace, macro_traces)
+S = TypeVar('S')
+A = TypeVar('A')
+def project_nfa(nfa: NFA[S, A], alphabet:Collection[A]) -> NFA[S,A]:
+    old_tsx = nfa.transition_func
+    remaining = set(nfa.alphabet)
+    remaining.difference_update(alphabet)
 
+    def tsx(st, char):
+        if char is None:
+            result = set()
+            for other_char in remaining:
+                result.update(old_tsx(st, other_char))
+            return result
+        elif char in alphabet:
+            return old_tsx(st, char)
+        else:
+            return frozenset()
+
+    return NFA(
+        alphabet=alphabet,
+        transition_func=tsx,
+        start_state=nfa.start_state,
+        accepted_states=nfa.accepted_states,
+    )
 
 @dataclass
 class MicroBehavior:
@@ -444,11 +468,88 @@ TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure]
 
 
 @dataclass
+class Projection:
+    projected: DFA[Any, str]
+    component: DFA[Any, str]
+    is_valid: bool = field(init=False)
+    validation_time: timedelta = field(init=False)
+
+    def __post_init__(self) -> None:
+        start = timer()
+        self.is_valid = self.component.contains(self.projected)
+        self.validation_time = get_elapsed_time(start)
+
+    @classmethod
+    def make(cls, micro:MicroBehavior, component:NFA[Any,str]) -> "Projection":
+        """
+        Restrict the language of a micro behavior using a component's alphabet
+        """
+        return cls(
+            component=nfa_to_dfa(component),
+            projected=nfa_to_dfa(project_nfa(micro.nfa, component.alphabet))
+        )
+
+@dataclass
+class AssembledMicroBehavior2:
+    projections: List[Projection]
+    micro: MicroBehavior
+    is_valid: bool = field(init=False)
+    validation_time: timedelta = field(init=False)
+
+    def __post_init__(self) -> None:
+        invalid_count = 0
+        self.validation_time = timedelta()
+        for x in self.projections:
+            if not x.is_valid:
+                invalid_count += 1
+            self.validation_time += x.validation_time
+        self.is_valid = invalid_count == 0
+
+    @property
+    def dfa(self) -> DFA[Any, str]:
+        return self.micro.dfa
+
+    @property
+    def nfa(self) -> NFA[DecodedState, str]:
+        return self.micro.nfa
+
+    def get_failure(
+        self, known_devices: TKnownDevices, components: Dict[str, str]
+    ) -> Optional[TFailure]:
+        # Fill in the failure field
+        failure: Optional[TFailure] = self.micro.failure
+        if failure is None and not self.is_valid:
+            raise NotImplementedError()
+        return failure
+
+    @classmethod
+    def make(
+        cls,
+        components: List[NFA[Any, str]],
+        external_behavior: NFA[Any, str],
+        triggers: Dict[str, Regex[str]],
+    ) -> "AssembledMicroBehavior2":
+        if len(components) == 0:
+            raise ValueError(
+                "Should not be creating an internal behavior with 0 components"
+            )
+        alphabet: Set[str] = set()
+        for c in components:
+            alphabet.update(c.alphabet)
+        micro = MicroBehavior.make(external_behavior, triggers, alphabet)
+        projs = list(
+            Projection.make(micro=micro, component=x) for x in components
+        )
+        return cls(projections=projs, micro=micro)
+
+
+@dataclass
 class AssembledMicroBehavior:
     possible: DFA[Any, str]
     impossible: DFA[Any, str]
     micro: MicroBehavior
     is_valid: bool = field(init=False)
+    validation_time: timedelta = field(init=False)
 
     def __post_init__(self) -> None:
         start = timer()
@@ -608,7 +709,7 @@ class DeviceStats:
 @dataclass
 class AssembledDevice:
     external: CheckedDevice
-    internal: Optional[AssembledMicroBehavior]
+    internal: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]]
     is_valid: bool = field(init=False)
     failure: Optional[Union[AmbiguityFailure, TriggerIntegrationFailure]]
 
@@ -626,6 +727,8 @@ class AssembledDevice:
         )
 
     def get_stats(self) -> DeviceStats:
+        if isinstance(self.internal, AssembledMicroBehavior2):
+            raise NotImplementedError()
         return DeviceStats(
             macro_size=len(self.external.nfa),
             micro_size=0 if self.internal is None else len(self.internal.dfa.minimize()),
@@ -646,7 +749,10 @@ class AssembledDevice:
 
     @classmethod
     def make(
-        cls, dev: Device, known_devices: Mapping[str, CheckedDevice]
+        cls,
+        dev: Device,
+        known_devices: Mapping[str, CheckedDevice],
+        fast_check: bool = False,
     ) -> "AssembledDevice":
         """
         In order to assemble a device, the following steps are required:
@@ -664,18 +770,26 @@ class AssembledDevice:
             dev.behavior, dev.start_events, dev.final_events, dev.events
         )
         ext = CheckedDevice(external_behavior)
-        micro = None
+        micro: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]] = None
         fail = None
         if len(dev.components) > 0:
             # Since there are components, we must assemble them
             components_behaviors: List[NFA] = list(
                 dict(build_components(dev.components, known_devices)).values()
             )
-            micro = AssembledMicroBehavior.make(
-                components=components_behaviors,
-                external_behavior=external_behavior,
-                triggers=dev.triggers,
-            )
+            if fast_check:
+                micro = AssembledMicroBehavior2.make(
+                    components=components_behaviors,
+                    external_behavior=external_behavior,
+                    triggers=dev.triggers,
+                )
+            else:
+                micro = AssembledMicroBehavior.make(
+                    components=components_behaviors,
+                    external_behavior=external_behavior,
+                    triggers=dev.triggers,
+                )
+
             fail = micro.get_failure(known_devices, dev.components)
 
         return cls(external=ext, internal=micro, failure=fail)

@@ -74,6 +74,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="validate only, do not create compiled files, useful for benchmarking",
         action="store_true",
     )
+    parser.add_argument(
+        "--fast-check",
+        help="perform a fast check (no error reporting)",
+        action="store_true",
+    )
     return parser
 
 
@@ -157,6 +162,7 @@ def compile_shelley(
     dump_stats: Optional[IO[str]] = None,
     dump_timings: Optional[IO[str]] = None,
     no_output: bool = False,
+    fast_check: bool = False,
 ) -> Path:
     """
 
@@ -183,7 +189,7 @@ def compile_shelley(
         shelley_device, uses, binary
     )
     automata_device = shelley2automata(shelley_device)
-    dev = AssembledDevice.make(automata_device, known_devices)
+    dev = AssembledDevice.make(automata_device, known_devices, fast_check=fast_check)
 
     if dump_stats is not None:
         save_statistics(dump_stats, dev)
@@ -203,41 +209,45 @@ def compile_shelley(
         except ValueError as err:
             raise CompilationError(str(err))
 
-        if not no_output:
-            serialize(dst_path, dev.external.nfa.as_dict(), binary)
+    if not no_output:
+        serialize(dst_path, dev.external.nfa.as_dict(), binary)
 
-            if intermediate is True and dev.internal is not None:
-                micro: AssembledMicroBehavior = dev.internal
+    if (
+        intermediate
+        and dev.internal is not None
+        and isinstance(dev.internal, AssembledMicroBehavior)
+    ):
+        micro = dev.internal
 
-                logger.debug("Exporting shuffle dfa")
-                # generate shuffling of all components
-                path = src_path.parent / (
-                    src_path.stem + "-shuffle-dfa" + "." + _get_ext(binary)
-                )
-                shuffle = regular.dfa_to_nfa(
-                    micro.possible
-                ).remove_all_sink_states()  # without traps
-                serialize(path, shuffle.as_dict(), binary)
+        logger.debug("Exporting shuffle dfa")
+        # generate shuffling of all components
+        path = src_path.parent / (
+            src_path.stem + "-shuffle-dfa" + "." + _get_ext(binary)
+        )
+        shuffle = regular.dfa_to_nfa(
+            micro.possible
+        ).remove_all_sink_states()  # without traps
+        serialize(path, shuffle.as_dict(), binary)
 
-                logger.debug("Exporting internal nfa")
-                # generate internal nfa without epsilon and without traps
-                path = src_path.parent / (
-                    src_path.stem + "-internal-nfa" + "." + _get_ext(binary)
-                )
-                nfa = micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
-                serialize(path, nfa.as_dict(), binary)
+        logger.debug("Exporting internal nfa")
+        # generate internal nfa without epsilon and without traps
+        path = src_path.parent / (
+            src_path.stem + "-internal-nfa" + "." + _get_ext(binary)
+        )
+        nfa = micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
+        serialize(path, nfa.as_dict(), binary)
 
-                logger.debug("Exporting internal dfa")
-                # generate internal minimized dfa without traps (must be converted to NFA)
-                path = src_path.parent / (
-                    src_path.stem + "-internal-dfa" + "." + _get_ext(binary)
-                )
-                nfa = regular.dfa_to_nfa(
-                    cast(regular.DFA[Any, str], micro.dfa.minimize())
-                ).remove_all_sink_states()
-                serialize(path, nfa.as_dict(), binary)
+        logger.debug("Exporting internal dfa")
+        # generate internal minimized dfa without traps (must be converted to NFA)
+        path = src_path.parent / (
+            src_path.stem + "-internal-dfa" + "." + _get_ext(binary)
+        )
+        nfa = regular.dfa_to_nfa(
+            cast(regular.DFA[Any, str], micro.dfa.minimize())
+        ).remove_all_sink_states()
+        serialize(path, nfa.as_dict(), binary)
 
-    else:
+    if not dev.is_valid:
         raise CompilationError("Invalid device: {0}".format(dev.failure))
 
     logger.debug("Compiled file: {0}".format(dst_path))

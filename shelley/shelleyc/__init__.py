@@ -4,8 +4,6 @@ import os
 from typing import List, Dict, Optional, Any, cast, IO
 import argparse
 from pathlib import Path
-from karakuri import regular
-
 
 from shelley.shelleyc import settings
 from shelley.shelleyc.exceptions import CompilationError
@@ -78,6 +76,9 @@ def create_parser() -> argparse.ArgumentParser:
         "--fast-check",
         help="perform a fast check (no error reporting)",
         action="store_true",
+    )
+    parser.add_argument(
+        "--skip-testing", help="do not check traces", action="store_true",
     )
     return parser
 
@@ -153,6 +154,14 @@ def _get_ext(binary: bool = False) -> str:
     )
 
 
+def _export_internal(src_path, target_name, data, binary) -> None:
+    logger.debug("Exporting {0}".format(target_name))
+    path = src_path.parent / (
+        src_path.stem + "-" + target_name + "." + _get_ext(binary)
+    )
+    serialize(path, data, binary)
+
+
 def compile_shelley(
     src_path: Path,
     uses: List[str],
@@ -163,6 +172,7 @@ def compile_shelley(
     dump_timings: Optional[IO[str]] = None,
     no_output: bool = False,
     fast_check: bool = False,
+    skip_testing: bool = False,
 ) -> Path:
     """
 
@@ -200,16 +210,20 @@ def compile_shelley(
         save_timings(dump_timings, dev)
 
     if dev.is_valid:
-        try:
-            # test macro traces
-            logger.debug("Checking macro traces")
-            check_traces(dev.external_model_check, shelley_device.test_macro)  # macro
+        if skip_testing:
+            logger.debug("Skipping tests")
+        else:
+            try:
+                # test macro traces
+                logger.debug("Testing macro traces")
+                check_traces(dev.external_model_check, shelley_device.test_macro)  # macro
 
-            # test micro traces
-            logger.debug("Checking micro traces")
-            check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
-        except ValueError as err:
-            raise CompilationError(str(err))
+                # test micro traces
+                logger.debug("Testing micro traces")
+                check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
+            except ValueError as err:
+                raise CompilationError(str(err))
+
 
     if not no_output:
         serialize(dst_path, dev.external.nfa.as_dict(), binary)
@@ -219,35 +233,22 @@ def compile_shelley(
         and dev.internal is not None
         and isinstance(dev.internal, AssembledMicroBehavior)
     ):
-        micro = dev.internal
+        logger.debug("Generating internal structures...")
 
-        logger.debug("Exporting shuffle dfa")
-        # generate shuffling of all components
-        path = src_path.parent / (
-            src_path.stem + "-shuffle-dfa" + "." + _get_ext(binary)
-        )
-        shuffle = regular.dfa_to_nfa(
-            micro.possible.minimize()
-        ).remove_all_sink_states()  # without traps
-        serialize(path, shuffle.as_dict(), binary)
+        data = dev.device_export.get_shuffle_dfa_minimized().as_dict()
+        _export_internal(src_path, "shuffle-dfa-minimized", data, binary)
 
-        logger.debug("Exporting internal nfa")
-        # generate internal nfa without epsilon and without traps
-        path = src_path.parent / (
-            src_path.stem + "-internal-nfa" + "." + _get_ext(binary)
-        )
-        nfa = micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
-        serialize(path, nfa.as_dict(), binary)
+        data = dev.device_export.get_shuffle_dfa_minimized_no_traps().as_dict()
+        _export_internal(src_path, "shuffle-dfa-minimized-no-traps", data, binary)
 
-        logger.debug("Exporting internal dfa")
-        # generate internal minimized dfa without traps (must be converted to NFA)
-        path = src_path.parent / (
-            src_path.stem + "-internal-dfa" + "." + _get_ext(binary)
-        )
-        nfa = regular.dfa_to_nfa(
-            cast(regular.DFA[Any, str], micro.dfa.minimize())
-        ).remove_all_sink_states()
-        serialize(path, nfa.as_dict(), binary)
+        data = dev.device_export.get_micro_dfa_minimized().as_dict()
+        _export_internal(src_path, "micro-dfa-minimized", data, binary)
+
+        data = dev.device_export.get_micro_nfa_no_epsilon_no_traps().as_dict()
+        _export_internal(src_path, "micro-nfa-no-epsilon-no-traps", data, binary)
+
+        data = dev.device_export.get_micro_dfa_minimized_no_traps().as_dict()
+        _export_internal(src_path, "micro-dfa-minimized-no-traps", data, binary)
 
     if not dev.is_valid:
         raise CompilationError("Invalid device: {0}".format(dev.failure))

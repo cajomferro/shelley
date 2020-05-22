@@ -3,12 +3,12 @@ SHELLEYV = shelleyv
 
 all: scy pdf
 
-pdf: simple_button.pdf led_strict.pdf desklamp.pdf desklamp-shuffle-dfa desklamp-internal-nfa desklamp-internal-dfa
+pdf: simple_button.pdf led_strict.pdf desklamp.pdf desklamp-micro-dfa-minimized.pdf desklamp-micro-dfa-minimized-no-traps.pdf desklamp-micro-nfa-no-epsilon-no-traps.pdf desklamp-shuffle-dfa-minimized.pdf desklamp-shuffle-dfa-minimized-no-traps.pdf
 
 scy: desklamp.scy
 
 desklamp.scy: desklamp.yml led_strict.scy simple_button.scy
-	$(SHELLEYC) -i -d $< -u simple_button.scy\:SimpleButton led_strict.scy\:LedStrict
+	$(SHELLEYC) -i -d $< -u simple_button.scy\:SimpleButton led_strict.scy\:LedStrict -v
 
 %.scy: %.yml
 	$(SHELLEYC) -d $< -o $@
@@ -20,17 +20,8 @@ desklamp.scy: desklamp.yml led_strict.scy simple_button.scy
 %.pdf: %.gv
 	dot -Tpdf -o $@ $<
 
-desklamp-shuffle-dfa:
-	$(SHELLEYV) -o desklamp-shuffle-dfa.gv desklamp-shuffle-dfa.scy
-	dot -Tpdf -o desklamp-shuffle-dfa.pdf desklamp-shuffle-dfa.gv
-
-desklamp-internal-nfa:
-	$(SHELLEYV) -o desklamp-internal-nfa.gv desklamp-internal-nfa.scy
-	dot -Tpdf -o desklamp-internal-nfa.pdf desklamp-internal-nfa.gv
-
-desklamp-internal-dfa:
-	$(SHELLEYV) -o desklamp-internal-dfa.gv desklamp-internal-dfa.scy
-	dot -Tpdf -o desklamp-internal-dfa.pdf desklamp-internal-dfa.gv
+desklamp-%.scy:
+	test -f $<
 
 clean:
 	rm -f *.scy *.pdf *.gv

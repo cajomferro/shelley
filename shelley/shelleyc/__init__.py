@@ -77,6 +77,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="perform a fast check (no error reporting)",
         action="store_true",
     )
+    parser.add_argument(
+        "--skip-testing", help="do not check traces", action="store_true",
+    )
     return parser
 
 
@@ -169,6 +172,7 @@ def compile_shelley(
     dump_timings: Optional[IO[str]] = None,
     no_output: bool = False,
     fast_check: bool = False,
+    skip_testing: bool = False,
 ) -> Path:
     """
 
@@ -206,16 +210,20 @@ def compile_shelley(
         save_timings(dump_timings, dev)
 
     if dev.is_valid:
-        try:
-            # test macro traces
-            logger.debug("Checking macro traces")
-            check_traces(dev.external_model_check, shelley_device.test_macro)  # macro
+        if skip_testing:
+            logger.debug("Skipping tests")
+        else:
+            try:
+                # test macro traces
+                logger.debug("Testing macro traces")
+                check_traces(dev.external_model_check, shelley_device.test_macro)  # macro
 
-            # test micro traces
-            logger.debug("Checking micro traces")
-            check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
-        except ValueError as err:
-            raise CompilationError(str(err))
+                # test micro traces
+                logger.debug("Testing micro traces")
+                check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
+            except ValueError as err:
+                raise CompilationError(str(err))
+
 
     if not no_output:
         serialize(dst_path, dev.external.nfa.as_dict(), binary)

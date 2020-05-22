@@ -225,7 +225,7 @@ def compile_shelley(
             src_path.stem + "-shuffle-dfa" + "." + _get_ext(binary)
         )
         shuffle = regular.dfa_to_nfa(
-            micro.possible
+            micro.possible.minimize()
         ).remove_all_sink_states()  # without traps
         serialize(path, shuffle.as_dict(), binary)
 

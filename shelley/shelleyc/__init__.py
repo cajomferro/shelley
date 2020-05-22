@@ -233,6 +233,8 @@ def compile_shelley(
         and dev.internal is not None
         and isinstance(dev.internal, AssembledMicroBehavior)
     ):
+        logger.debug("Generating internal structures...")
+
         data = dev.device_export.get_shuffle_dfa_minimized().as_dict()
         _export_internal(src_path, "shuffle-dfa-minimized", data, binary)
 

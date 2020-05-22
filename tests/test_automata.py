@@ -20,7 +20,8 @@ from shelley.automata import (
     CheckedDevice,
     AssembledMicroBehavior2,
     project_nfa,
-    Projection,
+    ComponentUsage,
+    pad_trace,
 )
 from shelley import automata
 
@@ -661,12 +662,66 @@ def test_invalid_behavior_1() -> None:
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
-    assert isinstance(given.failure, automata.FullTriggerIntegrationFailure)
+    assert isinstance(given.failure, automata.TriggerIntegrationFailure)
     assert given.failure.macro_trace == (LEVEL1,)
     assert given.failure.micro_trace == (B_P, B_P, LA_ON, T_S)
     assert given.failure.component_errors == {
         "b": (("pressed", "pressed"), 1),
     }
+
+
+def test_pad_trace_1() -> None:
+    given = pad_trace(tuple(["a", "b"]), ["c"])
+    expected = NFA(
+        alphabet=["a", "b", "c"],
+        transition_func=NFA.transition_table(
+            {
+                (0, "a"): frozenset([1]),
+                (1, "b"): frozenset([2]),
+                (0, "c"): frozenset([0]),
+                (1, "c"): frozenset([1]),
+                (2, "c"): frozenset([2]),
+            }
+        ),
+        start_state=0,
+        accepted_states=[2],
+    )
+    print("given:", given)
+    print("expected:", expected)
+    assert given == expected
+
+
+def test_pad_trace_2() -> None:
+    given = pad_trace(tuple(["a", "b"]), ["c", "d"])
+    expected = NFA(
+        alphabet=["a", "b", "c", "d"],
+        transition_func=NFA.transition_table(
+            {
+                (0, "a"): frozenset([1]),
+                (1, "b"): frozenset([2]),
+                (0, "c"): frozenset([0]),
+                (1, "c"): frozenset([1]),
+                (2, "c"): frozenset([2]),
+                (0, "d"): frozenset([0]),
+                (1, "d"): frozenset([1]),
+                (2, "d"): frozenset([2]),
+            }
+        ),
+        start_state=0,
+        accepted_states=[2],
+    )
+    print("given:", given)
+    print("expected:", expected)
+    assert given == expected
+
+
+def test_pad_trace_3() -> None:
+    # 1. Compute the set of characters to pad
+    pad_alpha = {T_C, T_S, T_T, LA_OFF, LA_ON, LB_OFF, LB_ON}
+    # 2. Find the set of all padded strings
+    trace_dfa = nfa_to_dfa(pad_trace(trace=(B_R, B_P, B_R), alphabet=pad_alpha))
+    # 3. Find the set of padded strings that are in the micro
+    assert [B_R, B_P, B_R, LA_ON, T_S,] in trace_dfa
 
 
 def test_invalid_behavior_2() -> None:
@@ -700,7 +755,7 @@ def test_invalid_behavior_2() -> None:
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
-    assert isinstance(given.failure, automata.FullTriggerIntegrationFailure)
+    assert isinstance(given.failure, automata.TriggerIntegrationFailure)
     assert given.failure.micro_trace == (B_R, B_P, B_R, LA_ON, T_S)
     assert given.failure.macro_trace == (LEVEL1,)
     assert given.failure.component_errors == {
@@ -710,8 +765,59 @@ def test_invalid_behavior_2() -> None:
         device, get_basic_known_devices(), fast_check=True
     )
     assert isinstance(fast_check.internal, AssembledMicroBehavior2)
-    print(fast_check.internal.projections[0].projected.minimize())
+    print(fast_check.internal.usages[0].projected.minimize())
     assert not fast_check.is_valid
+
+
+def test_get_traces_from_components() -> None:
+    triggers: Dict[str, Regex[str]] = {
+        LEVEL1: Concat.from_list(
+            map(Char, [B_R, B_P, B_R, LA_ON, T_S,],)  # <--- ERROR HERE: should be B_P
+        ),
+        LEVEL2: Concat.from_list(
+            [Char(B_P), Char(B_R), And(Char(T_C), Char(LB_ON)), Char(T_S),]
+        ),
+        STANDBY1: concat(Char(T_T), Char(LA_OFF)),
+        STANDBY2: concat(
+            Union(Concat.from_list(map(Char, [B_P, B_R, T_C])), Char(T_T)),
+            And(Char(LB_OFF), Char(LA_OFF)),
+        ),
+    }
+    device = Device(
+        start_events=["level1"],
+        final_events=["level1", "level2", "standby1", "standby2"],
+        events=["level1", "level2", "standby1", "standby2"],
+        behavior=[
+            ("level1", "standby1"),
+            ("level1", "level2"),
+            ("level2", "standby2"),
+            ("standby1", "level1"),
+            ("standby2", "level1"),
+        ],
+        components={"b": "Button", "ledA": "Led", "ledB": "Led", "t": "Timer",},
+        triggers=triggers,
+    )
+    given = AssembledDevice.make(device, get_basic_known_devices())
+    assert not given.is_valid
+    assert given.internal is not None
+    micro = given.internal.micro
+
+    # 1. Compute the set of characters to pad
+    pad_alpha = {T_C, T_S, T_T, LA_OFF, LA_ON, LB_OFF, LB_ON}
+    # 2. Find the set of all padded strings
+    trace_dfa = nfa_to_dfa(pad_trace(trace=(B_R, B_P, B_R), alphabet=pad_alpha))
+    # 3. Find the set of padded strings that are in the micro
+    assert [B_R, B_P, B_R, LA_ON, T_S,] in trace_dfa
+
+    invalid1 = micro.get_traces_from_component_trace({B_R, B_P}, (B_R, B_P, B_R))
+    assert [B_R, B_P, B_R, LA_ON, T_S,] in invalid1
+    assert not invalid1.is_empty()
+    invalid2 = invalid1.set_alphabet(micro.dfa.alphabet)
+    assert [B_R, B_P, B_R, LA_ON, T_S,] in invalid2
+    assert not invalid2.is_empty()
+    invalid3 = micro.dfa.intersection(invalid2)
+    assert [B_R, B_P, B_R, LA_ON, T_S,] in invalid3
+    assert not invalid3.is_empty()
 
 
 def test_projection_2() -> None:
@@ -767,7 +873,7 @@ def test_projection_class() -> None:
     )
     button_dfa = nfa_to_dfa(button_nfa)
     # We build a projection directly
-    proj = Projection.make(micro_nfa, button_nfa)
+    proj = ComponentUsage.make(micro_nfa, button_nfa)
     assert project_nfa(micro_nfa, button_nfa.alphabet) == micro_nfa
     assert proj.component == button_dfa, "component was set incorrectly"
     assert proj.projected == micro_dfa, "projected was set incorrectly"
@@ -816,7 +922,7 @@ def test_invalid_behavior_4() -> None:
     ), "micro behaviour with fast-check should remain the same"
     ################################################
     # 2. We now test the projected button
-    proj_btn = fast_check.internal.projections[0]
+    proj_btn = fast_check.internal.usages[0]
     ################################################
     # 2.1 We test if componet for button was correctly initialized
     # This is the expected NFA of the button container:
@@ -832,22 +938,14 @@ def test_invalid_behavior_4() -> None:
     ################################################
     # We build a projection directly
     # Test if the component was set correctly
-    print("INTERNAL DFA:", given.internal.dfa.minimize())
-    print(
-        "PROJECTED INTERNAL:",
-        nfa_to_dfa(project_nfa(given.internal.nfa, button_nfa.alphabet)).minimize(),
-    )
     assert project_nfa(given.internal.nfa, button_nfa.alphabet) == given.internal.nfa
     assert proj_btn.component.is_equivalent_to(
         button_dfa
     ), "component was set incorrectly"
-    print("Projected:", proj_btn.projected.minimize())
-    print("Expected:", micro_dfa.minimize())
     assert proj_btn.projected.is_equivalent_to(
         micro_dfa
     ), "projected was set incorrectly"
     converted = nfa_to_dfa(project_nfa(micro_nfa, button_nfa.alphabet))
-    print("Converted", converted.minimize())
     assert converted.is_equivalent_to(proj_btn.projected)
     ################################################
     # 2.3 Next we test the projected DFA
@@ -887,7 +985,6 @@ def test_invalid_behavior_3() -> None:
         device, get_basic_known_devices(), fast_check=True
     )
     assert isinstance(fast_check.internal, AssembledMicroBehavior2)
-    print(fast_check.internal.projections[0].projected.minimize())
     assert not fast_check.is_valid
 
 

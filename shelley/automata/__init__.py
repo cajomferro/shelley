@@ -390,20 +390,16 @@ class MicroBehavior:
                 rest = new_rest
         return tuple(rest)
 
-    def component_trace_to_micro(
+    def get_traces_from_component_trace(
         self, component_alpha: Collection[str], component_seq: MicroTrace
-    ) -> MicroTrace:
+    ) -> DFA[Any, str]:
         # 1. Compute the set of characters to pad
         pad_alpha = set(self.dfa.alphabet)
         pad_alpha.difference_update(component_alpha)
         # 2. Find the set of all padded strings
-        trace_dfa = nfa_to_dfa(pad_trace(component_seq, pad_alpha))
+        trace_dfa = nfa_to_dfa(pad_trace(trace=component_seq, alphabet=pad_alpha))
         # 3. Find the set of padded strings that are in the micro
-        result = self.dfa.intersection(trace_dfa.set_alphabet(self.dfa.alphabet))
-        # 4. Get the shortest string
-        seq = result.get_shortest_string()
-        assert seq is not None
-        return seq
+        return self.dfa.intersection(trace_dfa.set_alphabet(self.dfa.alphabet))
 
     @classmethod
     def make(
@@ -480,52 +476,7 @@ class MicroBehavior:
 
 
 @dataclass
-class TriggerIntegrationFailure:
-    pass
-
-
-@dataclass
-class FullTriggerIntegrationFailure(TriggerIntegrationFailure):
-    micro_trace: MicroTrace
-    macro_trace: MacroTrace
-    component_errors: Dict[str, Tuple[MacroTrace, int]]
-
-    @classmethod
-    def make(
-        cls,
-        micro: MicroBehavior,
-        dfa: DFA[Any, str],
-        known_devices: TKnownDevices,
-        components: Dict[str, str],
-    ) -> "TriggerIntegrationFailure":
-        # We could not assemble the device
-        # We compute the smallest error
-        dec_seq: Optional[MicroTrace] = dfa.get_shortest_string()
-        assert (
-            dec_seq is not None
-        ), "dec_seq can only be none if failure is empty, which cannot be"
-        # There should be a unique macro trace
-        (macro_trace,) = micro.convert_micro_to_macro(dec_seq)
-        # We demutex by device
-        errs = dict()
-        for component, seq in demultiplex(dec_seq).items():
-            ch_dev = known_devices[components[component]]
-            if not ch_dev.nfa.accepts(seq):
-                dfa = nfa_to_dfa(ch_dev.nfa).minimize()
-                idx = dfa.get_divergence_index(seq)
-                assert (
-                    idx is not None
-                ), "The index can only be None if the behavior is empty, which should never happen"
-                errs[component] = (tuple(seq), idx)
-
-        return cls(dec_seq, macro_trace, errs)
-
-
-TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure]
-
-
-@dataclass
-class Projection:
+class ComponentUsage:
     projected: DFA[Any, str]
     component: DFA[Any, str]
     is_valid: bool = field(init=False)
@@ -537,17 +488,33 @@ class Projection:
         self.validation_time = get_elapsed_time(start)
 
     def __equals__(self, other: Any) -> bool:
-        if other is None or not isinstance(other, Projection):
+        if other is None or not isinstance(other, ComponentUsage):
             return False
         return self.projected == other.projected and self.component == other.component
 
-    def is_equivalent_to(self, other: "Projection") -> bool:
+    def is_equivalent_to(self, other: "ComponentUsage") -> bool:
         return self.projected.is_equivalent_to(
             other.projected
         ) and self.component.is_equivalent_to(other.component)
 
+    @property
+    def invalid(self) -> DFA[Any, str]:
+        """Returns the set of invalid traces."""
+        return self.projected.subtract(self.component)
+
+    def get_smallest_error(self) -> MicroTrace:
+        """
+        Returns the smallest error issued by this component's usage.
+        """
+        if self.is_valid:
+            raise ValueError("Can only be called if projection is invalid.")
+        # 2. Get the shortest string therein
+        component_seq: Optional[MicroTrace] = self.invalid.get_shortest_string()
+        assert component_seq is not None
+        return component_seq
+
     @classmethod
-    def make(cls, micro: NFA[Any, str], component: NFA[Any, str]) -> "Projection":
+    def make(cls, micro: NFA[Any, str], component: NFA[Any, str]) -> "ComponentUsage":
         """
         Restrict the language of a micro behavior using a component's alphabet
         """
@@ -558,24 +525,80 @@ class Projection:
 
 
 @dataclass
-class BriefTriggerIntegrationFailure(TriggerIntegrationFailure):
+class TriggerIntegrationFailure:
     micro_trace: MicroTrace
+    macro_trace: MacroTrace
+    component_errors: Dict[str, Tuple[MacroTrace, int]]
 
     @classmethod
-    def make(cls, proj: Projection) -> "TriggerIntegrationFailure":
-        invalid = proj.projected.subtract(proj.component)
+    def make(
+        cls,
+        micro: MicroBehavior,
+        invalid: DFA[Any, str],
+        known_devices: TKnownDevices,
+        components: Dict[str, str],
+    ) -> "TriggerIntegrationFailure":
         # We could not assemble the device
         # We compute the smallest error
         dec_seq: Optional[MicroTrace] = invalid.get_shortest_string()
         assert (
             dec_seq is not None
         ), "dec_seq can only be none if failure is empty, which cannot be"
-        return cls(micro_trace=dec_seq)
+        # There should be a unique macro trace
+        (macro_trace,) = micro.convert_micro_to_macro(dec_seq)
+        # We demutex by device
+        errs = dict()
+        for component, seq in demultiplex(dec_seq).items():
+            ch_dev = known_devices[components[component]]
+            if not ch_dev.nfa.accepts(seq):
+                invalid = nfa_to_dfa(ch_dev.nfa).minimize()
+                idx = invalid.get_divergence_index(seq)
+                assert (
+                    idx is not None
+                ), "The index can only be None if the behavior is empty, which should never happen"
+                errs[component] = (tuple(seq), idx)
+
+        return cls(dec_seq, macro_trace, errs)
+
+    @classmethod
+    def from_component_usage(
+        cls,
+        usage: ComponentUsage,
+        micro: MicroBehavior,
+        known_devices: TKnownDevices,
+        components: Dict[str, str],
+    ) -> "TriggerIntegrationFailure":
+        if usage.is_valid:
+            raise ValueError(f"Expecting an invalid projection, but got: {usage}")
+        # 1. Get an invalid usage
+        component_seq = usage.get_smallest_error()
+        # 2. Find the name of the affected component
+        component: Optional[str] = None
+        for elem in component_seq:
+            component = elem.split(".")[0]
+            break
+        assert component is not None
+        # 3. Get the component's alphabet
+        component_alpha = set(
+            component + "." + x
+            for x in known_devices[components[component]].nfa.alphabet
+        )
+        # 4. Get the set of invalid traces
+        invalid = micro.get_traces_from_component_trace(component_alpha, component_seq)
+        return cls.make(
+            micro=micro,
+            invalid=invalid,
+            known_devices=known_devices,
+            components=components,
+        )
+
+
+TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure]
 
 
 @dataclass
 class AssembledMicroBehavior2:
-    projections: List[Projection]
+    usages: List[ComponentUsage]
     micro: MicroBehavior
     is_valid: bool = field(init=False)
     validation_time: timedelta = field(init=False)
@@ -583,7 +606,7 @@ class AssembledMicroBehavior2:
     def __post_init__(self) -> None:
         invalid_count = 0
         self.validation_time = timedelta()
-        for x in self.projections:
+        for x in self.usages:
             if not x.is_valid:
                 invalid_count += 1
             self.validation_time += x.validation_time
@@ -603,9 +626,14 @@ class AssembledMicroBehavior2:
         # Fill in the failure field
         failure: Optional[TFailure] = self.micro.failure
         if failure is None and not self.is_valid:
-            for proj in self.projections:
-                if not proj.is_valid:
-                    return BriefTriggerIntegrationFailure.make(proj)
+            for usage in self.usages:
+                if not usage.is_valid:
+                    return TriggerIntegrationFailure.from_component_usage(
+                        usage=usage,
+                        micro=self.micro,
+                        known_devices=known_devices,
+                        components=components,
+                    )
         return failure
 
     @classmethod
@@ -623,8 +651,10 @@ class AssembledMicroBehavior2:
         for c in components:
             alphabet.update(c.alphabet)
         micro = MicroBehavior.make(external_behavior, triggers, alphabet)
-        projs = list(Projection.make(micro=micro.nfa, component=c) for c in components)
-        return cls(projections=projs, micro=micro)
+        usages = list(
+            ComponentUsage.make(micro=micro.nfa, component=c) for c in components
+        )
+        return cls(usages=usages, micro=micro)
 
 
 @dataclass
@@ -654,7 +684,7 @@ class AssembledMicroBehavior:
         # Fill in the failure field
         failure: Optional[TFailure] = self.micro.failure
         if failure is None and not self.is_valid:
-            failure = FullTriggerIntegrationFailure.make(
+            failure = TriggerIntegrationFailure.make(
                 self.micro, self.impossible, known_devices, components
             )
         return failure

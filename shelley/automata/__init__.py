@@ -21,6 +21,7 @@ from karakuri.regular import (
     regex_to_nfa,
     Regex,
     nfa_to_dfa,
+    dfa_to_nfa,
     DFA,
     SubstHandler,
 )
@@ -737,11 +738,67 @@ class Timings:
         object.__setattr__(self, "total_check_time", t1 + t2)
 
 
-@dataclass(frozen=True)
-class DeviceStats:
-    macro_size: int
-    micro_size: int
-    micro_max_size: int
+@dataclass
+class DeviceExport:
+    macro: CheckedDevice = None
+    micro: AssembledMicroBehavior = None
+    micro_dfa_minimized: DFA[Any, str] = None
+    micro_dfa_minimized_no_traps: NFA[Any, str] = None
+    shuffle_dfa_minimized: DFA[Any, str] = None
+    shuffle_dfa_minimized_no_traps: NFA[Any, str] = None
+
+    def __init__(self, macro: CheckedDevice, micro: AssembledMicroBehavior):
+        self.macro = macro
+        self.micro = micro
+
+    def stats(self) -> Dict:
+        return {
+            "macro_size": len(self.get_macro_nfa()),
+            "micro_size:": 0
+            if self.micro is None
+            else len(self.get_micro_dfa_minimized()),
+            "micro_max_size:": 0
+            if self.micro is None
+            else len(self.get_shuffle_dfa_minimized()),
+        }
+
+    def get_micro_dfa(self) -> DFA[Any, str]:
+        return self.micro.dfa
+
+    def get_shuffle_dfa(self) -> DFA[Any, str]:
+        return self.micro.possible
+
+    def get_macro_nfa(self) -> NFA[Any, str]:
+        return self.macro.nfa
+
+    def get_micro_nfa_no_epsilon_no_traps(self) -> NFA[Any, str]:
+        return self.micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
+
+    def get_micro_dfa_minimized(self) -> DFA[Any, str]:
+        if self.micro_dfa_minimized is None:
+            self.micro_dfa_minimized = self.micro.dfa.minimize()
+        return self.micro_dfa_minimized
+
+    def get_micro_dfa_minimized_no_traps(self) -> NFA[Any, str]:
+        # generate internal minimized dfa without traps (must be converted to NFA)
+        if self.micro_dfa_minimized_no_traps is None:
+            self.micro_dfa_minimized_no_traps = dfa_to_nfa(
+                self.get_micro_dfa_minimized()
+            ).remove_all_sink_states()
+        return self.micro_dfa_minimized_no_traps
+
+    def get_shuffle_dfa_minimized(self) -> DFA[Any, str]:
+        if self.shuffle_dfa_minimized is None:
+            self.shuffle_dfa_minimized = self.micro.possible.minimize()
+        return self.shuffle_dfa_minimized
+
+    def get_shuffle_dfa_minimized_no_traps(self) -> NFA[Any, str]:
+        # generate shuffle minimized dfa without traps (must be converted to NFA)
+        if self.shuffle_dfa_minimized_no_traps is None:
+            self.shuffle_dfa_minimized_no_traps = dfa_to_nfa(
+                self.get_shuffle_dfa_minimized()
+            ).remove_all_sink_states()
+        return self.shuffle_dfa_minimized_no_traps
 
 
 @dataclass
@@ -750,9 +807,11 @@ class AssembledDevice:
     internal: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]]
     is_valid: bool = field(init=False)
     failure: Optional[Union[AmbiguityFailure, TriggerIntegrationFailure]]
+    device_export: DeviceExport = field(init=False)
 
     def __post_init__(self):
         self.is_valid = self.failure is None
+        self.device_export = DeviceExport(self.external, self.internal)
 
     def get_timings(self) -> Timings:
         return Timings(
@@ -764,14 +823,10 @@ class AssembledDevice:
             else self.internal.validation_time,
         )
 
-    def get_stats(self) -> DeviceStats:
+    def get_stats(self) -> Dict:
         if isinstance(self.internal, AssembledMicroBehavior2):
             raise NotImplementedError()
-        return DeviceStats(
-            macro_size=len(self.external.nfa),
-            micro_size=0 if self.internal is None else len(self.internal.dfa.minimize()),
-            micro_max_size=0 if self.internal is None else len(self.internal.possible.minimize()),
-        )
+        return self.device_export.stats()
 
     def internal_model_check(
         self, word_or_formula: Union[List[str], hml.Formula[str]]

@@ -1,9 +1,11 @@
 SHELLEYC = shelleyc
 SHELLEYV = shelleyv
 
-all: scy pdf
+all: pdf
 
-pdf: magnetic.pdf httpclient.pdf wificlient.pdf radio.pdf valve.pdf timer.pdf valvehandlertimer.pdf lowpower-strict.pdf controller.pdf controller-internal-dfa.pdf controller-internal-nfa.pdf # controller-shuffle-dfa.pdf --> takes too long!
+pdf: magnetic.pdf httpclient.pdf wificlient.pdf radio.pdf valve.pdf timer.pdf valvehandlertimer.pdf lowpower-strict.pdf micro-pdf
+
+micro-pdf: controller-micro-dfa-minimized.pdf controller-micro-dfa-minimized-no-traps.pdf controller-micro-nfa-no-epsilon-no-traps.pdf # controller-shuffle-dfa-minimized.pdf controller-shuffle-dfa-minimized-no-traps.pdf --> takes too long!
 
 scy: controller.scy radio.scy valvehandlertimer.scy
 
@@ -16,13 +18,10 @@ valvehandlertimer.scy: valvehandlertimer.yml valve.scy timer.scy
 	test -f $<
 
 controller.scy: controller.yml valvehandlertimer.scy magnetic.scy radio.scy lowpower-strict.scy
-	time $(SHELLEYC) -d $< -u magnetic.scy\:Magnetic valvehandlertimer.scy\:ValveHandlerTimer radio.scy\:Radio lowpower-strict.scy\:LowPower -o $@ -i # -v
+	time $(SHELLEYC) -d $< -u magnetic.scy\:Magnetic valvehandlertimer.scy\:ValveHandlerTimer radio.scy\:Radio lowpower-strict.scy\:LowPower -o $@ -i -v --dump-stats
 	test -f $<
 
-controller-internal-dfa.scy:
-	test -f $<
-
-controller-internal-nfa.scy:
+controller-%.scy:
 	test -f $<
 
 %.scy: %.yml

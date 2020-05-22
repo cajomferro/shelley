@@ -16,4 +16,4 @@ def save_timings(fp: IO[str], device: AssembledDevice) -> None:
 
 def save_statistics(fp: IO[str], device: AssembledDevice) -> None:
     # Print out stats (may take a long time)
-    json.dump(asdict(device.get_stats()), fp)
+    json.dump(device.device_export.stats(), fp)

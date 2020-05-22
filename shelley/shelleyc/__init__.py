@@ -4,8 +4,6 @@ import os
 from typing import List, Dict, Optional, Any, cast, IO
 import argparse
 from pathlib import Path
-from karakuri import regular
-
 
 from shelley.shelleyc import settings
 from shelley.shelleyc.exceptions import CompilationError
@@ -153,6 +151,14 @@ def _get_ext(binary: bool = False) -> str:
     )
 
 
+def _export_internal(src_path, target_name, data, binary) -> None:
+    logger.debug("Exporting {0}".format(target_name))
+    path = src_path.parent / (
+        src_path.stem + "-" + target_name + "." + _get_ext(binary)
+    )
+    serialize(path, data, binary)
+
+
 def compile_shelley(
     src_path: Path,
     uses: List[str],
@@ -219,35 +225,20 @@ def compile_shelley(
         and dev.internal is not None
         and isinstance(dev.internal, AssembledMicroBehavior)
     ):
-        micro = dev.internal
+        data = dev.device_export.get_shuffle_dfa_minimized().as_dict()
+        _export_internal(src_path, "shuffle-dfa-minimized", data, binary)
 
-        logger.debug("Exporting shuffle dfa")
-        # generate shuffling of all components
-        path = src_path.parent / (
-            src_path.stem + "-shuffle-dfa" + "." + _get_ext(binary)
-        )
-        shuffle = regular.dfa_to_nfa(
-            micro.possible.minimize()
-        ).remove_all_sink_states()  # without traps
-        serialize(path, shuffle.as_dict(), binary)
+        data = dev.device_export.get_shuffle_dfa_minimized_no_traps().as_dict()
+        _export_internal(src_path, "shuffle-dfa-minimized-no-traps", data, binary)
 
-        logger.debug("Exporting internal nfa")
-        # generate internal nfa without epsilon and without traps
-        path = src_path.parent / (
-            src_path.stem + "-internal-nfa" + "." + _get_ext(binary)
-        )
-        nfa = micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
-        serialize(path, nfa.as_dict(), binary)
+        data = dev.device_export.get_micro_dfa_minimized().as_dict()
+        _export_internal(src_path, "micro-dfa-minimized", data, binary)
 
-        logger.debug("Exporting internal dfa")
-        # generate internal minimized dfa without traps (must be converted to NFA)
-        path = src_path.parent / (
-            src_path.stem + "-internal-dfa" + "." + _get_ext(binary)
-        )
-        nfa = regular.dfa_to_nfa(
-            cast(regular.DFA[Any, str], micro.dfa.minimize())
-        ).remove_all_sink_states()
-        serialize(path, nfa.as_dict(), binary)
+        data = dev.device_export.get_micro_nfa_no_epsilon_no_traps().as_dict()
+        _export_internal(src_path, "micro-nfa-no-epsilon-no-traps", data, binary)
+
+        data = dev.device_export.get_micro_dfa_minimized_no_traps().as_dict()
+        _export_internal(src_path, "micro-dfa-minimized-no-traps", data, binary)
 
     if not dev.is_valid:
         raise CompilationError("Invalid device: {0}".format(dev.failure))

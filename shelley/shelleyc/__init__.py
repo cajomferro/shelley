@@ -216,14 +216,17 @@ def compile_shelley(
             try:
                 # test macro traces
                 logger.debug("Testing macro traces")
-                check_traces(dev.external_model_check, shelley_device.test_macro)  # macro
+                check_traces(
+                    dev.external_model_check, shelley_device.test_macro
+                )  # macro
 
                 # test micro traces
                 logger.debug("Testing micro traces")
-                check_traces(dev.internal_model_check, shelley_device.test_micro)  # micro
+                check_traces(
+                    dev.internal_model_check, shelley_device.test_micro
+                )  # micro
             except ValueError as err:
                 raise CompilationError(str(err))
-
 
     if not no_output:
         serialize(dst_path, dev.external.nfa.as_dict(), binary)

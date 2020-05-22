@@ -30,7 +30,7 @@ def main() -> None:
             dump_timings=args.dump_timings,
             no_output=args.no_output,
             fast_check=args.fast_check,
-            skip_testing=args.skip_testing
+            skip_testing=args.skip_testing,
         )
     except CompilationError as error:
         if settings.VERBOSE:

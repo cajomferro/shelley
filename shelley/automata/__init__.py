@@ -785,12 +785,12 @@ class Timings:
 
 @dataclass
 class DeviceExport:
-    macro: CheckedDevice = None
-    micro: AssembledMicroBehavior = None
-    micro_dfa_minimized: DFA[Any, str] = None
-    micro_dfa_minimized_no_traps: NFA[Any, str] = None
-    shuffle_dfa_minimized: DFA[Any, str] = None
-    shuffle_dfa_minimized_no_traps: NFA[Any, str] = None
+    micro_dfa_minimized: DFA[Any, str]
+    micro_dfa_minimized_no_traps: NFA[Any, str]
+    shuffle_dfa_minimized: DFA[Any, str]
+    shuffle_dfa_minimized_no_traps: NFA[Any, str]
+    macro: Optional[CheckedDevice] = None
+    micro: Optional[AssembledMicroBehavior] = None
 
     def __init__(self, macro: CheckedDevice, micro: AssembledMicroBehavior):
         self.macro = macro
@@ -808,18 +808,33 @@ class DeviceExport:
         }
 
     def get_micro_dfa(self) -> DFA[Any, str]:
+        assert (
+            self.micro is not None
+        ), "Cannot perform operation because there is no internal behavior"
         return self.micro.dfa
 
     def get_shuffle_dfa(self) -> DFA[Any, str]:
+        assert (
+            self.micro is not None
+        ), "Cannot perform operation because there is no internal behavior"
         return self.micro.possible
 
     def get_macro_nfa(self) -> NFA[Any, str]:
+        assert (
+            self.macro is not None
+        ), "Cannot perform operation because there is no checked device"
         return self.macro.nfa
 
     def get_micro_nfa_no_epsilon_no_traps(self) -> NFA[Any, str]:
+        assert (
+            self.micro is not None
+        ), "Cannot perform operation because there is no internal behavior"
         return self.micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
 
     def get_micro_dfa_minimized(self) -> DFA[Any, str]:
+        assert (
+            self.micro is not None
+        ), "Cannot perform operation because there is no internal behavior"
         if self.micro_dfa_minimized is None:
             self.micro_dfa_minimized = self.micro.dfa.minimize()
         return self.micro_dfa_minimized
@@ -833,6 +848,9 @@ class DeviceExport:
         return self.micro_dfa_minimized_no_traps
 
     def get_shuffle_dfa_minimized(self) -> DFA[Any, str]:
+        assert (
+            self.micro is not None
+        ), "Cannot perform operation because there is no internal behavior"
         if self.shuffle_dfa_minimized is None:
             self.shuffle_dfa_minimized = self.micro.possible.minimize()
         return self.shuffle_dfa_minimized

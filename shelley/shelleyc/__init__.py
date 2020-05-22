@@ -192,9 +192,11 @@ def compile_shelley(
     dev = AssembledDevice.make(automata_device, known_devices, fast_check=fast_check)
 
     if dump_stats is not None:
+        logger.debug("Dumping statistics")
         save_statistics(dump_stats, dev)
 
     if dump_timings is not None:
+        logger.debug("Dumping timings")
         save_timings(dump_timings, dev)
 
     if dev.is_valid:

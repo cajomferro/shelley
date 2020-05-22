@@ -14,6 +14,7 @@ from typing import (
     Union,
     cast,
     TypeVar,
+    FrozenSet,
 )
 from karakuri.regular import (
     NFA,
@@ -330,6 +331,35 @@ def project_nfa(nfa: NFA[S, A], alphabet: Collection[A]) -> NFA[S, A]:
     )
 
 
+def pad_trace(trace: Tuple[A, ...], alphabet: Collection[A]) -> NFA[Any, A]:
+    """
+    Given a trace and some padding characters, returns the set of all
+    strings that interleave padding characters in the given trace.
+
+    For instance, if trace=[a,b] and alphabet=[c], then examples of padded
+    strings are:
+    - acb
+    - ab
+    - ccccacccbccc
+    """
+
+    def tsx(st: int, letter: Optional[A]) -> FrozenSet[int]:
+        if letter in alphabet:
+            return frozenset([st])
+        if st < len(trace) and letter == trace[st]:
+            return frozenset([st + 1])
+        return frozenset()
+
+    target_alphabet = set(alphabet)
+    target_alphabet.update(trace)
+    return NFA(
+        alphabet=target_alphabet,
+        transition_func=tsx,
+        start_state=0,
+        accepted_states=[len(trace)],
+    )
+
+
 @dataclass
 class MicroBehavior:
     nfa: NFA[DecodedState, str]
@@ -358,6 +388,21 @@ class MicroBehavior:
                 new_rest = list(x + (st.event,) for x in rest for st in sts)
                 rest = new_rest
         return tuple(rest)
+
+    def component_trace_to_micro(
+        self, component_alpha: Collection[str], component_seq: MicroTrace
+    ) -> MicroTrace:
+        # 1. Compute the set of characters to pad
+        pad_alpha = set(self.dfa.alphabet)
+        pad_alpha.difference_update(component_alpha)
+        # 2. Find the set of all padded strings
+        trace_dfa = nfa_to_dfa(pad_trace(component_seq, pad_alpha))
+        # 3. Find the set of padded strings that are in the micro
+        result = self.dfa.intersection(trace_dfa.set_alphabet(self.dfa.alphabet))
+        # 4. Get the shortest string
+        seq = result.get_shortest_string()
+        assert seq is not None
+        return seq
 
     @classmethod
     def make(
@@ -769,8 +814,12 @@ class AssembledDevice:
             raise NotImplementedError()
         return DeviceStats(
             macro_size=len(self.external.nfa),
-            micro_size=0 if self.internal is None else len(self.internal.dfa.minimize()),
-            micro_max_size=0 if self.internal is None else len(self.internal.possible.minimize()),
+            micro_size=0
+            if self.internal is None
+            else len(self.internal.dfa.minimize()),
+            micro_max_size=0
+            if self.internal is None
+            else len(self.internal.possible.minimize()),
         )
 
     def internal_model_check(

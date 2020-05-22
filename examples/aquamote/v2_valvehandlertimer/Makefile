@@ -3,7 +3,7 @@ SHELLEYV = shelleyv
 
 all: scy pdf
 
-pdf: magnetic.pdf radio.pdf radiosimple.pdf radiosimplest.pdf valve.pdf timer.pdf valvehandlertimer.pdf lowpower-strict.pdf controller.pdf controller-internal-dfa.pdf controller-internal-nfa.pdf controller-shuffle-dfa.pdf
+pdf: magnetic.pdf radio.pdf radiosimple.pdf radiosimplest.pdf valve.pdf timer.pdf valvehandlertimer.pdf lowpower-strict.pdf controller.pdf #controller-internal-dfa.pdf controller-internal-nfa.pdf # controller-shuffle-dfa.pdf
 
 scy: controller.scy
 
@@ -17,7 +17,7 @@ valvehandlertimer.scy: valvehandlertimer.yml valve.scy timer.scy
 	$(SHELLEYC) -d $< -u valve.scy\:Valve timer.scy\:Timer
 
 controller.scy: controller.yml valvehandlertimer.scy magnetic.scy radiosimplest.scy lowpower-strict.scy
-	$(SHELLEYC) -d $< -i -u magnetic.scy\:Magnetic valvehandlertimer.scy\:ValveHandlerTimer radiosimplest.scy\:RadioSimplest lowpower-strict.scy\:LowPower
+	$(SHELLEYC) -d $< -u magnetic.scy\:Magnetic valvehandlertimer.scy\:ValveHandlerTimer radiosimplest.scy\:RadioSimplest lowpower-strict.scy\:LowPower # -i
 
 %.scy: %.yml
 	$(SHELLEYC) -d $< -o $@

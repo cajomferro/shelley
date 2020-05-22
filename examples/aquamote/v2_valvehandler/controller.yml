@@ -35,9 +35,9 @@ test_micro:
     valid5: [m.locked, m.unlocked, lp.cancel]
   fail:
     invalid1: [m.locked, m.unlocked, lp.cancel, v.on, rs.send] # missing rs.ok on macro behavior update
-    invalid2: [m.locked, m.unlocked, lp.cancel, v.on, r.start, lp.sleep] # missing rs.ok on macro behavior update
+    invalid2: [m.locked, m.unlocked, lp.cancel, v.on, lp.sleep] # missing rs.ok on macro behavior update
     invalid3: [m.locked, m.unlocked, lp.cancel, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, m.locked, m.unlocked] # missing 'lp.cancel' on macro behavior 'start'
-    invalid4: [m.locked, m.unlocked, v.on, rs.send, rs.ok v.off, lp.setup, lp.sleep, lp.wakeup] # missing 'lp.cancel' on macro behavior 'start'
-    invalid5: [m.locked, lp.cancel, v.on, r.start, rs.send, rs.ok v.off, lp.setup, lp.sleep, lp.wakeup] # missing 'm.unlocked' on macro behavior 'start'
+    invalid4: [m.locked, m.unlocked, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, lp.wakeup] # missing 'lp.cancel' on macro behavior 'start'
+    invalid5: [m.locked, lp.cancel, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, lp.wakeup] # missing 'm.unlocked' on macro behavior 'start'
     invalid6: [m.locked, m.unlocked]
     invalid7: false

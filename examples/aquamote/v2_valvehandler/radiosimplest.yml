@@ -30,7 +30,7 @@ test_micro:
     invalid1: [rs.start]
     invalid2: [rs.send]
     invalid3: [rs.start, rs.receive, rs.stop]
-    invalid4: [rs.start, rs.send, s.stop]
+    invalid4: [rs.start, rs.send, rs.stop]
     invalid5: [rs.start, rs.send, rs.receive]
     invalid6: [rs.send, rs.receive, rs.stop]
     # invalid7: [rs.start, rs.send, rs.receive, rs.stop, rs.start, rs.send, rs.receive, rs.stop] # comment this to be more strict

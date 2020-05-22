@@ -27,7 +27,6 @@ test_macro:
     invalid1: [wakeup]
     invalid2: [setup, sleep, wakeup, sleep]
     invalid3: [setup, sleep, sleep]
-    invalid4: [cancel]
     invalidfinal1: [sleep]
     invalidfinal2: [setup, sleep]
     invalidfinal3: [setup, sleep, wakeup, setup, sleep]

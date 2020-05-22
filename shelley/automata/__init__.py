@@ -865,13 +865,13 @@ class DeviceExport:
         assert (
             self.micro is not None
         ), "Cannot perform operation because there is no internal behavior"
-        if self.micro_dfa_minimized is None:
+        if not hasattr(self, "micro_dfa_minimized"):
             self.micro_dfa_minimized = self.micro.dfa.minimize()
         return self.micro_dfa_minimized
 
     def get_micro_dfa_minimized_no_traps(self) -> NFA[Any, str]:
         # generate internal minimized dfa without traps (must be converted to NFA)
-        if self.micro_dfa_minimized_no_traps is None:
+        if not hasattr(self, "micro_dfa_minimized_no_traps"):
             self.micro_dfa_minimized_no_traps = dfa_to_nfa(
                 self.get_micro_dfa_minimized()
             ).remove_all_sink_states()
@@ -881,13 +881,13 @@ class DeviceExport:
         assert (
             self.micro is not None
         ), "Cannot perform operation because there is no internal behavior"
-        if self.shuffle_dfa_minimized is None:
+        if not hasattr(self, "shuffle_dfa_minimized"):
             self.shuffle_dfa_minimized = self.micro.possible.minimize()
         return self.shuffle_dfa_minimized
 
     def get_shuffle_dfa_minimized_no_traps(self) -> NFA[Any, str]:
         # generate shuffle minimized dfa without traps (must be converted to NFA)
-        if self.shuffle_dfa_minimized_no_traps is None:
+        if not hasattr(self, "shuffle_dfa_minimized_no_traps"):
             self.shuffle_dfa_minimized_no_traps = dfa_to_nfa(
                 self.get_shuffle_dfa_minimized()
             ).remove_all_sink_states()

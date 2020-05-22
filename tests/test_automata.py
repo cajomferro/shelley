@@ -661,7 +661,7 @@ def test_invalid_behavior_1() -> None:
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
-    assert isinstance(given.failure, automata.FullTriggerIntegrationFailure)
+    assert isinstance(given.failure, automata.TriggerIntegrationFailure)
     assert given.failure.macro_trace == (LEVEL1,)
     assert given.failure.micro_trace == (B_P, B_P, LA_ON, T_S)
     assert given.failure.component_errors == {
@@ -700,7 +700,7 @@ def test_invalid_behavior_2() -> None:
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
-    assert isinstance(given.failure, automata.FullTriggerIntegrationFailure)
+    assert isinstance(given.failure, automata.TriggerIntegrationFailure)
     assert given.failure.micro_trace == (B_R, B_P, B_R, LA_ON, T_S)
     assert given.failure.macro_trace == (LEVEL1,)
     assert given.failure.component_errors == {

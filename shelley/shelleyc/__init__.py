@@ -14,7 +14,7 @@ from shelley.automata import (
     CheckedDevice,
     AssembledDevice,
     check_traces,
-    AssembledMicroBehavior,
+    AssembledMicroBehavior2,
 )
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
@@ -234,15 +234,15 @@ def compile_shelley(
     if (
         intermediate
         and dev.internal is not None
-        and isinstance(dev.internal, AssembledMicroBehavior)
+        and isinstance(dev.internal, AssembledMicroBehavior2)
     ):
         logger.debug("Generating internal structures...")
 
-        data = dev.device_export.get_shuffle_dfa_minimized().as_dict()
-        _export_internal(src_path, "shuffle-dfa-minimized", data, binary)
-
-        data = dev.device_export.get_shuffle_dfa_minimized_no_traps().as_dict()
-        _export_internal(src_path, "shuffle-dfa-minimized-no-traps", data, binary)
+        # data = dev.device_export.get_shuffle_dfa_minimized().as_dict()
+        # _export_internal(src_path, "shuffle-dfa-minimized", data, binary)
+        #
+        # data = dev.device_export.get_shuffle_dfa_minimized_no_traps().as_dict()
+        # _export_internal(src_path, "shuffle-dfa-minimized-no-traps", data, binary)
 
         data = dev.device_export.get_micro_dfa_minimized().as_dict()
         _export_internal(src_path, "micro-dfa-minimized", data, binary)

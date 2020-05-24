@@ -832,9 +832,9 @@ class DeviceExport:
             "micro_size:": 0
             if self.micro is None
             else len(self.get_micro_dfa_minimized()),
-            "micro_max_size:": 0
-            if self.micro is None
-            else len(self.get_shuffle_dfa_minimized()),
+            # "micro_max_size:": 0
+            # if self.micro is None
+            # else len(self.get_shuffle_dfa_minimized()),
         }
 
     def get_micro_dfa(self) -> DFA[Any, str]:

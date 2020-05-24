@@ -855,6 +855,12 @@ class DeviceExport:
         ), "Cannot perform operation because there is no checked device"
         return self.macro.nfa
 
+    def get_micro_nfa_with_epsilon_no_traps(self) -> NFA[Any, str]:
+        assert (
+            self.micro is not None
+        ), "Cannot perform operation because there is no internal behavior"
+        return self.micro.nfa.remove_all_sink_states()
+
     def get_micro_nfa_no_epsilon_no_traps(self) -> NFA[Any, str]:
         assert (
             self.micro is not None
@@ -938,7 +944,7 @@ class AssembledDevice:
         cls,
         dev: Device,
         known_devices: Mapping[str, CheckedDevice],
-        fast_check: bool = False,
+        slow_check: bool = False,
     ) -> "AssembledDevice":
         """
         In order to assemble a device, the following steps are required:
@@ -963,19 +969,18 @@ class AssembledDevice:
             components_behaviors: List[NFA] = list(
                 dict(build_components(dev.components, known_devices)).values()
             )
-            if fast_check:
-                micro = AssembledMicroBehavior2.make(
-                    components=components_behaviors,
-                    external_behavior=external_behavior,
-                    triggers=dev.triggers,
-                )
-            else:
+            if slow_check:
                 micro = AssembledMicroBehavior.make(
                     components=components_behaviors,
                     external_behavior=external_behavior,
                     triggers=dev.triggers,
                 )
-
+            else:
+                micro = AssembledMicroBehavior2.make(
+                    components=components_behaviors,
+                    external_behavior=external_behavior,
+                    triggers=dev.triggers,
+                )
             fail = micro.get_failure(known_devices, dev.components)
 
         return cls(external=ext, internal=micro, failure=fail)

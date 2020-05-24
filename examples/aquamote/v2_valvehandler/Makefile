@@ -1,7 +1,7 @@
 SHELLEYC = shelleyc
 SHELLEYV = shelleyv
 
-all: scy pdf
+all: scy
 
 pdf: magnetic.pdf radio.pdf radiosimple.pdf radiosimplest.pdf valve.pdf valvehandler.pdf lowpower-strict.pdf controller.pdf
 

@@ -29,7 +29,7 @@ def main() -> None:
             dump_stats=args.dump_stats,
             dump_timings=args.dump_timings,
             no_output=args.no_output,
-            fast_check=args.fast_check,
+            slow_check=args.slow_check,
             skip_testing=args.skip_testing,
         )
     except CompilationError as error:

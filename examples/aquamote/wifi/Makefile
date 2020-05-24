@@ -1,7 +1,7 @@
 SHELLEYC = shelleyc
 SHELLEYV = shelleyv
 
-all: scy pdf
+all: scy
 
 pdf: httpclient.pdf wificlient.pdf wifihttp.pdf
 

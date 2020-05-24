@@ -1,7 +1,7 @@
 SHELLEYC = shelleyc
 SHELLEYV = shelleyv
 
-all: scy pdf
+all: scy
 
 pdf: singleclick.pdf timer.pdf smartbutton.pdf
 

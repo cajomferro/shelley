@@ -1,16 +1,16 @@
 device:
   name: Button
   behavior:
-    - [pressed, released]
-    - [released, pressed]
+    - [press, release]
+    - [release, press]
 
 test_macro:
   ok:
-    valid1: [pressed, released, pressed, released, pressed, released, pressed, released]
-    valid2: [pressed]
-    valid3: [pressed, released]
-    valid4: [pressed, released, pressed]
+    valid1: [press, release, press, release, press, release, press, release]
+    valid2: [press]
+    valid3: [press, release]
+    valid4: [press, release, press]
     empty: []
   fail:
-    invalid1: [released, pressed]
-    invalid2: [released]
+    invalid1: [release, press]
+    invalid2: [release]

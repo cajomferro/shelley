@@ -73,7 +73,7 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
     )
     parser.add_argument(
-        "--fast-check",
+        "--slow-check",
         help="perform a fast check (no error reporting)",
         action="store_true",
     )
@@ -171,7 +171,7 @@ def compile_shelley(
     dump_stats: Optional[IO[str]] = None,
     dump_timings: Optional[IO[str]] = None,
     no_output: bool = False,
-    fast_check: bool = False,
+    slow_check: bool = False,
     skip_testing: bool = False,
 ) -> Path:
     """
@@ -199,7 +199,7 @@ def compile_shelley(
         shelley_device, uses, binary
     )
     automata_device = shelley2automata(shelley_device)
-    dev = AssembledDevice.make(automata_device, known_devices, fast_check=fast_check)
+    dev = AssembledDevice.make(automata_device, known_devices, slow_check=slow_check)
 
     if dump_stats is not None:
         logger.debug("Dumping statistics")
@@ -247,11 +247,14 @@ def compile_shelley(
         data = dev.device_export.get_micro_dfa_minimized().as_dict()
         _export_internal(src_path, "micro-dfa-minimized", data, binary)
 
-        data = dev.device_export.get_micro_nfa_no_epsilon_no_traps().as_dict()
-        _export_internal(src_path, "micro-nfa-no-epsilon-no-traps", data, binary)
-
         data = dev.device_export.get_micro_dfa_minimized_no_traps().as_dict()
         _export_internal(src_path, "micro-dfa-minimized-no-traps", data, binary)
+
+        data = dev.device_export.get_micro_nfa_with_epsilon_no_traps().as_dict()
+        _export_internal(src_path, "micro-nfa-with-epsilon-no-traps", data, binary)
+
+        data = dev.device_export.get_micro_nfa_no_epsilon_no_traps().as_dict()
+        _export_internal(src_path, "micro-nfa-no-epsilon-no-traps", data, binary)
 
     if not dev.is_valid:
         raise CompilationError("Invalid device: {0}".format(dev.failure))

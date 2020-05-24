@@ -1,5 +1,8 @@
 all:
 	$(MAKE) -C desklamp/bad_desklamp1
+	$(MAKE) -C desklamp/bad_desklamp_ambiguity1
+	$(MAKE) -C desklamp/bad_desklamp_ambiguity2
+	$(MAKE) -C desklamp/bad_desklamp_ambiguity3
 	$(MAKE) -C desklamp/good_desklamp
 	$(MAKE) -C desklamp/good_simple_desklamp
 	$(MAKE) -C desklamp/good_simple_desklamp2
@@ -28,6 +31,9 @@ all:
 	$(MAKE) -C valves/several_valves_integration
 clean:
 	$(MAKE) -C desklamp/bad_desklamp1 clean
+	$(MAKE) -C desklamp/bad_desklamp_ambiguity1 clean
+	$(MAKE) -C desklamp/bad_desklamp_ambiguity2 clean
+	$(MAKE) -C desklamp/bad_desklamp_ambiguity3 clean
 	$(MAKE) -C desklamp/good_desklamp clean
 	$(MAKE) -C desklamp/good_simple_desklamp clean
 	$(MAKE) -C desklamp/good_simple_desklamp2 clean

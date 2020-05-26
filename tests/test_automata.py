@@ -223,7 +223,7 @@ def test_encode_behavior2_1() -> None:
     }
     n_behavior = regex_to_nfa(behavior)
     expected = nfa_to_dfa(automata.encode_behavior(n_behavior, triggers))
-    result = automata.MicroBehavior.make(n_behavior, triggers)
+    result = automata.MicroBehavior.make(n_behavior, triggers, set(expected.alphabet))
     assert result.is_valid
     given = result.dfa.minimize()
     assert given.is_equivalent_to(expected)

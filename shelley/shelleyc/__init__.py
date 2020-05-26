@@ -199,7 +199,9 @@ def compile_shelley(
         shelley_device, uses, binary
     )
     automata_device = shelley2automata(shelley_device)
-    dev = AssembledDevice.make(automata_device, known_devices, slow_check=slow_check)
+    dev = AssembledDevice.make(
+        automata_device, known_devices, fast_check=not slow_check
+    )
 
     if dump_stats is not None:
         logger.debug("Dumping statistics")

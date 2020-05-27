@@ -1,23 +1,27 @@
 from __future__ import annotations
-from typing import Dict, Set, Tuple, List
+from typing import Dict
 
-from .triggers import TriggersVisitor
+from shelley.ast.visitors.triggers import TriggersVisitor
 from shelley.ast.triggers import Trigger, Triggers
-from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
-from karakuri.regular import Regex, Char, Concat, Union, NIL
+from shelley.ast.rules import (
+    TriggerRuleSequence,
+    TriggerRuleChoice,
+    TriggerRuleEvent,
+    TriggerRuleFired,
+)
+from karakuri.regular import Regex, Char, Concat, Union, NIL, VOID
 
 
 class TRules2RegexVisitor(TriggersVisitor):
-    regex_dict = None  # type: Dict[str, Regex]
-    current_regex = None  # type: Regex
+    regex_dict: Dict[str, Regex]
+    current_regex: Regex
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.regex_dict = dict()
         self.current_regex = NIL
 
     def visit_trigger_rule_fired(self, element: TriggerRuleFired) -> None:
-        # self.current_regex = NIL() # TODO: como processar o fired?
-        pass
+        self.current_regex = NIL
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
         self.current_regex = Char(str(element))
@@ -46,6 +50,7 @@ class TRules2RegexVisitor(TriggersVisitor):
 
     def __str__(self):
         return self.regex_dict
+
 
 #
 # class CountStatesVisitor(Visitor):

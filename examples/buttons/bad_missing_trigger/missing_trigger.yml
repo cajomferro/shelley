@@ -1,0 +1,11 @@
+device:
+  name: WrongButton
+  behavior:
+    - [on, off]
+  components:
+    b: SingleClickButton
+  events:
+    - on:
+        micro: [ b.pressed]
+    # - off:
+    #      micro: [ b.released] # ERROR: off is missing!

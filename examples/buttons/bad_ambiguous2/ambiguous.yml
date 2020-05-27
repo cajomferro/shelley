@@ -1,0 +1,17 @@
+device:
+  name: AmbiguousButton
+  behavior:
+    - [buttonPressedOnce, buttonPressedOnce]
+    - [buttonPressedOnce, buttonPressedTwice]
+    - [buttonPressedTwice, buttonPressedTwice]
+    - [buttonPressedTwice, buttonPressedOnce]
+  components:
+    b: SingleClickButton
+    t: Timer
+  events:
+    - buttonPressedOnce:
+        start: True
+        micro: [b.pressed, t.started, b.released, t.canceled, t.started, t.timeout]
+    - buttonPressedTwice:
+        start: True
+        micro: [ b.pressed, t.started, b.released, t.canceled, t.started, t.timeout] # this shouldn't be allowed since it is equivalent to other trigger

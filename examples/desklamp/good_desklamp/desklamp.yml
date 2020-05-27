@@ -1,0 +1,73 @@
+device:
+  name: DeskLamp
+  behavior:
+    - [level1, standby1]
+    - [level1, level2]
+    - [level2, standby2]
+    - [standby1, level1]
+    - [standby2, level1]
+  components:
+    ledA: Led
+    ledB: Led
+    b: Button
+    t: Timer
+  events:
+    - level1:
+        start: True
+        final: False
+        micro: [b.press, b.release, ledA.on, t.start]
+    - level2:
+        final: False
+        micro:
+          - b.press
+          - b.release
+          - xor:
+              - [t.cancel, ledB.on]
+              - [ledB.on, t.cancel]
+          - t.start
+    - standby1:
+        final: True
+        micro: [t.timeout, ledA.off]
+    - standby2:
+        final: True
+        micro:
+          - xor:
+              - [b.press, b.release, t.cancel]
+              -  t.timeout
+          - xor:
+                - [ledB.off, ledA.off]
+                - [ledA.off, ledB.off]
+
+test_macro:
+  ok:
+    valid1: [level1, standby1]
+    valid2: [level1, level2, standby2]
+    valid3: true
+    valid4: true
+    valid5: true
+  fail:
+    # This is an incomplete trace, and is therefore reject
+    invalid1: [level1, standby1, standby2]
+    invalid2: [standby1, standby2]
+    invalid3: false
+    invalid4: false
+    invalid5: false
+    invalid6: false
+    invalid7: false
+
+test_micro:
+  ok:
+    valid1: [b.press, b.release, ledA.on, t.start, b.press, b.release, t.cancel, ledB.on, t.start, t.timeout, ledB.off, ledA.off]
+    valid3: true
+#    valid2:
+#      possibly:
+#      - b.press
+#      - necessarily:
+#        - b.release
+#        - ledA.on
+#        - t.start
+#        - true
+  fail:
+    # This is an incomplete trace, and is therefore reject
+    invalid1: [b.press, b.release]
+    invalid2: false

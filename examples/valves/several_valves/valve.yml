@@ -1,0 +1,7 @@
+# Water valve
+
+device:
+  name: Valve
+  behavior:
+    - [on, off]
+    - [off, on]

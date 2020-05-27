@@ -1,124 +1,78 @@
 from __future__ import annotations
-from abc import ABC
-from typing import TYPE_CHECKING, TypeVar
-from .node import Node
-from .util import MyCollection
-# from . import events, find_instance_by_name
+from typing import TYPE_CHECKING, Optional, List
 from dataclasses import dataclass
+from shelley.ast.node import Node
 
 if TYPE_CHECKING:
-    from .visitors import Visitor
+    from shelley.ast.visitors import Visitor
 
 
 @dataclass(order=True)
-class GenericEvent(Node):
+class Event(Node):
     name: str
-
-    # def __new__(cls, name: str):
-    #     instance = find_instance_by_name(name, events)
-    #     if instance is None:
-    #         instance = super(GenericEvent, cls).__new__(cls)
-    #         events.append(instance)
-    #     return instance
+    is_start: bool
+    is_final: bool
 
     def accept(self, visitor: Visitor) -> None:
-        visitor.visit_ievent(self)
-
-    #    @abstractmethod -> fix this!
-    def accept(self, visitor: Visitor) -> None:
-        pass
-
-    # def check(self, events: Set[GenericEvent]):
-    #     self.check_is_duplicated(events)
-    #     events.add(self)
-    #
-    # def check_is_duplicated(self, events: Set[GenericEvent]):
-    #     if self in events:
-    #         raise EventsListDuplicatedError("Duplicated event: {0}".format(self.name))
+        visitor.visit_event(self)
 
     def __str__(self):
         return self.name
 
-    # def __eq__(self, other):
-    #     if not isinstance(other, GenericEvent):
-    #         # don't attempt to compare against unrelated types
-    #         raise Exception("Instance {0} is not of Event type".format(type(other)))
-    #
-    #     return self.name == other.name
-    #
-    # def __hash__(self):
-    #     return id(self.uuid
 
+class Events(Node):
+    _data: List[Event]
 
-class IEvent(GenericEvent):
+    def __init__(self) -> None:
+        self._data = []
 
-    # def __new__(cls, name: str):
-    #     instance = find_instance_by_name(name, events)
-    #     if instance is None:
-    #         instance = super(IEvent, cls).__new__(cls, name)
-    #         events.append(instance)
-    #     return instance
+    def add(self, elem: Event) -> None:
+        if elem not in self._data:
+            self._data.append(elem)
+        else:
+            raise EventsListDuplicatedError()
+
+    def contains(self, elem: Event) -> bool:
+        return elem in self._data
+
+    def list(self) -> List[Event]:
+        return self._data
+
+    def list_str(self) -> List[str]:
+        return [str(elem) for elem in self._data]
+
+    def __len__(self):
+        return len(self._data)
+
+    def find_by_name(self, name: str) -> Optional[Event]:
+        # XXX: This should be the standard method: get
+        for x in self._data:
+            if x.name == name:
+                return x
+        return None
+
+    def __getitem__(self, name: str) -> Event:
+        res = self.find_by_name(name)
+        if res is None:
+            raise KeyError(name)
+        return res
 
     def accept(self, visitor: Visitor) -> None:
-        visitor.visit_ievent(self)
+        visitor.visit_events(self)
 
-
-class EEvent(GenericEvent):
-
-    # def __new__(cls, name: str):
-    #     instance = find_instance_by_name(name, events)
-    #     if instance is None:
-    #         instance = super(EEvent, cls).__new__(cls, name)
-    #         events.append(instance)
-    #     return instance
-
-    def accept(self, visitor: Visitor) -> None:
-        visitor.visit_eevent(self)
-
-
-T = TypeVar('T', IEvent, EEvent, GenericEvent)
-
-
-class Events(ABC, MyCollection[T]):
-
-    def find_by_name(self, name: str) -> GenericEvent:
-        re = None
-        try:
-            re = next(x for x in self._data if x.name == name)
-        except StopIteration:
-            pass
-        return re
-
-    def merge(self, events: Events) -> Events:
-        merged_events = Events()
-        merged_events._data = self._data + events._data
-        return merged_events
-
-
-class IEvents(Node, Events):
-    def accept(self, visitor: Visitor) -> None:
-        visitor.visit_ievents(self)
-
-    def create(self, name: str) -> IEvent:
-        event = IEvent(name)
+    def create(self, name: str, is_start=False, is_final=True) -> Event:
+        event = Event(name, is_start, is_final)
         if event not in self._data:
             self._data.append(event)
         else:
             raise EventsListDuplicatedError()
         return event
 
+    def start_events(self) -> List[Event]:
+        return [event for event in self._data if event.is_start]
 
-class EEvents(Node, Events):
-    def accept(self, visitor: Visitor) -> None:
-        visitor.visit_eevents(self)
-
-    def create(self, name: str) -> EEvent:
-        event = EEvent(name)
-        if event not in self._data:
-            self._data.append(event)
-        else:
-            raise EventsListDuplicatedError()
-        return event
+    def final_events(self) -> List[Event]:
+        return [event for event in self._data if event.is_final]
 
 
 class EventsListEmptyError(Exception):

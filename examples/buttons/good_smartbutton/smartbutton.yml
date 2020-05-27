@@ -1,0 +1,9 @@
+device:
+  name: SmartButton
+  behavior:
+    - [click, click]
+  components:
+    b: Button
+  events:
+    - click:
+        micro: [ b.in, b.out]

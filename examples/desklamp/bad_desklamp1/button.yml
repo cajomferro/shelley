@@ -1,0 +1,5 @@
+device:
+  name: Button
+  behavior:
+    - [pressed, released]
+    - [released, pressed]

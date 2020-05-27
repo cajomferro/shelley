@@ -1,0 +1,34 @@
+device:
+  name: SmartButton
+  components:
+    b: Button
+  events:
+    - on:
+        start: True
+        final: True
+        micro: [ b.pressed, b.released]
+  behavior:
+    - [on, on]
+
+
+test_macro:
+  ok:
+    valid1: [on]
+    valid2: [on, on, on, on]
+    empty: []
+  fail:
+    invalid1: False
+
+test_micro:
+  ok:
+    valid1: [b.pressed, b.released]
+    valid2: [b.pressed, b.released, b.pressed, b.released]
+    valid3: [b.pressed, b.released, b.pressed, b.released]
+    empty: []
+  fail:
+    invalid1: [b.released, b.pressed] # wrong order
+    invalid2: [b.pressed, b.pressed] # violates sequence
+    invalid3: [b.released, b.released] # violates sequence
+    incomplete1: [b.released] # incomplete (not a final state)
+    incomplete2: [b.pressed] # incomplete (not a final state)
+    incomplete3: [b.pressed, b.released, b.pressed] # incomplete (not a final state)

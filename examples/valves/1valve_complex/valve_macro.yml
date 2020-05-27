@@ -1,0 +1,49 @@
+device:
+  name: ValveHandler
+  behavior:
+    - [go2, go2]
+    - [go2, go3]
+    - [go2, go4]
+    - [go2, go5]
+    - [go2, go6]
+    - [go2, go7]
+    - [go2, go8]
+    - [go2, go9]
+    - [go2, go10]
+    - [go2, go11]
+    - [go2, go12]
+    - [go3, go2]
+    - [go4, go2]
+    - [go5, go2]
+    - [go6, go2]
+    - [go7, go2]
+    - [go8, go2]
+    - [go9, go2]
+    - [go10, go2]
+    - [go11, go2]
+    - [go12, go2]
+  components:
+    v: Valve
+  events:
+    - go2: # (v.x1, v.x2) x 1 ~ 0.42s
+        micro: [v.x1, v.x2]
+    - go3:
+        micro: [v.x1, v.x3]
+    - go4:
+        micro: [v.x1, v.x4]
+    - go5:
+        micro: [v.x1, v.x5]
+    - go6:
+        micro: [v.x1, v.x6]
+    - go7:
+        micro: [v.x1, v.x7]
+    - go8:
+        micro: [v.x1, v.x8]
+    - go9:
+        micro: [v.x1, v.x9]
+    - go10:
+        micro: [v.x1, v.x10]
+    - go11:
+        micro: [v.x1, v.x11]
+    - go12:
+        micro: [v.x1, v.x12]

@@ -1,0 +1,43 @@
+device:
+  name: Controller
+  behavior:
+    - [start, activateAllValves]
+    - [wakeup, activateAllValves]
+    - [activateAllValves, update]
+    - [update, deactivateAllValves]
+    - [deactivateAllValves, sleep]
+    - [sleep, start]
+    - [sleep, wakeup]
+  components:
+    v: ValveHandler
+    m: Magnetic
+    rs: RadioSimplest
+    lp: LowPower
+  events:
+    - start:
+        micro: [m.locked, m.unlocked, lp.cancel]
+    - wakeup:
+        micro: [lp.wakeup]
+    - update:
+        micro: [rs.send, rs.ok]
+    - activateAllValves:
+        micro: [v.on]
+    - deactivateAllValves:
+        micro: [v.off]
+    - sleep:
+        micro: [lp.setup, lp.sleep]
+
+test_micro:
+  ok:
+    valid1: [m.locked, m.unlocked, lp.cancel, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, lp.wakeup]
+    valid2: [m.locked, m.unlocked, lp.cancel, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel]
+    valid4: [m.locked, m.unlocked, lp.cancel, v.on, rs.send, rs.ok, v.off]
+    valid5: [m.locked, m.unlocked, lp.cancel]
+  fail:
+    invalid1: [m.locked, m.unlocked, lp.cancel, v.on, rs.send] # missing rs.ok on macro behavior update
+    invalid2: [m.locked, m.unlocked, lp.cancel, v.on, lp.sleep] # missing rs.ok on macro behavior update
+    invalid3: [m.locked, m.unlocked, lp.cancel, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, m.locked, m.unlocked] # missing 'lp.cancel' on macro behavior 'start'
+    invalid4: [m.locked, m.unlocked, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, lp.wakeup] # missing 'lp.cancel' on macro behavior 'start'
+    invalid5: [m.locked, lp.cancel, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, lp.wakeup] # missing 'm.unlocked' on macro behavior 'start'
+    invalid6: [m.locked, m.unlocked]
+    invalid7: false

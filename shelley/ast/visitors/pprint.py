@@ -1,21 +1,28 @@
 from __future__ import annotations
-from typing import Dict
+from typing import Optional
 
-from . import Visitor
+from shelley.ast.visitors import Visitor
 from shelley.ast.devices import Device
 from shelley.ast.actions import Action, Actions
-from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
+from shelley.ast.events import Event, Events
 from shelley.ast.behaviors import Behavior, Behaviors
 from shelley.ast.components import Component, Components
 from shelley.ast.triggers import Trigger, Triggers
-from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
+from shelley.ast.rules import (
+    TriggerRuleSequence,
+    TriggerRuleChoice,
+    TriggerRuleEvent,
+    TriggerRuleFired,
+)
 
 
 class PrettyPrintVisitor(Visitor):
-    components = None  # type:Components
-    result = None
+    components: Components
+    result: str
 
-    def __init__(self, components: Components = None):
+    def __init__(self, components: Optional[Components] = None):
+        if components is None:
+            components = Components()
         self.components = components
         self.result = ""
 
@@ -23,7 +30,7 @@ class PrettyPrintVisitor(Visitor):
         self.result += "fired"
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
-        self.result += "{0}.{1} ".format(element.component.name, element.event.name)
+        self.result += "{0}.{1} ".format(element.component.name, element.event)
 
     def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
         self.result += "( "
@@ -63,7 +70,9 @@ class PrettyPrintVisitor(Visitor):
 
     def visit_behaviour(self, element: Behavior) -> None:
         if element.action is not None:
-            self.result += "    {0} -> {1}() {2}\n".format(element.e1.name, element.action.name, element.e2.name)
+            self.result += "    {0} -> {1}() {2}\n".format(
+                element.e1.name, element.action.name, element.e2.name
+            )
         else:
             self.result += "    {0} -> {1}\n".format(element.e1.name, element.e2.name)
 
@@ -81,21 +90,11 @@ class PrettyPrintVisitor(Visitor):
         self.result = self.result[:-2]  # remove extra ", "
         self.result += "\n"
 
-    def visit_ievent(self, element: IEvent) -> None:
+    def visit_event(self, element: Event) -> None:
         self.result += "{0}, ".format(element.name)
 
-    def visit_ievents(self, element: IEvents) -> None:
-        self.result += "  internal events:\n    "
-        for event in element.list():
-            event.accept(self)
-        self.result = self.result[:-2]  # remove extra ", "
-        self.result += "\n"
-
-    def visit_eevent(self, element: EEvent) -> None:
-        self.result += "{0}, ".format(element.name)
-
-    def visit_eevents(self, element: EEvents) -> None:
-        self.result += "  external events:\n    "
+    def visit_events(self, element: Events) -> None:
+        self.result += "  events:\n    "
         for event in element.list():
             event.accept(self)
         self.result = self.result[:-2]  # remove extra ", "
@@ -106,34 +105,39 @@ class PrettyPrintVisitor(Visitor):
         if len(element.uses) > 0:
             uses_str = ""
             for device_name in element.uses:
-                uses_str += (device_name + ", ")
-            self.result += "Device {0} uses {1}:\n".format(element.name, uses_str[0:-2])  # remove extra ", "
+                uses_str += device_name + ", "
+            self.result += "Device {0} uses {1}:\n".format(
+                element.name, uses_str[0:-2]
+            )  # remove extra ", "
         else:
             self.result += "Device {0}:\n".format(element.name)
 
-        if element.actions.count() > 0:
+        if len(element.actions) > 0:
             element.actions.accept(self)
 
-        if element.internal_events.count() > 0:
-            element.internal_events.accept(self)
-
-        if element.external_events.count() > 0:
-            element.external_events.accept(self)
+        if len(element.events) > 0:
+            element.events.accept(self)
 
         self.result += "  start events:\n    "
         start_events_str = ""
-        for event_name in element.start_events:
-            start_events_str += (event_name + ", ")
-        self.result += "{1}\n".format(element.name, start_events_str[0:-2])  # remove extra ", "
+        for event in element.events.start_events():
+            start_events_str += event.name + ", "
+        self.result += "{}\n".format(start_events_str[0:-2])  # remove extra ", "
+
+        self.result += "  final events:\n    "
+        final_events_str = ""
+        for event in element.events.final_events():
+            final_events_str += event.name + ", "
+        self.result += "{}\n".format(final_events_str[0:-2])  # remove extra ", "
 
         self.result += "  behaviours:\n"
         element.behaviors.accept(self)
 
-        if element.components.count() > 0:
+        if len(element.components) > 0:
             element.components.accept(self)
 
         self.result += "  triggers:\n"
         element.triggers.accept(self)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.result

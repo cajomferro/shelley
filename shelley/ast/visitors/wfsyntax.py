@@ -1,19 +1,24 @@
 from __future__ import annotations
-from typing import Dict, Set
+from typing import Dict
 
-from . import Visitor
+from shelley.ast.visitors import Visitor
 from shelley.ast.devices import Device
 from shelley.ast.actions import Action, Actions
-from shelley.ast.events import EEvent, IEvent, EEvents, IEvents
+from shelley.ast.events import Event, Events
 from shelley.ast.behaviors import Behavior, Behaviors
 from shelley.ast.components import Component, Components
-from shelley.ast.triggers import Trigger, Triggers, TriggersEventUndeclaredError
-from shelley.ast.rules import TriggerRuleSequence, TriggerRuleChoice, TriggerRuleEvent, TriggerRuleFired
+from shelley.ast.triggers import Trigger, Triggers
+from shelley.ast.rules import (
+    TriggerRuleSequence,
+    TriggerRuleChoice,
+    TriggerRuleEvent,
+    TriggerRuleFired,
+)
 
 
 class CheckWFSyntaxVisitor(Visitor):
-    device = None  # type: Device
-    declared_devices = None  # type: Dict[str, Device]
+    device: Device
+    declared_devices: Dict[str, Device]
 
     def __init__(self, device: Device, declared_devices: Dict[str, Device]):
         self.device = device
@@ -34,13 +39,13 @@ class CheckWFSyntaxVisitor(Visitor):
         element.right_trigger_rule.accept(self)
 
     def visit_component(self, element: Component) -> None:
-        element.check(self.device.uses, self.declared_devices, self.device.components.get_device_name(element.name))
+        element.check(
+            self.device.uses,
+            self.declared_devices,
+            self.device.components.get_device_name(element.name),
+        )
 
     def visit_trigger(self, element: Trigger) -> None:
-        # this should never happen, because Triggers cannot have duplicated events
-        # if not self.device.get_all_events().contains(element.event):
-        #     raise TriggersEventUndeclaredError(
-        #         "Left event '{0}' must be declared in events section!".format(element.event.name))
         element.trigger_rule.accept(self)
 
     def visit_triggers(self, element: Triggers) -> None:
@@ -65,22 +70,15 @@ class CheckWFSyntaxVisitor(Visitor):
         for e in element.list():
             e.accept(self)
 
-    def visit_ievent(self, element: IEvent) -> None:
+    def visit_event(self, element: Event) -> None:
         pass
 
-    def visit_ievents(self, element: IEvents) -> None:
-        pass
-
-    def visit_eevent(self, element: EEvent) -> None:
-        pass
-
-    def visit_eevents(self, element: EEvents) -> None:
+    def visit_events(self, element: Events) -> None:
         pass
 
     def visit_device(self, element: Device) -> None:
         element.actions.accept(self)
-        element.internal_events.accept(self)
-        element.external_events.accept(self)
+        element.events.accept(self)
         element.behaviors.accept(self)
         element.components.accept(self)
         element.triggers.accept(self)

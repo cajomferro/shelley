@@ -1,8 +1,0 @@
-device:
-  name: Led
-  start_events: [on, off]
-  behavior:
-    - [on, on]
-    - [on, off]
-    - [off, on]
-    - [off, off]

@@ -1,0 +1,33 @@
+device:
+  name: LowPower
+  events:
+    - setup: # if sleeping, cancels timer
+        start: True
+        final: True
+    - sleep:
+        start: False
+        final: False
+    - wakeup:
+        start: False
+  behavior:
+    - [setup, sleep]
+    - [setup, setup]
+    - [sleep, wakeup]
+    - [sleep, setup]
+    - [wakeup, setup]
+
+test_macro:
+  ok:
+#    valid1: [setup, sleep]
+    valid2: [setup, sleep, wakeup]
+    valid3: [setup, sleep, wakeup, setup]
+    valid4: [setup, sleep, wakeup, setup, sleep, setup]
+    empty: []
+  fail:
+    invalid1: [wakeup]
+    invalid2: [setup, sleep, wakeup, sleep]
+    invalid3: [setup, sleep, sleep]
+    invalidfinal1: [sleep]
+    invalidfinal2: [setup, sleep]
+    invalidfinal3: [setup, sleep, wakeup, setup, sleep]
+

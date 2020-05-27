@@ -1,0 +1,37 @@
+#device:
+#  name: RadioSimplest
+#  start_events: [send]
+#  behavior:
+#    - [send, ?] # como é que poderia fazer para só enviar 1x?
+#  components:
+#      rs: RadioSimple
+#  triggers:
+#    send: [rs.start, rs.send, rs.receive, rs.stop]
+
+device:
+  name: RadioSimplest
+  behavior:
+    - [send, ok]
+    - [ok, send] # comment this to be more strict
+  components:
+      rs: RadioSimple
+  events:
+    - send:
+        micro: [rs.start, rs.send]
+    - ok:
+        micro: [rs.receive, rs.stop]
+
+test_micro:
+  ok:
+    valid1: [rs.start, rs.send]
+    valid2: [rs.start, rs.send, rs.receive, rs.stop]
+    empty: []
+  fail:
+    invalid1: [rs.start]
+    invalid2: [rs.send]
+    invalid3: [rs.start, rs.receive, rs.stop]
+    invalid4: [rs.start, rs.send, rs.stop]
+    invalid5: [rs.start, rs.send, rs.receive]
+    invalid6: [rs.send, rs.receive, rs.stop]
+    # invalid7: [rs.start, rs.send, rs.receive, rs.stop, rs.start, rs.send, rs.receive, rs.stop] # comment this to be more strict
+    invalid8: false

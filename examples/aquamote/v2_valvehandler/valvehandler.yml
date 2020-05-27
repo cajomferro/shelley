@@ -1,0 +1,17 @@
+# Water valves handler
+
+device:
+  name: ValveHandler
+  behavior:
+    - [on, off]
+    - [off, on]
+  components:
+    v1: Valve
+    v2: Valve
+    v3: Valve
+    v4: Valve
+  events:
+    - on:
+        micro: [v1.on, v2.on, v3.on, v4.on]
+    - off:
+        micro: [v1.off, v2.off, v3.off, v4.off]

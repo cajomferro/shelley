@@ -1,0 +1,16 @@
+#!/bin/bash
+pushd $(dirname "$0")
+cd ..
+BASEDIR="$PWD"
+export PATH="$PATH":"$BASEDIR/stats-tk":"$BASEDIR/bin"
+popd
+OUTPUTDIR="$BASEDIR/data"
+
+RUNS=31
+nthreads=$2
+mkdir -p "$OUTPUTDIR"
+
+for run in $(seq -w $RUNS)
+do
+    make run NAME=run-$run-$nthreads NTHREADS=$nthreads || exit -1
+done

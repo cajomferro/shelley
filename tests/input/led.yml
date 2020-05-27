@@ -1,0 +1,6 @@
+device:
+  name: Led
+  events: [on, off] # on is start event
+  behavior:
+    - [on, off]
+    - [off, on]

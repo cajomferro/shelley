@@ -1,0 +1,29 @@
+device:
+  name: SmartButton
+  behavior:
+    - [single, single]
+    - [single, double]
+    - [single, long]
+    - [double, double]
+    - [double, single]
+    - [double, long]
+    - [long, long]
+    - [long, double]
+    - [long, single]
+  components:
+    b: Button
+    t: Timer
+  events:
+    - single:
+        start: True
+        micro: [b.in, t.start, b.out, t.stop, t.start, t.timeout]
+    - double:
+        start: True
+        micro:
+          - [ b.in, t.start, b.out, t.stop, t.start, b.in]
+          - xor:
+              - [t.stop, b.out]
+              - [b.out, t.stop]
+    - long:
+        start: True
+        micro: [b.in, t.start, t.timeout, b.out]

@@ -1,0 +1,51 @@
+device:
+  name: DeskLamp
+  components:
+    ledA: Led
+    ledB: Led
+    b: Button
+    t: Timer
+  events:
+    - level1:
+        start: True
+        micro: [b.pressed, b.released, ledA.on, t.started]
+    - level2:
+        micro:
+          - b.pressed
+          - b.released
+          - xor:
+              - [t.canceled, ledB.on]
+              - [ledB.on, t.canceled]
+          - t.started
+    - standby1:
+        micro: [t.timeout, ledA.off]
+    - standby2:
+        micro:
+          - xor:
+              - [b.pressed, b.released, t.canceled]
+              -  t.timeout
+          - xor:
+                - [ledB.off, ledA.off]
+                - [ledA.off, ledB.off]
+  behavior:
+    - [level1, standby1]
+    - [level1, level2]
+    - [level2, standby2]
+    - [standby1, level1]
+    - [standby2, level1]
+
+test_micro:
+  ok:
+    valid1: [b.pressed, b.released, ledA.on, t.started]
+    valid3: true
+    valid2:
+      possibly:
+      - b.pressed
+      - b.released
+      - ledA.on
+#      - t.started
+      - true
+  fail:
+    # This is an incomplete trace, and is therefore reject
+    invalid1: [b.pressed, b.released]
+    invalid2: false

@@ -1,0 +1,19 @@
+device:
+  name: LedStrict
+  behavior:
+    - [on, off]
+    - [off, on]
+
+test_macro:
+  ok:
+    valid1: [on, off]
+    valid2: [on, off, on, off]
+    valid3: [on]
+    valid4: [on, off, on]
+  fail:
+    invalid1: [off, on] # first event must be on
+    invalid2: [off, on, off, on] # first event must be on
+    invalid3: [off, off] # first event must be on
+    invalid4: [on, on] # after on, we must observe an off
+    invalid5: [off] # first event must be on
+    invalid6: [on, off, off] # after off, we must observe an on

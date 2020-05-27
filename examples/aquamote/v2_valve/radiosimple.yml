@@ -1,0 +1,40 @@
+device:
+  name: RadioSimple
+  behavior:
+    - [start, send]
+    - [send, receive]
+    - [receive, send]
+    - [send, stop]
+    - [receive, stop]
+    - [stop, start] # comment this to be more strict
+  components:
+      r: Radio
+  events:
+    - start:
+        micro: [r.start, r.HTTPsetup, r.HTTPconnect]
+    - send:
+        micro: [r.HTTPsend]
+    - receive:
+        micro: [r.HTTPreceive]
+    - stop:
+        micro: [r.HTTPdisconnect, r.HTTPdisable]
+
+test_micro:
+  ok:
+    valid1: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable]
+    valid4: [r.start, r.HTTPsetup, r.HTTPconnect]
+    valid5: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend]
+    valid6: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive]
+    valid9: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPsend, r.HTTPdisconnect, r.HTTPdisable]
+    empty: []
+  fail:
+    invalid1: [r.HTTPsetup]
+    invalid2: [r.HTTPconnect]
+    invalid3: [r.HTTPsend]
+    invalid4: [r.HTTPreceive]
+    invalid5: [r.HTTPdisconnect, r.HTTPdisable]
+    invalid6: [r.HTTPdisable]
+    invalid7: [r.start, r.HTTPsetup, r.HTTPsetup, r.HTTPsend, r.HTTPreceive, r.HTTPdisconnect]
+    invalid8: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable]
+    invalid9: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable]
+

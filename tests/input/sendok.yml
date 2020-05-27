@@ -1,0 +1,24 @@
+device:
+  name: SendOK
+  components:
+    b1: Button
+    b2: Button
+    lgreen: Led
+    lred: Led
+  events:
+    - send:
+        start: True
+        micro: [ b1.pressed, b1.released]
+    - ok:
+        micro:
+          - xor:
+              - [ lred.on, lred.off ]
+              - [ lgreen.on, lgreen.off ]
+    - off:
+        micro: [ b2.pressed, b2.released]
+  behavior:
+    - [send, ok]
+    - [send, off]
+    - [ok, send]
+    - [off, send]
+

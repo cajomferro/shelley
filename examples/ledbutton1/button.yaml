@@ -1,5 +1,0 @@
-device:
-  name: Button
-  start_events: [pressed]
-  behavior:
-    - [pressed, pressed]

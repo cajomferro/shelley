@@ -1,12 +1,11 @@
 from __future__ import annotations
-from typing import Set, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, List
 from dataclasses import dataclass
 
-from .util import MyCollection
-from .node import Node
+from shelley.ast.node import Node
 
 if TYPE_CHECKING:
-    from ast.visitors import Visitor
+    from shelley.ast.visitors import Visitor
 
 
 @dataclass(order=True)
@@ -16,36 +15,8 @@ class Action(Node):
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_action(self)
 
-    def check(self, actions: Set[Action]):
-        self.check_is_duplicated(actions)
-        actions.append(self)
-
     def __str__(self):
         return self.name
-
-    # def check_is_duplicated(self, actions: Set[Action]):
-    #     if self in actions:
-    #         raise ActionsListDuplicatedError("Duplicated action: {0}".format(self.name))
-
-    # def __new__(cls, name: str):
-    #     instance = find_instance_by_name(name, actions)
-    #     if instance is None:
-    #         instance = super(Action, cls).__new__(cls)
-    #         actions.append(instance)
-    #     return instance
-
-    # def __eq__(self, other):
-    #     if not isinstance(other, Action):
-    #         # don't attempt to compare against unrelated types
-    #         raise Exception("Instance is not of Action type")
-    #
-    #     return self.name == other.name
-    #
-    # # https://docs.python.org/3.1/reference/datamodel.html?highlight=hash#object.__hash__
-    # # https://stackoverflow.com/questions/1608842/types-that-define-eq-are-unhashable
-    # # https://stackoverflow.com/questions/8705378/pythons-in-set-operator
-    # def __hash__(self):
-    #     return id(self.uuid)
 
 
 class ActionsListEmptyError(Exception):
@@ -56,7 +27,29 @@ class ActionsListDuplicatedError(Exception):
     pass
 
 
-class Actions(Node, MyCollection[Action]):
+class Actions(Node):
+    _data: List[Action]
+
+    def __init__(self) -> None:
+        self._data = []
+
+    def add(self, elem: Action) -> None:
+        if elem not in self._data:
+            self._data.append(elem)
+        else:
+            raise ActionsListDuplicatedError()
+
+    def contains(self, elem: Action) -> bool:
+        return elem in self._data
+
+    def list(self) -> List[Action]:
+        return self._data
+
+    def list_str(self) -> List[str]:
+        return [str(elem) for elem in self._data]
+
+    def __len__(self):
+        return len(self._data)
 
     def create(self, action_name: str) -> Action:
         action = Action(action_name)
@@ -66,13 +59,18 @@ class Actions(Node, MyCollection[Action]):
             raise ActionsListDuplicatedError()
         return action
 
-    def find_by_name(self, name: str) -> Action:
-        re = None  # type: Action
-        try:
-            re = next(x for x in self._data if x.name == name)
-        except StopIteration:
-            pass
-        return re
+    def find_by_name(self, name: str) -> Optional[Action]:
+        # XXX: This should be the standard method: get
+        for x in self._data:
+            if x.name == name:
+                return x
+        return None
+
+    def __getitem__(self, name: str) -> Action:
+        res = self.find_by_name(name)
+        if res is None:
+            raise KeyError(name)
+        return res
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_actions(self)

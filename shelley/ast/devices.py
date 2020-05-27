@@ -1,15 +1,15 @@
 from __future__ import annotations
-from typing import List, TYPE_CHECKING
+from typing import Mapping, List, TYPE_CHECKING, Optional
 
-from .node import Node
-from .actions import Actions
-from .behaviors import Behaviors
-from .components import Components
-from .triggers import Triggers
-from .events import IEvents, EEvents, Events
+from shelley.ast.node import Node
+from shelley.ast.actions import Actions
+from shelley.ast.behaviors import Behaviors
+from shelley.ast.components import Components
+from shelley.ast.triggers import Triggers
+from shelley.ast.events import Events
 
 if TYPE_CHECKING:
-    from .visitors import Visitor
+    from shelley.ast.visitors import Visitor
 
 
 def discover_uses(components: Components) -> List[str]:
@@ -25,31 +25,36 @@ class Device(Node):
     """
     \\hard{D} -> categoria sintática
     """
-    name: str = None
-    actions: Actions = None
-    internal_events: IEvents = None
-    external_events: EEvents = None
-    start_events: List[str] = None
-    behaviors: Behaviors = None
-    uses = None  # type: List[str]
-    components: Components = None
-    triggers: Triggers = None
 
-    def __init__(self, name: str,
-                 actions: Actions,
-                 internal_events: IEvents,
-                 external_events: EEvents,
-                 start_events: List[str],
-                 behaviors: Behaviors,
-                 triggers: Triggers,
-                 uses: List[str] = list(),
-                 components=Components()):
+    name: str
+    actions: Actions
+    events: Events  # TODO: change to Events later
+    behaviors: Behaviors
+    uses: List[str]
+    components: Components
+    triggers: Triggers
+    test_macro: Mapping[str, Mapping[str, List[str]]]
+    test_micro: Mapping[str, Mapping[str, List[str]]]
 
+    def __init__(
+        self,
+        name: str,
+        events: Events,
+        behaviors: Behaviors,
+        triggers: Triggers,
+        actions: Optional[Actions] = None,
+        uses: Optional[List[str]] = None,
+        components: Optional[Components] = None,
+    ) -> None:
+        if actions is None:
+            actions = Actions()
+        if uses is None:
+            uses = []
+        if components is None:
+            components = Components()
         self.name = name
         self.actions = actions
-        self.internal_events = internal_events
-        self.external_events = external_events
-        self.start_events = start_events
+        self.events = events
         self.behaviors = behaviors
         self.uses = uses
         self.components = components
@@ -68,15 +73,13 @@ class Device(Node):
 
         visitor.visit_device(self)
 
-    def check_is_duplicated(self, devices: List[Device]):
+    def check_is_duplicated(self, devices: List[Device]) -> None:
         if self in devices:
             raise DevicesListDuplicatedError(
-                "Duplicated device with name '{0}'".format(self.name))
+                "Duplicated device with name '{0}'".format(self.name)
+            )
 
-    def get_all_events(self) -> Events:
-        return self.external_events.merge(self.internal_events)
-
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Device):
             # don't attempt to compare against unrelated types
             raise Exception("Instance is not of Device type")

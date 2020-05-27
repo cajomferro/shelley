@@ -1,0 +1,56 @@
+device:
+  name: Controller
+  behavior:
+    - [wakeup, update]
+    - [sleepTimeout, update]
+    - [update, runValves]
+    - [runValves, sleep]
+    - [sleep, wakeup]
+    - [sleep, sleepTimeout]
+  components:
+    v: ValveHandlerTimer
+    m: Magnetic
+    r: Radio
+    lp: LowPower
+  events:
+    - wakeup:
+        start: True
+        final: False
+        micro: [m.locked, m.unlocked, lp.cancel]
+    - sleepTimeout:
+        final: False
+        micro: [lp.wakeup]
+    - update:
+        final: False
+        micro: [r.started, r.send, r.ok, r.stopped]
+    - runValves:
+        final: False
+        micro: [v.v1, v.v2, v.v3, v.v4]
+    - sleep:
+        final: True
+        micro: [lp.setup, lp.sleep]
+
+test_macro:
+  ok:
+    valid1: [wakeup, update, runValves, sleep]
+    valid2: [wakeup, update, runValves, sleep, sleepTimeout, update, runValves, sleep]
+  fail:
+    invalid1: [sleepTimeout, update, runValves, sleep]
+
+
+test_micro:
+  ok:
+    valid1: [m.locked, m.unlocked, lp.cancel, r.started, r.send, r.ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
+    valid2: [m.locked, m.unlocked, lp.cancel, r.started, r.send, r.ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel, r.started, r.send, r.ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
+  fail:
+    invalid1a: [m.locked, m.unlocked, lp.cancel, r.started, r.send, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing r.ok on macro behavior update
+    invalid1b: [m.locked, m.unlocked, r.started, r.send, r.ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'lp.cancel' on macro behavior 'wakeup'
+    invalid1c: [m.locked, lp.cancel, r.started, r.send, r.ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'm.unlocked' on macro behavior 'wakeup'
+    invalid1d: [m.locked, m.unlocked, lp.cancel, r.started, r.send, r.ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # wakeup is not final
+    invalid2a: [m.locked, m.unlocked, lp.cancel, r.started, r.send, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.sleep, m.locked, m.unlocked, lp.cancel] # missing r.ok on macro behavior update
+    invalid2b: [m.locked, m.unlocked, r.started, r.send, r.ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.sleep, m.locked, m.unlocked, lp.cancel] # missing 'lp.cancel' on macro behavior 'wakeup'
+    invalid3: [m.locked, m.unlocked]
+    invalid4: [m.locked, m.unlocked, lp.cancel, r.started, r.send, r.ok, r.stopped, v.v1, v.v2, v.v3, v.v4]
+    invalid5: [m.locked, m.unlocked, lp.cancel]
+
+    invalid7: false

@@ -2,32 +2,49 @@
 Shelley checker
 ***************
 
-Run compiler
+.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+    :target: https://github.com/psf/black
+
+Installation
 ############
+
+.. warning:: You will need to install `poetry <https://python-poetry.org/docs/#installation>`_ and graphviz dot tool (for visualizing examples). Make sure you install poetry with the appropriate Python version (>=3.7). For more info on how to install poetry with pyenv `follow this link <https://python-poetry.org/docs/managing-environments/>`_.
 
 .. code-block:: shell
 
-   # show all otions
-   python3 -m appcompiler -h
+   poetry install
+
+Run tools
+#########
+
+.. code-block:: shell
+
+   # show all options
+   shelleyc -h
 
    # compile a device without dependencies (uses)
-   python3 -m appcompiler -d examples/button.yaml
+   shelleyc -d examples/button.yml
 
    # compile a device with dependencies (uses)
-   python3 -m appcompiler -u examples/button.sc:Button examples/led.sc:Led examples/timer.sc:Timer -d examples/desklamp.yaml
-
-   # user-defined output folder (-o), verbose (-v)
-   python3 -m appcompiler -o examples/compiled  -u examples/compiled/button.sc:Button examples/compiled/led.sc:Led examples/compiled/timer.sc:Timer -d examples/desklamp.yaml -v
-
-   # compile a device in binary mode
-   python3 -m appcompiler -b -d examples/button.yaml
+   shelleyc -u examples/button.scy:Button examples/led.scy:Led examples/timer.scy:Timer -d examples/desklamp.yml
 
    # visualize a compiled device using xdot
-   python3 -m appvizviewer -i examples/desklamp/desklamp.scy -p | xdot -
-
-   # export compiled device as a state diagram to pdf, png, svg, etc.
-   python3 -m appvizviewer -i examples/desklamp/desklamp.scy -f pdf
+   shelleyv -o examples/desklamp/desklamp.gv examples/desklamp/desklamp.scy
+   dot -Tpdf -o examples/desklamp/desklamp.pdf examples/desklamp/desklamp.gv
 
 .. warning:: To compile composite devices, please compile all dependency components first.
 
+Useful poetry commands
+######################
 
+.. code-block:: shell
+
+    # show env info (useful for configuring your preferred IDE)
+    # Example configurations for PyCharm: https://www.reddit.com/r/pycharm/comments/elga2z/using_pycharm_for_poetrybased_projects/
+    poetry env info
+
+
+    # these are all equivalent
+    poetry run python -m shelleyc
+    poetry run shelleyc
+    shelleyc

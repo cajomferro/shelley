@@ -8,7 +8,7 @@ pdf: button.pdf led.pdf timer.pdf desklamp.pdf
 scy: desklamp.scy
 
 desklamp.scy: desklamp.yml timer.scy led.scy button.scy
-	$(SHELLEYC) -d $< -u button.scy\:Button led.scy\:Led timer.scy\:Timer -o $@ # -v
+	$(SHELLEYC) -d $< -uf uses.yml -o $@ # -v
 	test -f $<
 
 %.scy: %.yml
@@ -16,7 +16,7 @@ desklamp.scy: desklamp.yml timer.scy led.scy button.scy
 	test -f $<
 
 # run with make internal SHELLEYC="shelleyc -i"
-internal: pdf desklamp-micro-dfa-minimized.pdf desklamp-micro-dfa-minimized-no-traps.pdf desklamp-micro-nfa-no-epsilon-no-traps.pdf desklamp-shuffle-dfa-minimized.pdf desklamp-shuffle-dfa-minimized-no-traps.pdf
+internal: pdf desklamp-micro-dfa-minimized.pdf desklamp-micro-dfa-minimized-no-traps.pdf desklamp-micro-nfa-no-epsilon-no-traps.pdf desklamp-micro-nfa-with-epsilon-no-traps.pdf# -shuffle-dfa-minimized.pdf desklamp-shuffle-dfa-minimized-no-traps.pdf
 
 desklamp-%.scy:
 	test -f $<

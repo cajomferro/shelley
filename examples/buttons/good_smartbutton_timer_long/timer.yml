@@ -1,0 +1,7 @@
+device:
+  name: Timer
+  behavior:
+    - [start, stop]
+    - [start, timeout]
+    - [stop, start]
+    - [timeout, start]

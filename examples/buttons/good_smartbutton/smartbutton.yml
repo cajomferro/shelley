@@ -1,9 +1,9 @@
 device:
   name: SmartButton
   behavior:
-    - [on, on]
+    - [click, click]
   components:
-    b: SingleClickButton
+    b: Button
   events:
-    - on:
-        micro: [ b.pressed, b.released]
+    - click:
+        micro: [ b.in, b.out]

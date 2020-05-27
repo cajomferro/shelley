@@ -1,0 +1,46 @@
+device:
+  name: SmartButton
+  behavior:
+    - [single, single]
+    - [single, double]
+    - [double, double]
+    - [double, single]
+  components:
+    b: Button
+    t: Timer
+  events:
+    - single:
+        start: True
+        micro: [b.in, t.start, b.out, t.stop, t.start, t.timeout]
+        # micro: [b.in, t.start, b.out, t.timeout, t.start, t.timeout] e se omitir isto?
+    - double:
+        start: True
+        micro:
+          - [ b.in, t.start, b.out, t.stop, t.start, b.in]
+          - xor:
+              - [t.stop, b.out]
+              - [b.out, t.stop]
+
+test_macro:
+  ok:
+    single: [single]
+    double: [single]
+    single_single: [single, single]
+    single_dobule: [single, double]
+    dobule_single: [double, single]
+    dobule_double: [double, double]
+  fail:
+    invalid: false
+
+test_micro:
+  ok:
+    single: [b.in, t.start, b.out, t.stop, t.start, t.timeout]
+    double_a: [b.in, t.start, b.out, t.stop, t.start, b.in, t.stop, b.out]
+    double_b: [b.in, t.start, b.out, t.stop, t.start, b.in, b.out, t.stop]
+    single_double_a: [b.in, t.start, b.out, t.stop, t.start, t.timeout, b.in, t.start, b.out, t.stop, t.start, b.in, t.stop, b.out]
+    single_double_b: [b.in, t.start, b.out, t.stop, t.start, t.timeout, b.in, t.start, b.out, t.stop, t.start, b.in, b.out, t.stop]
+    empty: []
+  fail:
+    single_missing_timeout: [b.in, t.start, b.out, t.stop, t.start] #, t.timeout]
+    invalid: false
+

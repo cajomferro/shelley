@@ -13,6 +13,7 @@ from shelley.automata import (
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley, shelleyc
+from shelley.shelleyc import parser as shelleyc_parser
 
 EXAMPLES_PATH = Path() / "tests" / "input"
 COMPILED_PATH = Path() / "tests" / "input" / "compiled"
@@ -70,7 +71,7 @@ def make_args(src_path: Path, **kwargs: Path) -> argparse.Namespace:
     uses = []
     for k, v in kwargs.items():
         uses.append(str(v) + ":" + k)
-    parser = shelleyc.create_parser()
+    parser = shelleyc_parser.create_parser()
     if len(uses) > 0:
         uses = ["--uses"] + list(sorted(uses))
     return parser.parse_args(
@@ -149,7 +150,7 @@ def test_single_device() -> None:
 def test_no_output() -> None:
     devicepath: Path = EXAMPLES_PATH / "button.yml"
     outpath: Path = EXAMPLES_PATH / "button.scy"
-    parser = shelleyc.create_parser()
+    parser = shelleyc_parser.create_parser()
     args: argparse.Namespace = parser.parse_args(
         ["-d", str(devicepath), "-o", str(outpath), "--no-output"]
     )
@@ -161,7 +162,7 @@ def test_no_output() -> None:
 
 def test_single_device_binary() -> None:
     device = EXAMPLES_PATH / "button.yml"
-    parser = shelleyc.create_parser()
+    parser = shelleyc_parser.create_parser()
     args = parser.parse_args(["-b", "-d", str(device)])
     assert args.device == device
     assert args.output is None
@@ -172,7 +173,7 @@ def test_single_device_binary() -> None:
 def test_single_device_user_defined_outdir() -> None:
     device = EXAMPLES_PATH / "button.yml"
     output = EXAMPLES_PATH / "compiled" / "button.scy"
-    parser = shelleyc.create_parser()
+    parser = shelleyc_parser.create_parser()
     args = make_args(device)
     assert args.device == device
     assert args.output == output
@@ -193,6 +194,31 @@ def test_composite_device() -> None:
     assert args.uses[0] == mk_use(Button=EXAMPLES_PATH / "button.scy")
     assert args.uses[1] == mk_use(Led=EXAMPLES_PATH / "led.scy")
     assert args.uses[2] == mk_use(Timer=EXAMPLES_PATH / "timer.scy")
+
+
+def test_composite_device_uses_file() -> None:
+    device = EXAMPLES_PATH / "desklamp.yml"
+    uses = EXAMPLES_PATH / "desklamp.uses.yml"
+    parser = shelleyc_parser.create_parser()
+
+    args = parser.parse_args(
+        ["--output", get_path(device)]
+        + ["--uses-file", str(uses)]
+        + ["--device", str(device)]
+    )
+
+    print(args)
+
+    assert args.device == device
+    assert args.output == COMPILED_PATH / "desklamp.scy"
+    assert args.uses == []
+    assert args.uses_file == uses
+
+    assert shelleyc_parser.parse_uses(args.uses, args.uses_file) == [
+        "button.scy:Button",
+        "led.scy:Led",
+        "timer.scy:Timer",
+    ]
 
 
 ### TEST SERIALIZER ###
@@ -276,7 +302,7 @@ def _compile_simple_device(device_name: str) -> Path:
 
 def test_not_found_device() -> None:
     src_path = os.path.join(EXAMPLES_PATH, "XbuttonX.yml")
-    parser = shelleyc.create_parser()
+    parser = shelleyc_parser.create_parser()
     args = parser.parse_args(["-d", src_path])
 
     with pytest.raises(FileNotFoundError) as exc_info:
@@ -298,7 +324,7 @@ def test_compile_buton_no_output() -> None:
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     assert src_path.exists()
     assert not outpath.exists()
-    parser = shelleyc.create_parser()
+    parser = shelleyc_parser.create_parser()
     args: argparse.Namespace = parser.parse_args(
         ["-d", str(src_path), "-o", str(outpath), "--no-output"]
     )

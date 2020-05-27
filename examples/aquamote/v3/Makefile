@@ -5,7 +5,10 @@ all: scy
 
 pdf: magnetic.pdf httpclient.pdf wificlient.pdf radio.pdf valve.pdf timer.pdf valvehandlertimer.pdf lowpower-strict.pdf controller.pdf # micro-pdf
 
-micro-pdf: controller-micro-dfa-minimized.pdf controller-micro-dfa-minimized-no-traps.pdf controller-micro-nfa-no-epsilon-no-traps.pdf # controller-shuffle-dfa-minimized.pdf controller-shuffle-dfa-minimized-no-traps.pdf --> takes too long!
+# run with make internal SHELLEYC="shelleyc -i"
+internal: pdf controller-micro-dfa-minimized.pdf controller-micro-dfa-minimized-no-traps.pdf controller-micro-nfa-no-epsilon-no-traps.pdf # controller-shuffle-dfa-minimized.pdf controller-shuffle-dfa-minimized-no-traps.pdf
+
+internal-radio: radio-micro-dfa-minimized.pdf radio-micro-dfa-minimized-no-traps.pdf radio-micro-nfa-no-epsilon-no-traps.pdf
 
 scy: controller.scy radio.scy valvehandlertimer.scy
 

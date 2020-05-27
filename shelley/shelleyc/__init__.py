@@ -1,8 +1,6 @@
-import sys
 import logging
 import os
 from typing import List, Dict, Optional, Any, cast, IO
-import argparse
 from pathlib import Path
 
 from shelley.shelleyc import settings
@@ -14,6 +12,7 @@ from shelley.automata import (
     CheckedDevice,
     AssembledDevice,
     check_traces,
+    AssembledMicroBehavior,
     AssembledMicroBehavior2,
 )
 from shelley.ast.devices import Device as ShelleyDevice
@@ -22,65 +21,6 @@ from shelley import yaml2shelley
 
 
 logger = logging.getLogger("shelleyc")
-
-
-def get_args() -> argparse.Namespace:
-    return create_parser().parse_args()
-
-
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Compile shelley files")
-    parser.add_argument(
-        "-v", "--verbosity", help="increase output verbosity", action="store_true"
-    )
-    parser.add_argument(
-        "-u", "--uses", nargs="*", default=[], help="path to used device"
-    )
-    parser.add_argument("-o", "--output", type=Path, help="path to store compile file")
-    parser.add_argument(
-        "-b", "--binary", help="generate binary files", action="store_true"
-    )
-    parser.add_argument(
-        "-d",
-        "--device",
-        type=Path,
-        help="Path to the input example yaml file",
-        required=True,
-    )
-    parser.add_argument(
-        "-i",
-        "--intermediate",
-        help="export intermediate structures representations",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--dump-stats",
-        type=argparse.FileType("w"),
-        nargs="?",
-        const=sys.stdout,
-        help="path to CSV file to dump verification statistics",
-    )
-    parser.add_argument(
-        "--dump-timings",
-        type=argparse.FileType("w"),
-        nargs="?",
-        const=sys.stdout,
-        help="path to CSV file to dump verification timings",
-    )
-    parser.add_argument(
-        "--no-output",
-        help="validate only, do not create compiled files, useful for benchmarking",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--slow-check",
-        help="perform a fast check (no error reporting)",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--skip-testing", help="do not check traces", action="store_true",
-    )
-    return parser
 
 
 def get_dest_path(
@@ -199,9 +139,18 @@ def compile_shelley(
         shelley_device, uses, binary
     )
     automata_device = shelley2automata(shelley_device)
-    dev = AssembledDevice.make(
-        automata_device, known_devices, fast_check=not slow_check
-    )
+
+    if slow_check:
+        logger.debug("Performing slow check")
+
+    try:
+        dev = AssembledDevice.make(
+            automata_device, known_devices, fast_check=not slow_check
+        )
+    except ValueError as error:
+        if settings.VERBOSE:
+            logger.exception(error)
+        raise CompilationError("Shelley parser error: {0}".format(str(error)))
 
     if dump_stats is not None:
         logger.debug("Dumping statistics")
@@ -233,18 +182,22 @@ def compile_shelley(
     if not no_output:
         serialize(dst_path, dev.external.nfa.as_dict(), binary)
 
-    if (
-        intermediate
-        and dev.internal is not None
-        and isinstance(dev.internal, AssembledMicroBehavior2)
-    ):
+    if not dev.is_valid:
+        raise CompilationError("Invalid device: {0}".format(dev.failure))
+
+    if intermediate and dev.internal is not None:  # do this only for compound devices
         logger.debug("Generating internal structures...")
 
-        # data = dev.device_export.get_shuffle_dfa_minimized().as_dict()
-        # _export_internal(src_path, "shuffle-dfa-minimized", data, binary)
+        assert isinstance(dev.internal, AssembledMicroBehavior) or isinstance(
+            dev.internal, AssembledMicroBehavior2
+        )
+
+        # if isinstance(dev.internal, AssembledMicroBehavior):
+        #     data = dev.device_export.get_shuffle_dfa_minimized().as_dict()
+        #     _export_internal(src_path, "shuffle-dfa-minimized", data, binary)
         #
-        # data = dev.device_export.get_shuffle_dfa_minimized_no_traps().as_dict()
-        # _export_internal(src_path, "shuffle-dfa-minimized-no-traps", data, binary)
+        #     data = dev.device_export.get_shuffle_dfa_minimized_no_traps().as_dict()
+        #     _export_internal(src_path, "shuffle-dfa-minimized-no-traps", data, binary)
 
         data = dev.device_export.get_micro_dfa_minimized().as_dict()
         _export_internal(src_path, "micro-dfa-minimized", data, binary)
@@ -257,9 +210,6 @@ def compile_shelley(
 
         data = dev.device_export.get_micro_nfa_no_epsilon_no_traps().as_dict()
         _export_internal(src_path, "micro-nfa-no-epsilon-no-traps", data, binary)
-
-    if not dev.is_valid:
-        raise CompilationError("Invalid device: {0}".format(dev.failure))
 
     logger.debug("Compiled file: {0}".format(dst_path))
 

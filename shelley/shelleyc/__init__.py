@@ -14,6 +14,7 @@ from shelley.automata import (
     CheckedDevice,
     AssembledDevice,
     check_traces,
+    AssembledMicroBehavior,
     AssembledMicroBehavior2,
 )
 from shelley.ast.devices import Device as ShelleyDevice
@@ -231,18 +232,22 @@ def compile_shelley(
     if not no_output:
         serialize(dst_path, dev.external.nfa.as_dict(), binary)
 
-    if (
-        intermediate
-        and dev.internal is not None
-        and isinstance(dev.internal, AssembledMicroBehavior2)
-    ):
+    if not dev.is_valid:
+        raise CompilationError("Invalid device: {0}".format(dev.failure))
+
+    if intermediate and dev.internal is not None: # do this only for compound devices
         logger.debug("Generating internal structures...")
 
-        # data = dev.device_export.get_shuffle_dfa_minimized().as_dict()
-        # _export_internal(src_path, "shuffle-dfa-minimized", data, binary)
+        assert isinstance(dev.internal, AssembledMicroBehavior) or isinstance(
+            dev.internal, AssembledMicroBehavior2
+        )
+
+        # if isinstance(dev.internal, AssembledMicroBehavior):
+        #     data = dev.device_export.get_shuffle_dfa_minimized().as_dict()
+        #     _export_internal(src_path, "shuffle-dfa-minimized", data, binary)
         #
-        # data = dev.device_export.get_shuffle_dfa_minimized_no_traps().as_dict()
-        # _export_internal(src_path, "shuffle-dfa-minimized-no-traps", data, binary)
+        #     data = dev.device_export.get_shuffle_dfa_minimized_no_traps().as_dict()
+        #     _export_internal(src_path, "shuffle-dfa-minimized-no-traps", data, binary)
 
         data = dev.device_export.get_micro_dfa_minimized().as_dict()
         _export_internal(src_path, "micro-dfa-minimized", data, binary)
@@ -255,9 +260,6 @@ def compile_shelley(
 
         data = dev.device_export.get_micro_nfa_no_epsilon_no_traps().as_dict()
         _export_internal(src_path, "micro-nfa-no-epsilon-no-traps", data, binary)
-
-    if not dev.is_valid:
-        raise CompilationError("Invalid device: {0}".format(dev.failure))
 
     logger.debug("Compiled file: {0}".format(dst_path))
 

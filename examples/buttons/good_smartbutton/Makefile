@@ -3,12 +3,12 @@ SHELLEYV = shelleyv
 
 all: scy
 
-pdf: singleclick.pdf smartbutton.pdf
+pdf: button.pdf smartbutton.pdf
 
 scy: smartbutton.scy
 
-smartbutton.scy: smartbutton.yml singleclick.scy
-	$(SHELLEYC) -d $< -u singleclick.scy\:SingleClickButton
+smartbutton.scy: smartbutton.yml button.scy
+	$(SHELLEYC) -d $< -u button.scy\:Button
 
 %.scy: %.yml
 	$(SHELLEYC) -d $<

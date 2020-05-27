@@ -1,0 +1,34 @@
+device:
+  name: SmartButton
+  behavior:
+    - [single, single]
+    - [single, double]
+    - [double, double]
+    - [double, single]
+  components:
+    b: Button
+    t: Timer
+  events:
+    - single:
+        start: True
+        final: True
+        micro: 
+          - [b.in, t.start]
+          - xor:
+#              - [b.out, t.cancel, t.start, t.timeout] # ISTO N DÁ ERRO E DEVIA DAR PORQUE CANCEL N EXISTE!
+              - [b.out, t.stop]
+              - [t.timeout, b.out]
+          - [t.start, t.timeout]
+    - double:
+        start: True
+        final: True
+        micro:
+          - [b.in, t.start]
+          - xor:
+              - [b.out, t.stop]
+              - [t.timeout, b.out]
+#         - [t.start, b.in, t.cancel, t.start] # ISTO N DÁ ERRO E DEVIA DAR E ALÉM DISSO É INFINITO!
+          - [t.start, b.in, t.stop, t.start]
+          - xor:
+              - [b.out, t.stop]
+              - [t.timeout, b.out]

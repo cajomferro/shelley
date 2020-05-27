@@ -44,6 +44,9 @@ device:
     #        Serial.print(line);
     #    }
     - [ssid_joined, connected]
+    - [ssid_joined, connection_timeout]
+    - [connection_timeout, ssid_failed]
+    - [connection_timeout, ssid_joined]
     - [ssid_joined, ssid_left]
     - [ssid_left, ssid_joined]
     - [ssid_left, ssid_failed]

@@ -17,15 +17,15 @@ device:
     - started:
         start: True
         final: False
-        micro: [wc.joined, wc.connected, hc.connected]
+        micro: [wc.ssid_joined, wc.connected, hc.connected]
     - notconnected:
         start: True
         final: True
         micro:
           xor:
-            - [wc.joined, wc.connected, hc.connect_failed]
+            - [wc.ssid_joined, wc.connected, hc.connect_failed, wc.disconnected, wc.ssid_left]
             - xor:
-              - [wc.joined, wc.connection_timeout]
+              - [wc.ssid_joined, wc.connection_timeout]
               - [wc.ssid_failed]
     - send:
         final: False
@@ -39,15 +39,16 @@ device:
     - error:
         final: True
         micro:
-          xor:
-            - [wc.print_data_ready, hc.response401]
-            - xor:
+          - xor:
               - [wc.print_data_ready, hc.response401]
               - xor:
-                - [wc.print_data_ready, hc.response404]
+                - [wc.print_data_ready, hc.response401]
                 - xor:
-                  - [wc.print_data_ready, hc.response500]
-                  - wc.print_timeout
+                  - [wc.print_data_ready, hc.response404]
+                  - xor:
+                    - [wc.print_data_ready, hc.response500]
+                    - [wc.print_timeout]
+          - [wc.disconnected, hc.disconnected]
     - stopped:
         final: True
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
@@ -58,7 +59,6 @@ device:
     - [send, stopped]
     - [send, ok]
     - [send, error]
-    - [error, send]
     - [ok, send]
     - [ok, stopped]
     - [error, stopped]
@@ -66,17 +66,9 @@ device:
     - [stopped, notconnected]
 
 
-#test_micro:
-#  ok:
-#    valid1: [rs.start, rs.send]
-#    valid2: [rs.start, rs.send, rs.receive, rs.stop]
-#    empty: []
-#  failed:
-#    invalid1: [rs.start]
-#    invalid2: [rs.send]
-#    invalid3: [rs.start, rs.receive, rs.stop]
-#    invalid4: [rs.start, rs.send, s.stop]
-#    invalid5: [rs.start, rs.send, rs.receive]
-#    invalid6: [rs.send, rs.receive, rs.stop]
-#    # invalid7: [rs.start, rs.send, rs.receive, rs.stop, rs.start, rs.send, rs.receive, rs.stop] # comment this to be more strict
-#    invalid8: false
+test_micro:
+  ok:
+    valid1: [wc.ssid_joined, wc.connected, hc.connected, hc.get, wc.print_data_ready, hc.response200, wc.disconnected, hc.disconnected, wc.ssid_left]
+    empty: []
+  fail:
+    invalid8: false

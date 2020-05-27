@@ -35,6 +35,7 @@ device:
     - [connected, post]  # client.connect(host, port)) succeeded
     - [connected, connect_failed]  # !client.connect(host, port))
     - [connect_failed, connected]
+    - [connect_failed, connect_failed]
     - [get, response200]
     - [get, response404]
     - [get, response401]
@@ -43,6 +44,8 @@ device:
     - [post, response404]
     - [post, response401]
     - [post, response500]
+    - [post, disconnected]
+    - [get, disconnected]
     - [response200, get]
     - [response200, post]
     - [response200, disconnected]
@@ -56,6 +59,8 @@ device:
     - [response500, disconnected]
     - [response500, post]
     - [disconnected, connected]
+    - [disconnected, connect_failed]
+    - [disconnected, disconnected]
 
 test_macro:
   ok:

@@ -1,8 +1,6 @@
-import sys
 import logging
 import os
 from typing import List, Dict, Optional, Any, cast, IO
-import argparse
 from pathlib import Path
 
 from shelley.shelleyc import settings
@@ -23,63 +21,6 @@ from shelley import yaml2shelley
 
 
 logger = logging.getLogger("shelleyc")
-
-
-def get_args() -> argparse.Namespace:
-    return create_parser().parse_args()
-
-
-def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Compile shelley files")
-    parser.add_argument(
-        "-v", "--verbosity", help="increase output verbosity", action="store_true"
-    )
-    parser.add_argument(
-        "-u", "--uses", nargs="*", default=[], help="path to used device"
-    )
-    parser.add_argument("-o", "--output", type=Path, help="path to store compile file")
-    parser.add_argument(
-        "-b", "--binary", help="generate binary files", action="store_true"
-    )
-    parser.add_argument(
-        "-d",
-        "--device",
-        type=Path,
-        help="Path to the input example yaml file",
-        required=True,
-    )
-    parser.add_argument(
-        "-i",
-        "--intermediate",
-        help="export intermediate structures representations",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--dump-stats",
-        type=argparse.FileType("w"),
-        nargs="?",
-        const=sys.stdout,
-        help="path to CSV file to dump verification statistics",
-    )
-    parser.add_argument(
-        "--dump-timings",
-        type=argparse.FileType("w"),
-        nargs="?",
-        const=sys.stdout,
-        help="path to CSV file to dump verification timings",
-    )
-    parser.add_argument(
-        "--no-output",
-        help="validate only, do not create compiled files, useful for benchmarking",
-        action="store_true",
-    )
-    parser.add_argument(
-        "--slow-check", help="perform a slow check", action="store_true",
-    )
-    parser.add_argument(
-        "--skip-testing", help="do not check traces", action="store_true",
-    )
-    return parser
 
 
 def get_dest_path(
@@ -198,6 +139,9 @@ def compile_shelley(
         shelley_device, uses, binary
     )
     automata_device = shelley2automata(shelley_device)
+
+    if slow_check:
+        logger.debug("Performing slow check")
 
     try:
         dev = AssembledDevice.make(

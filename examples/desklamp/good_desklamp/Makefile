@@ -8,7 +8,7 @@ pdf: button.pdf led.pdf timer.pdf desklamp.pdf
 scy: desklamp.scy
 
 desklamp.scy: desklamp.yml timer.scy led.scy button.scy
-	$(SHELLEYC) -d $< -u button.scy\:Button led.scy\:Led timer.scy\:Timer -o $@ # -v
+	$(SHELLEYC) -d $< -uf uses.yml -o $@ # -v
 	test -f $<
 
 %.scy: %.yml

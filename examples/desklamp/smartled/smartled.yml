@@ -16,8 +16,9 @@ device:
         final: True
         micro:
           - xor:
-            - [t.timeout, l.off]
-            - [l.off, t.cancel]
+            - [t.timeout]
+            - [t.cancel]
+          - l.off
 
     #       - b.press
     #       - b.release

@@ -8,18 +8,12 @@ pdf: led.pdf timer.pdf smartled.pdf
 scy: smartled.scy
 
 smartled.scy: smartled.yml timer.scy led.scy
-	$(SHELLEYC) -d $< -u led.scy\:Led timer.scy\:Timer -o $@ # -v
-	test -f $<
 
 %.scy: %.yml
-	$(SHELLEYC) -d $< -o $@
-	test -f $<
+	$(SHELLEYC) -u uses.yml -d $< -o $@
 
 # run with make internal SHELLEYC="shelleyc -i"
 internal: pdf smartled-micro-dfa-minimized.pdf smartled-micro-dfa-minimized-no-traps.pdf smartled-micro-nfa-no-epsilon-no-traps.pdf smartled-micro-nfa-with-epsilon-no-traps.pdf# -shuffle-dfa-minimized.pdf smartled-shuffle-dfa-minimized-no-traps.pdf
-
-smartled-%.scy:
-	test -f $<
 
 %.gv: %.scy
 	$(SHELLEYV) $< -o $@

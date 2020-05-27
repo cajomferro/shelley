@@ -27,7 +27,7 @@ from karakuri.regular import (
     SubstHandler,
 )
 from dataclasses import dataclass, field
-from karakuri import hml
+from karakuri import hml, regular
 from contextlib import contextmanager
 
 # https://stackoverflow.com/questions/7370801/measure-time-elapsed-in-python
@@ -406,7 +406,7 @@ class MicroBehavior:
         cls,
         external_behavior: NFA[Any, str],
         triggers: Dict[str, Regex[str]],
-        alphabet: Optional[Collection[str]] = None,
+        alphabet: Set[str],
     ) -> "MicroBehavior":
         """
         Micro behavior
@@ -422,9 +422,13 @@ class MicroBehavior:
         """
         assert isinstance(external_behavior, NFA)
         det_behavior: DFA[AbstractSet[str], str] = nfa_to_dfa(external_behavior)
-        det_triggers: Dict[str, DFA[Any, str]] = dict(
-            (k, nfa_to_dfa(regex_to_nfa(v))) for k, v in triggers.items()
-        )
+        det_triggers: Dict[str, DFA[Any, str]] = dict()
+        for k, rule in triggers.items():
+            rule_alpha = set(regular.get_alphabet(rule))
+            rule_alpha = rule_alpha - alphabet
+            if len(rule_alpha) > 0:
+                raise ValueError(f"Operation '{k}': unknown operations {rule_alpha}")
+            det_triggers[k] = nfa_to_dfa(regex_to_nfa(rule))
         # det_triggers and triggers are so close together, make sure we don't mistype
         del triggers
         # make sure we don't use external_behavior in the rest of the code
@@ -714,7 +718,7 @@ class AssembledMicroBehavior:
         all_possible: DFA[Any, str] = merge_components(components)  # shuffle operation
 
         internal_behavior = MicroBehavior.make(
-            external_behavior, triggers, all_possible.alphabet
+            external_behavior, triggers, set(all_possible.alphabet)
         )
         # Ensure that the all possible behaviors in dev contain the encoded behavior
         invalid_behavior = internal_behavior.dfa.subtract(all_possible)
@@ -944,7 +948,7 @@ class AssembledDevice:
         cls,
         dev: Device,
         known_devices: Mapping[str, CheckedDevice],
-        slow_check: bool = False,
+        fast_check: bool = False,
     ) -> "AssembledDevice":
         """
         In order to assemble a device, the following steps are required:
@@ -969,14 +973,14 @@ class AssembledDevice:
             components_behaviors: List[NFA] = list(
                 dict(build_components(dev.components, known_devices)).values()
             )
-            if slow_check:
-                micro = AssembledMicroBehavior.make(
+            if fast_check:
+                micro = AssembledMicroBehavior2.make(
                     components=components_behaviors,
                     external_behavior=external_behavior,
                     triggers=dev.triggers,
                 )
             else:
-                micro = AssembledMicroBehavior2.make(
+                micro = AssembledMicroBehavior.make(
                     components=components_behaviors,
                     external_behavior=external_behavior,
                     triggers=dev.triggers,

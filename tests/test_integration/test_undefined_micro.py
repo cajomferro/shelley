@@ -111,7 +111,7 @@ def test_bad_tests() -> None:
             composition_assembled.internal_model_check, composition_shy.test_micro
         )
 
-    assert "Undeclared event in trace: 's.badbadbad'" == str(exc_info.value)
+    assert "Operation 'bad': unknown operations {'s.badbadbad'}" == str(exc_info.value)
 
 
 # TODO: this test should raise a shelleyc error!
@@ -121,28 +121,30 @@ def test_bad() -> None:
     :return:
     """
 
-    # TODO: this test should raise a shelleyc error!
-    # with pytest.raises(ValueError) as exc_info:
+    with pytest.raises(ValueError) as exc_info:
 
-    # parse yaml and assemble device
-    known_devices = {"Simple": simple_assembled.external}
-    composition_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
-        composition_yml_src
-    )
-    composition_aut: AutomataDevice = shelley2automata.shelley2automata(composition_shy)
+        # parse yaml and assemble device
+        known_devices = {"Simple": simple_assembled.external}
+        composition_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
+            composition_yml_src
+        )
+        composition_aut: AutomataDevice = shelley2automata.shelley2automata(
+            composition_shy
+        )
 
-    composition_assembled = AssembledDevice.make(composition_aut, known_devices)
+        composition_assembled = AssembledDevice.make(composition_aut, known_devices)
 
-    assert composition_assembled.is_valid
-    assert type(composition_assembled.external) == CheckedDevice
+        assert composition_assembled.is_valid
+        assert type(composition_assembled.external) == CheckedDevice
 
-    # test macro traces
-    check_traces(composition_assembled.external_model_check, composition_shy.test_macro)
+        # test macro traces
+        check_traces(
+            composition_assembled.external_model_check, composition_shy.test_macro
+        )
 
-    # test micro traces
-    check_traces(composition_assembled.internal_model_check, composition_shy.test_micro)
+        # test micro traces
+        check_traces(
+            composition_assembled.internal_model_check, composition_shy.test_micro
+        )
 
-    # assert (
-    #     "Undeclared event in trace: 's.badbadbad'"
-    #     == str(exc_info.value)
-    # )
+    assert "Operation 'bad': unknown operations {'s.badbadbad'}" == str(exc_info.value)

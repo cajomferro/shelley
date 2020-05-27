@@ -1,0 +1,26 @@
+device:
+ name: ClickButton
+ behavior:
+ - [click, release]
+ - [dclick, release]
+ components:
+  b: Button
+  t: Timer
+ event:
+ - click:
+   start: True
+   final: True
+   micro:
+   - [b.press, t.start]
+   - xor:
+     - [t.timeout, b.release]
+     - [b.release, t.timeout]
+ - dclick:
+   start: True
+   final: True
+   micro:
+   - [b.press, t.start, b.release, b.press]
+   - xor:
+     - t.timeout
+     - t.cancel
+   - b.release    

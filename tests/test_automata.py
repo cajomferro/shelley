@@ -211,7 +211,7 @@ def test_encode_1() -> None:
         LEVEL2: Char(B_P),
     }
     be = nfa_to_dfa(automata.encode_behavior(regex_to_nfa(behavior), triggers))
-    expected = nfa_to_dfa(regex_to_nfa(Star(Char(B_P)))).flatten(minimize=True)
+    expected = nfa_to_dfa(regex_to_nfa(Star(Char(B_P))))
     assert expected.contains(be)
 
 
@@ -225,7 +225,7 @@ def test_encode_behavior2_1() -> None:
     expected = nfa_to_dfa(automata.encode_behavior(n_behavior, triggers))
     result = automata.MicroBehavior.make(n_behavior, triggers, set(expected.alphabet))
     assert result.is_valid
-    given = result.dfa.minimize()
+    given = result.dfa
     assert given.is_equivalent_to(expected)
 
 
@@ -236,9 +236,7 @@ def test_encode2() -> None:
         LEVEL2: NIL,
     }
     be = nfa_to_dfa(automata.encode_behavior(regex_to_nfa(behavior), triggers))
-    expected = nfa_to_dfa(regex_to_nfa(Star(Concat(Char(B_P), Char(B_P))))).flatten(
-        minimize=True
-    )
+    expected = nfa_to_dfa(regex_to_nfa(Star(Concat(Char(B_P), Char(B_P)))))
     assert expected.contains(be)
     assert be.contains(expected)
 
@@ -520,7 +518,7 @@ def test_device_button() -> None:
         components={},
         triggers={"b.pressed": NIL, "b.released": NIL,},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa
 
     assert nfa_to_dfa(create_prefixed_button()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -534,7 +532,7 @@ def test_device_led_a() -> None:
         components={},
         triggers={"ledA.on": NIL, "ledA.off": NIL,},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa
 
     assert nfa_to_dfa(create_prefixed_led_a()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -548,7 +546,7 @@ def test_device_led_b() -> None:
         components={},
         triggers={"ledB.on": NIL, "ledB.off": NIL,},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa
 
     assert nfa_to_dfa(create_prefixed_led_b()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -567,7 +565,7 @@ def test_device_timer() -> None:
         components={},
         triggers={"t.started": NIL, "t.canceled": NIL, "t.timeout": NIL},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa
 
     assert nfa_to_dfa(create_prefixed_timer()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -587,7 +585,7 @@ def test_device_hello_world() -> None:
         components={},
         triggers={"level1": NIL, "level2": NIL, "standby1": NIL, "standby2": NIL},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
+    expected = AssembledDevice.make(device, {}).external.nfa
 
     assert nfa_to_dfa(create_hello_world()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -686,8 +684,6 @@ def test_pad_trace_1() -> None:
         start_state=0,
         accepted_states=[2],
     )
-    print("given:", given)
-    print("expected:", expected)
     assert given == expected
 
 
@@ -710,8 +706,6 @@ def test_pad_trace_2() -> None:
         start_state=0,
         accepted_states=[2],
     )
-    print("given:", given)
-    print("expected:", expected)
     assert given == expected
 
 
@@ -765,7 +759,6 @@ def test_invalid_behavior_2() -> None:
         device, get_basic_known_devices(), fast_check=True
     )
     assert isinstance(fast_check.internal, AssembledMicroBehavior2)
-    print(fast_check.internal.usages[0].projected.minimize())
     assert not fast_check.is_valid
 
 
@@ -879,6 +872,29 @@ def test_projection_class() -> None:
     assert proj.projected == micro_dfa, "projected was set incorrectly"
     assert not proj.is_valid
 
+def assert_equiv_nfa(self:NFA[Any,str], other:NFA[Any,str]):
+    assert_equiv_dfa(nfa_to_dfa(self), nfa_to_dfa(other))
+
+def assert_equiv_dfa(lhs:DFA[Any,str], rhs:DFA[Any,str], msg=""):
+    if msg != "":
+        msg = f"{msg}: "
+    missing = lhs.subtract(rhs)
+    if not missing.is_empty():
+        err = list(missing.get_shortest_string())
+        print(f"lhs accept {err}", err in lhs)
+        print(f"rhs accept {err}", err in rhs)
+        print(rhs)
+        print(lhs)
+        assert False, f"{msg}rhs REJECTS string: {err}"
+    missing = rhs.subtract(lhs)
+    if not missing.is_empty():
+        err = missing.get_shortest_string()
+        err = list(missing.get_shortest_string())
+        print(f"lhs accept {err}", err in lhs)
+        print(f"rhs accept {err}", err in rhs)
+        print(lhs)
+        print(rhs)
+        assert False, f"{msg}lhs REJECTS string: {err}"
 
 def test_invalid_behavior_4() -> None:
     triggers: Dict[str, Regex[str]] = {
@@ -899,9 +915,12 @@ def test_invalid_behavior_4() -> None:
     # Let us make sure we get the internal behaviour
     # This is the expected internal NFA:
     micro_nfa = NFA[int, str](
-        alphabet=["b.pressed", "b.released"],
+        alphabet=[B_P, B_R],
         transition_func=NFA.transition_table(
-            {(0, "b.released"): frozenset([1]), (1, "b.pressed"): frozenset([2]),}
+            {
+                (0, B_R): frozenset([1]),
+                (1, B_P): frozenset([2]),
+            }
         ),
         accepted_states=[0, 1, 2],
         start_state=0,
@@ -925,11 +944,14 @@ def test_invalid_behavior_4() -> None:
     proj_btn = fast_check.internal.usages[0]
     ################################################
     # 2.1 We test if componet for button was correctly initialized
-    # This is the expected NFA of the button container:
+    # The NFA below should represent the Button instantiated with 'b':
     button_nfa = NFA[int, str](
-        alphabet=["b.pressed", "b.released"],
+        alphabet=[B_P, B_R],
         transition_func=NFA.transition_table(
-            {(0, "b.pressed"): frozenset([1]), (1, "b.released"): frozenset([0]),}
+            {
+                (0, B_P): frozenset([1]),
+                (1, B_R): frozenset([0]),
+            }
         ),
         accepted_states=[0, 1, 2],
         start_state=0,
@@ -938,13 +960,9 @@ def test_invalid_behavior_4() -> None:
     ################################################
     # We build a projection directly
     # Test if the component was set correctly
-    assert project_nfa(given.internal.nfa, button_nfa.alphabet) == given.internal.nfa
-    assert proj_btn.component.is_equivalent_to(
-        button_dfa
-    ), "component was set incorrectly"
-    assert proj_btn.projected.is_equivalent_to(
-        micro_dfa
-    ), "projected was set incorrectly"
+    assert_equiv_nfa(project_nfa(given.internal.nfa, button_nfa.alphabet), given.internal.nfa)
+    assert_equiv_dfa(proj_btn.component, button_dfa, "(proj_btn, button_dfa): projected button differs from button")
+    assert_equiv_dfa(proj_btn.projected, micro_dfa, "projected was set incorrectly")
     converted = nfa_to_dfa(project_nfa(micro_nfa, button_nfa.alphabet))
     assert converted.is_equivalent_to(proj_btn.projected)
     ################################################
@@ -1066,8 +1084,5 @@ def test_device_led_and_button() -> None:
         components={},
         triggers={"ledA.on": NIL, "ledA.off": NIL, "b.pressed": NIL, "b.released": NIL},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa.flatten()
-
-    assert nfa_to_dfa(create_prefixed_led_and_button()).is_equivalent_to(
-        nfa_to_dfa(expected)
-    )
+    expected = AssembledDevice.make(device, {}).external.nfa
+    assert_equiv_nfa(create_prefixed_led_and_button(), expected)

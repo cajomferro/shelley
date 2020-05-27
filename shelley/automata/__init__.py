@@ -428,7 +428,7 @@ class MicroBehavior:
             rule_alpha = rule_alpha - alphabet
             if len(rule_alpha) > 0:
                 raise ValueError(f"Operation '{k}': unknown operations {rule_alpha}")
-            det_triggers[k] = nfa_to_dfa(regex_to_nfa(rule))
+            det_triggers[k] = nfa_to_dfa(regex_to_nfa(rule, alphabet))
         # det_triggers and triggers are so close together, make sure we don't mistype
         del triggers
         # make sure we don't use external_behavior in the rest of the code

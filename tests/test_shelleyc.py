@@ -198,12 +198,12 @@ def test_composite_device() -> None:
 
 def test_composite_device_uses_file() -> None:
     device = EXAMPLES_PATH / "desklamp.yml"
-    uses = EXAMPLES_PATH / "desklamp.uses.yml"
+    uses = EXAMPLES_PATH / "uses.yml"
     parser = shelleyc_parser.create_parser()
 
     args = parser.parse_args(
         ["--output", get_path(device)]
-        + ["--uses-file", str(uses)]
+        + ["--uses", str(uses)]
         + ["--device", str(device)]
     )
 
@@ -211,14 +211,14 @@ def test_composite_device_uses_file() -> None:
 
     assert args.device == device
     assert args.output == COMPILED_PATH / "desklamp.scy"
-    assert args.uses == []
-    assert args.uses_file == uses
+    assert args.uses == uses
 
-    assert shelleyc_parser.parse_uses(args.uses, args.uses_file) == [
-        "button.scy:Button",
-        "led.scy:Led",
-        "timer.scy:Timer",
-    ]
+    assert shelleyc_parser.parse_uses(args.uses) == {
+        "Button": "button.scy",
+        "SimpleButton": "button.scy",
+        "Led": "led.scy",
+        "Timer": "timer.scy",
+    }
 
 
 ### TEST SERIALIZER ###

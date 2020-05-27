@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Dict, Optional
 from pathlib import Path
 import logging
 import argparse
@@ -18,13 +18,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "-v", "--verbosity", help="increase output verbosity", action="store_true"
     )
-    parser_uses_group = parser.add_mutually_exclusive_group()
-    parser_uses_group.add_argument(
-        "-u", "--uses", nargs="*", default=[], help="path to used device"
-    )
-    parser_uses_group.add_argument(
-        "-uf", "--uses-file", type=Path, default=None, help="path to file with uses"
-    )
+    parser.add_argument("-u", "--uses", type=Path, help="path to file with uses")
     parser.add_argument("-o", "--output", type=Path, help="path to store compile file")
     parser.add_argument(
         "-b", "--binary", help="generate binary files", action="store_true"
@@ -74,12 +68,12 @@ def get_args() -> argparse.Namespace:
     return create_parser().parse_args()
 
 
-def parse_uses(uses_list: List[str], uses_file: Optional[Path]) -> List[str]:
-    if uses_file is None:
-        return uses_list
+def parse_uses(uses_path: Optional[Path]) -> Dict[str, str]:
+    if uses_path is None:
+        return {}
 
-    uses: List[str]
-    with uses_file.open(mode="r") as f:
+    uses: Dict[str, str]
+    with uses_path.open(mode="r") as f:
         uses = yaml.safe_load(f)
     return uses
 
@@ -96,7 +90,7 @@ def parse() -> None:
     try:
         compile_shelley(
             args.device,
-            parse_uses(args.uses, args.uses_file),
+            parse_uses(args.uses),
             args.output,
             binary=args.binary,
             intermediate=args.intermediate,

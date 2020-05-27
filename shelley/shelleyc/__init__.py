@@ -50,37 +50,20 @@ def get_dest_path(
 
 
 def _get_known_devices(
-    device: ShelleyDevice, uses_list: List[str], binary: bool = False
+    device: ShelleyDevice, uses: Dict[str, str], binary: bool = False
 ) -> Dict[str, CheckedDevice]:
     known_devices: Dict[str, CheckedDevice] = {}
-    for u in uses_list:
+
+    for uses_device_name in device.uses:
         try:
-            device_path, device_name = u.split(settings.USE_DEVICE_NAME_SEP)
-        except ValueError as error:
-            if settings.VERBOSE:
-                logger.exception(error)
-            raise CompilationError(
-                "Invalid dependency: {0}. Perhaps missing device name?".format(u)
+            known_devices[uses_device_name] = deserialize(
+                Path(uses[uses_device_name]), binary
             )
-        known_devices[device_name] = deserialize(Path(device_path), binary)
-
-    if len(device.uses) != len(known_devices):
-        raise CompilationError(
-            "Device {name} expects {uses} but found {known_devices}!".format(
-                name=device.name,
-                uses=device.uses,
-                known_devices=list(known_devices.keys()),
-            )
-        )
-
-    for (
-        dname
-    ) in (
-        device.uses
-    ):  # check that all uses match the specified dependencies on the command
-        if dname not in known_devices:
+        except KeyError as err:
             raise CompilationError(
-                "Device dependency not specified: {0}!".format(dname)
+                "Device {name} dependency on {uses_device_name} not declared in uses file!".format(
+                    name=device.name, uses_device_name=uses_device_name
+                )
             )
 
     return known_devices
@@ -104,7 +87,7 @@ def _export_internal(src_path, target_name, data, binary) -> None:
 
 def compile_shelley(
     src_path: Path,
-    uses: List[str],
+    uses: Dict[str, str],
     dst_path: Optional[Path] = None,
     binary: bool = False,
     intermediate: bool = False,

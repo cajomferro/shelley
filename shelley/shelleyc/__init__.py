@@ -74,9 +74,7 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_true",
     )
     parser.add_argument(
-        "--slow-check",
-        help="perform a fast check (no error reporting)",
-        action="store_true",
+        "--slow-check", help="perform a slow check", action="store_true",
     )
     parser.add_argument(
         "--skip-testing", help="do not check traces", action="store_true",
@@ -200,9 +198,15 @@ def compile_shelley(
         shelley_device, uses, binary
     )
     automata_device = shelley2automata(shelley_device)
-    dev = AssembledDevice.make(
-        automata_device, known_devices, fast_check=not slow_check
-    )
+
+    try:
+        dev = AssembledDevice.make(
+            automata_device, known_devices, fast_check=not slow_check
+        )
+    except ValueError as error:
+        if settings.VERBOSE:
+            logger.exception(error)
+        raise CompilationError("Shelley parser error: {0}".format(str(error)))
 
     if dump_stats is not None:
         logger.debug("Dumping statistics")
@@ -237,7 +241,7 @@ def compile_shelley(
     if not dev.is_valid:
         raise CompilationError("Invalid device: {0}".format(dev.failure))
 
-    if intermediate and dev.internal is not None: # do this only for compound devices
+    if intermediate and dev.internal is not None:  # do this only for compound devices
         logger.debug("Generating internal structures...")
 
         assert isinstance(dev.internal, AssembledMicroBehavior) or isinstance(

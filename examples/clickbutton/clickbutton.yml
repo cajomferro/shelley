@@ -1,26 +1,28 @@
 device:
  name: ClickButton
  behavior:
- - [click, release]
- - [dclick, release]
+ - [click, click]
+ - [dclick, click]
+ - [click, dclick]
+ - [dclick, dclick]
  components:
   b: Button
   t: Timer
- event:
+ events:
  - click:
-   start: True
-   final: True
-   micro:
-   - [b.press, t.start]
-   - xor:
-     - [t.timeout, b.release]
-     - [b.release, t.timeout]
+    start: True
+    final: True
+    micro:
+    - [b.press, t.start]
+    - xor:
+      - [t.timeout, b.release]
+      - [b.release, t.timeout]
  - dclick:
-   start: True
-   final: True
-   micro:
-   - [b.press, t.start, b.release, b.press]
-   - xor:
-     - t.timeout
-     - t.cancel
-   - b.release    
+    start: True
+    final: True
+    micro:
+    - [b.press, t.start, b.release, b.press]
+    - xor:
+       - t.timeout
+       - t.cancel
+    - b.release

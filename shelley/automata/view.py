@@ -70,7 +70,7 @@ def transition_name_txt(name: Any) -> str:
 
 def fsm2dot(
     fsm: regular.NFA[Any, str],
-    transition_name: Callable[[Any], str] = str,
+    transition_name: Callable[[Any], str] = transition_name_txt,
     state_name=str,
     char_sep=",",
 ) -> graphviz.Digraph:

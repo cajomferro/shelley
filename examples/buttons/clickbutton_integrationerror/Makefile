@@ -8,26 +8,37 @@ pdf: button.pdf timer.pdf clickbutton.pdf
 scy: clickbutton.scy
 
 clickbutton.scy: clickbutton.yml timer.scy button.scy
-	! $(SHELLEYC) -u uses.yml -d $< -o $@
+	! $(SHELLEYC) -u uses.yml -d $< --no-output
+
+# Generate integration diagram (minimized)
+# Example:
+#   make desklamp-i-d.pdf
+%-i-d.pdf: %.int
+	$(SHELLEYV) --dfa --minimize --no-sink --format pdf $< -o $@
+
+
+# Generate integration diagram (full)
+# Example:
+#   make desklamp-i-n.pdf
+%-i-n.pdf: %.int
+	$(SHELLEYV) --no-sink --format pdf $< -o $@
+
+# Generate system diagram
+# Example:
+#   make desklamp.pdf
+%.pdf: %.scy
+	$(SHELLEYV) --format pdf $< -o $@
+
+%.int:  %.yml
+	$(SHELLEYC) -d $< --no-output -i $@ -u uses.yml
 
 %.scy: %.yml
 	$(SHELLEYC) -u uses.yml -d $< -o $@
 
-# run with make internal SHELLEYC="shelleyc -i"
-internal: pdf clickbutton-micro-dfa-minimized.pdf clickbutton-micro-dfa-minimized-no-traps.pdf clickbutton-micro-nfa-no-epsilon-no-traps.pdf clickbutton-micro-nfa-with-epsilon-no-traps.pdf# -shuffle-dfa-minimized.pdf clickbutton-shuffle-dfa-minimized-no-traps.pdf
-
-#clickbutton-%.scy:
-#	test -f $<
-
-%.gv: %.scy
-	$(SHELLEYV) $< -o $@
-
-%.pdf: %.gv
-	dot -Tpdf -o $@ $<
 
 clean:
-	rm -f *.scy *.pdf *.gv
+	rm -f *.scy *.pdf *.int
 
 .PHONY: all pdf scy
 
-.SUFFIXES: .yml .scy
+.SUFFIXES: .yml .scy .int

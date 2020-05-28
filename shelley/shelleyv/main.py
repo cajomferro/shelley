@@ -4,6 +4,7 @@ import sys
 from typing import Union, Any
 from karakuri import regular
 from shelley.automata.view import fsm2dot, fsm2tex
+from pathlib import Path
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -19,15 +20,20 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--no-epsilon", action="store_true", help="Remove epsilon transitions"
     )
+    parser.add_argument(
+        "--format", default="dot", help="Specify the output format (defaults to dot)"
+    )
     parser.add_argument("--no-sink", action="store_true", help="Remove sink states")
     parser.add_argument("--minimize", action="store_true", help="Minimize the DFA")
-    parser.add_argument("--tex", action="store_true", help="Generate dot2tex")
+    parser.add_argument(
+        "--tex", action="store_true", help="Generate a dot file amenable to dot2tex"
+    )
     parser.add_argument(
         "-o",
         "--output",
         nargs="?",
-        type=argparse.FileType("w"),
-        default=sys.stdout,
+        type=Path,
+        default=None,
         help="Path to the generated DOT file (defaults to STDOUT)",
     )
     return parser
@@ -63,7 +69,20 @@ def main() -> None:
         dot = fsm2tex(n)
     else:
         dot = fsm2dot(n)
-    print(dot, file=args.output)
+    dot.format = args.format
+    if dot.format == "dot":
+        if args.output is None:
+            print(dot, file=sys.stdout)
+        else:
+            with args.output.open("w") as fp:
+                print(dot, file=fp)
+    else:
+        if args.output is None:
+            sys.stdout.buffer.write(dot.pipe())
+        else:
+            with args.output.open("wb") as fp:
+                fp.write(dot.pipe())
+    #
 
 
 if __name__ == "__main__":

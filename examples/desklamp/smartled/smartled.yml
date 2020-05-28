@@ -15,16 +15,19 @@ device:
         start: False     
         final: True
         micro:
+#          - xor:
+#            - [t.timeout]
+#            - [t.stop]
+#          - l.off
           - xor:
-            - [t.timeout]
-            - [t.cancel]
-          - l.off
+            - [t.timeout, l.off]
+            - [l.off, t.stop]
 
     #       - b.press
     #       - b.release
     #       - xor:
-    #           - [t.cancel, ledB.on]
-    #           - [ledB.on, t.cancel]
+    #           - [t.stop, ledB.on]
+    #           - [ledB.on, t.stop]
     #       - t.start
     # - standby1:
     #     final: True
@@ -33,7 +36,7 @@ device:
     #     final: True
     #     micro:
     #       - xor:
-    #           - [b.press, b.release, t.cancel]
+    #           - [b.press, b.release, t.stop]
     #           -  t.timeout
     #       - xor:
     #             - [ledB.off, ledA.off]
@@ -58,7 +61,7 @@ test_macro:
 
 test_micro:
   ok:
-    valid1: [b.press, b.release, ledA.on, t.start, b.press, b.release, t.cancel, ledB.on, t.start, t.timeout, ledB.off, ledA.off]
+    valid1: [b.press, b.release, ledA.on, t.start, b.press, b.release, t.stop, ledB.on, t.start, t.timeout, ledB.off, ledA.off]
     valid3: true
 #    valid2:
 #      possibly:

@@ -1,7 +1,7 @@
 device:
  name: ClickButton
  behavior:
-   - [click, click]
+   - [1c, 2c]
    - [dclick, click]
    - [click, dclick]
    - [dclick, dclick]
@@ -17,12 +17,13 @@ device:
          - xor:
            - [t.timeout, b.out]
            - [b.out, t.timeout]
+           #- b.out # removes t.timeout --> integration error
    - dclick:
        start: True
        final: True
        micro:
-         - [b.in, t.start, b.out, b.in] # t.timeout may fire between b.out, b.in
+         - [b.in, t.start, b.out] # t.timeout may fire here?
          - xor:
-           - t.timeout
-           - t.stop # why here and not before?
-         - b.out
+           - [b.in, t.timeout, b.out]
+           - [b.in, t.stop, b.out]
+           # - t.timeout # adding t.timeout --> ambiguity error

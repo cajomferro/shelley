@@ -37,10 +37,7 @@ def create_parser() -> argparse.ArgumentParser:
         required=True,
     )
     parser.add_argument(
-        "-i",
-        "--intermediate",
-        help="export intermediate structures representations",
-        action="store_true",
+        "-i", "--integration", type=Path, help="dump the integration diagram",
     )
     parser.add_argument(
         "--dump-stats",
@@ -99,7 +96,7 @@ def parse() -> None:
             parse_uses(args.uses, args.uses_file),
             args.output,
             binary=args.binary,
-            intermediate=args.intermediate,
+            integration=args.integration,
             dump_stats=args.dump_stats,
             dump_timings=args.dump_timings,
             no_output=args.no_output,

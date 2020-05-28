@@ -872,15 +872,19 @@ def test_projection_class() -> None:
     assert proj.projected == micro_dfa, "projected was set incorrectly"
     assert not proj.is_valid
 
-def assert_equiv_nfa(self:NFA[Any,str], other:NFA[Any,str]):
+
+def assert_equiv_nfa(self: NFA[Any, str], other: NFA[Any, str]):
     assert_equiv_dfa(nfa_to_dfa(self), nfa_to_dfa(other))
 
-def assert_equiv_dfa(lhs:DFA[Any,str], rhs:DFA[Any,str], msg=""):
+
+def assert_equiv_dfa(lhs: DFA[Any, str], rhs: DFA[Any, str], msg=""):
     if msg != "":
         msg = f"{msg}: "
     missing = lhs.subtract(rhs)
     if not missing.is_empty():
-        err = list(missing.get_shortest_string())
+        err_l = missing.get_shortest_string()
+        assert err_l is not None
+        err = list(err_l)
         print(f"lhs accept {err}", err in lhs)
         print(f"rhs accept {err}", err in rhs)
         print(rhs)
@@ -888,13 +892,15 @@ def assert_equiv_dfa(lhs:DFA[Any,str], rhs:DFA[Any,str], msg=""):
         assert False, f"{msg}rhs REJECTS string: {err}"
     missing = rhs.subtract(lhs)
     if not missing.is_empty():
-        err = missing.get_shortest_string()
-        err = list(missing.get_shortest_string())
+        err_l = missing.get_shortest_string()
+        assert err_l is not None
+        err = list(err_l)
         print(f"lhs accept {err}", err in lhs)
         print(f"rhs accept {err}", err in rhs)
         print(lhs)
         print(rhs)
         assert False, f"{msg}lhs REJECTS string: {err}"
+
 
 def test_invalid_behavior_4() -> None:
     triggers: Dict[str, Regex[str]] = {
@@ -917,10 +923,7 @@ def test_invalid_behavior_4() -> None:
     micro_nfa = NFA[int, str](
         alphabet=[B_P, B_R],
         transition_func=NFA.transition_table(
-            {
-                (0, B_R): frozenset([1]),
-                (1, B_P): frozenset([2]),
-            }
+            {(0, B_R): frozenset([1]), (1, B_P): frozenset([2]),}
         ),
         accepted_states=[0, 1, 2],
         start_state=0,
@@ -948,10 +951,7 @@ def test_invalid_behavior_4() -> None:
     button_nfa = NFA[int, str](
         alphabet=[B_P, B_R],
         transition_func=NFA.transition_table(
-            {
-                (0, B_P): frozenset([1]),
-                (1, B_R): frozenset([0]),
-            }
+            {(0, B_P): frozenset([1]), (1, B_R): frozenset([0]),}
         ),
         accepted_states=[0, 1, 2],
         start_state=0,
@@ -960,8 +960,14 @@ def test_invalid_behavior_4() -> None:
     ################################################
     # We build a projection directly
     # Test if the component was set correctly
-    assert_equiv_nfa(project_nfa(given.internal.nfa, button_nfa.alphabet), given.internal.nfa)
-    assert_equiv_dfa(proj_btn.component, button_dfa, "(proj_btn, button_dfa): projected button differs from button")
+    assert_equiv_nfa(
+        project_nfa(given.internal.nfa, button_nfa.alphabet), given.internal.nfa
+    )
+    assert_equiv_dfa(
+        proj_btn.component,
+        button_dfa,
+        "(proj_btn, button_dfa): projected button differs from button",
+    )
     assert_equiv_dfa(proj_btn.projected, micro_dfa, "projected was set incorrectly")
     converted = nfa_to_dfa(project_nfa(micro_nfa, button_nfa.alphabet))
     assert converted.is_equivalent_to(proj_btn.projected)

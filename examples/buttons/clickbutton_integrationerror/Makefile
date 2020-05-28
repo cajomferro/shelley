@@ -8,6 +8,7 @@ pdf: button.pdf timer.pdf clickbutton.pdf
 scy: clickbutton.scy
 
 clickbutton.scy: clickbutton.yml timer.scy button.scy
+	@$(SHELLEYC) -u uses.yml -d $< -o $@ --skip-checks
 	! $(SHELLEYC) -u uses.yml -d $< --no-output
 
 # Generate integration diagram (minimized)

@@ -11,14 +11,9 @@ def render_state(name: Any) -> Any:
 
 
 def render_edge(name: Any) -> str:
-    return f"{{\\tt {name} }}"
-
-
-def char_to_str(name: Any) -> str:
     if name is None:
         return "\\epsilon"
-    return str(name)
-
+    return f"{{\\tt {name} }}"
 
 def fsm2tex(
     fsm: regular.NFA[Any, str],

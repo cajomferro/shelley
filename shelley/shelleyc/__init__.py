@@ -61,7 +61,7 @@ def _get_known_devices(
             )
         except KeyError as err:
             raise CompilationError(
-                "Device {name} dependency on {uses_device_name} not declared in uses file!".format(
+                "Device {name} depends on {uses_device_name}. Please update uses file!".format(
                     name=device.name, uses_device_name=uses_device_name
                 )
             )

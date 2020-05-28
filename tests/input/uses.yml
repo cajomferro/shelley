@@ -1,4 +1,4 @@
-Button: button.scy
-SimpleButton: button.scy
-Led: led.scy
-Timer: timer.scy
+Button: tests/input/compiled/button.scy
+SimpleButton: tests/input/compiled/simple_button.scy
+Led: tests/input/compiled/led.scy
+Timer: tests/input/compiled/timer.scy

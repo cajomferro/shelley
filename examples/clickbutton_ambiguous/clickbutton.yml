@@ -6,14 +6,14 @@ device:
    - [click, dclick]
    - [dclick, dclick]
  components:
-  b: Button
-  t: Timer
+  B: Button
+  T: Timer
  events:
    - click:
        start: True
        final: True
        micro:
-         - [b.in, t.start]
+         - [B.p, T.b]
          - xor:
            - [t.timeout, b.out]
            - [b.out, t.timeout]

@@ -72,7 +72,15 @@ def parse_uses(uses_path: Optional[Path]) -> Dict[str, str]:
     uses: Dict[str, str]
     with uses_path.open(mode="r") as f:
         uses = yaml.safe_load(f)
-    return uses
+
+    if uses is None:
+        return {}  # empty or commented yaml
+    elif isinstance(uses, dict):
+        return uses
+    else:
+        raise CompilationError(
+            "Shelley parser error: uses file must be a valid dictionary"
+        )
 
 
 def parse() -> None:

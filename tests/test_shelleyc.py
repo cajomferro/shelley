@@ -66,17 +66,28 @@ def mk_use(**kwargs: Path) -> str:
     raise ValueError()
 
 
-def make_args(src_path: Path, **kwargs: Path) -> argparse.Namespace:
-    assert isinstance(src_path, Path)
-    uses = []
-    for k, v in kwargs.items():
-        uses.append(str(v) + ":" + k)
+def make_args(src_path: Path, uses: Optional[Path] = None) -> argparse.Namespace:
+    assert isinstance(src_path, Path) and src_path.exists()
+
+    if uses is not None:
+        assert isinstance(uses, Path) and uses.exists()
+
     parser = shelleyc_parser.create_parser()
-    if len(uses) > 0:
-        uses = ["--uses"] + list(sorted(uses))
-    return parser.parse_args(
-        ["--output", get_path(src_path)] + uses + ["--device", str(src_path)]
-    )
+
+    args: argparse.Namespace
+
+    if uses is not None:
+        args = parser.parse_args(
+            ["--output", get_path(src_path)]
+            + ["--uses", str(uses)]
+            + ["--device", str(src_path)]
+        )
+    else:
+        args = parser.parse_args(
+            ["--output", get_path(src_path)] + ["--device", str(src_path)]
+        )
+
+    return args
 
 
 ### TEST ASSEMBLE DEVICE ###
@@ -144,7 +155,7 @@ def test_single_device() -> None:
     args = make_args(device)
     assert args.device == device
     assert args.output == COMPILED_PATH / "button.scy"
-    assert args.uses == []
+    assert args.uses == None
 
 
 def test_no_output() -> None:
@@ -156,7 +167,7 @@ def test_no_output() -> None:
     )
     assert args.device == devicepath
     assert args.output == outpath
-    assert args.uses == []
+    assert args.uses == None
     assert args.no_output == True
 
 
@@ -166,58 +177,34 @@ def test_single_device_binary() -> None:
     args = parser.parse_args(["-b", "-d", str(device)])
     assert args.device == device
     assert args.output is None
-    assert args.uses == []
+    assert args.uses == None
     assert args.binary is True
 
 
 def test_single_device_user_defined_outdir() -> None:
     device = EXAMPLES_PATH / "button.yml"
     output = EXAMPLES_PATH / "compiled" / "button.scy"
-    parser = shelleyc_parser.create_parser()
     args = make_args(device)
     assert args.device == device
     assert args.output == output
-    assert args.uses == []
+    assert args.uses == None
 
 
 def test_composite_device() -> None:
     device = EXAMPLES_PATH / "desklamp.yml"
-    args = make_args(
-        device,
-        Button=EXAMPLES_PATH / "button.scy",
-        Led=EXAMPLES_PATH / "led.scy",
-        Timer=EXAMPLES_PATH / "timer.scy",
-    )
-    assert args.device == device
-    assert args.output == COMPILED_PATH / "desklamp.scy"
-    assert len(args.uses) == 3
-    assert args.uses[0] == mk_use(Button=EXAMPLES_PATH / "button.scy")
-    assert args.uses[1] == mk_use(Led=EXAMPLES_PATH / "led.scy")
-    assert args.uses[2] == mk_use(Timer=EXAMPLES_PATH / "timer.scy")
-
-
-def test_composite_device_uses_file() -> None:
-    device = EXAMPLES_PATH / "desklamp.yml"
     uses = EXAMPLES_PATH / "uses.yml"
-    parser = shelleyc_parser.create_parser()
 
-    args = parser.parse_args(
-        ["--output", get_path(device)]
-        + ["--uses", str(uses)]
-        + ["--device", str(device)]
-    )
-
-    print(args)
+    args = make_args(device, uses)
 
     assert args.device == device
     assert args.output == COMPILED_PATH / "desklamp.scy"
     assert args.uses == uses
 
     assert shelleyc_parser.parse_uses(args.uses) == {
-        "Button": "button.scy",
-        "SimpleButton": "button.scy",
-        "Led": "led.scy",
-        "Timer": "timer.scy",
+        "Button": "tests/input/compiled/button.scy",
+        "SimpleButton": "tests/input/compiled/simple_button.scy",
+        "Led": "tests/input/compiled/led.scy",
+        "Timer": "tests/input/compiled/timer.scy",
     }
 
 
@@ -343,30 +330,81 @@ def test_compile_buton_no_output() -> None:
 ### smartbutton
 
 
-def test_smartbutton_dependency_missing() -> None:
+def test_smartbutton_file_invalid_dict_uses_file() -> None:
     assert not COMPILED_PATH.exists()
+    uses_path = EXAMPLES_PATH / "invalid_uses4.yml"
 
     src_path = EXAMPLES_PATH / "smartbutton1.yml"
-    args = make_args(src_path)
+    args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
+        shelleyc.compile_shelley(
+            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
+        )
 
-    assert str(exc_info.value) == "Device SmartButton expects ['Button'] but found []!"
+    assert (
+        str(exc_info.value)
+        == "Shelley parser error: uses file must be a valid dictionary"
+    )
 
     _remove_compiled_dir()
 
 
-def test_smartbutton_dependency_not_found() -> None:
+def test_smartbutton_file_not_found_uses_file() -> None:
     assert not COMPILED_PATH.exists()
-    COMPILED_PATH.mkdir()
+    uses_path = EXAMPLES_PATH / "invalid_uses3.yml"
+
     src_path = EXAMPLES_PATH / "smartbutton1.yml"
-    args = make_args(src_path, Button=COMPILED_PATH / "button.scy")
+    args = make_args(src_path, uses_path)
+
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
+        shelleyc.compile_shelley(
+            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
+        )
+
     assert (
         str(exc_info.value)
-        == "Use device not found: tests/input/compiled/button.scy. Please compile it first!"
+        == "Use device not found: buttonBAD.scy. Please compile it first!"
+    )
+
+    _remove_compiled_dir()
+
+
+def test_smartbutton_not_in_uses_file() -> None:
+    assert not COMPILED_PATH.exists()
+    uses_path = EXAMPLES_PATH / "invalid_uses2.yml"
+
+    src_path = EXAMPLES_PATH / "smartbutton1.yml"
+    args = make_args(src_path, uses_path)
+
+    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+        shelleyc.compile_shelley(
+            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
+        )
+
+    assert (
+        str(exc_info.value)
+        == "Device SmartButton depends on Button. Please update uses file!"
+    )
+
+    _remove_compiled_dir()
+
+
+def test_smartbutton_empty_uses_file() -> None:
+    assert not COMPILED_PATH.exists()
+    uses_path = EXAMPLES_PATH / "invalid_uses.yml"
+
+    src_path = EXAMPLES_PATH / "smartbutton1.yml"
+    args = make_args(src_path, uses_path)
+
+    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+        shelleyc.compile_shelley(
+            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
+        )
+
+    assert (
+        str(exc_info.value)
+        == "Device SmartButton depends on Button. Please update uses file!"
     )
 
     _remove_compiled_dir()
@@ -377,9 +415,13 @@ def test_smartbutton_ok() -> None:
     _compile_simple_device("button")
 
     src_path = EXAMPLES_PATH / "smartbutton1.yml"
-    args = make_args(src_path, Button=COMPILED_PATH / "button.scy")
+    uses_path = EXAMPLES_PATH / "uses.yml"
 
-    shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
+    args = make_args(src_path, uses_path)
+
+    shelleyc.compile_shelley(
+        args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
+    )
 
     _remove_compiled_dir()
 
@@ -388,19 +430,18 @@ def test_compile_desklamp_dependency_not_found() -> None:
     COMPILED_PATH.mkdir(exist_ok=True, parents=True)
 
     src_path = EXAMPLES_PATH / "desklamp.yml"
-    args = make_args(
-        src_path,
-        Button=COMPILED_PATH / "button.scy",
-        Led=COMPILED_PATH / "led.scy",
-        Timer=COMPILED_PATH / "timer.scy",
-    )
+    uses_path = EXAMPLES_PATH / "invalid_uses.yml"
+
+    args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
-    print(exc_info.value)
+        shelleyc.compile_shelley(
+            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
+        )
+
     assert (
         str(exc_info.value)
-        == "Use device not found: tests/input/compiled/button.scy. Please compile it first!"
+        == "Device DeskLamp depends on Led. Please update uses file!"
     )
 
     _remove_compiled_dir()
@@ -409,19 +450,17 @@ def test_compile_desklamp_dependency_not_found() -> None:
 def test_compile_desklamp_dependency_not_found_2() -> None:
     # assert not COMPILED_PATH.exists()
     _compile_simple_device("button")
-    # _compile_simple_device('led', COMPILED_PATH)
+    # _compile_simple_device('led', COMPILED_PATH) --> THIS IS NOT TO BE COMPILED ON PURPOSE
     _compile_simple_device("timer")
 
     src_path = EXAMPLES_PATH / "desklamp.yml"
-    args = make_args(
-        src_path,
-        Button=COMPILED_PATH / "button.scy",
-        Led=COMPILED_PATH / "led.scy",
-        Timer=COMPILED_PATH / "timer.scy",
-    )
+    uses_path = EXAMPLES_PATH / "uses.yml"
+    args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
+        shelleyc.compile_shelley(
+            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
+        )
 
     assert (
         str(exc_info.value)
@@ -439,13 +478,12 @@ def test_compile_desklamp_ok() -> None:
     _compile_simple_device("timer")
 
     src_path = EXAMPLES_PATH / "desklamp.yml"
-    args = make_args(
-        src_path,
-        Button=COMPILED_PATH / "button.scy",
-        Led=COMPILED_PATH / "led.scy",
-        Timer=COMPILED_PATH / "timer.scy",
+    uses_path = EXAMPLES_PATH / "uses.yml"
+    args = make_args(src_path, uses_path)
+
+    shelleyc.compile_shelley(
+        args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
     )
-    shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
 
     _remove_compiled_dir()
 
@@ -455,10 +493,13 @@ def test_compile_ambiguous() -> None:
     _compile_simple_device("simple_button")
 
     src_path = EXAMPLES_PATH / "ambiguous.yml"
-    args = make_args(src_path, SimpleButton=COMPILED_PATH / "simple_button.scy")
+    uses_path = EXAMPLES_PATH / "uses.yml"
+    args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
+        shelleyc.compile_shelley(
+            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
+        )
 
     assert "Invalid device: AmbiguityFailure" in str(exc_info.value)
 

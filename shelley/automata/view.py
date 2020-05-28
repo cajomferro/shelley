@@ -54,11 +54,12 @@ def fsm2tex(
         if state == fsm.start_state:
             style.append(" ".join(initial))
         kwargs["style"] = ",".join(style)
-        dot.node(state_name(state), **kwargs)
+        kwargs["label"] = state_name(state)
+        dot.node(str(state), **kwargs)
 
     for ((src, dst), chars) in sorted(edges.items()):
         str_chars = sorted(map(transition_name, chars))
-        dot.edge(state_name(src), state_name(dst), label=char_sep.join(str_chars))
+        dot.edge(str(src), str(dst), label=char_sep.join(str_chars))
 
     return dot
 

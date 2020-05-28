@@ -21,13 +21,12 @@ def create_parser() -> argparse.ArgumentParser:
         "--no-epsilon", action="store_true", help="Remove epsilon transitions"
     )
     parser.add_argument(
-        "--format", default="dot", help="Specify the output format (defaults to dot)"
+        "--format",
+        default="dot",
+        help="Specify the output format (defaults to dot) pick 'tex' or any from https://www.graphviz.org/doc/info/output.html",
     )
     parser.add_argument("--no-sink", action="store_true", help="Remove sink states")
     parser.add_argument("--minimize", action="store_true", help="Minimize the DFA")
-    parser.add_argument(
-        "--tex", action="store_true", help="Generate a dot file amenable to dot2tex"
-    )
     parser.add_argument(
         "-o",
         "--output",
@@ -65,11 +64,11 @@ def main() -> None:
         parser.error("The '--minimize' option requires '--dfa'")
     d = yaml.load(args.input, Loader=yaml.FullLoader)
     n: regular.NFA[Any, str] = handle_fsm(regular.NFA.from_dict(d), args)
-    if args.tex:
+    if args.format == "tex":
         dot = fsm2tex(n)
     else:
         dot = fsm2dot(n)
-    dot.format = args.format
+    dot.format = "dot" if args.format == "tex" else args.format
     if dot.format == "dot":
         if args.output is None:
             print(dot, file=sys.stdout)

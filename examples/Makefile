@@ -20,6 +20,9 @@ all:
 	$(MAKE) -C buttons/good_smartbutton_timer_double_complex
 	$(MAKE) -C buttons/good_smartbutton_timer_long
 	$(MAKE) -C buttons/good_smartbutton_timer_single
+	$(MAKE) -C buttons/clickbutton
+	$(MAKE) -C buttons/clickbutton_integrationerror
+	$(MAKE) -C buttons/clickbutton_ambiguous
 	$(MAKE) -C aquamote/v1
 	$(MAKE) -C aquamote/v2
 	$(MAKE) -C aquamote/v2_finalstates
@@ -54,6 +57,9 @@ clean:
 	$(MAKE) -C buttons/good_smartbutton_timer_double_complex clean
 	$(MAKE) -C buttons/good_smartbutton_timer_long clean
 	$(MAKE) -C buttons/good_smartbutton_timer_single clean
+	$(MAKE) -C buttons/clickbutton clean
+	$(MAKE) -C buttons/clickbutton_integrationerror clean
+	$(MAKE) -C buttons/clickbutton_ambiguous clean
 	$(MAKE) -C aquamote/v1 clean
 	$(MAKE) -C aquamote/v2 clean
 	$(MAKE) -C aquamote/v2_finalstates clean

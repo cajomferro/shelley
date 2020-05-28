@@ -7,12 +7,11 @@ pdf: simple_button.pdf led_strict.pdf ledbutton.pdf
 
 scy: ledbutton.scy
 
+# This is ok: led is more strict but ledbutton is also more strict
 ledbutton.scy: ledbutton.yml simple_button.scy led_strict.scy
-	# This is ok: led is more strict but ledbutton is also more strict
-	$(SHELLEYC) -d $< -u simple_button.scy\:SimpleButton led_strict.scy\:LedStrict
 
 %.scy: %.yml
-	$(SHELLEYC) -d $<
+	$(SHELLEYC) -u uses.yml -d $<
 
 %.gv: %.scy
 	$(SHELLEYV) $< -o $@

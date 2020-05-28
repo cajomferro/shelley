@@ -3,13 +3,13 @@ SHELLEYV = shelleyv
 
 all: scy
 
-pdf: singleclick.pdf
+pdf: button.pdf
 
 scy: missing_trigger.scy
 
-missing_trigger.scy: missing_trigger.yml singleclick.scy
+missing_trigger.scy: missing_trigger.yml button.scy
 	# Shelley parser error: Event 'off' doesn't specify micro behavior but device has components!
-	! $(SHELLEYC) -d $< -u singleclick.scy\:SingleClickButton
+	! $(SHELLEYC) -d $< -u uses.yml
 
 %.scy: %.yml
 	$(SHELLEYC) -d $<

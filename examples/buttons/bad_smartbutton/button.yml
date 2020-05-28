@@ -1,5 +1,5 @@
 device:
-  name: SingleClickButton
+  name: Button
   behavior:
     - [pressed, released]
     - [released, pressed]

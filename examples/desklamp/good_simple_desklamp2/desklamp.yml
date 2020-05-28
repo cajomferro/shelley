@@ -4,8 +4,8 @@ device:
     - [level1, off]
     - [off, level1]
   components:
-    l: LedStrict
-    b: SimpleButton
+    l: Led
+    b: Button
   events:
     - level1:
         start: True

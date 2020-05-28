@@ -1,5 +1,5 @@
 device:
-  name: LedStrict
+  name: Led
   behavior:
     - [on, off]
     - [off, on]

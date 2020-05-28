@@ -2,10 +2,3 @@ device:
   name: SimpleButton
   behavior:
     - [pressed, pressed]
-
-test_macro:
-  ok:
-    valid1: [pressed]
-    valid2: [pressed, pressed]
-    valid3: [pressed, pressed, pressed, pressed, pressed, pressed]
-  fail: {}

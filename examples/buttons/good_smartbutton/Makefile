@@ -8,10 +8,9 @@ pdf: button.pdf smartbutton.pdf
 scy: smartbutton.scy
 
 smartbutton.scy: smartbutton.yml button.scy
-	$(SHELLEYC) -d $< -u button.scy\:Button
 
 %.scy: %.yml
-	$(SHELLEYC) -d $<
+	$(SHELLEYC) -u uses.yml -d $<
 
 %.gv: %.scy
 	$(SHELLEYV) $< -o $@

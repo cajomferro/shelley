@@ -3,13 +3,13 @@ SHELLEYV = shelleyv
 
 all: scy
 
-pdf: singleclick.pdf
+pdf: button.pdf
 
 scy: smartbutton.scy
 
-smartbutton.scy: smartbutton.yml singleclick.scy
-	# Invalid device: TriggerIntegrationFailure
-	! $(SHELLEYC) -d $< -u singleclick.scy\:SingleClickButton
+smartbutton.scy: smartbutton.yml button.scy
+	# Invalid device: TriggerIntegrationFailure(micro_trace=('b.pressed', 'b.pressed'), macro_trace=('on',), component_errors={'b': (('pressed', 'pressed'), 1)})
+	! $(SHELLEYC) -d $< -u uses.yml
 
 %.scy: %.yml
 	$(SHELLEYC) -d $<

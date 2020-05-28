@@ -6,10 +6,10 @@ device:
     - [led2, led1]
     - [led2, led2]
   components:
-    led1: LedStrict # Let's use a strict led here!
-    led2: LedStrict # Let's use a strict led here!
-    b1: SimpleButton
-    b2: SimpleButton
+    led1: Led # Let's use a strict led here!
+    led2: Led # Let's use a strict led here!
+    b1: Button
+    b2: Button
   events: # this is wrong: led1->led1 and led2->led2 are invalid!
     - led1:
         start: True

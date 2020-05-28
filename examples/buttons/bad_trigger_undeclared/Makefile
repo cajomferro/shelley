@@ -3,13 +3,13 @@ SHELLEYV = shelleyv
 
 all: scy
 
-pdf: singleclick.pdf
+pdf: button.pdf
 
 scy: trigger_undeclared.scy
 
-trigger_undeclared.scy: trigger_undeclared.yml singleclick.scy
+trigger_undeclared.scy: trigger_undeclared.yml button.scy
 	# Shelley parser error: Events declared not used in behavior: '{'off'}'
-	! $(SHELLEYC) -d $< -u singleclick.scy\:SingleClickButton
+	! $(SHELLEYC) -d $< -u uses.yml
 
 %.scy: %.yml
 	$(SHELLEYC) -d $<

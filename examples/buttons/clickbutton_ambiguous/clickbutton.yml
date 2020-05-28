@@ -1,0 +1,35 @@
+device:
+ name: ClickButton
+ behavior:
+   - [s, s]
+   - [d, s]
+   - [s, d]
+   - [d, d]
+ components:
+  B: Button
+  T: Timer
+ events:
+   - s:
+       start: True
+       final: True
+       micro:
+         - [B.p, T.b]
+         - xor:
+           - [T.t, B.r]
+           - [B.r, T.t]
+   - d:
+       start: True
+       final: True
+       micro:
+         - [B.p, T.b, B.r] # t.timeout may fire here?
+         - xor:
+           - [B.p, T.t, B.r]
+           - xor:
+              - [B.p, T.e, B.r]
+              - T.t # adding t.timeout --> ambiguity error
+
+# TODO: update xor syntax to allow >=0 options
+#         - xor:
+#           - [B.p, T.t, B.r]
+#           - [B.p, T.e, B.r]
+#           - t.timeout # adding t.timeout --> ambiguity error

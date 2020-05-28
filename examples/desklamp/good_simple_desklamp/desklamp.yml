@@ -5,9 +5,9 @@ device:
     - [level2, off]
     - [off, level1]
   components:
-    ledA: LedStrict
-    ledB: LedStrict
-    b: SimpleButton
+    ledA: Led
+    ledB: Led
+    b: Button
   events:
     - level1:
         start: True

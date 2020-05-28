@@ -8,6 +8,7 @@ pdf: button.pdf timer.pdf clickbutton.pdf
 scy: clickbutton.scy
 
 clickbutton.scy: clickbutton.yml timer.scy button.scy
+	! $(SHELLEYC) -u uses.yml -d $< -o $@
 
 %.scy: %.yml
 	$(SHELLEYC) -u uses.yml -d $< -o $@

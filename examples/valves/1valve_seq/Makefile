@@ -8,12 +8,10 @@ pdf: valve.pdf valve_seq.pdf valve_2seq.pdf valve_3seq.pdf
 scy: valve.scy valve_seq.scy valve_2seq.scy valve_3seq.scy
 
 valve.scy: valve.yml
-	$(SHELLEYC) -d $< -o valve.scy
-
+	$(SHELLEYC) -d $< -u uses.yml -o $@
 
 %.scy: %.yml valve.scy
-	$(SHELLEYC) -d $< -u valve.scy\:Valve -o $@
-	test -f $<
+	$(SHELLEYC) -d $< -u uses.yml -o $@
 
 %.gv: %.scy
 	$(SHELLEYV) $< -o $@

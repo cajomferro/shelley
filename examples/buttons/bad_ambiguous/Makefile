@@ -9,7 +9,7 @@ scy: ambiguous.scy
 
 ambiguous.scy: ambiguous.yml simple.scy
 	# Invalid device: AmbiguousTriggersFailure
-	! $(SHELLEYC) -d $< -u simple.scy\:SimpleButton
+	! $(SHELLEYC) -d $< -u uses.yml
 
 %.scy: %.yml
 	$(SHELLEYC) -d $<

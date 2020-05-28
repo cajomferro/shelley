@@ -8,11 +8,10 @@ pdf: valve.pdf 1valve.pdf 4valves.pdf 8valves.pdf 9valves.pdf 10valves.pdf 11val
 scy: 1valve.scy 4valves.scy 8valves.scy 9valves.scy 10valves.scy 11valves.scy 12valves.scy 13valves.scy 16valves.scy 24valves.scy 32valves.scy
 
 valve.scy: valve.yml
-	$(SHELLEYC) -d $< -o valve.scy
+	$(SHELLEYC) -d $< -u uses.yml -o $@
 
 %.scy: %.yml valve.scy
-	$(SHELLEYC) -d $< -u valve.scy\:Valve -o $@
-	test -f $<
+	$(SHELLEYC) -d $< -u uses.yml -o $@
 
 %.scy: %.yml
 	$(SHELLEYC) -d $< -o $@

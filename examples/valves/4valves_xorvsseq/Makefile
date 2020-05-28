@@ -8,15 +8,10 @@ pdf: 4valves_seq.pdf 4valves_xor.pdf 4valves_seqx25.pdf 4valves_xorx25.pdf 4valv
 scy: 4valves_seq.scy 4valves_xor.scy 4valves_seqx25.scy 4valves_xorx25.scy 4valves_seqx50.scy 4valves_xorx50.scy
 
 valve.scy: valve.yml
-	$(SHELLEYC) -d $< -o valve.scy
+	$(SHELLEYC) -d $< -u uses.yml -o $@
 
 %.scy: %.yml valve.scy
-	$(SHELLEYC) -d $< -u valve.scy\:Valve -o $@
-	test -f $<
-
-%.scy: %.yml
-	$(SHELLEYC) -d $< -o $@
-	test -f $<
+	$(SHELLEYC) -d $< -u uses.yml -o $@
 
 %.gv: %.scy
 	$(SHELLEYV) $< -o $@

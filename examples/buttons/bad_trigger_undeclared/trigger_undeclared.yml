@@ -3,7 +3,7 @@ device:
   behavior:
     - [on, on]
   components:
-    b: SingleClickButton
+    b: Button
   events:
     - on:
         micro: [ b.pressed, b.released]

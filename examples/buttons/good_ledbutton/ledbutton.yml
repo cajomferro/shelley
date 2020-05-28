@@ -8,8 +8,8 @@ device:
   components:
     led1: Led
     led2: Led
-    b1: SimpleButton
-    b2: SimpleButton
+    b1: Button
+    b2: Button
   events:
     - led1:
         start: True

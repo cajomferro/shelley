@@ -9,7 +9,7 @@ scy: ambiguous.scy
 
 ambiguous.scy: ambiguous.yml singleclick.scy timer.scy
 	# Invalid device: AmbiguousTriggersFailure
-	! $(SHELLEYC) -d $< -u singleclick.scy\:SingleClickButton timer.scy\:Timer
+	! $(SHELLEYC) -u uses.yml -d $<
 
 %.scy: %.yml
 	$(SHELLEYC) -d $<

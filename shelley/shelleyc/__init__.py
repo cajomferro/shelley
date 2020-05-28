@@ -85,9 +85,10 @@ def compile_shelley(
     integration: Optional[Path] = None,
     dump_stats: Optional[IO[str]] = None,
     dump_timings: Optional[IO[str]] = None,
-    no_output: bool = False,
+    save_output: bool = False,
     slow_check: bool = False,
     skip_testing: bool = False,
+    skip_checks: bool = False,
 ) -> Path:
     """
 
@@ -135,6 +136,23 @@ def compile_shelley(
         logger.debug("Dumping timings")
         save_timings(dump_timings, dev)
 
+    if (
+        integration is not None and dev.internal is not None
+    ):  # do this only for compound devices
+        logger.debug("Generating integration diagram...")
+
+        assert isinstance(dev.internal, AssembledMicroBehavior) or isinstance(
+            dev.internal, AssembledMicroBehavior2
+        )
+        serialize(integration, dev.internal.nfa.as_dict(), binary)
+
+    if (dev.is_valid or skip_checks) and save_output:
+        serialize(dst_path, dev.external.nfa.as_dict(), binary)
+        logger.debug("Compiled file: {0}".format(dst_path))
+
+    if skip_checks:
+        return dst_path
+    # Do not ignore checks
     if dev.is_valid:
         if skip_testing:
             logger.debug("Skipping tests")
@@ -153,22 +171,7 @@ def compile_shelley(
                 )  # micro
             except ValueError as err:
                 raise CompilationError(str(err))
-
-    if not no_output:
-        serialize(dst_path, dev.external.nfa.as_dict(), binary)
-        logger.debug("Compiled file: {0}".format(dst_path))
-
-    if (
-        integration is not None and dev.internal is not None
-    ):  # do this only for compound devices
-        logger.debug("Generating integration diagram...")
-
-        assert isinstance(dev.internal, AssembledMicroBehavior) or isinstance(
-            dev.internal, AssembledMicroBehavior2
-        )
-        serialize(integration, dev.internal.nfa.as_dict(), binary)
-
-    if not dev.is_valid:
+    else:
         raise CompilationError("Invalid device: {0}".format(dev.failure))
 
     return dst_path

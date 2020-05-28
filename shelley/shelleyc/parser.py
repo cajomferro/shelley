@@ -49,14 +49,18 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--no-output",
+        dest="save_output",
         help="validate only, do not create compiled files, useful for benchmarking",
-        action="store_true",
+        action="store_false",
     )
     parser.add_argument(
         "--slow-check", help="perform a slow check", action="store_true",
     )
     parser.add_argument(
         "--skip-testing", help="do not check traces", action="store_true",
+    )
+    parser.add_argument(
+        "--skip-checks", help="Skip validity tests.", action="store_true",
     )
     return parser
 
@@ -101,13 +105,14 @@ def parse() -> None:
             integration=args.integration,
             dump_stats=args.dump_stats,
             dump_timings=args.dump_timings,
-            no_output=args.no_output,
+            save_output=args.save_output,
             slow_check=args.slow_check,
             skip_testing=args.skip_testing,
+            skip_checks=args.skip_checks,
         )
     except CompilationError as error:
         if settings.VERBOSE:
             logger.error(str(error), exc_info=settings.VERBOSE)
-        sys.exit(str(error))
+        sys.exit(1)
 
     logger.debug("OK!")

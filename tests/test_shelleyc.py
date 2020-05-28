@@ -168,7 +168,7 @@ def test_no_output() -> None:
     assert args.device == devicepath
     assert args.output == outpath
     assert args.uses == None
-    assert args.no_output == True
+    assert args.save_output == False
 
 
 def test_single_device_binary() -> None:
@@ -320,7 +320,7 @@ def test_compile_buton_no_output() -> None:
         args.uses,
         dst_path=args.output,
         binary=args.binary,
-        no_output=args.no_output,
+        skip_checks=args.skip_checks,
     )
     assert src_path.exists()
     assert not outpath.exists()

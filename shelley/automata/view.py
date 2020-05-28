@@ -1,5 +1,5 @@
 import graphviz
-from typing import Dict, Any, Callable, Optional
+from typing import Dict, Any, Callable, Optional, Union
 from graphviz import Digraph
 from karakuri import regular
 
@@ -20,15 +20,14 @@ def char_to_str(name: Any) -> str:
     return str(name)
 
 
-def dfa2tex(
-    data: Dict,
+def fsm2tex(
+    fsm: regular.NFA[Any, str],
     state_name: Callable[[Any], str] = render_state,
     transition_name: Callable[[Any], str] = render_edge,
     initial_orientation: Optional[str] = None,
     fig_only: bool = False,
     char_sep: str = ",",
 ) -> graphviz.Digraph:
-    m: regular.NFA[Any, str] = regular.NFA.from_dict(data)
     dot = Digraph()
     dot.attr(
         d2tfigpreamble=r"\tikzstyle{every state}=[thick,fill=gray!20]", rankdir="LR"
@@ -45,60 +44,56 @@ def dfa2tex(
     if initial_orientation is not None:
         initial.append(initial_orientation)
 
-    nodes, edges = m.as_graph()
+    nodes, edges = fsm.as_graph()
 
     for state in sorted(nodes):
         kwargs = dict()
         style = ["state"]
-        if m.accepted_states(state):
+        if fsm.accepted_states(state):
             style.append("accepting")
-        if state == m.start_state:
+        if state == fsm.start_state:
             style.append(" ".join(initial))
         kwargs["style"] = ",".join(style)
-        dot.node(state_name(state), **kwargs)
+        kwargs["label"] = state_name(state)
+        dot.node(str(state), **kwargs)
 
     for ((src, dst), chars) in sorted(edges.items()):
         str_chars = sorted(map(transition_name, chars))
-        dot.edge(state_name(src), state_name(dst), label=char_sep.join(str_chars))
+        dot.edge(str(src), str(dst), label=char_sep.join(str_chars))
 
     return dot
 
 
-def automaton2dot(automaton: Dict) -> graphviz.Digraph:
+def transition_name_txt(name: Any) -> str:
+    return str(name) if name is not None else "ε"
+
+
+def fsm2dot(
+    fsm: regular.NFA[Any, str],
+    transition_name: Callable[[Any], str] = str,
+    state_name=str,
+    char_sep=",",
+) -> graphviz.Digraph:
+
     """
     :param automaton: YAML checked device as dict
     :return:
     """
     dot = graphviz.Digraph()
     dot.graph_attr["rankdir"] = "LR"
-    nodes = set(k for edge in automaton["edges"] for k in (edge["src"], edge["dst"]))
-    nodes.add(automaton["start_state"])
-    nodes.union(automaton["accepted_states"])
-    accepted = set(automaton["accepted_states"])
     dot.node("", shape="point")  # start point
+    nodes, edges = fsm.as_graph()
+
     for node in sorted(nodes):
         kwargs = {"shape": "circle"}
-        if node == automaton["start_state"]:
+        if node == fsm.start_state:
             start_node_lbl: str = str(node)
-        # if node == automaton["start_state"] and node in accepted:
-        #     kwargs["shape"] = "doubleoctagon"
-        # elif node == automaton["start_state"]:
-        #     kwargs["shape"] = "octagon"
-        if node in accepted:
+        if fsm.accepted_states(node):
             kwargs["shape"] = "doublecircle"
         dot.node(str(node), **kwargs)
-    # Group by edges:
-    edges: Dict = {}
-    for edge in automaton["edges"]:
-        pair = str(edge["src"]), str(edge["dst"])
-        outs = edges.get(pair, None)
-        if outs is None:
-            edges[pair] = outs = []
-        outs.append(edge["char"])
-    # Create an edge per edge
-    dot.edge("", start_node_lbl, label="")  # arrow for start state
-    for ((src, dst), chars) in sorted(edges.items()):
-        chars = sorted(map(str, chars))
-        dot.edge(src, dst, label=", ".join(chars))
 
+    dot.edge("", str(fsm.start_state), label="")  # arrow for start state
+    for ((src, dst), chars) in sorted(edges.items()):
+        str_chars = sorted(map(transition_name, chars))
+        dot.edge(state_name(src), state_name(dst), label=char_sep.join(str_chars))
     return dot

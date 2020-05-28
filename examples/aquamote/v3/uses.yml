@@ -1,0 +1,8 @@
+Valve: valve.scy
+Timer: timer.scy
+ValveHandlerTimer: valvehandlertimer.scy
+Magnetic: magnetic.scy
+Radio: radio.scy
+WiFiClient: wificlient.scy
+HTTPClient: httpclient.scy
+LowPower: lowpower-strict.scy

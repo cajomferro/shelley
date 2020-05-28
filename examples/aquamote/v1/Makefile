@@ -8,10 +8,9 @@ pdf: magnetic.pdf radio.pdf valve.pdf lowpower.pdf controller.pdf
 scy: controller.scy
 
 controller.scy: controller.yml valve.scy magnetic.scy radio.scy lowpower.scy
-	$(SHELLEYC) -d $< -u magnetic.scy\:Magnetic valve.scy\:Valve radio.scy\:Radio lowpower.scy\:LowPower
 
 %.scy: %.yml
-	$(SHELLEYC) -d $< -o $@
+	$(SHELLEYC) -u uses.yml -d $< -o $@
 	test -f $<
 
 %.gv: %.scy

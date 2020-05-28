@@ -13,23 +13,16 @@ internal-radio: radio-micro-dfa-minimized.pdf radio-micro-dfa-minimized-no-traps
 scy: controller.scy radio.scy valvehandlertimer.scy
 
 radio.scy: radio.yml wificlient.scy httpclient.scy
-	$(SHELLEYC) -d $< -u wificlient.scy\:WiFiClient httpclient.scy\:HTTPClient
-	test -f $<
 
 valvehandlertimer.scy: valvehandlertimer.yml valve.scy timer.scy
-	$(SHELLEYC) -d $< -u valve.scy\:Valve timer.scy\:Timer -o $@
-	test -f $<
 
 controller.scy: controller.yml valvehandlertimer.scy magnetic.scy radio.scy lowpower-strict.scy
-	$(SHELLEYC) -d $< -u magnetic.scy\:Magnetic valvehandlertimer.scy\:ValveHandlerTimer radio.scy\:Radio lowpower-strict.scy\:LowPower -o $@ # -i -v #--dump-stats
-	test -f $<
 
-controller-%.scy:
-	test -f $<
+#controller-%.scy:
+#	$(SHELLEYC) -u uses.yml -d $< -o $@
 
 %.scy: %.yml
-	$(SHELLEYC) -d $< -o $@
-	test -f $<
+	$(SHELLEYC) -u uses.yml -d $< -o $@
 
 %.gv: %.scy
 	$(SHELLEYV) $< -o $@

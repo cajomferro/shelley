@@ -1,0 +1,9 @@
+Valve: valve.scy
+ValveHandler: valvehandler.scy
+Timer: timer.scy
+ValveHandlerTimer: valvehandlertimer.scy
+Magnetic: magnetic.scy
+Radio: radio.scy
+RadioSimple: radiosimple.scy
+RadioSimplest: radiosimplest.scy
+LowPower: lowpower-strict.scy

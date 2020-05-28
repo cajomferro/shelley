@@ -8,20 +8,15 @@ pdf: magnetic.pdf radio.pdf radiosimple.pdf radiosimplest.pdf valve.pdf timer.pd
 scy: controller.scy
 
 radiosimple.scy: radiosimple.yml radio.scy
-	$(SHELLEYC) -d $< -u radio.scy\:Radio
 
 radiosimplest.scy: radiosimplest.yml radiosimple.scy
-	$(SHELLEYC) -d $< -u radiosimple.scy\:RadioSimple
 
 valvehandlertimer.scy: valvehandlertimer.yml valve.scy timer.scy
-	$(SHELLEYC) -d $< -u valve.scy\:Valve timer.scy\:Timer
 
 controller.scy: controller.yml valvehandlertimer.scy magnetic.scy radiosimplest.scy lowpower-strict.scy
-	$(SHELLEYC) -d $< -u magnetic.scy\:Magnetic valvehandlertimer.scy\:ValveHandlerTimer radiosimplest.scy\:RadioSimplest lowpower-strict.scy\:LowPower # -i
 
 %.scy: %.yml
-	$(SHELLEYC) -d $< -o $@
-	test -f $<
+	$(SHELLEYC) -u uses.yml -d $< -o $@
 
 %.gv: %.scy
 	$(SHELLEYV) $< -o $@

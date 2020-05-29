@@ -35,8 +35,8 @@ class CheckWFSyntaxVisitor(Visitor):
         element.right_trigger_rule.accept(self)
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
-        element.left_trigger_rule.accept(self)
-        element.right_trigger_rule.accept(self)
+        for choice in element.choices:
+            choice.accept(self)
 
     def visit_component(self, element: Component) -> None:
         element.check(

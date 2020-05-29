@@ -271,12 +271,14 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
     elif isinstance(src, dict):
         if "xor" in src:
             trule_choice = TriggerRuleChoice()
-            if (src['xor']) is None:
-                raise ShelleyParserError("Micro must have at least one option!")
+            if src['xor'] is None:
+                raise ShelleyParserError("xor must have at least one option!")
             for option in src["xor"]:
                 trule_choice.choices.append(_parse_trigger_rule(option, components))
             return trule_choice
         elif "seq" in src:
+            if src['seq'] is None:
+                raise ShelleyParserError("seq must have at least one option!")
             left = _parse_trigger_rule(src['seq'].pop(0), components)
             if len(src['seq']) > 0:
                 right = _parse_trigger_rule(src['seq'], components)

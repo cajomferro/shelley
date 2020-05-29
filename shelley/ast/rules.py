@@ -98,7 +98,7 @@ class TriggerRuleSequence(TriggerRule):
 class TriggerRuleChoice(TriggerRule):
     choices: List[TriggerRule]
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.choices = []
 
     def accept(self, visitor: Visitor) -> None:

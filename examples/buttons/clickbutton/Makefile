@@ -34,7 +34,6 @@ clickbutton.scy: clickbutton.yml timer.scy button.scy
 %.scy: %.yml
 	$(SHELLEYC) -u uses.yml -d $< -o $@
 
-
 clean:
 	rm -f *.scy *.pdf *.int
 

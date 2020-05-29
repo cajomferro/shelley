@@ -34,11 +34,13 @@ class TRules2RegexVisitor(TriggersVisitor):
         self.current_regex = Concat(left, right)
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
-        element.left_trigger_rule.accept(self)
-        left = self.current_regex
-        element.right_trigger_rule.accept(self)
-        right = self.current_regex
-        self.current_regex = Union(left, right)
+        element.choices[0].accept(self)
+        next = self.current_regex
+        for choice in element.choices[1:]:
+            prev = next
+            choice.accept(self)
+            next = self.current_regex
+        self.current_regex = Union(prev, next)
 
     def visit_trigger(self, element: Trigger) -> None:
         element.trigger_rule.accept(self)
@@ -50,7 +52,6 @@ class TRules2RegexVisitor(TriggersVisitor):
 
     def __str__(self):
         return self.regex_dict
-
 
 #
 # class CountStatesVisitor(Visitor):

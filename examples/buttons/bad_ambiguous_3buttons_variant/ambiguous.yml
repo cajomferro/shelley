@@ -48,6 +48,8 @@ device:
                         - b1.pressed
                         - b2.pressed
                     - seq:
+                        - b2.pressed
+                        - b1.pressed
                 - b3.pressed
 
 # button1AndOther <- b1.pressed and (b2.pressed or b3.pressed) <=> b1.pressed; (b2.pressed or b3.pressed) or (b2.pressed or b3.pressed); b1.pressed

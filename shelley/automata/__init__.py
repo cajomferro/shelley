@@ -54,7 +54,7 @@ class CheckedDevice:
     nfa: NFA[Any, str]
 
 
-TKnownDevices = Mapping[str, CheckedDevice]
+TKnownDevices = Callable[[str], CheckedDevice]
 
 
 @dataclass(frozen=True)
@@ -206,7 +206,7 @@ def build_components(
         Example: "t": Timer(..t.started..t.timeout..), "b": Button(..b.pressed..b.released..)
     """
     for (name, ty) in components.items():
-        yield name, instantiate(known_devices[ty].nfa, name + ".")
+        yield name, instantiate(known_devices(ty).nfa, name + ".")
 
 
 def merge_components(components: Iterable[NFA[Any, str]]) -> DFA[Any, str]:
@@ -553,7 +553,7 @@ class TriggerIntegrationFailure:
         # We demutex by device
         errs = dict()
         for component, seq in demultiplex(dec_seq).items():
-            ch_dev = known_devices[components[component]]
+            ch_dev = known_devices(components[component])
             if not ch_dev.nfa.accepts(seq):
                 invalid = nfa_to_dfa(ch_dev.nfa).minimize()
                 idx = invalid.get_divergence_index(seq)
@@ -585,7 +585,7 @@ class TriggerIntegrationFailure:
         # 3. Get the component's alphabet
         component_alpha = set(
             component + "." + x
-            for x in known_devices[components[component]].nfa.alphabet
+            for x in known_devices(components[component]).nfa.alphabet
         )
         # 4. Get the set of invalid traces
         invalid = micro.get_traces_from_component_trace(component_alpha, component_seq)
@@ -947,7 +947,7 @@ class AssembledDevice:
     def make(
         cls,
         dev: Device,
-        known_devices: Mapping[str, CheckedDevice],
+        known_devices: TKnownDevices,
         fast_check: bool = False,
     ) -> "AssembledDevice":
         """

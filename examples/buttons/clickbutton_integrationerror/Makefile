@@ -31,7 +31,7 @@ clickbutton.scy: clickbutton.yml timer.scy button.scy
 	$(SHELLEYV) --format pdf $< -o $@
 
 %.int:  %.yml
-	$(SHELLEYC) -d $< --no-output -i $@ -u uses.yml
+	$(SHELLEYC) -d $< --no-output -i $@ -u uses.yml --skip-checks
 
 %.scy: %.yml
 	$(SHELLEYC) -u uses.yml -d $< -o $@

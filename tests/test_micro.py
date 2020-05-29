@@ -1,4 +1,4 @@
-from typing import Any, List, Dict, Mapping, Optional
+from typing import Any, List, Dict, Mapping, Optional, Callable, cast
 import yaml
 from pathlib import Path
 from karakuri.regular import (
@@ -74,11 +74,11 @@ def get_basic_devices() -> Mapping[str, Device]:
     )
 
 
-def get_basic_known_devices() -> Mapping[str, CheckedDevice]:
+def get_basic_known_devices() -> Callable[[str], CheckedDevice]:
     return dict(
-        (k, AssembledDevice.make(d, {}).external)
+        (k, AssembledDevice.make(d, cast(Callable[[str],CheckedDevice], {}.__getitem__)).external)
         for (k, d) in get_basic_devices().items()
-    )
+    ).__getitem__
 
 
 def _serialize(name: str, data: Any) -> Path:

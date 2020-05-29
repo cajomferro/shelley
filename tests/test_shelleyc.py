@@ -18,6 +18,8 @@ from shelley.shelleyc import parser as shelleyc_parser
 EXAMPLES_PATH = Path() / "tests" / "input"
 COMPILED_PATH = Path() / "tests" / "input" / "compiled"
 
+def empty_devices(name:str) -> CheckedDevice:
+    raise ValueError()
 
 def _remove_compiled_dir() -> None:
     _remove_compiled_files(COMPILED_PATH)
@@ -97,21 +99,21 @@ def test_assemble_button() -> None:
     shelley_device: ShelleyDevice = _get_shelley_device("button")
     automata: AutomataDevice = shelley2automata(shelley_device)
 
-    assembled_button: AssembledDevice = AssembledDevice.make(automata, {})
+    assembled_button: AssembledDevice = AssembledDevice.make(automata, empty_devices)
     assert assembled_button.is_valid
     assert type(assembled_button.external) == CheckedDevice
 
 
 def test_assemble_smart_button() -> None:
     checked_button = AssembledDevice.make(
-        shelley2automata(_get_shelley_device("button")), {}
+        shelley2automata(_get_shelley_device("button")), empty_devices
     ).external
     assert type(checked_button) == CheckedDevice
 
     shelley_device = _get_shelley_device("smartbutton1")
     automata = shelley2automata(shelley_device)
     assembled_smartbutton: AssembledDevice = AssembledDevice.make(
-        automata, {"Button": checked_button}
+        automata, {"Button": checked_button}.__getitem__
     )
     assert assembled_smartbutton.is_valid
     assert type(assembled_smartbutton.external) == CheckedDevice
@@ -133,16 +135,16 @@ def test_assemble_desklamp() -> None:
     dev = shelley2automata(_get_shelley_device("desklamp"))
     known_devices = {
         "Led": AssembledDevice.make(
-            shelley2automata(_get_shelley_device("led")), {}
+            shelley2automata(_get_shelley_device("led")), empty_devices
         ).external,
         "Button": AssembledDevice.make(
-            shelley2automata(_get_shelley_device("button")), {}
+            shelley2automata(_get_shelley_device("button")), empty_devices
         ).external,
         "Timer": AssembledDevice.make(
-            shelley2automata(_get_shelley_device("timer")), {}
+            shelley2automata(_get_shelley_device("timer")), empty_devices
         ).external,
     }
-    assembled_desklamp = AssembledDevice.make(dev, known_devices)
+    assembled_desklamp = AssembledDevice.make(dev, known_devices.__getitem__)
     assert assembled_desklamp.is_valid
     assert type(assembled_desklamp.external) == CheckedDevice
 
@@ -220,7 +222,7 @@ def _serialize(
         known_devices = {}
     path = _get_compiled_path(name, binary=binary)
     assembled_device: AssembledDevice = AssembledDevice.make(
-        shelley2automata(_get_shelley_device(name)), known_devices
+        shelley2automata(_get_shelley_device(name)), known_devices.__getitem__
     )
     shelleyc.serializer.serialize(
         path, assembled_device.external.nfa.as_dict(flatten=False), binary

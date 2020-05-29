@@ -1,5 +1,5 @@
 import pytest
-from typing import Dict, cast, List, Any
+from typing import Dict, cast, List, Any, Callable
 from karakuri.regular import (
     NFA,
     DFA,
@@ -371,7 +371,7 @@ def test_build_components() -> None:
     known_devs = {
         "LED": CheckedDevice(led),
     }
-    given = dict(automata.build_components(comps, known_devs))
+    given = dict(automata.build_components(comps, known_devs.__getitem__))
     expected = {
         "ledA": create_prefixed_led_a(),
         "ledB": create_prefixed_led_b(),
@@ -410,7 +410,7 @@ def test_build_components2() -> None:
         "Timer": CheckedDevice(timer),
         "Button": CheckedDevice(button),
     }
-    given = dict(automata.build_components(comps, known_devs))
+    given = dict(automata.build_components(comps, known_devs.__getitem__))
     expected = {
         "t": create_prefixed_timer(),
         "b": create_prefixed_button(),
@@ -508,6 +508,8 @@ def test_build_behavior_same_name_start_event() -> None:
 #### TEST DEVICES ####
 ######################
 
+def empty_devices(name:str) -> CheckedDevice:
+    raise ValueError()
 
 def test_device_button() -> None:
     device = Device(
@@ -518,7 +520,7 @@ def test_device_button() -> None:
         components={},
         triggers={"b.pressed": NIL, "b.released": NIL,},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa
+    expected = AssembledDevice.make(device, empty_devices).external.nfa
 
     assert nfa_to_dfa(create_prefixed_button()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -532,7 +534,7 @@ def test_device_led_a() -> None:
         components={},
         triggers={"ledA.on": NIL, "ledA.off": NIL,},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa
+    expected = AssembledDevice.make(device, empty_devices).external.nfa
 
     assert nfa_to_dfa(create_prefixed_led_a()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -546,7 +548,7 @@ def test_device_led_b() -> None:
         components={},
         triggers={"ledB.on": NIL, "ledB.off": NIL,},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa
+    expected = AssembledDevice.make(device, empty_devices).external.nfa
 
     assert nfa_to_dfa(create_prefixed_led_b()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -565,7 +567,7 @@ def test_device_timer() -> None:
         components={},
         triggers={"t.started": NIL, "t.canceled": NIL, "t.timeout": NIL},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa
+    expected = AssembledDevice.make(device, empty_devices).external.nfa
 
     assert nfa_to_dfa(create_prefixed_timer()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -585,7 +587,7 @@ def test_device_hello_world() -> None:
         components={},
         triggers={"level1": NIL, "level2": NIL, "standby1": NIL, "standby2": NIL},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa
+    expected = AssembledDevice.make(device, empty_devices).external.nfa
 
     assert nfa_to_dfa(create_hello_world()).is_equivalent_to(nfa_to_dfa(expected))
 
@@ -624,11 +626,11 @@ def get_basic_devices() -> Dict[str, Device]:
     )
 
 
-def get_basic_known_devices() -> Dict[str, CheckedDevice]:
+def get_basic_known_devices() -> Callable[[str], CheckedDevice]:
     return dict(
-        (k, AssembledDevice.make(d, {}).external)
+        (k, AssembledDevice.make(d, empty_devices).external)
         for (k, d) in get_basic_devices().items()
-    )
+    ).__getitem__
 
 
 def test_invalid_behavior_1() -> None:
@@ -1090,5 +1092,5 @@ def test_device_led_and_button() -> None:
         components={},
         triggers={"ledA.on": NIL, "ledA.off": NIL, "b.pressed": NIL, "b.released": NIL},
     )
-    expected = AssembledDevice.make(device, {}).external.nfa
+    expected = AssembledDevice.make(device, empty_devices).external.nfa
     assert_equiv_nfa(create_prefixed_led_and_button(), expected)

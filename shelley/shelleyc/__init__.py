@@ -2,6 +2,7 @@ import logging
 import os
 from typing import List, Dict, Optional, Any, cast, IO
 from pathlib import Path
+from dataclasses import dataclass
 
 from shelley.shelleyc import settings
 from shelley.shelleyc.exceptions import CompilationError
@@ -22,6 +23,23 @@ from shelley import yaml2shelley
 
 logger = logging.getLogger("shelleyc")
 
+class DeviceMapping:
+    def __init__(self, files:Dict[str,Path], binary:bool):
+        self.files = files
+        self.binary = binary
+        self.loaded : Dict[str, CheckedDevice] = dict()
+    def __getitem__(self, key):
+        dev = self.loaded.get(key, None)
+        if dev is not None:
+            return dev
+        try:
+            fname = self.files[key]
+            self.loaded[key] = dev = deserialize(fname, self.binary)
+            return dev
+        except (KeyError, IOError) as err:
+            raise CompilationError(
+                f"Error loading system '{key}': {err}"
+            )
 
 def get_dest_path(
     args_binary: bool, args_output_dir: str, args_src_filepath: str, device_name: str
@@ -111,9 +129,7 @@ def compile_shelley(
 
     logger.debug("Compiling device: {0}".format(shelley_device.name))
 
-    known_devices: Dict[str, CheckedDevice] = _get_known_devices(
-        shelley_device, uses, binary
-    )
+    known_devices = DeviceMapping(dict((k,Path(v)) for (k,v) in uses.items()), binary)
     automata_device = shelley2automata(shelley_device)
 
     if slow_check:
@@ -121,7 +137,7 @@ def compile_shelley(
 
     try:
         dev = AssembledDevice.make(
-            automata_device, known_devices, fast_check=not slow_check
+            automata_device, known_devices.__getitem__, fast_check=not slow_check
         )
     except ValueError as error:
         if settings.VERBOSE:

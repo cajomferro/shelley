@@ -15,12 +15,12 @@ device:
         start: True
         micro:
             - xor:
-                - left:
+                - seq:
                     - b1.pressed
                     - xor:
                         - b2.pressed
                         - b3.pressed
-                - right:
+                - seq:
                     - xor:
                         - b2.pressed
                         - b3.pressed
@@ -29,7 +29,7 @@ device:
         start: True
         micro:
             - xor:
-                - left:
+                - seq:
                     - xor:
                         - left:
                             - b1.pressed
@@ -37,16 +37,16 @@ device:
                         - right:
                             - b2.pressed
                             - b1.pressed
-                - right:
+                - seq:
                     - b3.pressed
     - button3OrOthersv2:
         micro:
             - xor:
                 - xor:
-                    - left:
+                    - seq:
                         - b1.pressed
                         - b2.pressed
-                    - right:
+                    - seq:
                         - b2.pressed
                         - b1.pressed
                 - b3.pressed

@@ -33,11 +33,11 @@ class PrettyPrintVisitor(Visitor):
         self.result += "{0}.{1} ".format(element.component.name, element.event)
 
     def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
-        self.result += "( "
+        # self.result += "( "
         element.left_trigger_rule.accept(self)
         self.result += "; "
         element.right_trigger_rule.accept(self)
-        self.result += ") "
+        # self.result += ") "
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
         self.result += "( "

@@ -278,8 +278,11 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
             return trule_choice
         elif "seq" in src:
             left = _parse_trigger_rule(src['seq'].pop(0), components)
-            right = _parse_trigger_rule(src['seq'], components)
-            return TriggerRuleSequence(left, right)
+            if len(src['seq']) > 0:
+                right = _parse_trigger_rule(src['seq'], components)
+                return TriggerRuleSequence(left, right)
+            else:
+                return left
         else:
             raise ShelleyParserError("Unknown option for micro: ", src)
     else:

@@ -127,8 +127,6 @@ def compile_shelley(
     if dst_path is None:
         dst_path = src_path.parent / (src_path.stem + "." + _get_ext(binary))
 
-    logger.debug("Compiling device: {0}".format(shelley_device.name))
-
     known_devices = DeviceMapping(dict((k,Path(v)) for (k,v) in uses.items()), binary)
     automata_device = shelley2automata(shelley_device)
 
@@ -163,6 +161,7 @@ def compile_shelley(
         serialize(integration, dev.internal.nfa.as_dict(), binary)
 
     if (dev.is_valid or skip_checks) and save_output:
+        logger.debug("Compiling device: {0}".format(shelley_device.name))
         serialize(dst_path, dev.external.nfa.as_dict(), binary)
         logger.debug("Compiled file: {0}".format(dst_path))
 

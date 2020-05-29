@@ -22,11 +22,11 @@ class ShelleyParserError(Exception):
 
 
 def _parse_behavior(
-    src: List[List[str]],
-    events: Events,
-    behaviors: Behaviors,
-    components: Components,
-    triggers: Triggers,
+        src: List[List[str]],
+        events: Events,
+        behaviors: Behaviors,
+        components: Components,
+        triggers: Triggers,
 ) -> None:
     """
     Parse behavior by creating discovered events and creating the corresponding transitions
@@ -94,7 +94,7 @@ def _parse_components(src: Mapping[str, str], components: Components) -> None:
 
 
 def _parse_event(
-    src: Union[str, dict], events: Events, components: Components, triggers: Triggers
+        src: Union[str, dict], events: Events, components: Components, triggers: Triggers
 ) -> Event:
     event: Optional[Event] = None
 
@@ -169,7 +169,7 @@ def _parse_event(
 
 
 def _parse_events(
-    src: Mapping, events: Events, components: Components, triggers: Triggers
+        src: Mapping, events: Events, components: Components, triggers: Triggers
 ) -> None:
     """
 
@@ -203,7 +203,7 @@ def _parse_events(
 
 
 def _parse_triggers(
-    src: Optional[Dict], event: Event, components: Components, triggers: Triggers
+        src: Optional[Dict], event: Event, components: Components, triggers: Triggers
 ) -> None:
     """
 
@@ -216,7 +216,7 @@ def _parse_triggers(
     trigger_rule: Optional[TriggerRule] = None
 
     if (
-        src is not None and len(components) == 0
+            src is not None and len(components) == 0
     ):  # simple device with micro (not allowed!)
         raise ShelleyParserError(
             "Event '{0}' specifies micro behavior but device has no components!".format(
@@ -224,7 +224,7 @@ def _parse_triggers(
             )
         )
     elif (
-        src is None and len(components) > 0
+            src is None and len(components) > 0
     ):  # composition device not declaring micro for this event (not allowed!)
         raise ShelleyParserError(
             "Event '{0}' doesn't specify micro behavior but device has components!".format(
@@ -234,7 +234,7 @@ def _parse_triggers(
     elif src is None and len(components) == 0:  # simple device without micro (ok!)
         trigger_rule = TriggerRuleFired()
     elif (
-        src is not None and len(components) > 0
+            src is not None and len(components) > 0
     ):  # composition device declaring trigger for this event (ok!)
         trigger_rule = _parse_trigger_rule(src, components)
     else:
@@ -270,31 +270,21 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
         raise ShelleyParserError("Micro must not be empty!")
     elif isinstance(src, dict):
         if "xor" in src:
-            xor_options: List = src["xor"]
-            if len(xor_options) != 2:
-                raise ShelleyParserError(
-                    "Invalid micro rule '{0}'. Branching (xor) requires 2 options!".format(
-                        src
-                    )
-                )
-            left_option = xor_options[0]
-            right_option = xor_options[1]
-            if isinstance(left_option, dict) and "left" in left_option:
-                # syntax variant with explicit left and right options
-                if not ("left" in left_option and "right" in right_option):
-                    raise ShelleyParserError(
-                        "Invalid micro rule '{0}'. Branching (xor) requires left and right options!".format(
-                            src
-                        )
-                    )
-                left = _parse_trigger_rule(left_option["left"], components)
-                right = _parse_trigger_rule(right_option["right"], components)
-                return TriggerRuleChoice(left, right)
-            else:
+            trule_choice = TriggerRuleChoice()
+            if (src['xor']) is None:
+                raise ShelleyParserError("Micro must have at least one option!")
+            for option in src["xor"]:
                 # syntax variant without left and right options
-                left = _parse_trigger_rule(left_option, components)
-                right = _parse_trigger_rule(right_option, components)
-                return TriggerRuleChoice(left, right)
+                trule_choice.choices.append(_parse_trigger_rule(option, components))
+            return trule_choice
+        elif "seq" in src:
+            left = _parse_trigger_rule(src['seq'].pop(0), components)
+            right = _parse_trigger_rule(src['seq'], components)
+            # trule_choice = TriggerRuleChoice()
+            # for option in src["xor"]:
+            #     # syntax variant without left and right options
+            #     trule_choice.append(_parse_trigger_rule(option, components))
+            return TriggerRuleSequence(left, right)
         else:
             raise ShelleyParserError("Unknown option for micro: ", src)
     else:
@@ -380,7 +370,7 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
     # at this point, this must be true
     assert len(events) == len(triggers)
 
-    device = Device(device_name, events, behaviors, triggers, components=components,)
+    device = Device(device_name, events, behaviors, triggers, components=components, )
 
     device.test_macro = test_macro
     device.test_micro = test_micro

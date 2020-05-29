@@ -1,6 +1,6 @@
 from __future__ import annotations
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List
 from dataclasses import dataclass
 
 from shelley.ast.node import Node
@@ -96,8 +96,10 @@ class TriggerRuleSequence(TriggerRule):
 
 @dataclass(order=True)
 class TriggerRuleChoice(TriggerRule):
-    left_trigger_rule: TriggerRule
-    right_trigger_rule: TriggerRule
+    choices: List[TriggerRule]
+
+    def __init__(self):
+        self.choices = []
 
     def accept(self, visitor: Visitor) -> None:
         """

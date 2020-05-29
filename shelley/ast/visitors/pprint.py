@@ -41,9 +41,10 @@ class PrettyPrintVisitor(Visitor):
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
         self.result += "( "
-        element.left_trigger_rule.accept(self)
-        self.result += "xor "
-        element.right_trigger_rule.accept(self)
+        for rule in element.choices[0:-1]:
+            rule.accept(self)
+            self.result += "xor "
+        element.choices[-1].accept(self)
         self.result += ") "
 
     def visit_trigger(self, element: Trigger) -> None:

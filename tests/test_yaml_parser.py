@@ -1,9 +1,13 @@
 import pytest
+import yaml
 from pathlib import Path
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
 from shelley.ast.devices import Device
-from shelley.ast.rules import TriggerRuleFired
+from shelley.ast.components import Components, Component
+from shelley.ast.triggers import Triggers
+from shelley.ast.events import Event
 from shelley import yaml2shelley
+from shelley.yaml2shelley.util import MySafeLoader
 
 
 def _get_path(device_name: str) -> Path:
@@ -55,8 +59,8 @@ def test_events_invalid_event_syntax() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-        "Invalid syntax for event. Expecting string or dict but found ['pressed']"
-        == str(exc_info.value)
+            "Invalid syntax for event. Expecting string or dict but found ['pressed']"
+            == str(exc_info.value)
     )
 
 
@@ -115,8 +119,8 @@ def test_events_no_components_but_triggers() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-        "Event 'released' specifies micro behavior but device has no components!"
-        == str(exc_info.value)
+            "Event 'released' specifies micro behavior but device has no components!"
+            == str(exc_info.value)
     )
 
 
@@ -134,8 +138,8 @@ def test_auto_create_declared_event_without_micro() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-        str(exc_info.value)
-        == "Event 'pressed' doesn't specify micro behavior but device has components!"
+            str(exc_info.value)
+            == "Event 'pressed' doesn't specify micro behavior but device has components!"
     )
 
 
@@ -153,8 +157,8 @@ def test_auto_create_undeclared_event_with_micro() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-        "Event 'pressed' doesn't specify micro behavior but device has components!"
-        == str(exc_info.value)
+            "Event 'pressed' doesn't specify micro behavior but device has components!"
+            == str(exc_info.value)
     )
 
 
@@ -163,8 +167,8 @@ def test_button() -> None:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert (
-        visitor.result.strip()
-        == """Device Button:
+            visitor.result.strip()
+            == """Device Button:
   events:
     pressed, released
   start events:
@@ -206,8 +210,8 @@ def test_led() -> None:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert (
-        visitor.result.strip()
-        == """Device Led:
+            visitor.result.strip()
+            == """Device Led:
   events:
     on, off
   start events:
@@ -228,8 +232,8 @@ def test_timer() -> None:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert (
-        visitor.result.strip()
-        == """Device Timer:
+            visitor.result.strip()
+            == """Device Timer:
   events:
     started, canceled, timeout
   start events:
@@ -254,8 +258,8 @@ def test_sendok() -> None:
     shelley_device.accept(visitor)
 
     assert (
-        visitor.result.strip()
-        == """Device SendOK uses Button, Led:
+            visitor.result.strip()
+            == """Device SendOK uses Button, Led:
   events:
     send, ok, off
   start events:
@@ -281,8 +285,8 @@ def test_smartbutton_1() -> None:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert (
-        visitor.result.strip()
-        == """Device SmartButton uses Button:
+            visitor.result.strip()
+            == """Device SmartButton uses Button:
   events:
     on
   start events:
@@ -326,8 +330,8 @@ def test_desklamp() -> None:
     shelley_device.accept(visitor)
 
     assert (
-        visitor.result.strip()
-        == """Device DeskLamp uses Led, Button, Timer:
+            visitor.result.strip()
+            == """Device DeskLamp uses Led, Button, Timer:
   events:
     level1, level2, standby1, standby2
   start events:
@@ -356,8 +360,8 @@ def test_ambiguous() -> None:
     shelley_device.accept(visitor)
 
     assert (
-        visitor.result.strip()
-        == """Device 3Buttons uses SimpleButton:
+            visitor.result.strip()
+            == """Device 3Buttons uses SimpleButton:
   events:
     button1AndOther, button3OrOthers
   start events:
@@ -386,8 +390,8 @@ def test_ambiguous_variant() -> None:
     shelley_device.accept(visitor)
 
     assert (
-        visitor.result.strip()
-        == """Device 3Buttons uses SimpleButton:
+            visitor.result.strip()
+            == """Device 3Buttons uses SimpleButton:
   events:
     button1AndOther, button3OrOthers, button3OrOthersv2
   start events:
@@ -428,3 +432,142 @@ device:
         device: Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
 
     assert str(exc_info.value) == "Events declared not used in behavior: '{'off'}'"
+
+
+def test_xor_inside_xor() -> None:
+    e = Event("xxx", True, True)
+    t = Triggers()
+    c = Components()
+    c.add(Component("B"))
+    c.add(Component("T"))
+    yaml_code = """
+micro:
+ - xor:
+   - [B.p, T.t, B.r]
+   - xor:
+      - [B.p, T.e, B.r]
+      - T.t
+    """
+    yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
+    triggers_src = yaml_as_dict['micro']
+
+    assert len(t) == 0
+    yaml2shelley._parse_triggers(triggers_src, e, c, t)
+    assert len(t) == 1
+
+def test_seq_3_options() -> None:
+    e = Event("click", True, True)
+    t = Triggers()
+    c = Components()
+    c.add(Component("B"))
+    c.add(Component("T"))
+    yaml_code = """
+micro:
+ - seq:
+     - T.t
+     - T.t
+     - B.p
+ - B.r
+    """
+    yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
+    triggers_src = yaml_as_dict['micro']
+
+    yaml2shelley._parse_triggers(triggers_src, e, c, t)
+
+    visitor = PrettyPrintVisitor(components=c)
+    t.accept(visitor)
+
+    assert visitor.result.strip() == "click: ( T.t; T.t; B.p; B.r )"
+
+def test_xor_3_options() -> None:
+    e = Event("click", True, True)
+    t = Triggers()
+    c = Components()
+    c.add(Component("B"))
+    c.add(Component("T"))
+    yaml_code = """
+micro:
+ xor:
+    - T.t
+    - B.p
+    - B.r
+    """
+    yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
+    triggers_src = yaml_as_dict['micro']
+
+    assert len(t) == 0
+    yaml2shelley._parse_triggers(triggers_src, e, c, t)
+    assert len(t) == 1
+
+    visitor = PrettyPrintVisitor(components=c)
+    t.accept(visitor)
+
+    assert visitor.result.strip() == "click: ( T.t xor B.p xor B.r )"
+
+
+def test_xor_2_options() -> None:
+    e = Event("click", True, True)
+    t = Triggers()
+    c = Components()
+    c.add(Component("B"))
+    c.add(Component("T"))
+    yaml_code = """
+    micro:
+     xor:
+        - T.t
+        - B.p
+        """
+    yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
+    triggers_src = yaml_as_dict['micro']
+
+    assert len(t) == 0
+    yaml2shelley._parse_triggers(triggers_src, e, c, t)
+    assert len(t) == 1
+
+    visitor = PrettyPrintVisitor(components=c)
+    t.accept(visitor)
+
+    assert visitor.result.strip() == "click: ( T.t xor B.p )"
+
+def test_xor_1_options() -> None:
+    e = Event("click", True, True)
+    t = Triggers()
+    c = Components()
+    c.add(Component("B"))
+    c.add(Component("T"))
+    yaml_code = """
+    micro:
+     xor:
+        - T.t
+        """
+    yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
+    triggers_src = yaml_as_dict['micro']
+
+    assert len(t) == 0
+    yaml2shelley._parse_triggers(triggers_src, e, c, t)
+    assert len(t) == 1
+
+    visitor = PrettyPrintVisitor(components=c)
+    t.accept(visitor)
+
+    assert visitor.result.strip() == "click: ( T.t )"
+
+def test_xor_0_options() -> None:
+    e = Event("click", True, True)
+    t = Triggers()
+    c = Components()
+    c.add(Component("B"))
+    c.add(Component("T"))
+    yaml_code = """
+    micro:
+     xor:
+        """
+    yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
+    triggers_src = yaml_as_dict['micro']
+
+    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
+        yaml2shelley._parse_triggers(triggers_src, e, c, t)
+
+    assert str(exc_info.value) == "Micro must have at least one option!"
+
+

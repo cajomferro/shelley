@@ -227,9 +227,7 @@ def _parse_triggers(
             src is None and len(components) > 0
     ):  # composition device not declaring micro for this event (not allowed!)
         raise ShelleyParserError(
-            "Event '{0}' doesn't specify micro behavior but device has components!".format(
-                event.name
-            )
+            f"Integration for operation '{event.name}' is missing"
         )
     elif src is None and len(components) == 0:  # simple device without micro (ok!)
         trigger_rule = TriggerRuleFired()

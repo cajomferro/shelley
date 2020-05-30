@@ -219,9 +219,7 @@ def _parse_triggers(
             src is not None and len(components) == 0
     ):  # simple device with micro (not allowed!)
         raise ShelleyParserError(
-            "Event '{0}' specifies micro behavior but device has no components!".format(
-                event.name
-            )
+            f"Event '{event.name}' specifies micro behavior but device has no components!"
         )
     elif (
             src is None and len(components) > 0

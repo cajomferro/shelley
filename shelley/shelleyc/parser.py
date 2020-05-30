@@ -113,6 +113,8 @@ def parse() -> None:
     except CompilationError as error:
         if settings.VERBOSE:
             logger.error(str(error), exc_info=settings.VERBOSE)
+        else:
+            print(str(error), file=sys.stderr)
         sys.exit(1)
 
     logger.debug("OK!")

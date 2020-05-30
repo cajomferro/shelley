@@ -21,7 +21,7 @@ def create_parser() -> argparse.ArgumentParser:
         "--no-epsilon", action="store_true", help="Remove epsilon transitions"
     )
     parser.add_argument(
-        "--format",
+        "--format", "-f",
         default="dot",
         help="Specify the output format (defaults to dot) pick 'tex' or any from https://www.graphviz.org/doc/info/output.html",
     )

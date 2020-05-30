@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, Optional, List, Dict
 from dataclasses import dataclass, field
 
 from shelley.ast.node import Node
@@ -44,15 +44,19 @@ class TriggerRulesListEmptyError(Exception):
 
 class Triggers(Node):
     _data: List[Trigger]
+    _rules: Dict[str,Trigger]
 
     def __init__(self) -> None:
         self._data = []
+        self._rules = {}
+
 
     def add(self, elem: Trigger) -> None:
-        if elem not in self._data:
+        if elem.event.name not in self._rules:
             self._data.append(elem)
+            self._rules[elem.event.name] = elem
         else:
-            raise TriggersListDuplicatedError()
+            raise TriggersListDuplicatedError(elem.event.name)
 
     def contains(self, elem: Trigger) -> bool:
         return elem in self._data
@@ -68,10 +72,7 @@ class Triggers(Node):
 
     def create(self, event: Event, rule: TriggerRule) -> Trigger:
         trigger = Trigger(event, rule)
-        if trigger not in self._data:
-            self._data.append(trigger)
-        else:
-            raise TriggersListDuplicatedError()
+        self.add(trigger)
         return trigger
 
     def get_rule(self, event_name: str) -> Optional[TriggerRule]:
@@ -79,18 +80,13 @@ class Triggers(Node):
         return trigger.trigger_rule if trigger is not None else None
 
     def find_by_event(self, event_name: str) -> Optional[Trigger]:
-        re: Optional[Trigger] = None
-        try:
-            re = next(x for x in self._data if x.event.name == event_name)
-        except StopIteration:
-            pass
-        return re
+        return self._rules.get(event_name, None)
 
-    def __getitem__(self, name: str) -> Trigger:
-        res = self.find_by_event(name)
-        if res is None:
-            raise KeyError(name)
-        return res
+    def __getitem__(self, event_name: str) -> Trigger:
+        return self._rules[event_name]
+
+    def __repr__(self):
+        return repr(self._data)
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_triggers(self)

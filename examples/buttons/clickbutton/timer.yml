@@ -1,34 +1,34 @@
 device:
   name: Timer
   events:
-    - b:
+    - begin:
         start: True
         final: False
-    - e:
+    - end:
         start: False
         final: True
-    - t:
+    - timeout:
         start: False
         final: True
   behavior:
-    - [b, e]
-    - [b, t]
-    - [e, b]
-    - [t, b]
+    - [begin, end]
+    - [begin, timeout]
+    - [end, begin]
+    - [timeout, begin]
 
 test_macro:
   ok:
-    valid1: [b, e]
-    valid2: [b, t]
-    valid3: [b, t, b, e]
-    valid4: [b, e, b, t]
+    valid1: [begin, end]
+    valid2: [begin, timeout]
+    valid3: [begin, timeout, begin, end]
+    valid4: [begin, end, begin, timeout]
     valid5: true
   fail:
     # This is an incomplete trace, and is therefore reject
-    invalid1: [b]
-    invalid2: [t]
-    invalid3: [e]
-    invalid4: [b, e, b]
-    invalid5: [b, t, b]
-    invalid6: [b, t, b, e, b]
+    invalid1: [begin]
+    invalid2: [timeout]
+    invalid3: [end]
+    invalid4: [begin, end, begin]
+    invalid5: [begin, timeout, begin]
+    invalid6: [begin, timeout, begin, end, begin]
     invalid7: false

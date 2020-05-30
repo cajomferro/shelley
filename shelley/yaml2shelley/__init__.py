@@ -77,7 +77,7 @@ def _parse_behavior(
     difference = set(events.list_str()).difference(discovered_events)
     if len(difference) > 0:
         raise ShelleyParserError(
-            "Events declared not used in behavior: '{0}'".format(difference)
+            f"invalid operations {difference!r}. Operations must be referred in the behavior."
         )
 
 

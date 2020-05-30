@@ -122,7 +122,7 @@ def compile_shelley(
     except yaml2shelley.ShelleyParserError as error:
         if settings.VERBOSE:
             logger.exception(error)
-        raise CompilationError("Shelley parser error: {0}".format(str(error)))
+        raise CompilationError(f"Parsing error: {error}")
 
     if dst_path is None:
         dst_path = src_path.parent / (src_path.stem + "." + _get_ext(binary))

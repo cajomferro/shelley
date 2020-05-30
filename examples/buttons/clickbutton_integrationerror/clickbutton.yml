@@ -1,28 +1,29 @@
 device:
  name: ClickButton
  behavior:
-   - [s, s]
-   - [d, s]
-   - [s, d]
-   - [d, d]
+   - [single, single]
+   - [double, single]
+   - [single, double]
+   - [double, double]
  components:
   B: Button
   T: Timer
  events:
-   - s:
+   - single:
        start: True
        final: True
        micro:
-         - [B.p, T.b]
+         seq:
+         - [B.press, T.begin]
          - xor:
-           - [T.t, B.r]
-           #- [B.r, T.t]
-           - B.r # removes t.timeout --> integration error
-   - d:
+           - [T.timeout, B.release]
+           - [B.release] # T.timeout
+   - double:
        start: True
        final: True
        micro:
-         - [B.p, T.b, B.r] # t.timeout may fire here?
+         seq:
+         - [B.press, T.begin, B.release] # t.timeout may fire here?
          - xor:
-           - [B.p, T.t, B.r]
-           - [B.p, T.e, B.r]
+           - [B.press, T.timeout, B.release]
+           - [B.press, T.end, B.release]

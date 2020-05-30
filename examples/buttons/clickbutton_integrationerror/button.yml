@@ -1,5 +1,5 @@
 device:
   name: Button
   behavior:
-    - [p, r]
-    - [r, p]
+    - [press, release]
+    - [release, press]

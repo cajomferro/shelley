@@ -68,20 +68,18 @@ def mk_use(**kwargs: Path) -> str:
     raise ValueError()
 
 
-def make_args(src_path: Path, uses: Optional[Path] = None) -> argparse.Namespace:
+def make_args(src_path: Path, uses_path: Optional[Path] = None) -> argparse.Namespace:
     assert isinstance(src_path, Path) and src_path.exists()
 
-    if uses is not None:
-        assert isinstance(uses, Path) and uses.exists()
-
     parser = shelleyc_parser.create_parser()
-
     args: argparse.Namespace
 
-    if uses is not None:
+    if uses_path is not None:
+        assert isinstance(uses_path, Path) and uses_path.exists()
+
         args = parser.parse_args(
             ["--output", get_path(src_path)]
-            + ["--uses", str(uses)]
+            + ["--uses", str(uses_path)]
             + ["--device", str(src_path)]
         )
     else:
@@ -286,7 +284,7 @@ def _compile_simple_device(device_name: str) -> Path:
     src_path = EXAMPLES_PATH / (device_name + ".yml")
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     args = make_args(src_path)
-    return shelleyc.compile_shelley(args.device, args.uses, args.output, args.binary)
+    return shelleyc.compile_shelley(args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary)
 
 
 def test_not_found_device() -> None:
@@ -319,7 +317,7 @@ def test_compile_buton_no_output() -> None:
     )
     shelleyc.compile_shelley(
         args.device,
-        args.uses,
+        shelleyc_parser.parse_uses(args.uses),
         dst_path=args.output,
         binary=args.binary,
         skip_checks=args.skip_checks,

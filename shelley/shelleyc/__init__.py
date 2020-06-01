@@ -140,7 +140,7 @@ def compile_shelley(
     except ValueError as error:
         if settings.VERBOSE:
             logger.exception(error)
-        raise CompilationError("Shelley parser error: {0}".format(str(error)))
+        raise CompilationError("Parser error: {0}".format(str(error)))
 
     if dump_stats is not None:
         logger.debug("Dumping statistics")

@@ -36,6 +36,10 @@ class DeviceMapping:
             fname = self.files[key]
             self.loaded[key] = dev = deserialize(fname, self.binary)
             return dev
+        except KeyError:
+            raise CompilationError(
+                f"Error loading system '{key}': system not defined"
+            )
         except (KeyError, IOError) as err:
             raise CompilationError(
                 f"Error loading system '{key}': {err}"

@@ -86,7 +86,7 @@ def test_events_no_components_but_triggers() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-            "Event 'released' specifies micro behavior but device has no components!"
+            "invalid operation declaration 'released': error in integration section. Only declare an integration rule when there are components (system has 0 components). Hint: remove integration rule or declare a component."
             == str(exc_info.value)
     )
 
@@ -106,7 +106,7 @@ def test_auto_create_declared_event_without_micro() -> None:
 
     assert (
             str(exc_info.value)
-            == "Event 'pressed' doesn't specify micro behavior but device has components!"
+            == "invalid operation declaration 'pressed': integration section missing. Only declare an integration rule when there are components (system has 1 components). Hint: write integration rule or remove all components."
     )
 
 
@@ -124,9 +124,32 @@ def test_auto_create_undeclared_event_with_micro() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-            "Event 'pressed' doesn't specify micro behavior but device has components!"
+            "invalid operation declaration 'pressed': integration section missing. Only declare an integration rule when there are components (system has 1 components). Hint: write integration rule or remove all components."
             == str(exc_info.value)
     )
+
+
+def test_empty_integration() -> None:
+    yaml_code = """
+device:
+  name: WrongButton
+  behavior:
+    - [on, on]
+  components:
+    b: SingleClickButton
+  events:
+    - on:
+        micro: []
+    - off:
+        micro: [ b.pressed, b.released] # ERROR: off is undeclared!
+    """
+
+    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
+        device: Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
+
+    assert str(exc_info.value) == "invalid operation declaration 'on': error in integration section: empty sequence error. An empty sequence introduces ambiguity. Hint: remove empty sequence or add subsystem call to sequence."
+
+
 
 def test_events_triggers_different_number() -> None:
     yaml_code = """
@@ -146,7 +169,7 @@ device:
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         device: Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
 
-    assert str(exc_info.value) == "Events declared not used in behavior: '{'off'}'"
+    assert str(exc_info.value) == "invalid operation declarations: ['off']. Every operation declaration must be referred in the behavior. Hint: remove the definition of 'on' or add a transition with 'on' to the behavior section."
 
 
 def test_seq_4_options() -> None:

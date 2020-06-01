@@ -197,7 +197,7 @@ def _encode(example_name: str):
     _serialize(
         "{0}-micro-dfa-minimized".format(example_name), micro_dfa_minimized.as_dict()
     )
-    assert len([state for state in micro_dfa_minimized.states]) == 5
+    assert len([state for state in micro_dfa_minimized.states]) == 6
 
     micro_dfa_minimized_no_traps = dfa_to_nfa(
         micro_be.dfa.minimize()
@@ -206,7 +206,7 @@ def _encode(example_name: str):
         "{0}-micro-dfa-minimized-no-traps".format(example_name),
         micro_dfa_minimized_no_traps.as_dict(),
     )
-    assert len([state for state in micro_dfa_minimized_no_traps.states]) == 4
+    assert len([state for state in micro_dfa_minimized_no_traps.states]) == 5
 
     print("micro nfa states: ", [state for state in micro_be.nfa.flatten().states])
     print(

@@ -159,7 +159,7 @@ def parse_bool_field(field_name:str, default_value:bool, event_name:str, event_d
         else:
             raise OperationDeclError(
                 names=[event_name],
-                reason=f"Expecting a boolean, but found {type(result)}: {result!r}",
+                reason=f"Expecting a boolean, but found {type(result).__name__}: {result!r}",
             )
     except KeyError:
         if default_value is None:
@@ -245,7 +245,7 @@ def _parse_events(
     if not isinstance(src_events, list):
         raise ShelleyParserError(
             title="syntax error in operation declarations section",
-            reason=f"Expecting list but found {type(src_events)}: {src_events!r}",
+            reason=f"Expecting list but found {type(src_events).__name__}: {src_events!r}",
         )
 
     for src_event in src_events:

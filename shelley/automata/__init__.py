@@ -148,7 +148,6 @@ def build_external_behavior(
 
     # build NFA states
     states: Set[str] = set(final_events)
-    states.add(start_state)
 
     # build NFA transitions (arcs)
     tsx: TNFATransitions = _build_nfa_transitions(behavior, start_events, start_state)

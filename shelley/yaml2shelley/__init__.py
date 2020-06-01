@@ -43,7 +43,7 @@ def _parse_behavior(
             right = beh_transition[1]
         except IndexError:
             raise ShelleyParserError(
-                "Missing behaviour right side: [{0}, ???]".format(left)
+                "Missing behavior right side: [{0}, ???]".format(left)
             )
 
         # TODO: do we want to force user to declare all events? right now I am creating if not declared
@@ -76,8 +76,10 @@ def _parse_behavior(
 
     difference = set(events.list_str()).difference(discovered_events)
     if len(difference) > 0:
+        evt1 = events.list_str()[0]
+        ops = list(sorted(difference))
         raise ShelleyParserError(
-            f"invalid operations {difference!r}. Operations must be referred in the behavior."
+            f"invalid operation declarations: {ops!r}. Every operation declaration must be referred in the behavior. Hint: remove the definition of {evt1!r} or add a transition with {evt1!r} to the behavior section."
         )
 
 
@@ -219,31 +221,36 @@ def _parse_triggers(
             src is not None and len(components) == 0
     ):  # simple device with micro (not allowed!)
         raise ShelleyParserError(
-            f"invalid integration of operation '{event.name}'. Remove integration (system has 0 components)."
+            f"invalid operation declaration {event.name!r}: error in integration section. Only declare an integration rule when there are components (system has 0 components). Hint: remove integration rule or declare a component."
         )
     elif (
             src is None and len(components) > 0
     ):  # composition device not declaring micro for this event (not allowed!)
         count = len(components)
         raise ShelleyParserError(
-            f"missing integration of operation '{event.name}'. Specify integration (system has {count} components)."
+            f"invalid operation declaration {event.name!r}: integration section missing. Only declare an integration rule when there are components (system has {count} components). Hint: write integration rule or remove all components."
         )
     elif src is None and len(components) == 0:  # simple device without micro (ok!)
         trigger_rule = TriggerRuleFired()
     elif (
             src is not None and len(components) > 0
     ):  # composition device declaring trigger for this event (ok!)
-        trigger_rule = _parse_trigger_rule(src, components)
+        try:
+            trigger_rule = _parse_trigger_rule(src, components)
+        except ShelleyParserError as err:
+            raise ShelleyParserError(f"invalid operation declaration {event.name!r}: error in integration section: {err}")
     else:
         raise ShelleyParserError("unknown option for operation: ", src)
 
     assert trigger_rule is not None
     triggers.create(event, trigger_rule)
 
+def empty_sequence_error():
+    return ShelleyParserError("empty sequence error. An empty sequence introduces ambiguity. Hint: remove empty sequence or add subsystem call to sequence.")
 
 def _parse_trigger_rule(src, components: Components) -> TriggerRule:
     if src is None:
-        raise ShelleyParserError("Micro must not be empty!")
+        raise ShelleyParserError(f"Micro must not be empty!")
 
     if isinstance(src, str):
         try:
@@ -256,7 +263,7 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
         assert component is not None
         return TriggerRuleEvent(component, e_name)
     elif isinstance(src, list) and len(src) == 0:
-        raise ShelleyParserError("Micro must not be empty!")
+        raise empty_sequence_error()
     elif isinstance(src, list) and len(src) == 1:
         return _parse_trigger_rule(src.pop(0), components)
     elif isinstance(src, list):

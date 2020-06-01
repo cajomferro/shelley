@@ -1,0 +1,9 @@
+device:
+  name: Led
+  behavior:
+    - [red, green]
+    - [green, red]
+    - [red, off]
+    - [green, off]
+    - [off, green]
+    - [off, red]

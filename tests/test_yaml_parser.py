@@ -26,7 +26,7 @@ def test_events_invalid_event_syntax() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-            "Invalid syntax for event. Expecting string or dict but found ['pressed']"
+            "invalid operation declaration: Expecting a string or a dict but found: ['pressed']"
             == str(exc_info.value)
     )
 
@@ -86,8 +86,9 @@ def test_events_no_components_but_triggers() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-            "invalid operation declaration 'released': error in integration section. Only declare an integration rule when there are components (system has 0 components). Hint: remove integration rule or declare a component."
-            == str(exc_info.value)
+            str(exc_info.value)
+            ==
+            "operation declaration error in ['released']: Only declare an integration rule when there are components (system has 0 components).\nHint: remove integration rule or declare a component."
     )
 
 
@@ -106,7 +107,8 @@ def test_auto_create_declared_event_without_micro() -> None:
 
     assert (
             str(exc_info.value)
-            == "invalid operation declaration 'pressed': integration section missing. Only declare an integration rule when there are components (system has 1 components). Hint: write integration rule or remove all components."
+            ==
+            "operation declaration error in ['pressed']: Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
     )
 
 
@@ -124,8 +126,8 @@ def test_auto_create_undeclared_event_with_micro() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-            "invalid operation declaration 'pressed': integration section missing. Only declare an integration rule when there are components (system has 1 components). Hint: write integration rule or remove all components."
-            == str(exc_info.value)
+            str(exc_info.value) ==
+            "operation declaration error in ['pressed']: Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
     )
 
 
@@ -139,15 +141,14 @@ device:
     b: SingleClickButton
   events:
     - on:
-        micro: []
+        micro: [] # ERROR: empty integration
     - off:
-        micro: [ b.pressed, b.released] # ERROR: off is undeclared!
+        micro: [ b.pressed, b.released]
     """
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         device: Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
-
-    assert str(exc_info.value) == "invalid operation declaration 'on': error in integration section: empty sequence error. An empty sequence introduces ambiguity. Hint: remove empty sequence or add subsystem call to sequence."
+    assert str(exc_info.value) == "operation declaration error in ['on']: integration rule error: An empty sequence introduces ambiguity.\nHint: remove empty sequence or add subsystem call to sequence."
 
 
 
@@ -169,7 +170,7 @@ device:
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         device: Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
 
-    assert str(exc_info.value) == "invalid operation declarations: ['off']. Every operation declaration must be referred in the behavior. Hint: remove the definition of 'on' or add a transition with 'on' to the behavior section."
+    assert str(exc_info.value) == "operation declaration error in ['off']: Every operation declaration must be referred in the behavior.\nHint: remove the definition of 'off' or add a transition with 'off' to the behavior section."
 
 
 def test_seq_4_options() -> None:

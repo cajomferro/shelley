@@ -14,17 +14,16 @@ device:
        final: True
        micro:
          seq:
-         - [B.press, T.begin]
+         - seq: [B.press, T.begin]
          - xor:
-           - [T.timeout, B.release]
-           - [B.release, T.timeout]
+           - [T.timeout, B.release] # user ir slow
+           - [B.release, T.begin] # user is fast # INTEGRATION ERROR HERE
    - double:
        start: True
        final: True
        micro:
          seq:
-         - [B.press, T.begin, B.release] # t.timeout may fire here?
+         - [B.press, T.begin, B.release, B.press]
          - xor:
-           - [B.press, T.timeout, B.release]
-           - [B.press, T.end, B.release]
-           - T.timeout # adding T.timeout --> ambiguity error
+           - [T.timeout, B.release] # user is slow
+           - [B.release, T.end] # user is fast

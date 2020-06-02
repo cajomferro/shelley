@@ -110,11 +110,11 @@ def parse() -> None:
             skip_testing=args.skip_testing,
             skip_checks=args.skip_checks,
         )
+        logger.debug("OK!")
     except CompilationError as error:
         if settings.VERBOSE:
             logger.error(str(error), exc_info=settings.VERBOSE)
         else:
             print(str(error), file=sys.stderr)
+        logger.debug("ERROR!")
         sys.exit(1)
-
-    logger.debug("OK!")

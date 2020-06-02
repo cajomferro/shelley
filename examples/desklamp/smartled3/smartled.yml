@@ -1,0 +1,43 @@
+
+device:
+  name: TrafficLight
+  behavior:
+    - [red, green]
+    - [green, red]
+  components:
+    r: Led
+    g: Led
+    t: Timer
+  events:
+    - red:
+        start: True
+        final: True
+        micro:
+          - seq:
+            - r.on
+            - t.start
+            - xor:
+              - [t.timeout, r.off]
+              - [r.off, t.stop]
+    - green:
+        start: False
+        final: False
+        micro:
+          - seq:
+            - g.on
+            - t.start
+            - xor:
+              - [t.timeout, g.off]
+              - [g.off, t.stop]
+
+#test_macro:
+#  ok:
+#    valid1: [red, standby, green, standby]
+#    valid5: true
+#  fail:
+#    # This is an incomplete trace, and is therefore reject
+#    invalid1: [red, red]
+#    invalid2: [red, green]
+#    invalid3: [green]
+#    invalid4: [green, green]
+#    invalid7: false

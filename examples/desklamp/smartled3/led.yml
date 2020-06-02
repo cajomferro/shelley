@@ -1,0 +1,10 @@
+device:
+  name: Led
+  events:
+    - on:
+        start: True
+    - off:
+        start: False
+  behavior:
+    - [on, off]
+    - [off, on]

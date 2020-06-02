@@ -34,7 +34,7 @@ smartled.scy: smartled.yml timer.scy led.scy
 	$(SHELLEYC) -u uses.yml -d $< -o $@
 
 clean:
-	rm -f *.scy *.pdf *.int
+	rm -f *.scy *.pdf *.png *.int
 
 .PHONY: all pdf scy
 

@@ -13,18 +13,20 @@ device:
     - red:
         start: True
         final: False
-        micro: [l.red, t.start]
+        micro: [l.red]
     - green:
         start: False
         final: False
-        micro: [l.green, t.start]
+        micro: [l.green]
     - standby:
         start: False
         final: True
         micro:
-          - xor:
-            - [t.timeout, l.off]
-            - [l.off, t.stop]
+          - seq:
+            - t.start
+            - xor:
+              - [t.timeout, l.off]
+              - [l.off, t.stop]
 
 test_macro:
   ok:

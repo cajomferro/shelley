@@ -1,0 +1,31 @@
+device:
+ name: ClickButton
+ behavior:
+   - [single, single]
+   - [double, single]
+   - [single, double]
+   - [double, double]
+ components:
+  B: Button
+  T: Timer
+ events:
+   - single:
+       start: True
+       final: True
+       micro:
+         seq:
+         - [B.read_press, T.write_begin]
+         - xor:
+           - [T.read_timeout, B.read_release] # user ir slow
+           - [B.read_release, T.write_end] # user is fast
+           # - [B.read_release, T.read_timeout] # --> UNNECESSARY?
+   - double:
+       start: True
+       final: True
+       micro:
+         seq:
+         - [B.read_press, T.write_begin, B.read_release, B.read_press]
+         - xor:
+           - [T.read_timeout, B.read_release] # user is slow
+           - [B.read_release, T.write_end] # user is fast
+           # - [B.read_release, T.read_timeout] # --> UNNECESSARY?

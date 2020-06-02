@@ -96,7 +96,7 @@ def test_bad_tests() -> None:
             composition_shy
         )
 
-        composition_assembled = AssembledDevice.make(composition_aut, known_devices)
+        composition_assembled = AssembledDevice.make(composition_aut, known_devices.__getitem__)
 
         assert composition_assembled.is_valid
         assert type(composition_assembled.external) == CheckedDevice
@@ -132,7 +132,7 @@ def test_bad() -> None:
             composition_shy
         )
 
-        composition_assembled = AssembledDevice.make(composition_aut, known_devices)
+        composition_assembled = AssembledDevice.make(composition_aut, known_devices.__getitem__)
 
         assert composition_assembled.is_valid
         assert type(composition_assembled.external) == CheckedDevice

@@ -124,6 +124,10 @@ def test_desklamp() -> None:
             ),
         },
     )
-    assert expected == shelley2automata(
+    given = shelley2automata(
         yaml2shelley.get_shelley_from_yaml(_get_path("desklamp"))
     )
+    x = given.triggers['level2'].right
+    y = expected.triggers['level2'].right
+    assert x.right == y.right
+    assert expected == given

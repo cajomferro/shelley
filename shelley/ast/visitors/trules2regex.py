@@ -35,12 +35,17 @@ class TRules2RegexVisitor(TriggersVisitor):
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
         element.choices[0].accept(self)
-        next = self.current_regex
+        next_r = self.current_regex
+        prev_r = None
         for choice in element.choices[1:]:
-            prev = next
+            prev_r = next_r
             choice.accept(self)
-            next = self.current_regex
-        self.current_regex = Union(prev, next)
+            next_r = self.current_regex
+        if prev_r is None:
+            result = prev_r
+        else:
+            result = Union(prev_r, next_r)
+        self.current_regex = result
 
     def visit_trigger(self, element: Trigger) -> None:
         element.trigger_rule.accept(self)

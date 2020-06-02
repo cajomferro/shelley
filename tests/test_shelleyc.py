@@ -384,7 +384,7 @@ def test_smartbutton_not_in_uses_file() -> None:
 
     assert (
         str(exc_info.value)
-        == "Device SmartButton depends on Button. Please update uses file!"
+        == "Error loading system 'Button': system not defined"
     )
 
     _remove_compiled_dir()
@@ -404,7 +404,7 @@ def test_smartbutton_empty_uses_file() -> None:
 
     assert (
         str(exc_info.value)
-        == "Device SmartButton depends on Button. Please update uses file!"
+        == "Error loading system 'Button': system not defined"
     )
 
     _remove_compiled_dir()
@@ -441,7 +441,7 @@ def test_compile_desklamp_dependency_not_found() -> None:
 
     assert (
         str(exc_info.value)
-        == "Device DeskLamp depends on Led. Please update uses file!"
+        == "Error loading system 'Led': system not defined"
     )
 
     _remove_compiled_dir()

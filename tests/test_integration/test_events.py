@@ -156,7 +156,7 @@ def test_start_missing_true() -> None:
         )
 
     assert (
-        "Type error for event started, field start. Expecting bool, found <class 'NoneType'>!"
+        "operation declaration error in ['started']: Expecting a boolean, but found NoneType: None"
         == str(exc_info.value)
     )
 
@@ -175,6 +175,6 @@ def test_start_not_bool() -> None:
         )
 
     assert (
-        "Type error for event started, field start. Expecting bool, found <class 'str'>!"
+        "operation declaration error in ['started']: Expecting a boolean, but found str: 'Txrxuxe'"
         == str(exc_info.value)
     )

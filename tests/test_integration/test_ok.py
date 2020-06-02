@@ -162,7 +162,7 @@ def test_compile_wifihttp() -> None:
     wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(wifihttp_yml)
     wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
 
-    wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
+    wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices.__getitem__)
 
     # TODO: assert wifihttp_assembled.is_valid
     assert type(wifihttp_assembled.external) == CheckedDevice
@@ -173,6 +173,6 @@ def test_compile_wifihttp_no_known_devices() -> None:
     wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
 
     with pytest.raises(KeyError) as exc_info:
-        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, {})
+        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, {}.__getitem__)
 
     assert "'HTTPClient'" == str(exc_info.value)

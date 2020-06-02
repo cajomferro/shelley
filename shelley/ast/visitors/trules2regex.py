@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict
+from typing import Dict, Optional
 
 from shelley.ast.visitors.triggers import TriggersVisitor
 from shelley.ast.triggers import Trigger, Triggers
@@ -14,7 +14,7 @@ from karakuri.regular import Regex, Char, Concat, Union, NIL, VOID
 
 class TRules2RegexVisitor(TriggersVisitor):
     regex_dict: Dict[str, Regex]
-    current_regex: Regex
+    current_regex: Regex[str]
 
     def __init__(self) -> None:
         self.regex_dict = dict()
@@ -35,14 +35,14 @@ class TRules2RegexVisitor(TriggersVisitor):
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
         element.choices[0].accept(self)
-        next_r = self.current_regex
-        prev_r = None
+        next_r:Regex[str] = self.current_regex
+        prev_r:Optional[Regex[str]] = None
         for choice in element.choices[1:]:
             prev_r = next_r
             choice.accept(self)
             next_r = self.current_regex
         if prev_r is None:
-            result = prev_r
+            result:Regex[str] = next_r
         else:
             result = Union(prev_r, next_r)
         self.current_regex = result

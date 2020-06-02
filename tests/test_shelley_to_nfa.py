@@ -127,7 +127,9 @@ def test_desklamp() -> None:
     given = shelley2automata(
         yaml2shelley.get_shelley_from_yaml(_get_path("desklamp"))
     )
+    assert isinstance(given.triggers['level2'], Concat)
     x = given.triggers['level2'].right
+    assert isinstance(expected.triggers['level2'], Concat)
     y = expected.triggers['level2'].right
-    assert x.right == y.right
+    assert isinstance(x, Concat) and isinstance(y, Concat) and x.right == y.right
     assert expected == given

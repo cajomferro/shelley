@@ -16,15 +16,15 @@ device:
          seq:
          - [B.press, T.begin]
          - xor:
-           - [T.timeout, B.release]
-           - [B.release, T.timeout]
+           - [T.timeout, B.release] # user ir slow
+           - [B.release, T.end] # user is fast
    - double:
        start: True
        final: True
        micro:
          seq:
-         - [B.press, T.begin, B.release] # t.timeout may fire here?
+         - [B.press, T.begin, B.release]
          - xor:
-           - [B.press, T.timeout, B.release]
-           - [B.press, T.end, B.release]
-           - T.timeout # adding T.timeout --> ambiguity error
+           - [B.press, T.timeout, B.release] # user is slow
+           - [B.press, B.release, T.end] # user is fast
+           #- T.end

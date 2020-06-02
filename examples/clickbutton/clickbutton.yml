@@ -14,18 +14,26 @@ device:
        final: True
        micro:
          seq:
-         - [B.read_press, T.write_begin]
+         - [B.press, T.begin]
          - xor:
-           - [T.read_timeout, B.read_release] # user ir slow
-           - [B.read_release, T.write_end] # user is fast
-           # - [B.read_release, T.read_timeout] # --> UNNECESSARY?
+           - [T.timeout, B.release] # user ir slow
+           - [B.release, T.end] # user is fast
+           # - [B.release, T.timeout] # --> UNNECESSARY?
    - double:
        start: True
        final: True
        micro:
          seq:
-         - [B.read_press, T.write_begin, B.read_release, B.read_press]
+         - [B.press, T.begin, B.release, B.press]
          - xor:
-           - [T.read_timeout, B.read_release] # user is slow
-           - [B.read_release, T.write_end] # user is fast
-           # - [B.read_release, T.read_timeout] # --> UNNECESSARY?
+           - [T.timeout, B.release] # user is slow
+           - [B.release, T.end] # user is fast
+           # - [B.release, T.timeout] # --> UNNECESSARY?
+
+# ALTERNATIVE SYNTAX, EASIER TO SHOW AMBIGUITY
+#       micro:
+#         seq:
+#         - [B.press, T.begin, B.release]
+#         - xor:
+#           - [B.press, T.timeout, B.release] # user is slow
+#           - [B.press, B.release, T.end] # user is fast

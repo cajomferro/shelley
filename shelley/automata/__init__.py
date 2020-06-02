@@ -487,7 +487,7 @@ class ComponentUsage:
 
     def __post_init__(self) -> None:
         start = timer()
-        self.is_valid = self.component.contains(self.projected.subtract(DFA.make_nil(self.projected.alphabet)))
+        self.is_valid = self.component.contains(self.projected.subtract(DFA[Any,str].make_nil(self.projected.alphabet)))
         self.validation_time = get_elapsed_time(start)
 
     def __equals__(self, other: Any) -> bool:

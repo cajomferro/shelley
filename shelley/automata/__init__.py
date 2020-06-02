@@ -411,7 +411,7 @@ class MicroBehavior:
         Micro behavior
         
         How:
-            - convert external behavior (NFA) and triggers (REGEX) to DFAs (because ... ???)
+            - convert external behavior (NFA) and triggers (REGEX) to DFA (needed for ambiguity)
             -
         :param external_behavior: device external behavior as NFA
         :param triggers: device triggers as REGEX

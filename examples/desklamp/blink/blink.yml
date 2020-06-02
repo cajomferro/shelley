@@ -1,0 +1,40 @@
+
+device:
+  name: Blink
+  behavior:
+    - [on, off]
+    - [off, on]
+  components:
+    l: Led
+    t: Timer
+  events:
+    - off:
+        start: False
+        final: True
+        micro:
+          - seq:
+            - t.start # t.start -> t.timeout for integration error
+            - xor:
+              - [t.timeout, l.write_off] # comment this for polarity problem
+              - [l.read_off, t.stop] # l.read_off -> l.read_on for ambiguity
+    - on:
+        start: True
+        final: False
+        micro:
+          - seq:
+            - t.start
+            - xor:
+              - [t.timeout, l.write_on]
+              - [l.read_on, t.stop]
+
+#test_macro:
+#  ok:
+#    valid1: [red, standby, green, standby]
+#    valid5: true
+#  fail:
+#    # This is an incomplete trace, and is therefore reject
+#    invalid1: [red, red]
+#    invalid2: [red, green]
+#    invalid3: [green]
+#    invalid4: [green, green]
+#    invalid7: false

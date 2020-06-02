@@ -1,0 +1,47 @@
+
+device:
+  name: SmartLed
+  behavior:
+    - [first, red]
+    - [red, first]
+  components:
+    l: Led
+    t: Timer
+  events:
+    - first:
+        start: True
+        final: False
+        micro: [l.red, t.start]
+    - red:
+        start: False
+        final: True
+        micro:
+          - seq:
+            - xor:
+              - [t.timeout, l.off]
+              - [l.off, t.stop]
+            - t.start
+            - xor:
+              - t.timeout
+              - t.stop
+#            - [l.red, t.start]
+#    - off:
+#        start: False
+#        final: True
+#        micro:
+#          - xor:
+#            - [t.timeout, l.off]
+#            - [l.off, t.stop]
+
+
+#test_macro:
+#  ok:
+#    valid1: [red, standby, green, standby]
+#    valid5: true
+#  fail:
+#    # This is an incomplete trace, and is therefore reject
+#    invalid1: [red, red]
+#    invalid2: [red, green]
+#    invalid3: [green]
+#    invalid4: [green, green]
+#    invalid7: false

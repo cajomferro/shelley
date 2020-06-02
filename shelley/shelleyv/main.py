@@ -44,7 +44,7 @@ def handle_fsm(
     if args.no_epsilon:
         n = n.remove_epsilon_transitions()
     if not args.dfa and args.no_sink:
-        n = n.remove_all_sink_states()
+        n = n.remove_sink_states()
     if not args.dfa:
         return n
     d: regular.DFA[Any, str] = regular.nfa_to_dfa(n).flatten()
@@ -53,7 +53,7 @@ def handle_fsm(
     # Convert the DFA back into an NFA to possibly remove sink states
     n = regular.dfa_to_nfa(d)
     if args.no_sink:
-        n = n.remove_all_sink_states()
+        n = n.remove_sink_states()
     return n
 
 

@@ -566,6 +566,7 @@ class TriggerIntegrationFailure:
     @classmethod
     def from_component_usage(
         cls,
+        component: str,
         usage: ComponentUsage,
         micro: MicroBehavior,
         known_devices: TKnownDevices,
@@ -575,18 +576,12 @@ class TriggerIntegrationFailure:
             raise ValueError(f"Expecting an invalid projection, but got: {usage}")
         # 1. Get an invalid usage
         component_seq = usage.get_smallest_error()
-        # 2. Find the name of the affected component
-        component: Optional[str] = None
-        for elem in component_seq:
-            component = elem.split(".")[0]
-            break
-        assert component is not None
-        # 3. Get the component's alphabet
+        # 2. Get the component's alphabet
         component_alpha = set(
             component + "." + x
             for x in known_devices(components[component]).nfa.alphabet
         )
-        # 4. Get the set of invalid traces
+        # 3. Get the set of invalid traces
         invalid = micro.get_traces_from_component_trace(component_alpha, component_seq)
         return cls.make(
             micro=micro,
@@ -601,7 +596,7 @@ TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure]
 
 @dataclass
 class AssembledMicroBehavior2:
-    usages: List[ComponentUsage]
+    usages: Dict[str,ComponentUsage]
     micro: MicroBehavior
     is_valid: bool = field(init=False)
     validation_time: timedelta = field(init=False)
@@ -609,7 +604,7 @@ class AssembledMicroBehavior2:
     def __post_init__(self) -> None:
         invalid_count = 0
         self.validation_time = timedelta()
-        for x in self.usages:
+        for x in self.usages.values():
             if not x.is_valid:
                 invalid_count += 1
             self.validation_time += x.validation_time
@@ -629,9 +624,10 @@ class AssembledMicroBehavior2:
         # Fill in the failure field
         failure: Optional[TFailure] = self.micro.failure
         if failure is None and not self.is_valid:
-            for usage in self.usages:
+            for (cid, usage) in self.usages.items():
                 if not usage.is_valid:
                     return TriggerIntegrationFailure.from_component_usage(
+                        component=cid,
                         usage=usage,
                         micro=self.micro,
                         known_devices=known_devices,
@@ -642,7 +638,7 @@ class AssembledMicroBehavior2:
     @classmethod
     def make(
         cls,
-        components: List[NFA[Any, str]],
+        components: Dict[str,NFA[Any, str]],
         external_behavior: NFA[Any, str],
         triggers: Dict[str, Regex[str]],
     ) -> "AssembledMicroBehavior2":
@@ -651,12 +647,12 @@ class AssembledMicroBehavior2:
                 "Should not be creating an internal behavior with 0 components"
             )
         alphabet: Set[str] = set()
-        for c in components:
+        for c in components.values():
             alphabet.update(c.alphabet)
         micro = MicroBehavior.make(external_behavior, triggers, alphabet)
-        usages = list(
-            ComponentUsage.make(micro=micro.nfa, component=c) for c in components
-        )
+        usages = dict((
+            (k,ComponentUsage.make(micro=micro.nfa, component=c)) for k,c in components.items()
+        ))
         return cls(usages=usages, micro=micro)
 
 
@@ -969,9 +965,7 @@ class AssembledDevice:
         fail = None
         if len(dev.components) > 0:
             # Since there are components, we must assemble them
-            components_behaviors: List[NFA] = list(
-                dict(build_components(dev.components, known_devices)).values()
-            )
+            components_behaviors: Dict[str,NFA[Any,str]] = dict(build_components(dev.components, known_devices))
             if fast_check:
                 micro = AssembledMicroBehavior2.make(
                     components=components_behaviors,
@@ -980,7 +974,7 @@ class AssembledDevice:
                 )
             else:
                 micro = AssembledMicroBehavior.make(
-                    components=components_behaviors,
+                    components=list(components_behaviors.values()),
                     external_behavior=external_behavior,
                     triggers=dev.triggers,
                 )

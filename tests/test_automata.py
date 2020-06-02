@@ -982,7 +982,7 @@ def test_invalid_behavior_4() -> None:
     ), "micro behaviour with fast-check should remain the same"
     ################################################
     # 2. We now test the projected button
-    proj_btn = fast_check.internal.usages[0]
+    proj_btn = fast_check.internal.usages["b"]
     ################################################
     # 2.1 We test if componet for button was correctly initialized
     # The NFA below should represent the Button instantiated with 'b':

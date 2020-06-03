@@ -59,6 +59,7 @@ device:
     - [print_data_ready, print_data_ready]
     - [print_timeout, print_timeout]
     - [print_data_ready, disconnected]
+    - [print_data_ready, print_timeout]
     - [print_timeout, disconnected]
     - [disconnected, connected]
     - [disconnected, connection_timeout]

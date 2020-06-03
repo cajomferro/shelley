@@ -1,20 +1,10 @@
-#device:
-#  name: RadioSimplest
-#  start_events: [send]
-#  behavior:
-#    - [send, ?] # como é que poderia fazer para só enviar 1x?
-#  components:
-#      rs: RadioSimple
-#  triggers:
-#    send: [rs.start, rs.send, rs.receive, rs.stop]
-
 device:
   name: Radio
   components:
       hc: HTTPClient
       wc: WiFiClient
   events:
-    - started:
+    - begin:
         start: True
         final: False
         micro:
@@ -33,10 +23,10 @@ device:
         micro:
           seq: [wc.disconnected, hc.disconnected, wc.ssid_left]
   behavior:
-    - [started, stopped]
-    - [stopped, started] # this is a restart
+    - [begin, stopped]
+    - [stopped, begin] # this is a restart
     - [startfailed, startfailed] # trying to start but always fails
-    - [startfailed, started] # starting after >= 1 fail
+    - [startfailed, begin] # starting after >= 1 fail
     - [stopped, startfailed] # restart fails
 #    - send:
 #        final: False
@@ -61,7 +51,7 @@ device:
 #                    - [wc.print_timeout]
 #          - [wc.disconnected, hc.disconnected]
 
-#    - [notconnected, started]
+#    - [notconnected, begin]
 #    - [notconnected, notconnected]
 #    - [send, stopped]
 #    - [send, ok]

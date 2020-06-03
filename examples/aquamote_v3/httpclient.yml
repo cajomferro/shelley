@@ -34,6 +34,7 @@ device:
     - [connected, get]  # client.connect(host, port)) succeeded
     - [connected, post]  # client.connect(host, port)) succeeded
     - [connected, connect_failed]  # !client.connect(host, port))
+    - [connected, disconnected]
     - [connect_failed, connected]
     - [connect_failed, connect_failed]
     - [get, response200]

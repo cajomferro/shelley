@@ -188,43 +188,28 @@ def instantiate(nfa: NFA, prefix: str) -> NFA:
     )
 
 
-def build_components(
-    components: Dict[str, str], known_devices: TKnownDevices
-) -> Iterator[Tuple[str, NFA]]:
-    """
-    Build a structure of components that is a map of component name to device instance with a prefixed alphabet
-    :func:`.instantiate`
+@dataclass
+class Component:
+    name: str
+    system: CheckedDevice
+    behavior: NFA[Any, str] = field(init=False)
 
-    :param components: map of component name to device type
-        Example:  components = {"t": "Timer", "b": "Button"}
+    @property
+    def alphabet(self):
+        return self.behavior.alphabet
 
-    :param known_devices: map of device type to device instance
-        Example: known_devices = {"Timer": Timer(..started..timeout..), Button(..pressed..released..)} )
-
-    :return: iterator of component name to device instance with alphabet prefixed with component name
-        Example: "t": Timer(..t.started..t.timeout..), "b": Button(..b.pressed..b.released..)
-    """
-    for (name, ty) in components.items():
-        yield name, instantiate(known_devices(ty).nfa, name + ".")
+    def __post_init__(self):
+        self.behavior = instantiate(self.system.nfa, self.name + ".")
 
 
-def merge_components(components: Iterable[NFA[Any, str]]) -> DFA[Any, str]:
-    """
-    Merge all components by using the shuffle operation
-    :param components: list of components as NFAs (see :func:`.build_components`)
-    :return: shuffled components DFA
-    """
+def shuffle(nfas: Iterable[NFA[Any, str]]) -> NFA[Any, str]:
     # Get the first component
-    dev, *rst = components
+    result, *rst = nfas
 
     # Shuffle all devices:
     for d in rst:
-        dev = dev.shuffle(d)
-
-    # Convert the given NFA into a DFA
-    dev_dfa = nfa_to_dfa(dev)
-
-    return dev_dfa
+        result = result.shuffle(d)
+    return result
 
 
 def encode_behavior(
@@ -640,7 +625,7 @@ class AssembledMicroBehavior2:
     @classmethod
     def make(
         cls,
-        components: Dict[str, NFA[Any, str]],
+        components: Dict[str, Component],
         external_behavior: NFA[Any, str],
         triggers: Dict[str, Regex[str]],
     ) -> "AssembledMicroBehavior2":
@@ -654,7 +639,7 @@ class AssembledMicroBehavior2:
         micro = MicroBehavior.make(external_behavior, triggers, alphabet)
         usages = dict(
             (
-                (k, ComponentUsage.make(micro=micro.nfa, component=c))
+                (k, ComponentUsage.make(micro=micro.nfa, component=c.behavior))
                 for k, c in components.items()
             )
         )
@@ -696,7 +681,7 @@ class AssembledMicroBehavior:
     @classmethod
     def make(
         cls,
-        components: List[NFA[Any, str]],
+        components: List[Component],
         external_behavior: NFA[Any, str],
         triggers: Dict[str, Regex[str]],
     ) -> "AssembledMicroBehavior":
@@ -715,7 +700,9 @@ class AssembledMicroBehavior:
                 "Should not be creating an internal behavior with 0 components"
             )
 
-        all_possible: DFA[Any, str] = merge_components(components)  # shuffle operation
+        all_possible: DFA[Any, str] = nfa_to_dfa(
+            shuffle(c.behavior for c in components)
+        )
 
         internal_behavior = MicroBehavior.make(
             external_behavior, triggers, set(all_possible.alphabet)
@@ -872,19 +859,20 @@ class AssembledDevice:
         micro: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]] = None
         fail = None
         if len(dev.components) > 0:
-            # Since there are components, we must assemble them
-            components_behaviors: Dict[str, NFA[Any, str]] = dict(
-                build_components(dev.components, known_devices)
+            # Load the map of components
+            components: Dict[str, Component] = dict(
+                (name, Component(name, known_devices(ty)))
+                for (name, ty) in dev.components.items()
             )
             if fast_check:
                 micro = AssembledMicroBehavior2.make(
-                    components=components_behaviors,
+                    components=components,
                     external_behavior=external_behavior,
                     triggers=dev.triggers,
                 )
             else:
                 micro = AssembledMicroBehavior.make(
-                    components=list(components_behaviors.values()),
+                    components=list(components.values()),
                     external_behavior=external_behavior,
                     triggers=dev.triggers,
                 )

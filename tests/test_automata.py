@@ -22,6 +22,7 @@ from shelley.automata import (
     project_nfa,
     ComponentUsage,
     pad_trace,
+    Component,
 )
 from shelley import automata
 
@@ -29,45 +30,145 @@ B_P: str = "b.pressed"
 B_R: str = "b.released"
 
 
-def create_prefixed_button() -> NFA:
+def create_led_nfa() -> NFA[Any, str]:
+    # fmt: off
     return NFA(
-        alphabet=[B_P, B_R],
-        transition_func=NFA[int, str].transition_edges(
-            [(0, set([B_P]), 1), (1, set([B_R]), 2), (2, set([B_P]), 1),]  #  #  #  #
+        alphabet=["on", "off"],
+        transition_func=NFA.transition_edges(
+            [
+                (0, ["on"], 1),
+                (1, ["off"], 2),
+                (2, ["on"], 1),
+            ]
         ),
         start_state=0,
         accepted_states=[1, 2],
     )
+    # fmt: on
+
+
+def create_led_dev() -> CheckedDevice:
+    return CheckedDevice(create_led_nfa())
+
+
+def create_button_nfa() -> NFA[Any, str]:
+    # fmt: off
+    return NFA(
+        alphabet=["pressed", "released"],
+        transition_func=NFA.transition_edges(
+            [
+                (0, ["pressed"], 1),
+                (1, ["released"], 2),
+                (2, ["pressed"], 1),
+            ]
+        ),
+        start_state=0,
+        accepted_states=[2, 1],
+    )
+    # fmt: on
+
+
+def create_button_dev() -> CheckedDevice:
+    return CheckedDevice(create_button_nfa())
+
+
+def create_timer_nfa() -> NFA[Any, str]:
+    # fmt: off
+    return NFA(
+        alphabet=["timeout", "canceled", "started"],
+        transition_func=NFA.transition_edges(
+            [
+                (0, ["started"], 1),
+                (1, ["canceled", "timeout"], 2),
+                (2, ["started"], 1),
+            ]
+        ),
+        start_state=0,
+        accepted_states=[2, 1],
+    )
+    # fmt: on
+
+
+def create_timer_dev() -> CheckedDevice:
+    return CheckedDevice(create_timer_nfa())
+
+
+def create_button_b_nfa() -> NFA:
+    # fmt: off
+    return NFA(
+        alphabet=[B_P, B_R],
+        transition_func=NFA[int, str].transition_edges(
+            [
+                (0, set([B_P]), 1),
+                (1, set([B_R]), 2),
+                (2, set([B_P]), 1),
+            ]
+        ),
+        start_state=0,
+        accepted_states=[1, 2],
+    )
+    # fmt: on
+
+
+def test_button() -> None:
+    button = create_button_b_nfa()
+    assert button.accepts([B_P, B_R])
+    assert button.accepts([B_P])
+    assert not button.accepts([B_R])
+
+
+def create_button_b() -> Component:
+    return Component("b", create_button_dev())
 
 
 LA_ON = "ledA.on"
 LA_OFF = "ledA.off"
 
 
-def create_prefixed_led_a() -> NFA:
+def create_led_a_nfa() -> NFA:
+    # fmt: off
     return NFA(
         alphabet=[LA_ON, LA_OFF],
         transition_func=NFA.transition_edges(
-            [(0, [LA_ON], 1), (1, [LA_OFF], 2), (2, [LA_ON], 1),]  #  #  #  #
+            [
+                (0, [LA_ON], 1),
+                (1, [LA_OFF], 2),
+                (2, [LA_ON], 1),
+            ]
         ),
         start_state=0,
         accepted_states=[1, 2],
     )
+    # fmt: on
+
+
+def create_led_a() -> Component:
+    return Component("ledA", create_led_dev())
 
 
 LB_ON = "ledB.on"
 LB_OFF = "ledB.off"
 
 
-def create_prefixed_led_b() -> NFA:
+def create_led_b_nfa() -> NFA:
+    # fmt: off
     return NFA(
         alphabet=[LB_ON, LB_OFF],
         transition_func=NFA.transition_edges(
-            [(0, [LB_ON], 1), (1, [LB_OFF], 2), (2, [LB_ON], 1),]  #  #  #  #
+            [
+                (0, [LB_ON], 1),
+                (1, [LB_OFF], 2),
+                (2, [LB_ON], 1),
+            ]
         ),
         start_state=0,
         accepted_states=[1, 2],
     )
+    # fmt: on
+
+
+def create_led_b() -> Component:
+    return Component("ledB", create_led_dev())
 
 
 T_T = "t.timeout"
@@ -75,7 +176,7 @@ T_C = "t.canceled"
 T_S = "t.started"
 
 
-def create_prefixed_timer() -> NFA:
+def create_timer_t_nfa() -> NFA:
     return NFA(
         alphabet=[T_T, T_C, T_S],
         transition_func=NFA.transition_edges(
@@ -86,13 +187,17 @@ def create_prefixed_timer() -> NFA:
     )
 
 
+def create_timer_t() -> Component:
+    return Component("t", create_timer_dev())
+
+
 LEVEL1 = "level1"
 LEVEL2 = "level2"
 STANDBY1 = "standby1"
 STANDBY2 = "standby2"
 
 
-def create_hello_world() -> NFA:
+def create_hello_world_nfa() -> NFA:
     return NFA(
         alphabet=[LEVEL1, LEVEL2, STANDBY1, STANDBY2],
         transition_func=NFA.transition_edges(
@@ -109,6 +214,10 @@ def create_hello_world() -> NFA:
     )
 
 
+def create_hello_world_dev() -> CheckedDevice:
+    return CheckedDevice(create_hello_world_nfa())
+
+
 def create_prefixed_led_and_button() -> NFA:
     """
     This example should be a sub-behavior of shuffling button with led-a.
@@ -117,15 +226,14 @@ def create_prefixed_led_and_button() -> NFA:
         <--- LEDA.OFF      <--- BTN.REL
     """
     return NFA(
-        # states=[0, 1, 2],
         alphabet=[LA_ON, LA_OFF, B_R, B_P],
         transition_func=NFA.transition_edges(
-            [  #
-                (0, [LA_ON], 1),  #
-                (1, [LA_OFF], 3),  #
-                (1, [B_P], 2),  #
-                (2, [B_R], 1),  #
-                (3, [LA_ON], 1),  #
+            [
+                (0, [LA_ON], 1),
+                (1, [LA_OFF], 3),
+                (1, [B_P], 2),
+                (2, [B_R], 1),
+                (3, [LA_ON], 1),
             ]
         ),
         start_state=0,
@@ -133,16 +241,9 @@ def create_prefixed_led_and_button() -> NFA:
     )
 
 
-def test_button() -> None:
-    button = create_prefixed_button()
-    assert button.accepts([B_P, B_R])
-    assert button.accepts([B_P])
-    assert not button.accepts([B_R])
-
-
 def test_shuffle() -> None:
-    button = create_prefixed_button()
-    led_a = create_prefixed_led_a()
+    button = create_button_b_nfa()
+    led_a = create_led_a_nfa()
     both = button.shuffle(led_a)
     # Both should accept all behaviors of the button
     assert button.accepts([B_P, B_R])
@@ -176,8 +277,8 @@ def test_led_and_button() -> None:
 
 
 def test_contains() -> None:
-    button = create_prefixed_button()
-    led_a = create_prefixed_led_a()
+    button = create_button_b_nfa()
+    led_a = create_led_a_nfa()
     both = button.shuffle(led_a)
     behavior = create_prefixed_led_and_button()
     assert nfa_to_dfa(both).contains(nfa_to_dfa(behavior))
@@ -196,12 +297,12 @@ def test_hello_world() -> None:
         ),
     }
     components = [
-        create_prefixed_button(),
-        create_prefixed_led_a(),
-        create_prefixed_led_b(),
-        create_prefixed_timer(),
+        create_button_b(),
+        create_led_a(),
+        create_led_b(),
+        create_timer_t(),
     ]
-    behavior = create_hello_world()
+    behavior = create_hello_world_nfa()
     be = automata.AssembledMicroBehavior.make(
         components, behavior, HELLO_WORLD_TRIGGERS
     )
@@ -253,7 +354,7 @@ def test_ambiguity_1() -> None:
         LEVEL2: Char(B_P),
     }
     res = automata.AssembledMicroBehavior.make(
-        [create_prefixed_button()], n_behavior, triggers
+        [create_button_b()], n_behavior, triggers
     )
     assert not res.micro.is_valid
     fail = res.micro.failure
@@ -275,12 +376,12 @@ def test_ok_1() -> None:
         LEVEL2: Char(B_R),
     }
     assert automata.AssembledMicroBehavior.make(
-        [create_prefixed_button()], n_behavior, triggers
+        [create_button_b()], n_behavior, triggers
     ).is_valid
 
 
 def test_fail_hello_world() -> None:
-    hello = create_hello_world()
+    hello = create_hello_world_nfa()
     triggers: Dict[str, Regex[str]] = {
         LEVEL1: Concat.from_list(map(Char, [B_P, B_R, LA_ON, T_S])),
         LEVEL2: Concat.from_list(
@@ -293,10 +394,10 @@ def test_fail_hello_world() -> None:
         ),
     }
     components = [
-        create_prefixed_button(),
-        create_prefixed_led_a(),
-        create_prefixed_led_b(),
-        create_prefixed_timer(),
+        create_button_b(),
+        create_led_a(),
+        create_led_b(),
+        create_timer_t(),
     ]
     be = automata.encode_behavior(hello, triggers)
     res = automata.AssembledMicroBehavior.make(components, hello, triggers)
@@ -305,7 +406,7 @@ def test_fail_hello_world() -> None:
 
 
 def test_smallest_error() -> None:
-    hello = create_hello_world()
+    hello = create_hello_world_nfa()
     triggers: Dict[str, Regex[str]] = {
         LEVEL1: Concat.from_list(
             map(Char, [B_P, B_P, LA_ON, T_S])  # <--- ERROR HERE: should be B_R
@@ -325,10 +426,10 @@ def test_smallest_error() -> None:
         ),
     }
     components = [
-        create_prefixed_button(),
-        create_prefixed_led_a(),
-        create_prefixed_led_b(),
-        create_prefixed_timer(),
+        create_button_b(),
+        create_led_a(),
+        create_led_b(),
+        create_timer_t(),
     ]
     res = automata.AssembledMicroBehavior.make(components, hello, triggers)
     assert not res.is_valid
@@ -355,89 +456,23 @@ def test_demultiplex() -> None:
 
 
 def test_prefix_nfa() -> None:
-    led = NFA(
-        alphabet=["on", "off"],
-        transition_func=NFA.transition_edges(
-            [(0, ["on"], 1), (1, ["off"], 2), (2, ["on"], 1),]  #  #  #  #
-        ),
-        start_state=0,
-        accepted_states=[1, 2],
-    )
-    assert automata.instantiate(led, "ledA.") == create_prefixed_led_a()
+    led = create_led_nfa()
+    assert automata.instantiate(led, "ledA.") == create_led_a_nfa()
 
 
-def test_build_components() -> None:
-    led = NFA(
-        alphabet=["on", "off"],
-        transition_func=NFA.transition_edges(  #
-            [(0, ["on"], 1), (1, ["off"], 2), (2, ["on"], 1),]  #  #  #  #
-        ),
-        start_state=0,
-        accepted_states=[1, 2],
-    )
-    comps = {
-        "ledA": "LED",
-        "ledB": "LED",
-    }
-    known_devs = {
-        "LED": CheckedDevice(led),
-    }
-    given = dict(automata.build_components(comps, known_devs.__getitem__))
-    expected = {
-        "ledA": create_prefixed_led_a(),
-        "ledB": create_prefixed_led_b(),
-    }
-    assert expected == given
-    assert len(expected) == len(given)
-    for (ex, giv) in zip(expected, given):
-        assert ex == giv
+def test_components() -> None:
+    led = create_led_dev()
+    btn = create_button_dev()
+    tmr = create_timer_dev()
 
-
-def test_build_components2() -> None:
-    timer = NFA(
-        # states=[0, 1],
-        alphabet=["timeout", "canceled", "started"],
-        transition_func=NFA.transition_edges(
-            [  #
-                (0, ["started"], 1),  #
-                (1, ["canceled", "timeout"], 2),  #
-                (2, ["started"], 1),  #
-            ]
-        ),
-        start_state=0,
-        accepted_states=[2, 1],
-    )
-
-    button = NFA(
-        alphabet=["pressed", "released"],
-        transition_func=NFA.transition_edges(
-            [  #
-                (0, ["pressed"], 1),  #
-                (1, ["released"], 2),  #
-                (2, ["pressed"], 1),  #
-            ]
-        ),
-        start_state=0,
-        accepted_states=[2, 1],
-    )
-
-    comps = {
-        "t": "Timer",
-        "b": "Button",
-    }
-    known_devs = {
-        "Timer": CheckedDevice(timer),
-        "Button": CheckedDevice(button),
-    }
-    given = dict(automata.build_components(comps, known_devs.__getitem__))
-    expected = {
-        "t": create_prefixed_timer(),
-        "b": create_prefixed_button(),
-    }
-    assert expected == given
-    assert len(expected) == len(given)
-    for (ex, giv) in zip(expected, given):
-        assert ex == giv
+    led_a = Component("ledA", led)
+    assert led_a.behavior == create_led_a_nfa()
+    led_b = Component("ledB", led)
+    assert led_b.behavior == create_led_b_nfa()
+    b = Component("b", btn)
+    assert b.behavior == create_button_b_nfa()
+    t = Component("t", tmr)
+    assert t.behavior == create_timer_t_nfa()
 
 
 def test_build_nfa_transitions() -> None:
@@ -501,7 +536,7 @@ def test_build_behavior() -> None:
     # Make sure this is equivalent to HELLO WORLD
     assert nfa_to_dfa(
         automata.build_external_behavior(behavior, start_events, final_events, events)
-    ).is_equivalent_to(nfa_to_dfa(create_hello_world()))
+    ).is_equivalent_to(nfa_to_dfa(create_hello_world_nfa()))
 
 
 def test_build_behavior_empty_start_events() -> None:
@@ -543,7 +578,7 @@ def test_device_button() -> None:
     )
     expected = AssembledDevice.make(device, empty_devices).external.nfa
 
-    assert nfa_to_dfa(create_prefixed_button()).is_equivalent_to(nfa_to_dfa(expected))
+    assert nfa_to_dfa(create_button_b_nfa()).is_equivalent_to(nfa_to_dfa(expected))
 
 
 def test_device_led_a() -> None:
@@ -557,21 +592,21 @@ def test_device_led_a() -> None:
     )
     expected = AssembledDevice.make(device, empty_devices).external.nfa
 
-    assert nfa_to_dfa(create_prefixed_led_a()).is_equivalent_to(nfa_to_dfa(expected))
+    assert nfa_to_dfa(create_led_a_nfa()).is_equivalent_to(nfa_to_dfa(expected))
 
 
 def test_device_led_b() -> None:
     device = Device(
-        start_events=["ledB.on"],
-        final_events=["ledB.on", "ledB.off"],
-        events=["ledB.on", "ledB.off"],
-        behavior=[("ledB.on", "ledB.off"), ("ledB.off", "ledB.on"),],
+        start_events=[LB_ON],
+        final_events=[LB_ON, LB_OFF],
+        events=[LB_ON, LB_OFF],
+        behavior=[(LB_ON, LB_OFF), (LB_OFF, LB_ON),],
         components={},
-        triggers={"ledB.on": NIL, "ledB.off": NIL,},
+        triggers={LB_ON: NIL, LB_OFF: NIL,},
     )
     expected = AssembledDevice.make(device, empty_devices).external.nfa
 
-    assert nfa_to_dfa(create_prefixed_led_b()).is_equivalent_to(nfa_to_dfa(expected))
+    assert nfa_to_dfa(create_led_b_nfa()).is_equivalent_to(nfa_to_dfa(expected))
 
 
 def test_device_timer() -> None:
@@ -590,7 +625,7 @@ def test_device_timer() -> None:
     )
     expected = AssembledDevice.make(device, empty_devices).external.nfa
 
-    assert nfa_to_dfa(create_prefixed_timer()).is_equivalent_to(nfa_to_dfa(expected))
+    assert nfa_to_dfa(create_timer_t_nfa()).is_equivalent_to(nfa_to_dfa(expected))
 
 
 def test_device_hello_world() -> None:
@@ -610,7 +645,7 @@ def test_device_hello_world() -> None:
     )
     expected = AssembledDevice.make(device, empty_devices).external.nfa
 
-    assert nfa_to_dfa(create_hello_world()).is_equivalent_to(nfa_to_dfa(expected))
+    assert nfa_to_dfa(create_hello_world_nfa()).is_equivalent_to(nfa_to_dfa(expected))
 
 
 def get_basic_devices() -> Dict[str, Device]:
@@ -871,22 +906,15 @@ def test_projection_2() -> None:
 
 def test_projection_class() -> None:
     micro_nfa = NFA[int, str](
-        alphabet=["b.pressed", "b.released"],
+        alphabet=[B_P, B_R],
         transition_func=NFA.transition_table(
-            {(0, "b.released"): frozenset([1]), (1, "b.pressed"): frozenset([2]),}
+            {(0, B_R): frozenset([1]), (1, B_P): frozenset([2]),}
         ),
         accepted_states=[0, 1, 2],
         start_state=0,
     )
     micro_dfa = nfa_to_dfa(micro_nfa)
-    button_nfa = NFA[int, str](
-        alphabet=["b.pressed", "b.released"],
-        transition_func=NFA.transition_table(
-            {(0, "b.pressed"): frozenset([1]), (1, "b.released"): frozenset([0]),}
-        ),
-        accepted_states=[0, 1, 2],
-        start_state=0,
-    )
+    button_nfa = create_button_b_nfa()
     button_dfa = nfa_to_dfa(button_nfa)
     # We build a projection directly
     proj = ComponentUsage.make(micro_nfa, button_nfa)
@@ -971,7 +999,7 @@ def test_invalid_behavior_4() -> None:
     ################################################
     # 2.1 We test if componet for button was correctly initialized
     # The NFA below should represent the Button instantiated with 'b':
-    button_nfa = create_prefixed_button()
+    button_nfa = create_button_b_nfa()
     button_dfa = nfa_to_dfa(button_nfa)
     ################################################
     # We build a projection directly

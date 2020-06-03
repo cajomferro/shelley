@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from shelley.shelleyc import settings
 from shelley.shelleyc.exceptions import CompilationError
 from shelley.shelleyc.serializer import serialize, deserialize
-from shelley.shelleyc.stats import save_statistics, save_timings
+from shelley.shelleyc.stats import save_timings
 
 from shelley.automata import (
     CheckedDevice,
@@ -104,7 +104,6 @@ def compile_shelley(
     dst_path: Optional[Path] = None,
     binary: bool = False,
     integration: Optional[Path] = None,
-    dump_stats: Optional[IO[str]] = None,
     dump_timings: Optional[IO[str]] = None,
     save_output: bool = False,
     slow_check: bool = False,
@@ -144,10 +143,6 @@ def compile_shelley(
         if settings.VERBOSE:
             logger.exception(error)
         raise CompilationError("Parser error: {0}".format(str(error)))
-
-    if dump_stats is not None:
-        logger.debug("Dumping statistics")
-        save_statistics(dump_stats, dev)
 
     if dump_timings is not None:
         logger.debug("Dumping timings")

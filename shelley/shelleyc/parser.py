@@ -34,18 +34,11 @@ def create_parser() -> argparse.ArgumentParser:
         "-i", "--integration", type=Path, help="dump the integration diagram",
     )
     parser.add_argument(
-        "--dump-stats",
-        type=argparse.FileType("w"),
-        nargs="?",
-        const=sys.stdout,
-        help="path to CSV file to dump verification statistics",
-    )
-    parser.add_argument(
         "--dump-timings",
         type=argparse.FileType("w"),
         nargs="?",
         const=sys.stdout,
-        help="path to CSV file to dump verification timings",
+        help="path to JSON file to dump verification timings",
     )
     parser.add_argument(
         "--no-output",
@@ -103,7 +96,6 @@ def parse() -> None:
             args.output,
             binary=args.binary,
             integration=args.integration,
-            dump_stats=args.dump_stats,
             dump_timings=args.dump_timings,
             save_output=args.save_output,
             slow_check=args.slow_check,

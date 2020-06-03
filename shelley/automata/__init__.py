@@ -818,103 +818,14 @@ class Timings:
 
 
 @dataclass
-class DeviceExport:
-    micro_dfa_minimized: DFA[Any, str]
-    micro_dfa_minimized_no_traps: NFA[Any, str]
-    shuffle_dfa_minimized: DFA[Any, str]
-    shuffle_dfa_minimized_no_traps: NFA[Any, str]
-    macro: Optional[CheckedDevice] = None
-    micro: Optional[AssembledMicroBehavior] = None
-
-    def __init__(self, macro: CheckedDevice, micro: AssembledMicroBehavior):
-        self.macro = macro
-        self.micro = micro
-
-    def stats(self) -> Dict:
-        return {
-            "macro_size": len(self.get_macro_nfa()),
-            "micro_size:": 0
-            if self.micro is None
-            else len(self.get_micro_dfa_minimized()),
-            # "micro_max_size:": 0
-            # if self.micro is None
-            # else len(self.get_shuffle_dfa_minimized()),
-        }
-
-    def get_micro_dfa(self) -> DFA[Any, str]:
-        assert (
-            self.micro is not None
-        ), "Cannot perform operation because there is no internal behavior"
-        return self.micro.dfa
-
-    def get_shuffle_dfa(self) -> DFA[Any, str]:
-        assert (
-            self.micro is not None
-        ), "Cannot perform operation because there is no internal behavior"
-        return self.micro.possible
-
-    def get_macro_nfa(self) -> NFA[Any, str]:
-        assert (
-            self.macro is not None
-        ), "Cannot perform operation because there is no checked device"
-        return self.macro.nfa
-
-    def get_micro_nfa_with_epsilon_no_traps(self) -> NFA[Any, str]:
-        assert (
-            self.micro is not None
-        ), "Cannot perform operation because there is no internal behavior"
-        return self.micro.nfa.remove_sink_states()
-
-    def get_micro_nfa_no_epsilon_no_traps(self) -> NFA[Any, str]:
-        assert (
-            self.micro is not None
-        ), "Cannot perform operation because there is no internal behavior"
-        return self.micro.nfa.remove_epsilon_transitions().remove_sink_states()
-
-    def get_micro_dfa_minimized(self) -> DFA[Any, str]:
-        assert (
-            self.micro is not None
-        ), "Cannot perform operation because there is no internal behavior"
-        if not hasattr(self, "micro_dfa_minimized"):
-            self.micro_dfa_minimized = self.micro.dfa.minimize()
-        return self.micro_dfa_minimized
-
-    def get_micro_dfa_minimized_no_traps(self) -> NFA[Any, str]:
-        # generate internal minimized dfa without traps (must be converted to NFA)
-        if not hasattr(self, "micro_dfa_minimized_no_traps"):
-            self.micro_dfa_minimized_no_traps = dfa_to_nfa(
-                self.get_micro_dfa_minimized()
-            ).remove_sink_states()
-        return self.micro_dfa_minimized_no_traps
-
-    def get_shuffle_dfa_minimized(self) -> DFA[Any, str]:
-        assert (
-            self.micro is not None
-        ), "Cannot perform operation because there is no internal behavior"
-        if not hasattr(self, "shuffle_dfa_minimized"):
-            self.shuffle_dfa_minimized = self.micro.possible.minimize()
-        return self.shuffle_dfa_minimized
-
-    def get_shuffle_dfa_minimized_no_traps(self) -> NFA[Any, str]:
-        # generate shuffle minimized dfa without traps (must be converted to NFA)
-        if not hasattr(self, "shuffle_dfa_minimized_no_traps"):
-            self.shuffle_dfa_minimized_no_traps = dfa_to_nfa(
-                self.get_shuffle_dfa_minimized()
-            ).remove_sink_states()
-        return self.shuffle_dfa_minimized_no_traps
-
-
-@dataclass
 class AssembledDevice:
     external: CheckedDevice
     internal: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]]
     is_valid: bool = field(init=False)
     failure: Optional[Union[AmbiguityFailure, TriggerIntegrationFailure]]
-    device_export: DeviceExport = field(init=False)
 
     def __post_init__(self):
         self.is_valid = self.failure is None
-        self.device_export = DeviceExport(self.external, self.internal)
 
     def get_timings(self) -> Timings:
         return Timings(
@@ -925,11 +836,6 @@ class AssembledDevice:
             if self.internal is None
             else self.internal.validation_time,
         )
-
-    def get_stats(self) -> Dict:
-        if isinstance(self.internal, AssembledMicroBehavior2):
-            raise NotImplementedError()
-        return self.device_export.stats()
 
     def internal_model_check(
         self, word_or_formula: Union[List[str], hml.Formula[str]]

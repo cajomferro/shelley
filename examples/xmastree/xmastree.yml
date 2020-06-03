@@ -1,0 +1,59 @@
+device:
+  name: XmasTree
+  behavior:
+    - [on, blink]
+    - [on, off]
+    - [blink, off]
+    - [blink, blink]
+    - [off, on]
+  components:
+    l: Led
+    t: Timer
+  events:
+    - on:
+        start: True
+        final: False
+        micro: l.on
+    - blink:
+        start: False     
+        final: False
+        micro:
+          - seq: [l.off, t.begin, t.timeout, l.on, t.begin, t.timeout]
+    - off:
+        start: False
+        final: True
+        micro: l.off
+
+#test_macro:
+#  ok:
+#    valid1: [level1, standby1]
+#    valid2: [level1, level2, standby2]
+#    valid3: true
+#    valid4: true
+#    valid5: true
+#  fail:
+#    # This is an incomplete trace, and is therefore reject
+#    invalid1: [level1, standby1, standby2]
+#    invalid2: [standby1, standby2]
+#    invalid3: false
+#    invalid4: false
+#    invalid5: false
+#    invalid6: false
+#    invalid7: false
+#
+#test_micro:
+#  ok:
+#    valid1: [b.press, b.release, ledA.on, t.begin, b.press, b.release, t.end, ledB.on, t.begin, t.timeout, ledB.off, ledA.off]
+#    valid3: true
+##    valid2:
+##      possibly:
+##      - b.press
+##      - necessarily:
+##        - b.release
+##        - ledA.on
+##        - t.begin
+##        - true
+#  fail:
+#    # This is an incomplete trace, and is therefore reject
+#    invalid1: [b.press, b.release]
+#    invalid2: false

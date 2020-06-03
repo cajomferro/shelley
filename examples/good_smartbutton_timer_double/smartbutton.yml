@@ -39,8 +39,8 @@ test_micro:
     double_b: [b.in, t.start, b.out, t.stop, t.start, b.in, b.out, t.stop]
     single_double_a: [b.in, t.start, b.out, t.stop, t.start, t.timeout, b.in, t.start, b.out, t.stop, t.start, b.in, t.stop, b.out]
     single_double_b: [b.in, t.start, b.out, t.stop, t.start, t.timeout, b.in, t.start, b.out, t.stop, t.start, b.in, b.out, t.stop]
-    empty: []
   fail:
     single_missing_timeout: [b.in, t.start, b.out, t.stop, t.start] #, t.timeout]
     invalid: false
+    empty: []
 

@@ -10,7 +10,7 @@ test_macro:
     valid2: [press]
     valid3: [press, release]
     valid4: [press, release, press]
-    empty: []
   fail:
     invalid1: [release, press]
     invalid2: [release]
+    empty: []

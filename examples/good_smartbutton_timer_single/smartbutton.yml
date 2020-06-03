@@ -14,17 +14,17 @@ test_macro:
   ok:
     single1x: [single]
     single2x: [single, single]
-    empty: []
   fail:
+    empty: []
     invalid: false
 
 test_micro:
   ok:
     single1x: [b.in, t.start, b.out, t.stop, t.start, t.timeout]
     single2x: [b.in, t.start, b.out, t.stop, t.start, t.timeout, b.in, t.start, b.out, t.stop, t.start, t.timeout]
-    empty: []
   fail:
     b_in_t_timeout: [b.in, t.start, t.timeout, b.out, t.start, t.timeout]
     t_timeout_t_stop: [b.in, t.start, t.timeout, b.out, t.stop, t.start, t.timeout]
     invalid: false
+    empty: []
 

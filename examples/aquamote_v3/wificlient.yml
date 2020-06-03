@@ -1,10 +1,11 @@
-# https://docs.python.org/3.3/library/http.client.html
+# LINK?
 # disconnected event might be external (device error) or internal (user called disconnect() function)
 device:
   name: WiFiClient
   events:
     - ssid_joined:
         start: True
+        final: False
     - ssid_failed:
         start: True
         final: True

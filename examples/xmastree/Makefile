@@ -3,35 +3,32 @@ SHELLEYV = shelleyv
 
 all: scy
 
-pdf: magnetic.pdf httpclient.pdf wificlient.pdf radio.pdf valve.pdf timer.pdf valvehandlertimer.pdf lowpower-strict.pdf controller.pdf
+pdf: led.pdf timer.pdf xmastree.pdf
 
-scy: controller.scy radio.scy valvehandlertimer.scy
+scy: xmastree.scy
 
-radio.scy: radio.yml wificlient.scy httpclient.scy
-
-valvehandlertimer.scy: valvehandlertimer.yml valve.scy timer.scy
-
-controller.scy: controller.yml valvehandlertimer.scy magnetic.scy radio.scy lowpower-strict.scy
+xmastree.scy: xmastree.yml timer.scy led.scy
 
 %.scy: %.yml
 	$(SHELLEYC) -u uses.yml -d $< -o $@
 
+
 # Generate integration diagram (minimized)
 # Example:
-#   make EXAMPLE-i-d.pdf
+#   make desklamp-i-d.pdf
 %-i-d.pdf: %.int
 	$(SHELLEYV) --dfa --minimize --no-sink --format pdf $< -o $@
 
 
 # Generate integration diagram (full)
 # Example:
-#   make EXAMPLE-i-n.pdf
+#   make desklamp-i-n.pdf
 %-i-n.pdf: %.int
 	$(SHELLEYV) --no-sink --format pdf $< -o $@
 
 # Generate system diagram
 # Example:
-#   make EXAMPLE.pdf
+#   make desklamp.pdf
 %.pdf: %.scy
 	$(SHELLEYV) --format pdf $< -o $@
 

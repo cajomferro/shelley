@@ -3,19 +3,14 @@ SHELLEYV = shelleyv
 
 all: scy
 
-pdf: button.pdf led.pdf timer.pdf desklamp.pdf
-
 scy: desklamp.scy
 
 desklamp.scy: desklamp.yml timer.scy led.scy button.scy
-	# Negate the result, since this should fail
-	! $(SHELLEYC) -d $< -u uses.yml -o $@ # -v
+	@$(SHELLEYC) -u uses.yml -d $< -o $@ --skip-checks
+	! $(SHELLEYC) -u uses.yml -d $< --no-output
 
 %.scy: %.yml
-	$(SHELLEYC) -d $< -o $@
-
-%.pdf: %.scy
-	$(SHELLEYV) --format pdf $< -o $@
+	$(SHELLEYC) -u uses.yml -d $< -o $@
 
 clean:
 	rm -f *.scy *.pdf

@@ -22,7 +22,6 @@ test_macro:
     valid2: [setup, sleep, wakeup]
     valid3: [setup, sleep, wakeup, setup]
     valid4: [setup, sleep, wakeup, setup, sleep, setup]
-    empty: []
   fail:
     invalid1: [wakeup]
     invalid2: [setup, sleep, wakeup, sleep]
@@ -30,4 +29,4 @@ test_macro:
     invalidfinal1: [sleep]
     invalidfinal2: [setup, sleep]
     invalidfinal3: [setup, sleep, wakeup, setup, sleep]
-
+    empty: []

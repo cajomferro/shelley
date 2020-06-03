@@ -25,7 +25,6 @@ test_micro:
   ok:
     valid1: [rs.start, rs.send]
     valid2: [rs.start, rs.send, rs.receive, rs.stop]
-    empty: []
   fail:
     invalid1: [rs.start]
     invalid2: [rs.send]
@@ -35,3 +34,4 @@ test_micro:
     invalid6: [rs.send, rs.receive, rs.stop]
     # invalid7: [rs.start, rs.send, rs.receive, rs.stop, rs.start, rs.send, rs.receive, rs.stop] # comment this to be more strict
     invalid8: false
+    empty: []

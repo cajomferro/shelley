@@ -46,3 +46,4 @@ test_micro:
     invalid1: [m.locked, m.unlocked, v1.on, v2.on, v3.on, v4.on, r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive]
     invalid2: [m.locked, m.unlocked, v1.on, v2.on, v3.on, v4.on, r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, lp.sleep]
     invalid3: false
+    empty: []

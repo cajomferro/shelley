@@ -26,7 +26,6 @@ test_micro:
     valid5: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend]
     valid6: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive]
     valid9: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPsend, r.HTTPdisconnect, r.HTTPdisable]
-    empty: []
   fail:
     invalid1: [r.HTTPsetup]
     invalid2: [r.HTTPconnect]
@@ -37,4 +36,4 @@ test_micro:
     invalid7: [r.start, r.HTTPsetup, r.HTTPsetup, r.HTTPsend, r.HTTPreceive, r.HTTPdisconnect]
     invalid8: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable]
     invalid9: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable]
-
+    empty: []

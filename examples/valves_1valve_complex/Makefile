@@ -3,9 +3,9 @@ SHELLEYV = shelleyv
 
 all: scy
 
-pdf: valve.pdf valve_macro1.pdf valve_macro2.pdf valve_macro3.pdf # valve_macro4.pdf TOO SLOW!
+pdf: valve.pdf valve_macro1.pdf valve_macro2.pdf valve_macro3.pdf # valve_macro4.pdf
 
-scy: valve_macro1.scy valve_macro2.scy valve_macro3.scy valve_macro4.scy
+scy: valve_macro1.scy valve_macro2.scy valve_macro3.scy # valve_macro4.scy TOO SLOW!
 
 valve_macro1.scy: valve_macro1.yml valve.scy
 

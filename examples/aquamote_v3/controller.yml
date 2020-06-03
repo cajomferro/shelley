@@ -52,5 +52,5 @@ test_micro:
     invalid3: [m.locked, m.unlocked]
     invalid4: [m.locked, m.unlocked, lp.cancel, r.started, r.send, r.ok, r.stopped, v.v1, v.v2, v.v3, v.v4]
     invalid5: [m.locked, m.unlocked, lp.cancel]
-
     invalid7: false
+    empty: []

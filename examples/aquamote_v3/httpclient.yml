@@ -50,14 +50,14 @@ device:
     - [response200, post]
     - [response200, disconnected]
     - [response404, get]
-    - [response404, disconnected]
     - [response404, post]
+    - [response404, disconnected]
     - [response401, get]
-    - [response401, disconnected]
     - [response401, post]
+    - [response401, disconnected]
     - [response500, get]
-    - [response500, disconnected]
     - [response500, post]
+    - [response500, disconnected]
     - [disconnected, connected]
     - [disconnected, connect_failed]
     - [disconnected, disconnected]
@@ -70,7 +70,6 @@ test_macro:
     connect_failed_getok: [connect_failed, connected, get, response200, disconnected]
     postok: [connected, post, response200, disconnected]
     get2x: [connected, get, response404, get, response200, disconnected]
-    empty: []
   fail:
     invalid1: [get]
     invalid2: [post]
@@ -81,3 +80,4 @@ test_macro:
     get2x_noresponse: [connected, get, get, response200, disconnected] # response200 missing
     get2x_nodisconnected: [connected, get, response404, get, response200] # response200 is not final state, disconnected missing
     invalid_final: [connected]
+    empty: []

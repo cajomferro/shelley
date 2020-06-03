@@ -1,74 +1,74 @@
 all:
-	$(MAKE) -C desklamp/bad_desklamp1
-	$(MAKE) -C desklamp/bad_desklamp_ambiguity1
-	$(MAKE) -C desklamp/bad_desklamp_ambiguity2
-	$(MAKE) -C desklamp/bad_desklamp_ambiguity3
-	$(MAKE) -C desklamp/good_desklamp
-	$(MAKE) -C desklamp/good_simple_desklamp
-	$(MAKE) -C desklamp/good_simple_desklamp2
-	$(MAKE) -C desklamp/smartled clean
-	$(MAKE) -C buttons/bad_ambiguous
-	$(MAKE) -C buttons/bad_ambiguous2
-	$(MAKE) -C buttons/bad_missing_trigger
-	$(MAKE) -C buttons/bad_smartbutton
-	$(MAKE) -C buttons/bad_trigger_undeclared
-	$(MAKE) -C buttons/good_ledbutton
-	$(MAKE) -C buttons/good_ledbuttonstrict
-	$(MAKE) -C buttons/bad_ledbuttonstrict
-	$(MAKE) -C buttons/good_smartbutton
-	$(MAKE) -C buttons/good_smartbutton_timer_double
-	$(MAKE) -C buttons/good_smartbutton_timer_double_complex
-	$(MAKE) -C buttons/good_smartbutton_timer_long
-	$(MAKE) -C buttons/good_smartbutton_timer_single
-	$(MAKE) -C buttons/clickbutton
-	$(MAKE) -C buttons/clickbutton_integrationerror
-	$(MAKE) -C buttons/clickbutton_ambiguous
-	$(MAKE) -C aquamote/v1
-	$(MAKE) -C aquamote/v2
-	$(MAKE) -C aquamote/v2_finalstates
-	$(MAKE) -C aquamote/v2_valve
-	$(MAKE) -C aquamote/v2_valvehandler
-	$(MAKE) -C aquamote/v2_valvehandlertimer
-	#$(MAKE) -C aquamote/v3 --> TODO: FIX THIS
-	$(MAKE) -C valves/1valve_complex
-	$(MAKE) -C valves/1valve_seq
-	#$(MAKE) -C valves/4valves_xorvsseq --> TODO: FIX THIS
-	$(MAKE) -C valves/several_valves
-	$(MAKE) -C valves/several_valves_integration
+	$(MAKE) -C bad_desklamp1
+	$(MAKE) -C bad_desklamp_ambiguity1
+	$(MAKE) -C bad_desklamp_ambiguity2
+	$(MAKE) -C bad_desklamp_ambiguity3
+	$(MAKE) -C good_desklamp
+	$(MAKE) -C good_simple_desklamp
+	$(MAKE) -C good_simple_desklamp2
+	$(MAKE) -C smartled clean
+	$(MAKE) -C bad_ambiguous
+	$(MAKE) -C bad_ambiguous2
+	$(MAKE) -C bad_missing_trigger
+	$(MAKE) -C bad_smartbutton
+	$(MAKE) -C bad_trigger_undeclared
+	$(MAKE) -C good_ledbutton
+	$(MAKE) -C good_ledbuttonstrict
+	$(MAKE) -C bad_ledbuttonstrict
+	$(MAKE) -C good_smartbutton
+	$(MAKE) -C good_smartbutton_timer_double
+	$(MAKE) -C good_smartbutton_timer_double_complex
+	$(MAKE) -C good_smartbutton_timer_long
+	$(MAKE) -C good_smartbutton_timer_single
+	$(MAKE) -C clickbutton
+	$(MAKE) -C clickbutton_integrationerror
+	$(MAKE) -C clickbutton_ambiguous
+	$(MAKE) -C aquamote_v1
+	$(MAKE) -C aquamote_v2
+	$(MAKE) -C aquamote_v2_finalstates
+	$(MAKE) -C aquamote_v2_valve
+	$(MAKE) -C aquamote_v2_valvehandler
+	$(MAKE) -C aquamote_v2_valvehandlertimer
+	#$(MAKE) -C aquamote_v3 --> TODO: FIX THIS
+	$(MAKE) -C 1valve_complex
+	$(MAKE) -C 1valve_seq
+	#$(MAKE) -C 4valves_xorvsseq --> TODO: FIX THIS
+	$(MAKE) -C several_valves
+	$(MAKE) -C several_valves_integration
 clean:
-	$(MAKE) -C desklamp/bad_desklamp1 clean
-	$(MAKE) -C desklamp/bad_desklamp_ambiguity1 clean
-	$(MAKE) -C desklamp/bad_desklamp_ambiguity2 clean
-	$(MAKE) -C desklamp/bad_desklamp_ambiguity3 clean
-	$(MAKE) -C desklamp/good_desklamp clean
-	$(MAKE) -C desklamp/good_simple_desklamp clean
-	$(MAKE) -C desklamp/good_simple_desklamp2 clean
-	$(MAKE) -C desklamp/smartled clean
-	$(MAKE) -C buttons/bad_ambiguous clean
-	$(MAKE) -C buttons/bad_ambiguous2 clean
-	$(MAKE) -C buttons/bad_missing_trigger clean
-	$(MAKE) -C buttons/bad_smartbutton clean
-	$(MAKE) -C buttons/bad_trigger_undeclared clean
-	$(MAKE) -C buttons/good_ledbutton clean
-	$(MAKE) -C buttons/good_ledbuttonstrict clean
-	$(MAKE) -C buttons/bad_ledbuttonstrict clean
-	$(MAKE) -C buttons/good_smartbutton clean
-	$(MAKE) -C buttons/good_smartbutton_timer_double clean
-	$(MAKE) -C buttons/good_smartbutton_timer_double_complex clean
-	$(MAKE) -C buttons/good_smartbutton_timer_long clean
-	$(MAKE) -C buttons/good_smartbutton_timer_single clean
-	$(MAKE) -C buttons/clickbutton clean
-	$(MAKE) -C buttons/clickbutton_integrationerror clean
-	$(MAKE) -C buttons/clickbutton_ambiguous clean
-	$(MAKE) -C aquamote/v1 clean
-	$(MAKE) -C aquamote/v2 clean
-	$(MAKE) -C aquamote/v2_finalstates clean
-	$(MAKE) -C aquamote/v2_valve clean
-	$(MAKE) -C aquamote/v2_valvehandler clean
-	$(MAKE) -C aquamote/v2_valvehandlertimer clean
-	$(MAKE) -C aquamote/v3 clean
-	$(MAKE) -C valves/1valve_complex clean
-	$(MAKE) -C valves/1valve_seq clean
-	$(MAKE) -C valves/4valves_xorvsseq clean
-	$(MAKE) -C valves/several_valves clean
-	$(MAKE) -C valves/several_valves_integration clean
+	$(MAKE) -C bad_desklamp1 clean
+	$(MAKE) -C bad_desklamp_ambiguity1 clean
+	$(MAKE) -C bad_desklamp_ambiguity2 clean
+	$(MAKE) -C bad_desklamp_ambiguity3 clean
+	$(MAKE) -C good_desklamp clean
+	$(MAKE) -C good_simple_desklamp clean
+	$(MAKE) -C good_simple_desklamp2 clean
+	$(MAKE) -C smartled clean
+	$(MAKE) -C bad_ambiguous clean
+	$(MAKE) -C bad_ambiguous2 clean
+	$(MAKE) -C bad_missing_trigger clean
+	$(MAKE) -C bad_smartbutton clean
+	$(MAKE) -C bad_trigger_undeclared clean
+	$(MAKE) -C good_ledbutton clean
+	$(MAKE) -C good_ledbuttonstrict clean
+	$(MAKE) -C bad_ledbuttonstrict clean
+	$(MAKE) -C good_smartbutton clean
+	$(MAKE) -C good_smartbutton_timer_double clean
+	$(MAKE) -C good_smartbutton_timer_double_complex clean
+	$(MAKE) -C good_smartbutton_timer_long clean
+	$(MAKE) -C good_smartbutton_timer_single clean
+	$(MAKE) -C clickbutton clean
+	$(MAKE) -C clickbutton_integrationerror clean
+	$(MAKE) -C clickbutton_ambiguous clean
+	$(MAKE) -C aquamote_v1 clean
+	$(MAKE) -C aquamote_v2 clean
+	$(MAKE) -C aquamote_v2_finalstates clean
+	$(MAKE) -C aquamote_v2_valve clean
+	$(MAKE) -C aquamote_v2_valvehandler clean
+	$(MAKE) -C aquamote_v2_valvehandlertimer clean
+	$(MAKE) -C aquamote_v3 clean
+	$(MAKE) -C 1valve_complex clean
+	$(MAKE) -C 1valve_seq clean
+	$(MAKE) -C 4valves_xorvsseq clean
+	$(MAKE) -C several_valves clean
+	$(MAKE) -C several_valves_integration clean

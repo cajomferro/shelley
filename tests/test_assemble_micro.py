@@ -7,7 +7,7 @@ from shelley.automata import (
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley import yaml2shelley
-
+from shelley.shelleyc import DeviceMapping
 
 httpclient_yml = """
 device:
@@ -127,7 +127,9 @@ def _get_wifi_client_assembled() -> AssembledDevice:
     )
     wificlient_aut: AutomataDevice = shelley2automata.shelley2automata(wificlient_shy)
 
-    return AssembledDevice.make(wificlient_aut, {})
+    return AssembledDevice.make(
+        wificlient_aut, DeviceMapping(dict(), False).__getitem__
+    )
 
 
 def _get_http_client_assembled() -> AssembledDevice:
@@ -136,7 +138,9 @@ def _get_http_client_assembled() -> AssembledDevice:
     )
     httpclient_aut: AutomataDevice = shelley2automata.shelley2automata(httpclient_shy)
 
-    return AssembledDevice.make(httpclient_aut, {})
+    return AssembledDevice.make(
+        httpclient_aut, DeviceMapping(dict(), False).__getitem__
+    )
 
 
 httpclient_assembled = _get_http_client_assembled()
@@ -171,7 +175,9 @@ def test_compile_wifihttp_event_undeclared() -> None:
         )
         wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
 
-        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
+        wifihttp_assembled = AssembledDevice.make(
+            wifihttp_aut, known_devices.__getitem__
+        )
 
     assert (
         "operation declaration error in ['send']: Only declare an integration rule when there are components (system has 2 components).\nHint: write integration rule or remove all components."
@@ -207,9 +213,14 @@ def test_compile_wifihttp_event_declared_micro_empty1() -> None:
         )
         wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
 
-        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
+        wifihttp_assembled = AssembledDevice.make(
+            wifihttp_aut, known_devices.__getitem__
+        )
 
-    assert str(exc_info.value) == "operation declaration error in ['send']: integration rule error: An empty sequence introduces ambiguity.\nHint: remove empty sequence or add subsystem call to sequence."
+    assert (
+        str(exc_info.value)
+        == "operation declaration error in ['send']: integration rule error: An empty sequence introduces ambiguity.\nHint: remove empty sequence or add subsystem call to sequence."
+    )
 
 
 def test_compile_wifihttp_event_declared_micro_empty2() -> None:
@@ -240,9 +251,14 @@ def test_compile_wifihttp_event_declared_micro_empty2() -> None:
         )
         wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
 
-        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
+        wifihttp_assembled = AssembledDevice.make(
+            wifihttp_aut, known_devices.__getitem__
+        )
 
-    assert "operation declaration error in ['send']: integration rule error: An empty sequence introduces ambiguity.\nHint: remove empty sequence or add subsystem call to sequence." == str(exc_info.value)
+    assert (
+        "operation declaration error in ['send']: integration rule error: An empty sequence introduces ambiguity.\nHint: remove empty sequence or add subsystem call to sequence."
+        == str(exc_info.value)
+    )
 
 
 def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
@@ -275,7 +291,9 @@ def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
         )
         wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
 
-        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices)
+        wifihttp_assembled = AssembledDevice.make(
+            wifihttp_aut, known_devices.__getitem__
+        )
 
     assert (
         str(exc_info.value)
@@ -317,7 +335,9 @@ def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
         )
         wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
 
-        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices.__getitem__)
+        wifihttp_assembled = AssembledDevice.make(
+            wifihttp_aut, known_devices.__getitem__
+        )
 
     assert (
         str(exc_info.value)
@@ -361,7 +381,9 @@ def XXX_test_compile_wifihttp_invalid_xor_3_options() -> None:
         )
         wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
 
-        wifihttp_assembled = AssembledDevice.make(wifihttp_aut, known_devices.__getitem__)
+        wifihttp_assembled = AssembledDevice.make(
+            wifihttp_aut, known_devices.__getitem__
+        )
 
     assert (
         str(exc_info.value)

@@ -487,7 +487,9 @@ class ComponentUsage:
 
     def __post_init__(self) -> None:
         start = timer()
-        self.is_valid = self.component.contains(self.projected.subtract(DFA[Any,str].make_nil(self.projected.alphabet)))
+        self.is_valid = self.component.contains(
+            self.projected.subtract(DFA[Any, str].make_nil(self.projected.alphabet))
+        )
         self.validation_time = get_elapsed_time(start)
 
     def __equals__(self, other: Any) -> bool:
@@ -596,7 +598,7 @@ TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure]
 
 @dataclass
 class AssembledMicroBehavior2:
-    usages: Dict[str,ComponentUsage]
+    usages: Dict[str, ComponentUsage]
     micro: MicroBehavior
     is_valid: bool = field(init=False)
     validation_time: timedelta = field(init=False)
@@ -638,7 +640,7 @@ class AssembledMicroBehavior2:
     @classmethod
     def make(
         cls,
-        components: Dict[str,NFA[Any, str]],
+        components: Dict[str, NFA[Any, str]],
         external_behavior: NFA[Any, str],
         triggers: Dict[str, Regex[str]],
     ) -> "AssembledMicroBehavior2":
@@ -650,9 +652,12 @@ class AssembledMicroBehavior2:
         for c in components.values():
             alphabet.update(c.alphabet)
         micro = MicroBehavior.make(external_behavior, triggers, alphabet)
-        usages = dict((
-            (k,ComponentUsage.make(micro=micro.nfa, component=c)) for k,c in components.items()
-        ))
+        usages = dict(
+            (
+                (k, ComponentUsage.make(micro=micro.nfa, component=c))
+                for k, c in components.items()
+            )
+        )
         return cls(usages=usages, micro=micro)
 
 
@@ -858,13 +863,13 @@ class DeviceExport:
         assert (
             self.micro is not None
         ), "Cannot perform operation because there is no internal behavior"
-        return self.micro.nfa.remove_all_sink_states()
+        return self.micro.nfa.remove_sink_states()
 
     def get_micro_nfa_no_epsilon_no_traps(self) -> NFA[Any, str]:
         assert (
             self.micro is not None
         ), "Cannot perform operation because there is no internal behavior"
-        return self.micro.nfa.remove_epsilon_transitions().remove_all_sink_states()
+        return self.micro.nfa.remove_epsilon_transitions().remove_sink_states()
 
     def get_micro_dfa_minimized(self) -> DFA[Any, str]:
         assert (
@@ -879,7 +884,7 @@ class DeviceExport:
         if not hasattr(self, "micro_dfa_minimized_no_traps"):
             self.micro_dfa_minimized_no_traps = dfa_to_nfa(
                 self.get_micro_dfa_minimized()
-            ).remove_all_sink_states()
+            ).remove_sink_states()
         return self.micro_dfa_minimized_no_traps
 
     def get_shuffle_dfa_minimized(self) -> DFA[Any, str]:
@@ -895,7 +900,7 @@ class DeviceExport:
         if not hasattr(self, "shuffle_dfa_minimized_no_traps"):
             self.shuffle_dfa_minimized_no_traps = dfa_to_nfa(
                 self.get_shuffle_dfa_minimized()
-            ).remove_all_sink_states()
+            ).remove_sink_states()
         return self.shuffle_dfa_minimized_no_traps
 
 
@@ -940,10 +945,7 @@ class AssembledDevice:
 
     @classmethod
     def make(
-        cls,
-        dev: Device,
-        known_devices: TKnownDevices,
-        fast_check: bool = False,
+        cls, dev: Device, known_devices: TKnownDevices, fast_check: bool = False,
     ) -> "AssembledDevice":
         """
         In order to assemble a device, the following steps are required:
@@ -965,7 +967,9 @@ class AssembledDevice:
         fail = None
         if len(dev.components) > 0:
             # Since there are components, we must assemble them
-            components_behaviors: Dict[str,NFA[Any,str]] = dict(build_components(dev.components, known_devices))
+            components_behaviors: Dict[str, NFA[Any, str]] = dict(
+                build_components(dev.components, known_devices)
+            )
             if fast_check:
                 micro = AssembledMicroBehavior2.make(
                     components=components_behaviors,

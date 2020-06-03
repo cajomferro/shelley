@@ -44,12 +44,11 @@ class TriggerRulesListEmptyError(Exception):
 
 class Triggers(Node):
     _data: List[Trigger]
-    _rules: Dict[str,Trigger]
+    _rules: Dict[str, Trigger]
 
     def __init__(self) -> None:
         self._data = []
         self._rules = {}
-
 
     def add(self, elem: Trigger) -> None:
         if elem.event.name not in self._rules:

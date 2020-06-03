@@ -20,8 +20,17 @@ from shelley.ast.rules import (
 class ShelleyParserError(Exception):
     # "invalid operation declaration {event.name!r}: integration section missing. Only declare an integration rule when there are components (system has {count} components). Hint: write integration rule or remove all components."
 
-    def __init__(self, *, title:str, reason:Optional[str]=None, hints:Collection[str]=(), parent:Optional["ShelleyParserError"]=None) -> None:
-        assert (reason is None and parent is not None) or (reason is not None and parent is None)
+    def __init__(
+        self,
+        *,
+        title: str,
+        reason: Optional[str] = None,
+        hints: Collection[str] = (),
+        parent: Optional["ShelleyParserError"] = None,
+    ) -> None:
+        assert (reason is None and parent is not None) or (
+            reason is not None and parent is None
+        )
         self.title = title
         self.reason = reason
         self.hints = hints
@@ -40,48 +49,67 @@ class ShelleyParserError(Exception):
 
     def __str__(self) -> str:
         if self.parent is None:
-            hints = "\n" + "\n".join(f"Hint: {x}" for x in self.hints) if len(self.hints) > 0 else ""
+            hints = (
+                "\n" + "\n".join(f"Hint: {x}" for x in self.hints)
+                if len(self.hints) > 0
+                else ""
+            )
             return f"{self.title}: {self.reason}{hints}"
         else:
             return self.title + ": " + str(self.parent)
 
-def BehaviorError(reason:Optional[str]=None, hints=(), parent=None):
-    return ShelleyParserError(title="behavior error", reason=reason, hints=hints, parent=parent)
+
+def BehaviorError(reason: Optional[str] = None, hints=(), parent=None):
+    return ShelleyParserError(
+        title="behavior error", reason=reason, hints=hints, parent=parent
+    )
+
 
 class OperationDeclError(ShelleyParserError):
-    def __init__(self, names=Optional[Iterable[str]], reason:Optional[str]=None, hints:Collection[str]=(), parent:Optional[ShelleyParserError]=None) -> None:
+    def __init__(
+        self,
+        names=Optional[Iterable[str]],
+        reason: Optional[str] = None,
+        hints: Collection[str] = (),
+        parent: Optional[ShelleyParserError] = None,
+    ) -> None:
         if names is None:
             title = "operation declaration error"
         else:
             ns = list(names)
             title = f"operation declaration error in {ns!r}"
-        super(OperationDeclError, self).__init__(title=title, reason=reason, hints=hints, parent=parent)
+        super(OperationDeclError, self).__init__(
+            title=title, reason=reason, hints=hints, parent=parent
+        )
+
 
 #    return ShelleyParserError(title=title, reason=reason, hints=hints, parent=parent)
 
+
 class IntegrationRuleError(ShelleyParserError):
-    def __init__(self, reason:str, hints=()):
+    def __init__(self, reason: str, hints=()):
         super(IntegrationRuleError, self).__init__(
-            title="integration rule error",
-            reason=reason,
-            hints=hints
+            title="integration rule error", reason=reason, hints=hints
         )
+
 
 def EmptySequenceError() -> ShelleyParserError:
     return IntegrationRuleError(
         reason="An empty sequence introduces ambiguity.",
-        hints=["remove empty sequence or add subsystem call to sequence."]
+        hints=["remove empty sequence or add subsystem call to sequence."],
     )
 
-def SystemDeclError(reason:str):
+
+def SystemDeclError(reason: str):
     return ShelleyParserError(title="system error", reason=reason)
 
+
 def _parse_behavior(
-        src: List[List[str]],
-        events: Events,
-        behaviors: Behaviors,
-        components: Components,
-        triggers: Triggers,
+    src: List[List[str]],
+    events: Events,
+    behaviors: Behaviors,
+    components: Components,
+    triggers: Triggers,
 ) -> None:
     """
     Parse behavior by creating discovered events and creating the corresponding transitions
@@ -135,7 +163,9 @@ def _parse_behavior(
         raise OperationDeclError(
             names=difference,
             reason="Every operation declaration must be referred in the behavior.",
-            hints=[f"remove the definition of {evt1!r} or add a transition with {evt1!r} to the behavior section."]
+            hints=[
+                f"remove the definition of {evt1!r} or add a transition with {evt1!r} to the behavior section."
+            ],
         )
 
 
@@ -151,7 +181,9 @@ def _parse_components(src: Mapping[str, str], components: Components) -> None:
         components.create(component_name, device_name)
 
 
-def parse_bool_field(field_name:str, default_value:bool, event_name:str, event_data:Any) -> bool:
+def parse_bool_field(
+    field_name: str, default_value: bool, event_name: str, event_data: Any
+) -> bool:
     try:
         result = event_data[field_name]
         if isinstance(result, bool):
@@ -166,13 +198,14 @@ def parse_bool_field(field_name:str, default_value:bool, event_name:str, event_d
             raise OperationDeclError(
                 names=[event_name],
                 reason=f"Field {field_name!r} is missing",
-                hints=["Define boolean field {field_name!r}"]
+                hints=["Define boolean field {field_name!r}"],
             )
         else:
             return default_value
 
+
 def _parse_event(
-        src: Union[str, dict], events: Events, components: Components, triggers: Triggers
+    src: Union[str, dict], events: Events, components: Components, triggers: Triggers
 ) -> Event:
     event: Optional[Event] = None
 
@@ -187,8 +220,7 @@ def _parse_event(
         except Exception as err:
             name = [event_name] if event_name is not None else None
             raise OperationDeclError(
-                names=name,
-                reason=f"Invalid syntax for event {src!r}"
+                names=name, reason=f"Invalid syntax for event {src!r}"
             )
         assert event_name is not None
         is_start: bool = parse_bool_field("start", False, event_name, event_data)
@@ -212,7 +244,7 @@ def _parse_event(
     else:
         raise ShelleyParserError(
             title="invalid operation declaration",
-            reason=f"Expecting a string or a dict but found: {src!r}"
+            reason=f"Expecting a string or a dict but found: {src!r}",
         )
     assert event is not None
 
@@ -220,7 +252,7 @@ def _parse_event(
 
 
 def _parse_events(
-        src: Mapping, events: Events, components: Components, triggers: Triggers
+    src: Mapping, events: Events, components: Components, triggers: Triggers
 ) -> None:
     """
 
@@ -253,7 +285,7 @@ def _parse_events(
 
 
 def _parse_triggers(
-        src: Optional[Dict], event: Event, components: Components, triggers: Triggers
+    src: Optional[Dict], event: Event, components: Components, triggers: Triggers
 ) -> None:
     """
 
@@ -266,15 +298,15 @@ def _parse_triggers(
     trigger_rule: Optional[TriggerRule] = None
 
     if (
-            src is not None and len(components) == 0
+        src is not None and len(components) == 0
     ):  # simple device with micro (not allowed!)
         raise OperationDeclError(
             names=[event.name],
             reason="Only declare an integration rule when there are components (system has 0 components).",
-            hints=["remove integration rule or declare a component."]
+            hints=["remove integration rule or declare a component."],
         )
     elif (
-            src is None and len(components) > 0
+        src is None and len(components) > 0
     ):  # composition device not declaring micro for this event (not allowed!)
         count = len(components)
         raise OperationDeclError(
@@ -285,23 +317,23 @@ def _parse_triggers(
     elif src is None and len(components) == 0:  # simple device without micro (ok!)
         trigger_rule = TriggerRuleFired()
     elif (
-            src is not None and len(components) > 0
+        src is not None and len(components) > 0
     ):  # composition device declaring trigger for this event (ok!)
-        #try:
+        # try:
         trigger_rule = _parse_trigger_rule(src, components)
-        #except ShelleyParserError as err:
+        # except ShelleyParserError as err:
         #    raise OperationDeclError(
         #        names=[event.name],
         #        parent=err
         #    )
     else:
         raise OperationDeclError(
-            names=[event.name],
-            reason=f"unknown option for operation: {src!r}"
+            names=[event.name], reason=f"unknown option for operation: {src!r}"
         )
 
     assert trigger_rule is not None
     triggers.create(event, trigger_rule)
+
 
 def _parse_trigger_rule(src, components: Components) -> TriggerRule:
     if src is None:
@@ -312,8 +344,7 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
             c_name, e_name = src.split(".")
         except ValueError as err:
             raise IntegrationRuleError(
-                reason=f"Invalid micro rule {src!r}",
-                hints=["Missing component?"]
+                reason=f"Invalid micro rule {src!r}", hints=["Missing component?"]
             )
         component = components[c_name]
         assert component is not None
@@ -331,17 +362,17 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
     elif isinstance(src, dict):
         if "xor" in src:
             trule_choice = TriggerRuleChoice()
-            if src['xor'] is None:
+            if src["xor"] is None:
                 raise IntegrationRuleError(reason="xor must have at least one option!")
             for option in src["xor"]:
                 trule_choice.choices.append(_parse_trigger_rule(option, components))
             return trule_choice
         elif "seq" in src:
-            if src['seq'] is None:
+            if src["seq"] is None:
                 raise IntegrationRuleError(reason="seq must have at least one option!")
-            left = _parse_trigger_rule(src['seq'].pop(0), components)
-            if len(src['seq']) > 0:
-                right = _parse_trigger_rule(src['seq'], components)
+            left = _parse_trigger_rule(src["seq"].pop(0), components)
+            if len(src["seq"]) > 0:
+                right = _parse_trigger_rule(src["seq"], components)
                 return TriggerRuleSequence(left, right)
             else:
                 return left
@@ -430,7 +461,7 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
     # at this point, this must be true
     assert len(events) == len(triggers)
 
-    device = Device(device_name, events, behaviors, triggers, components=components, )
+    device = Device(device_name, events, behaviors, triggers, components=components,)
 
     device.test_macro = test_macro
     device.test_micro = test_micro

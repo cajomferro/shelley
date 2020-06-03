@@ -1,5 +1,4 @@
 import pytest
-import re
 from shelley.automata import (
     Device as AutomataDevice,
     AssembledDevice,
@@ -9,6 +8,7 @@ from shelley.automata import (
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley import yaml2shelley
+from shelley.shelleyc import DeviceMapping
 
 
 simple_yml: str = """
@@ -73,7 +73,7 @@ def _get_simple_assembled() -> AssembledDevice:
     simple_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(simple_yml)
     simple_aut: AutomataDevice = shelley2automata.shelley2automata(simple_shy)
 
-    return AssembledDevice.make(simple_aut, {})
+    return AssembledDevice.make(simple_aut, DeviceMapping(dict(), False).__getitem__)
 
 
 simple_assembled = _get_simple_assembled()
@@ -96,7 +96,9 @@ def test_bad_tests() -> None:
             composition_shy
         )
 
-        composition_assembled = AssembledDevice.make(composition_aut, known_devices.__getitem__)
+        composition_assembled = AssembledDevice.make(
+            composition_aut, known_devices.__getitem__
+        )
 
         assert composition_assembled.is_valid
         assert type(composition_assembled.external) == CheckedDevice
@@ -132,7 +134,9 @@ def test_bad() -> None:
             composition_shy
         )
 
-        composition_assembled = AssembledDevice.make(composition_aut, known_devices.__getitem__)
+        composition_assembled = AssembledDevice.make(
+            composition_aut, known_devices.__getitem__
+        )
 
         assert composition_assembled.is_valid
         assert type(composition_assembled.external) == CheckedDevice

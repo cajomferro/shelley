@@ -23,11 +23,13 @@ from shelley import yaml2shelley
 
 logger = logging.getLogger("shelleyc")
 
+
 class DeviceMapping:
-    def __init__(self, files:Dict[str,Path], binary:bool):
+    def __init__(self, files: Dict[str, Path], binary: bool):
         self.files = files
         self.binary = binary
-        self.loaded : Dict[str, CheckedDevice] = dict()
+        self.loaded: Dict[str, CheckedDevice] = dict()
+
     def __getitem__(self, key):
         dev = self.loaded.get(key, None)
         if dev is not None:
@@ -37,13 +39,10 @@ class DeviceMapping:
             self.loaded[key] = dev = deserialize(fname, self.binary)
             return dev
         except KeyError:
-            raise CompilationError(
-                f"Error loading system '{key}': system not defined"
-            )
+            raise CompilationError(f"Error loading system '{key}': system not defined")
         except (KeyError, IOError) as err:
-            raise CompilationError(
-                f"Error loading system '{key}': {err}"
-            )
+            raise CompilationError(f"Error loading system '{key}': {err}")
+
 
 def get_dest_path(
     args_binary: bool, args_output_dir: str, args_src_filepath: str, device_name: str
@@ -131,7 +130,7 @@ def compile_shelley(
     if dst_path is None:
         dst_path = src_path.parent / (src_path.stem + "." + _get_ext(binary))
 
-    known_devices = DeviceMapping(dict((k,Path(v)) for (k,v) in uses.items()), binary)
+    known_devices = DeviceMapping(dict((k, Path(v)) for (k, v) in uses.items()), binary)
     automata_device = shelley2automata(shelley_device)
 
     if slow_check:

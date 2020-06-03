@@ -1,9 +1,9 @@
 device:
   name: 3Buttons
   components:
-    b1: Button
-    b2: Button
-    b3: Button
+    b1: SimpleButton
+    b2: SimpleButton
+    b3: SimpleButton
   events:
     - button1AndOther:
         start: True

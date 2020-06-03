@@ -26,8 +26,8 @@ def test_events_invalid_event_syntax() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-            "invalid operation declaration: Expecting a string or a dict but found: ['pressed']"
-            == str(exc_info.value)
+        "invalid operation declaration: Expecting a string or a dict but found: ['pressed']"
+        == str(exc_info.value)
     )
 
 
@@ -86,9 +86,8 @@ def test_events_no_components_but_triggers() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-            str(exc_info.value)
-            ==
-            "operation declaration error in ['released']: Only declare an integration rule when there are components (system has 0 components).\nHint: remove integration rule or declare a component."
+        str(exc_info.value)
+        == "operation declaration error in ['released']: Only declare an integration rule when there are components (system has 0 components).\nHint: remove integration rule or declare a component."
     )
 
 
@@ -106,9 +105,8 @@ def test_auto_create_declared_event_without_micro() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-            str(exc_info.value)
-            ==
-            "operation declaration error in ['pressed']: Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
+        str(exc_info.value)
+        == "operation declaration error in ['pressed']: Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
     )
 
 
@@ -126,8 +124,8 @@ def test_auto_create_undeclared_event_with_micro() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-            str(exc_info.value) ==
-            "operation declaration error in ['pressed']: Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
+        str(exc_info.value)
+        == "operation declaration error in ['pressed']: Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
     )
 
 
@@ -148,8 +146,10 @@ device:
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         device: Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
-    assert str(exc_info.value) == "operation declaration error in ['on']: integration rule error: An empty sequence introduces ambiguity.\nHint: remove empty sequence or add subsystem call to sequence."
-
+    assert (
+        str(exc_info.value)
+        == "operation declaration error in ['on']: integration rule error: An empty sequence introduces ambiguity.\nHint: remove empty sequence or add subsystem call to sequence."
+    )
 
 
 def test_events_triggers_different_number() -> None:
@@ -170,7 +170,10 @@ device:
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         device: Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
 
-    assert str(exc_info.value) == "operation declaration error in ['off']: Every operation declaration must be referred in the behavior.\nHint: remove the definition of 'off' or add a transition with 'off' to the behavior section."
+    assert (
+        str(exc_info.value)
+        == "operation declaration error in ['off']: Every operation declaration must be referred in the behavior.\nHint: remove the definition of 'off' or add a transition with 'off' to the behavior section."
+    )
 
 
 def test_seq_4_options() -> None:
@@ -188,7 +191,7 @@ micro:
  - B.r
     """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict['micro']
+    triggers_src = yaml_as_dict["micro"]
 
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
@@ -213,13 +216,16 @@ micro:
     - T.t
     """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict['micro']
+    triggers_src = yaml_as_dict["micro"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
     t.accept(visitor)
 
-    assert visitor.result.strip() == "click: ( B.p ; T.t ; B.r xor ( B.p ; T.e ; B.r xor T.t ) )"
+    assert (
+        visitor.result.strip()
+        == "click: ( B.p ; T.t ; B.r xor ( B.p ; T.e ; B.r xor T.t ) )"
+    )
 
 
 def test_xor_3_options() -> None:
@@ -236,13 +242,16 @@ micro:
    - T.t
     """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict['micro']
+    triggers_src = yaml_as_dict["micro"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
     t.accept(visitor)
 
-    assert visitor.result.strip() == "click: ( B.p ; T.t ; B.r xor B.p ; T.e ; B.r xor T.t )"
+    assert (
+        visitor.result.strip()
+        == "click: ( B.p ; T.t ; B.r xor B.p ; T.e ; B.r xor T.t )"
+    )
 
 
 def test_xor_2_options() -> None:
@@ -258,7 +267,7 @@ def test_xor_2_options() -> None:
         - B.p
         """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict['micro']
+    triggers_src = yaml_as_dict["micro"]
 
     assert len(t) == 0
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
@@ -282,7 +291,7 @@ def test_xor_1_options() -> None:
         - T.t
         """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict['micro']
+    triggers_src = yaml_as_dict["micro"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -310,12 +319,16 @@ micro:
         - b3.pressed
 """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict['micro']
+    triggers_src = yaml_as_dict["micro"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
     t.accept(visitor)
-    assert visitor.result.strip() == "click: ( ( b1.pressed ; b2.pressed xor b2.pressed ; b1.pressed ) xor b3.pressed )"
+    assert (
+        visitor.result.strip()
+        == "click: ( ( b1.pressed ; b2.pressed xor b2.pressed ; b1.pressed ) xor b3.pressed )"
+    )
+
 
 def test_xor_seq_v2() -> None:
     e = Event("click", True, True)
@@ -339,14 +352,19 @@ micro:
             - b1.pressed
 """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict['micro']
+    triggers_src = yaml_as_dict["micro"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
     t.accept(visitor)
-    assert visitor.result.strip() == "click: ( b1.pressed ; ( b2.pressed xor b3.pressed ) xor ( b2.pressed xor b3.pressed ) ; b1.pressed )"
+    assert (
+        visitor.result.strip()
+        == "click: ( b1.pressed ; ( b2.pressed xor b3.pressed ) xor ( b2.pressed xor b3.pressed ) ; b1.pressed )"
+    )
+
 
 ### INTEGRATION
+
 
 def test_led() -> None:
     yaml_code = """
@@ -361,8 +379,8 @@ device:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert (
-            visitor.result.strip()
-            == """Device Led:
+        visitor.result.strip()
+        == """Device Led:
   events:
     on, off
   start events:
@@ -376,6 +394,7 @@ device:
     on: fired
     off: fired"""
     )
+
 
 def test_timer() -> None:
     yaml_code = """
@@ -392,8 +411,8 @@ device:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert (
-            visitor.result.strip()
-            == """Device Timer:
+        visitor.result.strip()
+        == """Device Timer:
   events:
     started, canceled, timeout
   start events:
@@ -410,6 +429,7 @@ device:
     canceled: fired
     timeout: fired"""
     )
+
 
 def test_desklamp() -> None:
     yaml_code = """
@@ -455,8 +475,8 @@ device:
     shelley_device.accept(visitor)
 
     assert (
-            visitor.result.strip()
-            == """Device DeskLamp uses Led, Button, Timer:
+        visitor.result.strip()
+        == """Device DeskLamp uses Led, Button, Timer:
   events:
     level1, level2, standby1, standby2
   start events:
@@ -511,8 +531,9 @@ device:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
-    assert (visitor.result.strip()
-            == """Device SendOK uses Button, Led:
+    assert (
+        visitor.result.strip()
+        == """Device SendOK uses Button, Led:
   events:
     send, ok, off
   start events:
@@ -529,7 +550,8 @@ device:
   triggers:
     send: b1.pressed ; b1.released
     ok: ( lred.on ; lred.off xor lgreen.on ; lgreen.off )
-    off: b2.pressed ; b2.released""")
+    off: b2.pressed ; b2.released"""
+    )
 
 
 def test_smartbutton() -> None:
@@ -573,8 +595,8 @@ test_micro:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert (
-            visitor.result.strip()
-            == """Device SmartButton uses Button:
+        visitor.result.strip()
+        == """Device SmartButton uses Button:
   events:
     on
   start events:
@@ -601,7 +623,7 @@ test_micro:
         "valid1": ["b.pressed", "b.released"],
         "valid2": ["b.pressed", "b.released", "b.pressed", "b.released"],
         "valid3": ["b.pressed", "b.released", "b.pressed", "b.released"],
-        "empty": []
+        "empty": [],
     }
 
     assert shelley_device.test_micro["fail"] == {
@@ -610,7 +632,11 @@ test_micro:
         "invalid3": ["b.released", "b.released"],  # violates sequence
         "incomplete1": ["b.released"],  # incomplete (not a final state)
         "incomplete2": ["b.pressed"],  # incomplete (not a final state)
-        "incomplete3": ["b.pressed", "b.released", "b.pressed"]  # incomplete (not a final state)
+        "incomplete3": [
+            "b.pressed",
+            "b.released",
+            "b.pressed",
+        ],  # incomplete (not a final state)
     }
 
 
@@ -655,8 +681,8 @@ device:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert (
-            visitor.result.strip()
-            == """Device 3Buttons uses Button:
+        visitor.result.strip()
+        == """Device 3Buttons uses Button:
   events:
     button1AndOther, button3OrOthers
   start events:

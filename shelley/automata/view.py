@@ -15,6 +15,7 @@ def render_edge(name: Any) -> str:
         return "\\epsilon"
     return f"{{\\tt {name} }}"
 
+
 def fsm2tex(
     fsm: regular.NFA[Any, str],
     state_name: Callable[[Any], str] = render_state,

@@ -34,17 +34,18 @@ class TRules2RegexVisitor(TriggersVisitor):
         self.current_regex = Concat(left, right)
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
+
+        # TODO: What if element is None? i.e., xor has 0 options
+        assert element is not None
+
         element.choices[0].accept(self)
-        next_r:Regex[str] = self.current_regex
-        prev_r:Optional[Regex[str]] = None
+        result: Regex[str] = self.current_regex
+
         for choice in element.choices[1:]:
-            prev_r = next_r
             choice.accept(self)
             next_r = self.current_regex
-        if prev_r is None:
-            result:Regex[str] = next_r
-        else:
-            result = Union(prev_r, next_r)
+            result = Union(result, next_r)
+
         self.current_regex = result
 
     def visit_trigger(self, element: Trigger) -> None:
@@ -57,6 +58,7 @@ class TRules2RegexVisitor(TriggersVisitor):
 
     def __str__(self):
         return self.regex_dict
+
 
 #
 # class CountStatesVisitor(Visitor):

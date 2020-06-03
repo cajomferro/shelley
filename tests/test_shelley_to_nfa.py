@@ -1,8 +1,5 @@
-# Shelley to NFA[S,A] --> S: tipo do estado (str ou int), A: tipo do alfabeto (str)
+# Shelley to NFA[S,A] --> S: state type (str or int), A: alphabet type (str)
 
-import shelley
-
-from pathlib import Path
 from karakuri.regular import Char, Concat, Union, NIL
 
 from shelley.automata import Device as AutomataDevice
@@ -10,11 +7,16 @@ from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley
 
 
-def _get_path(device_name: str) -> Path:
-    return Path() / "tests" / "input" / "{0}.yml".format(device_name)
-
-
 def test_button() -> None:
+
+    yaml_src = """device:
+  name: Button
+  events: [pressed,released]
+  behavior:
+    - [pressed, released]
+    - [released, pressed]
+    """
+
     expected = AutomataDevice(
         start_events=["pressed"],
         final_events=["pressed", "released"],
@@ -24,11 +26,19 @@ def test_button() -> None:
         triggers={"pressed": NIL, "released": NIL,},
     )
     assert expected == shelley2automata(
-        yaml2shelley.get_shelley_from_yaml(_get_path("button"))
+        yaml2shelley.get_shelley_from_yaml_str(yaml_src)
     )
 
 
 def test_led() -> None:
+
+    yaml_src = """device:
+  name: Led
+  events: [on, off] # on is start event
+  behavior:
+    - [on, off]
+    - [off, on]"""
+
     expected = AutomataDevice(
         start_events=["on"],
         final_events=["on", "off"],
@@ -38,11 +48,22 @@ def test_led() -> None:
         triggers={"on": NIL, "off": NIL,},
     )
     assert expected == shelley2automata(
-        yaml2shelley.get_shelley_from_yaml(_get_path("led"))
+        yaml2shelley.get_shelley_from_yaml_str(yaml_src)
     )
 
 
 def test_timer() -> None:
+
+    yaml_src = """device:
+  name: Timer
+  events: [started, canceled, timeout] # started is start event
+  behavior:
+    - [started, canceled]
+    - [started, timeout]
+    - [canceled, started]
+    - [timeout, started]
+"""
+
     expected = AutomataDevice(
         start_events=["started"],
         final_events=["started", "canceled", "timeout"],
@@ -57,11 +78,24 @@ def test_timer() -> None:
         triggers={"started": NIL, "canceled": NIL, "timeout": NIL},
     )
     assert expected == shelley2automata(
-        yaml2shelley.get_shelley_from_yaml(_get_path("timer"))
+        yaml2shelley.get_shelley_from_yaml_str(yaml_src)
     )
 
 
 def test_smartbutton1() -> None:
+
+    yaml_src = """device:
+  name: SmartButton
+  components:
+    b: Button
+  events:
+    - on:
+        start: True
+        final: True
+        micro: [ b.pressed, b.released]
+  behavior:
+    - [on, on]"""
+
     expected = AutomataDevice(
         start_events=["on"],
         final_events=["on"],
@@ -71,12 +105,47 @@ def test_smartbutton1() -> None:
         triggers={"on": Concat(Char("b.pressed"), Char("b.released"))},
     )
     assert expected == shelley2automata(
-        yaml2shelley.get_shelley_from_yaml(_get_path("smartbutton1"))
+        yaml2shelley.get_shelley_from_yaml_str(yaml_src)
     )
 
 
 def test_desklamp() -> None:
-    expected_str = """standby2: (b.pressed ; b.released ; t.canceled + t.timeout) ; (ledB.off ; ledA.off + ledA.off ; ledB.off)"""
+
+    yaml_src = """device:
+  name: DeskLamp
+  components:
+    ledA: Led
+    ledB: Led
+    b: Button
+    t: Timer
+  events:
+    - level1:
+        start: True
+        micro: [b.pressed, b.released, ledA.on, t.started]
+    - level2:
+        micro:
+          - b.pressed
+          - b.released
+          - xor:
+              - [t.canceled, ledB.on]
+              - [ledB.on, t.canceled]
+          - t.started
+    - standby1:
+        micro: [t.timeout, ledA.off]
+    - standby2:
+        micro:
+          - xor:
+              - [b.pressed, b.released, t.canceled]
+              -  t.timeout
+          - xor:
+                - [ledB.off, ledA.off]
+                - [ledA.off, ledB.off]
+  behavior:
+    - [level1, standby1]
+    - [level1, level2]
+    - [level2, standby2]
+    - [standby1, level1]
+    - [standby2, level1]"""
 
     expected = AutomataDevice(
         start_events=["level1"],
@@ -124,12 +193,153 @@ def test_desklamp() -> None:
             ),
         },
     )
-    given = shelley2automata(
-        yaml2shelley.get_shelley_from_yaml(_get_path("desklamp"))
-    )
-    assert isinstance(given.triggers['level2'], Concat)
-    x = given.triggers['level2'].right
-    assert isinstance(expected.triggers['level2'], Concat)
-    y = expected.triggers['level2'].right
+    given = shelley2automata(yaml2shelley.get_shelley_from_yaml_str(yaml_src))
+    assert isinstance(given.triggers["level2"], Concat)
+    x = given.triggers["level2"].right
+    assert isinstance(expected.triggers["level2"], Concat)
+    y = expected.triggers["level2"].right
     assert isinstance(x, Concat) and isinstance(y, Concat) and x.right == y.right
+    assert expected == given
+
+
+def test_clickbutton():
+    expected = AutomataDevice(
+        start_events=["single", "double"],
+        final_events=["single", "double"],
+        events=["single", "double"],
+        behavior=[
+            ("single", "single"),
+            ("double", "single"),
+            ("single", "double"),
+            ("double", "double"),
+        ],
+        components={"B": "Button", "T": "Timer"},
+        triggers={
+            "single": Concat(
+                left=Concat(left=Char(char="B.press"), right=Char(char="T.begin")),
+                right=Union(
+                    left=Concat(
+                        left=Char(char="T.timeout"), right=Char(char="B.release")
+                    ),
+                    right=Concat(
+                        left=Char(char="B.release"), right=Char(char="T.timeout")
+                    ),
+                ),
+            ),
+            "double": Concat(
+                left=Concat(
+                    left=Char(char="B.press"),
+                    right=Concat(
+                        left=Char(char="T.begin"), right=Char(char="B.release")
+                    ),
+                ),
+                right=Concat(
+                    left=Union(
+                        left=Union(
+                            left=Concat(
+                                left=Char(char="B.press"),
+                                right=Concat(
+                                    left=Char(char="T.timeout"),
+                                    right=Char(char="B.release"),
+                                ),
+                            ),
+                            right=Concat(
+                                left=Char(char="B.press"),
+                                right=Concat(
+                                    left=Char(char="B.release"),
+                                    right=Char(char="T.end"),
+                                ),
+                            ),
+                        ),
+                        right=Char(char="T.end"),
+                    ),
+                    right=Char(char="B.press"),
+                ),
+            ),
+        },
+    )
+
+    yaml_code = """
+device:
+ name: ClickButtonVariation
+ behavior:
+   - [single, single]
+   - [double, single]
+   - [single, double]
+   - [double, double]
+ components:
+  B: Button
+  T: Timer
+ events:
+   - single:
+       start: True
+       final: True
+       micro:
+         seq:
+         - seq: [B.press, T.begin]
+         - xor:
+           - seq: [T.timeout, B.release] # user ir slow
+           - seq: [B.release, T.timeout] # user is fast
+   - double:
+       start: True
+       final: True
+       micro:
+         seq:
+         - seq: [B.press, T.begin, B.release]
+         - xor:
+           - seq: [B.press, T.timeout, B.release] # user is slow
+           - seq: [B.press, B.release, T.end] # user is fast
+           - T.end
+         - xor: # Note: this becomes a Char when converted to Regex
+            - B.press
+    """
+    given = shelley2automata(yaml2shelley.get_shelley_from_yaml_str(yaml_code))
+
+    assert isinstance(given.triggers["double"], Concat)
+    assert isinstance(expected.triggers["double"], Concat)
+
+    # seq:
+    # - seq: [B.press, T.begin, B.release] (LEFT)
+    # ...
+    seq_given = given.triggers["double"].left
+    seq_expected = expected.triggers["double"].left
+    assert (
+        isinstance(seq_given, Concat)
+        and isinstance(seq_expected, Concat)
+        and seq_given.left == seq_expected.left
+    )
+
+    # seq:
+    # ...
+    # - xor: (RIGHT, LEFT)
+    #   - seq: [B.press, T.timeout, B.release] # user is slow
+    #   - seq: [B.press, B.release, T.end] # user is fast
+    #   - T.end
+    # ...
+    xor_given = given.triggers["double"].right.left
+    xor_expected = expected.triggers["double"].right.left
+    assert (
+        isinstance(xor_given, Union)
+        and isinstance(xor_expected, Union)
+        and xor_given.right == xor_expected.right
+    )
+
+    assert (
+        isinstance(xor_given.left.left, Concat)
+        and isinstance(xor_expected.left.left, Concat)
+        and xor_given.left.left == xor_expected.left.left
+    )
+
+    # seq:
+    # ...
+    # - xor: # Note: this becomes a Char when converted to Regex (RIGHT, RIGHT)
+    #    - B.press
+    xor_given2 = given.triggers["double"].right.right
+    xor_expected2 = expected.triggers["double"].right.right
+    assert (
+        isinstance(xor_given2, Char)
+        and isinstance(xor_expected2, Char)
+        and xor_given2.char == xor_expected2.char
+    )
+
     assert expected == given

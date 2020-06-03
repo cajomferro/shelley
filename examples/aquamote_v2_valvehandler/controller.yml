@@ -41,3 +41,4 @@ test_micro:
     invalid5: [m.locked, lp.cancel, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, lp.wakeup] # missing 'm.unlocked' on macro behavior 'start'
     invalid6: [m.locked, m.unlocked]
     invalid7: false
+    empty: []

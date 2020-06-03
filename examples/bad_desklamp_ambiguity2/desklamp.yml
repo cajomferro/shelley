@@ -43,17 +43,11 @@ test_macro:
     valid1: [level1, standby1]
     valid2: [level1, level2, standby2]
     valid3: true
-    valid4: true
-    valid5: true
   fail:
     # This is an incomplete trace, and is therefore reject
     invalid1: [level1, standby1, standby2]
     invalid2: [standby1, standby2]
     invalid3: false
-    invalid4: false
-    invalid5: false
-    invalid6: false
-    invalid7: false
 
 test_micro:
   ok:

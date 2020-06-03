@@ -69,6 +69,6 @@ device:
 test_micro:
   ok:
     valid1: [wc.ssid_joined, wc.connected, hc.connected, hc.get, wc.print_data_ready, hc.response200, wc.disconnected, hc.disconnected, wc.ssid_left]
-    empty: []
   fail:
     invalid8: false
+    empty: []

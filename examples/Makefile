@@ -30,11 +30,11 @@ all:
 	$(MAKE) -C aquamote_v2_valvehandler
 	$(MAKE) -C aquamote_v2_valvehandlertimer
 	#$(MAKE) -C aquamote_v3 --> TODO: FIX THIS
-	$(MAKE) -C 1valve_complex
-	$(MAKE) -C 1valve_seq
-	#$(MAKE) -C 4valves_xorvsseq --> TODO: FIX THIS
-	$(MAKE) -C several_valves
-	$(MAKE) -C several_valves_integration
+	$(MAKE) -C valves_1valve_complex
+	$(MAKE) -C valves_1valve_seq
+	#$(MAKE) -C valves_4valves_xorvsseq --> TODO: FIX THIS
+	$(MAKE) -C valves_several_valves
+	$(MAKE) -C valves_several_valves_integration
 clean:
 	$(MAKE) -C bad_desklamp1 clean
 	$(MAKE) -C bad_desklamp_ambiguity1 clean
@@ -67,8 +67,8 @@ clean:
 	$(MAKE) -C aquamote_v2_valvehandler clean
 	$(MAKE) -C aquamote_v2_valvehandlertimer clean
 	$(MAKE) -C aquamote_v3 clean
-	$(MAKE) -C 1valve_complex clean
-	$(MAKE) -C 1valve_seq clean
-	$(MAKE) -C 4valves_xorvsseq clean
-	$(MAKE) -C several_valves clean
-	$(MAKE) -C several_valves_integration clean
+	$(MAKE) -C valves_1valve_complex clean
+	$(MAKE) -C valves_1valve_seq clean
+	$(MAKE) -C valves_4valves_xorvsseq clean
+	$(MAKE) -C valves_several_valves clean
+	$(MAKE) -C valves_several_valves_integration clean

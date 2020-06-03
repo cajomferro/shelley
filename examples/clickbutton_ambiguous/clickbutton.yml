@@ -14,17 +14,16 @@ device:
        final: True
        micro:
          seq:
-         - [B.press, T.begin]
+         - seq: [B.press, T.begin]
          - xor:
-           - [T.timeout, B.release] # user ir slow
-           - [B.release, T.end] # user is fast
+           - seq: [T.timeout, B.release]
+           - seq: [B.release, T.timeout] # , B.press
    - double:
        start: True
        final: True
        micro:
          seq:
-         - [B.press, T.begin, B.release]
+         - seq: [B.press, T.begin, B.release] # t.timeout may fire here?
          - xor:
-           - [B.press, T.timeout, B.release] # user is slow
-           - [B.press, B.release, T.end] # user is fast
-           #- T.end
+           - seq: [B.press, T.end, B.release]
+           - seq: [T.timeout]

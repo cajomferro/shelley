@@ -32,7 +32,6 @@ test_macro:
     valid1: [start, HTTPsetup, HTTPconnect, HTTPsend, HTTPreceive, HTTPdisconnect, HTTPdisable]
     valid2: [start, HTTPsetup, HTTPconnect, HTTPsend, HTTPsend, HTTPdisconnect, HTTPdisable]
     valid3: [start, HTTPsetup, HTTPconnect, HTTPsend, HTTPreceive, HTTPsend, HTTPdisconnect, HTTPdisable]
-    empty: []
   fail:
     invalid1: [HTTPsetup]
     invalid2: [HTTPconnect]
@@ -49,4 +48,4 @@ test_macro:
     invalidfinal4: [start, HTTPsetup, HTTPconnect, HTTPsend]
     invalidfinal5: [start, HTTPsetup, HTTPconnect, HTTPsend, HTTPreceive]
     invalidfinal6: [start, HTTPsetup, HTTPconnect, HTTPsend, HTTPreceive, HTTPdisconnect]
-
+    empty: []

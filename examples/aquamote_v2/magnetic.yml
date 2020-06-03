@@ -18,8 +18,8 @@ test_macro:
     valid2: [locked, unlocked, locked, unlocked]
     valid3: [locked]
     valid4: [unlocked]
-    empty: []
   fail:
     invalid1: [unlocked, unlocked]
     invalid2: [locked, locked]
+    empty: []
 

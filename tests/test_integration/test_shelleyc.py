@@ -18,8 +18,10 @@ from shelley.shelleyc import parser as shelleyc_parser
 EXAMPLES_PATH = Path() / "tests" / "input"
 COMPILED_PATH = Path() / "tests" / "input" / "compiled"
 
-def empty_devices(name:str) -> CheckedDevice:
+
+def empty_devices(name: str) -> CheckedDevice:
     raise ValueError()
+
 
 def _remove_compiled_dir() -> None:
     _remove_compiled_files(COMPILED_PATH)
@@ -90,11 +92,29 @@ def make_args(src_path: Path, uses_path: Optional[Path] = None) -> argparse.Name
     return args
 
 
+yaml_button = """device:
+  name: Button
+  events: [pressed,released]
+  behavior:
+    - [pressed, released]
+    - [released, pressed]
+
+test_macro:
+  ok:
+    valid1: [pressed, released, pressed, released, pressed, released, pressed, released]
+    valid2: [pressed]
+    valid3: [pressed, released]
+    valid4: [pressed, released, pressed]
+    empty: []
+  fail:
+    invalid1: [released, pressed]
+    invalid2: [released]"""
+
 ### TEST ASSEMBLE DEVICE ###
 
 
 def test_assemble_button() -> None:
-    shelley_device: ShelleyDevice = _get_shelley_device("button")
+    shelley_device: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(yaml_button)
     automata: AutomataDevice = shelley2automata(shelley_device)
 
     assembled_button: AssembledDevice = AssembledDevice.make(automata, empty_devices)
@@ -104,7 +124,7 @@ def test_assemble_button() -> None:
 
 def test_assemble_smart_button() -> None:
     checked_button = AssembledDevice.make(
-        shelley2automata(_get_shelley_device("button")), empty_devices
+        yaml2shelley.get_shelley_from_yaml_str(yaml_button), empty_devices
     ).external
     assert type(checked_button) == CheckedDevice
 
@@ -136,7 +156,7 @@ def test_assemble_desklamp() -> None:
             shelley2automata(_get_shelley_device("led")), empty_devices
         ).external,
         "Button": AssembledDevice.make(
-            shelley2automata(_get_shelley_device("button")), empty_devices
+            yaml2shelley.get_shelley_from_yaml_str(yaml_button), empty_devices
         ).external,
         "Timer": AssembledDevice.make(
             shelley2automata(_get_shelley_device("timer")), empty_devices
@@ -284,7 +304,9 @@ def _compile_simple_device(device_name: str) -> Path:
     src_path = EXAMPLES_PATH / (device_name + ".yml")
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     args = make_args(src_path)
-    return shelleyc.compile_shelley(args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary)
+    return shelleyc.compile_shelley(
+        args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
+    )
 
 
 def test_not_found_device() -> None:
@@ -382,10 +404,7 @@ def test_smartbutton_not_in_uses_file() -> None:
             args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
         )
 
-    assert (
-        str(exc_info.value)
-        == "Error loading system 'Button': system not defined"
-    )
+    assert str(exc_info.value) == "Error loading system 'Button': system not defined"
 
     _remove_compiled_dir()
 
@@ -402,10 +421,7 @@ def test_smartbutton_empty_uses_file() -> None:
             args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
         )
 
-    assert (
-        str(exc_info.value)
-        == "Error loading system 'Button': system not defined"
-    )
+    assert str(exc_info.value) == "Error loading system 'Button': system not defined"
 
     _remove_compiled_dir()
 
@@ -439,10 +455,7 @@ def test_compile_desklamp_dependency_not_found() -> None:
             args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
         )
 
-    assert (
-        str(exc_info.value)
-        == "Error loading system 'Led': system not defined"
-    )
+    assert str(exc_info.value) == "Error loading system 'Led': system not defined"
 
     _remove_compiled_dir()
 

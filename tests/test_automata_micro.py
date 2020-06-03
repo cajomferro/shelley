@@ -76,7 +76,12 @@ def get_basic_devices() -> Mapping[str, Device]:
 
 def get_basic_known_devices() -> Callable[[str], CheckedDevice]:
     return dict(
-        (k, AssembledDevice.make(d, cast(Callable[[str],CheckedDevice], {}.__getitem__)).external)
+        (
+            k,
+            AssembledDevice.make(
+                d, cast(Callable[[str], CheckedDevice], {}.__getitem__)
+            ).external,
+        )
         for (k, d) in get_basic_devices().items()
     ).__getitem__
 
@@ -167,12 +172,12 @@ def _encode(example_name: str):
     )
     _serialize(
         "{0}-all-possible-dfa-minimized-notraps".format(example_name),
-        dfa_to_nfa(all_possible).remove_all_sink_states().as_dict(),
+        dfa_to_nfa(all_possible).remove_sink_states().as_dict(),
     )
 
     # micro NFA
     micro_nfa_no_epsilon_no_traps = (
-        micro_be.nfa.remove_epsilon_transitions().remove_all_sink_states().as_dict()
+        micro_be.nfa.remove_epsilon_transitions().remove_sink_states().as_dict()
     )
     _serialize(
         "{0}-micro-nfa-no-epsilon-no-traps".format(example_name),
@@ -185,7 +190,7 @@ def _encode(example_name: str):
     micro_nfa_no_epsilon = micro_be.nfa.remove_epsilon_transitions().as_dict()
     _serialize("{0}-micro-nfa-no-epsilon".format(example_name), micro_nfa_no_epsilon)
 
-    micro_nfa_no_traps = micro_be.nfa.remove_all_sink_states().as_dict()
+    micro_nfa_no_traps = micro_be.nfa.remove_sink_states().as_dict()
     _serialize("{0}-micro-nfa-no-traps".format(example_name), micro_nfa_no_traps)
 
     # micro DFA
@@ -201,7 +206,7 @@ def _encode(example_name: str):
 
     micro_dfa_minimized_no_traps = dfa_to_nfa(
         micro_be.dfa.minimize()
-    ).remove_all_sink_states()
+    ).remove_sink_states()
     _serialize(
         "{0}-micro-dfa-minimized-no-traps".format(example_name),
         micro_dfa_minimized_no_traps.as_dict(),

@@ -11,7 +11,7 @@ test_macro:
     valid2: [pressed]
     valid3: [pressed, released]
     valid4: [pressed, released, pressed]
-    empty: []
   fail:
     invalid1: [released, pressed]
     invalid2: [released]
+    empty: []

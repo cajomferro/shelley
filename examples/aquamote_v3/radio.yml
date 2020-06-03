@@ -9,7 +9,7 @@ device:
         final: False
         micro:
           seq: [wc.ssid_joined, wc.connected, hc.connected]
-    - startfailed:
+    - begin_err:
         start: True
         final: True
         micro:
@@ -22,18 +22,24 @@ device:
         final: True
         micro:
           seq: [wc.disconnected, hc.disconnected, wc.ssid_left]
+    - send:
+        start: False
+        final: False
+        micro:
+          xor:
+            - seq: [hc.get, hc.response200, wc.print_data_ready]
+            - seq: [hc.post, hc.response200, wc.print_data_ready]
   behavior:
     - [begin, stopped]
     - [stopped, begin] # this is a restart
-    - [startfailed, startfailed] # trying to start but always fails
-    - [startfailed, begin] # starting after >= 1 fail
-    - [stopped, startfailed] # restart fails
-#    - send:
-#        final: False
-#        micro:
-#          xor:
-#            - hc.get
-#            - hc.post
+    - [begin_err, begin_err] # trying to start but always fails
+    - [begin_err, begin] # starting after >= 1 fail
+    - [stopped, begin_err] # restart fails
+    - [begin, send]
+    - [send, send]
+    - [send, stopped]
+    #- [send, send_err]
+
 #    - ok:
 #        final: False
 #        micro: [wc.print_data_ready, hc.response200]

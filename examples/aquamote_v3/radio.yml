@@ -17,58 +17,64 @@ device:
     - started:
         start: True
         final: False
-        micro: [wc.ssid_joined, wc.connected, hc.connected]
-    - notconnected:
+        micro:
+          seq: [wc.ssid_joined, wc.connected, hc.connected]
+    - startfailed:
         start: True
         final: True
         micro:
           xor:
-            - [wc.ssid_joined, wc.connected, hc.connect_failed, wc.disconnected, wc.ssid_left]
-            - xor:
-              - [wc.ssid_joined, wc.connection_timeout]
-              - [wc.ssid_failed]
-    - send:
-        final: False
-        micro:
-          xor:
-            - hc.get
-            - hc.post
-    - ok:
-        final: False
-        micro: [wc.print_data_ready, hc.response200]
-    - error:
-        final: True
-        micro:
-          - xor:
-              - [wc.print_data_ready, hc.response401]
-              - xor:
-                - [wc.print_data_ready, hc.response401]
-                - xor:
-                  - [wc.print_data_ready, hc.response404]
-                  - xor:
-                    - [wc.print_data_ready, hc.response500]
-                    - [wc.print_timeout]
-          - [wc.disconnected, hc.disconnected]
+            - seq: [wc.ssid_joined, wc.connected, hc.connect_failed, wc.disconnected, wc.ssid_left]
+            - seq: [wc.ssid_joined, wc.connection_timeout]
+            - wc.ssid_failed
     - stopped:
+        start: False
         final: True
-        micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
+        micro:
+          seq: [wc.disconnected, hc.disconnected, wc.ssid_left]
   behavior:
-    - [started, send]
-    - [notconnected, started]
-    - [notconnected, notconnected]
-    - [send, stopped]
-    - [send, ok]
-    - [send, error]
-    - [ok, send]
-    - [ok, stopped]
-    - [error, stopped]
-    - [stopped, started]
-    - [stopped, notconnected]
+    - [started, stopped]
+    - [stopped, started] # this is a restart
+    - [startfailed, startfailed] # trying to start but always fails
+    - [startfailed, started] # starting after >= 1 fail
+    - [stopped, startfailed] # restart fails
+#    - send:
+#        final: False
+#        micro:
+#          xor:
+#            - hc.get
+#            - hc.post
+#    - ok:
+#        final: False
+#        micro: [wc.print_data_ready, hc.response200]
+#    - error:
+#        final: True
+#        micro:
+#          - xor:
+#              - [wc.print_data_ready, hc.response401]
+#              - xor:
+#                - [wc.print_data_ready, hc.response401]
+#                - xor:
+#                  - [wc.print_data_ready, hc.response404]
+#                  - xor:
+#                    - [wc.print_data_ready, hc.response500]
+#                    - [wc.print_timeout]
+#          - [wc.disconnected, hc.disconnected]
+
+#    - [notconnected, started]
+#    - [notconnected, notconnected]
+#    - [send, stopped]
+#    - [send, ok]
+#    - [send, error]
+#    - [ok, send]
+#    - [ok, stopped]
+#    - [error, stopped]
+#    - [stopped, notconnected]
 
 
-test_micro:
-  ok:
-    valid1: [wc.ssid_joined, wc.connected, hc.connected, hc.get, wc.print_data_ready, hc.response200, wc.disconnected, hc.disconnected, wc.ssid_left]
-  fail:
-    invalid8: false
-    empty: []
+#test_micro:
+#  ok:
+#    valid1: [wc.ssid_joined, wc.connected, hc.connected, hc.get, wc.print_data_ready, hc.response200, wc.disconnected, hc.disconnected, wc.ssid_left]
+#  fail:
+#    invalid8: false
+#    empty: []

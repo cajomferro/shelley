@@ -3,12 +3,7 @@ SHELLEYV = shelleyv
 
 all: scy
 
-pdf: magnetic.pdf httpclient.pdf wificlient.pdf radio.pdf valve.pdf timer.pdf valvehandlertimer.pdf lowpower-strict.pdf controller.pdf # micro-pdf
-
-# run with make internal SHELLEYC="shelleyc -i"
-internal: pdf controller-micro-dfa-minimized.pdf controller-micro-dfa-minimized-no-traps.pdf controller-micro-nfa-no-epsilon-no-traps.pdf # controller-shuffle-dfa-minimized.pdf controller-shuffle-dfa-minimized-no-traps.pdf
-
-internal-radio: radio-micro-dfa-minimized.pdf radio-micro-dfa-minimized-no-traps.pdf radio-micro-nfa-no-epsilon-no-traps.pdf
+pdf: magnetic.pdf httpclient.pdf wificlient.pdf radio.pdf valve.pdf timer.pdf valvehandlertimer.pdf lowpower-strict.pdf controller.pdf
 
 scy: controller.scy radio.scy valvehandlertimer.scy
 
@@ -18,20 +13,34 @@ valvehandlertimer.scy: valvehandlertimer.yml valve.scy timer.scy
 
 controller.scy: controller.yml valvehandlertimer.scy magnetic.scy radio.scy lowpower-strict.scy
 
-#controller-%.scy:
-#	$(SHELLEYC) -u uses.yml -d $< -o $@
-
 %.scy: %.yml
 	$(SHELLEYC) -u uses.yml -d $< -o $@
 
-%.gv: %.scy
-	$(SHELLEYV) $< -o $@
+# Generate integration diagram (minimized)
+# Example:
+#   make EXAMPLE-i-d.pdf
+%-i-d.pdf: %.int
+	$(SHELLEYV) --dfa --minimize --no-sink --format pdf $< -o $@
 
-%.pdf: %.gv
-	dot -Tpdf -o $@ $<
+
+# Generate integration diagram (full)
+# Example:
+#   make EXAMPLE-i-n.pdf
+%-i-n.pdf: %.int
+	$(SHELLEYV) --no-sink --format pdf $< -o $@
+
+# Generate system diagram
+# Example:
+#   make EXAMPLE.pdf
+%.pdf: %.scy
+	$(SHELLEYV) --format pdf $< -o $@
+
+%.int:  %.yml
+	$(SHELLEYC) -d $< --no-output -i $@ -u uses.yml
 
 clean:
-	rm -f *.scy *.pdf *.gv
+	rm -f *.scy *.pdf *.int
 
+.PHONY: all pdf scy
 
-.SUFFIXES: .yml .scy
+.SUFFIXES: .yml .scy .int

@@ -29,7 +29,7 @@ all:
 	$(MAKE) -C aquamote_v2_valve
 	$(MAKE) -C aquamote_v2_valvehandler
 	$(MAKE) -C aquamote_v2_valvehandlertimer
-	#$(MAKE) -C aquamote_v3 --> TODO: FIX THIS
+	$(MAKE) -C aquamote_v3
 	$(MAKE) -C valves_1valve_complex
 	$(MAKE) -C valves_1valve_seq
 	#$(MAKE) -C valves_4valves_xorvsseq --> TODO: FIX THIS

@@ -20,7 +20,10 @@ device:
     - normal_red:
         start: True
         final: True
-        micro: [pi.police, c.toggle, lc.displayRed]
+        micro:
+          xor:
+            - seq: [pi.police, c.toggle, lc.displayRed]
+            - seq: [c.toggle, lc.displayRed]
     - normal_green:
         start: False
         final: True

@@ -1,5 +1,5 @@
-SHELLEYC = shelleyc
-SHELLEYV = shelleyv
+include ../common.mk
+.PHONY: all pdf scy clean all
 
 all: scy
 
@@ -10,15 +10,6 @@ scy: ambiguous.scy
 ambiguous.scy: ambiguous.yml singleclick.scy timer.scy
 	# Invalid device: AmbiguousTriggersFailure
 	! $(SHELLEYC) -u uses.yml -d $<
-
-%.scy: %.yml
-	$(SHELLEYC) -d $<
-
-%.gv: %.scy
-	$(SHELLEYV) $< -o $@
-
-%.pdf: %.gv
-	dot -Tpdf -o $@ $<
 
 clean:
 	rm -f *.scy *.pdf *.gv

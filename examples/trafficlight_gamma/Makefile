@@ -1,4 +1,4 @@
-include ../common.mf
+include ../common.mk
 
 all: scy
 
@@ -12,5 +12,3 @@ clean:
 	rm -f *.scy *.pdf *.int
 
 .PHONY: all pdf scy
-
-.SUFFIXES: .yml .scy .int

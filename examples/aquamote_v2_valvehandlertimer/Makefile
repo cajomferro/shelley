@@ -1,5 +1,4 @@
-SHELLEYC = shelleyc
-SHELLEYV = shelleyv
+include ../common.mk
 
 all: scy
 
@@ -15,17 +14,8 @@ valvehandlertimer.scy: valvehandlertimer.yml valve.scy timer.scy
 
 controller.scy: controller.yml valvehandlertimer.scy magnetic.scy radiosimplest.scy lowpower-strict.scy
 
-%.scy: %.yml
-	$(SHELLEYC) -u uses.yml -d $< -o $@
-
-%.gv: %.scy
-	$(SHELLEYV) $< -o $@
-
-%.pdf: %.gv
-	dot -Tpdf -o $@ $<
-
 clean:
 	rm -f *.scy *.pdf *.gv
 
 
-.SUFFIXES: .yml .scy
+.PHONY: all pdf scy clean all

@@ -10,3 +10,5 @@ controller.scy: controller.yml valve.scy magnetic.scy radio.scy lowpower.scy
 
 clean:
 	rm -f *.scy *.pdf *.gv
+
+.PHONY: all pdf scy

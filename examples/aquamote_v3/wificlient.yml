@@ -1,4 +1,4 @@
-# LINK?
+# https://www.arduino.cc/en/Reference/WiFiClientConnect
 # disconnected event might be external (device error) or internal (user called disconnect() function)
 device:
   name: WiFiClient
@@ -99,7 +99,6 @@ device:
 #    postok: [connect, post, response200, disconnect]
 #    get2x: [connect, get, response404, get, response200, disconnect]
 #    get2x_nodisconnect: [connect, get, response404, get, response200] # disconnect missing but still valid
-#    empty: []
 #  fail:
 #    invalid1: [get]
 #    invalid2: [post]
@@ -109,3 +108,5 @@ device:
 #    invalid6: [disconnect]
 #    invalid7: [connect_failed]
 #    get2x_noresponse: [connect, get, get, response200, disconnect] # response200 missing
+#    empty: []
+

@@ -1,25 +1,27 @@
 device:
   name: XmasTree
   behavior:
-    - [l1, l1]
+    - [l1, l2]
 #    - [l1, off]
 #    - [l2, off]
-#    - [l2, l2]
-#    - [l2, l1]
+    - [l2, l2]
+    - [l2, l1]
 #    - [off, l1]
-  components:
+  compl1ents:
     l: Led
     t: Timer
   events:
     - l1:
         start: True
         final: True
+        micro: l.on
+    - l2:
+        start: False     
+        final: False
         micro:
-          seq:
-            - l.on
-            - xor:
-              - seq: [t.begin, t.timeout, l.off, t.begin, t.timeout]
-              - l.off
+          xor:
+            - seq: [l.off, t.begin, t.timeout, l.off, t.begin, t.timeout]
+            - l.off 
 #    - off:
 #        start: False
 #        final: True

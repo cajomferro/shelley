@@ -17,7 +17,7 @@ desklamp.scy: desklamp.yml timer.scy led.scy
 # Example:
 #   make desklamp-i-d.pdf
 %-i-d.pdf: %.int
-	$(SHELLEYV) --dfa --format pdf $< -o $@
+	$(SHELLEYV) --dfa --minimize --no-sink --format pdf $< -o $@
 
 
 # Generate integration diagram (full)

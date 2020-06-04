@@ -32,6 +32,8 @@ device:
             - xor:
               - [ledB.off, ledA.off]
               - [ledA.off, ledB.off]
+              # - [ledA.off, ledB.on] # integration
+              # - [ledA.off] # ambiguity
 
 #test_macro:
 #  ok:

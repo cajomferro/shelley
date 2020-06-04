@@ -910,7 +910,7 @@ def test_projection_class() -> None:
         transition_func=NFA.transition_table(
             {(0, B_R): frozenset([1]), (1, B_P): frozenset([2]),}
         ),
-        accepted_states=[0, 1, 2],
+        accepted_states=[1, 2],
         start_state=0,
     )
     micro_dfa = nfa_to_dfa(micro_nfa)
@@ -920,7 +920,7 @@ def test_projection_class() -> None:
     proj = ComponentUsage.make(micro_nfa, button_nfa)
     assert project_nfa(micro_nfa, button_nfa.alphabet) == micro_nfa
     assert proj.component == button_dfa, "component was set incorrectly"
-    assert proj.projected == micro_dfa, "projected was set incorrectly"
+    assert_equiv_dfa(proj.projected, micro_dfa, "projected was set incorrectly")
     assert not proj.is_valid
 
 

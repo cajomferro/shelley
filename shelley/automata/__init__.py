@@ -472,9 +472,7 @@ class ComponentUsage:
 
     def __post_init__(self) -> None:
         start = timer()
-        self.is_valid = self.component.contains(
-            self.projected.subtract(DFA[Any, str].make_nil(self.projected.alphabet))
-        )
+        self.is_valid = self.component.contains(self.projected)
         self.validation_time = get_elapsed_time(start)
 
     def __equals__(self, other: Any) -> bool:
@@ -504,14 +502,18 @@ class ComponentUsage:
         return component_seq
 
     @classmethod
-    def make(cls, micro: NFA[Any, str], component: NFA[Any, str]) -> "ComponentUsage":
+    def make(
+        cls, micro: NFA[Any, str], component: NFA[Any, str], optional: bool = True
+    ) -> "ComponentUsage":
         """
         Restrict the language of a micro behavior using a component's alphabet
         """
-        return cls(
-            component=nfa_to_dfa(component),
-            projected=nfa_to_dfa(project_nfa(micro, component.alphabet)),
-        )
+        projected: DFA[Any, str] = nfa_to_dfa(project_nfa(micro, component.alphabet))
+        if optional:
+            nil = DFA[Any, str].make_nil(projected.alphabet)
+            projected = projected.subtract(nil)
+
+        return cls(component=nfa_to_dfa(component), projected=projected,)
 
 
 @dataclass

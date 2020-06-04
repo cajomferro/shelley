@@ -1,0 +1,13 @@
+device:
+  name: LightCommands
+  behavior:
+    - [displayRed, displayGreen]
+    - [displayRed, displayYellow]
+    - [displayRed, displayNone]
+    - [displayGreen, displayYellow]
+    - [displayGreen, displayNone]
+    - [displayYellow, displayRed]
+    - [displayYellow, displayNone]
+    - [displayYellow, displayYellow]
+    - [displayNone, displayYellow]
+    - [displayNone, displayRed]

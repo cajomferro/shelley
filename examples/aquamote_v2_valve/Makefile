@@ -1,5 +1,4 @@
-SHELLEYC = shelleyc
-SHELLEYV = shelleyv
+include ../common.mk
 
 all: scy
 
@@ -13,17 +12,7 @@ radiosimplest.scy: radiosimplest.yml radiosimple.scy
 
 controller.scy: controller.yml valve.scy magnetic.scy radiosimplest.scy lowpower-strict.scy
 
-%.scy: %.yml
-	$(SHELLEYC) -u uses.yml -d $< -o $@
-
-%.gv: %.scy
-	$(SHELLEYV) $< -o $@
-
-%.pdf: %.gv
-	dot -Tpdf -o $@ $<
-
 clean:
 	rm -f *.scy *.pdf *.gv
 
-
-.SUFFIXES: .yml .scy
+.PHONY: all pdf scy

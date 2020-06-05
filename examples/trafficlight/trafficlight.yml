@@ -1,0 +1,46 @@
+device:
+  name: TrafficLight
+  behavior:
+    - [first_red, green]
+    - [first_red, blinking]
+    - [green, yellow]
+    - [green, blinking]
+    - [yellow, red]
+    - [yellow, blinking]
+    - [red, green]
+    - [red, blinking]
+    - [blinking, red]
+    - [blinking, blinking]
+  components:
+    lred: Led
+    lgreen: Led
+    lyellow: Led
+    t: Timer
+  events:
+    - first_red:
+        start: True
+        final: True
+        micro:
+          seq: [lred.on]
+    - green:
+        start: False
+        final: True
+        micro:
+          seq: [lred.off, lgreen.on]
+    - yellow:
+        start: False
+        final: True
+        micro:
+          seq: [lgreen.off, lyellow.on]
+    - red:
+        start: False
+        final: True
+        micro:
+          seq: [lyellow.off, lred.on]
+    - blinking:
+        start: False
+        final: True
+        micro:
+          seq:
+            - seq: [lred.off, lgreen.off, lyellow.off]
+            - seq: [lyellow.on, t.begin, t.timeout, lyellow.off, t.begin, t.timeout]

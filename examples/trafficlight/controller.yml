@@ -1,0 +1,42 @@
+device:
+  name: Controller
+  behavior:
+    - [go, slow]
+    - [slow, stop]
+    - [stop, go]
+    - [go, police]
+    - [slow, police]
+    - [stop, police]
+  components:
+    lred: Led
+    lgreen: Led
+    lyellow: Led
+    t: Timer
+  events:
+    - first_red:
+        start: True
+        final: True
+        micro:
+          seq: [lred.on]
+    - green:
+        start: False
+        final: True
+        micro:
+          seq: [lred.off, lgreen.on]
+    - yellow:
+        start: False
+        final: True
+        micro:
+          seq: [lgreen.off, lyellow.on]
+    - red:
+        start: False
+        final: True
+        micro:
+          seq: [lyellow.off, lred.on]
+    - blinking:
+        start: False
+        final: True
+        micro:
+          seq:
+            - seq: [lred.off, lgreen.off, lyellow.off]
+            - seq: [lyellow.on, t.begin, t.timeout, lyellow.off, t.begin, t.timeout]

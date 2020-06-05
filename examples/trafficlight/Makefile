@@ -3,11 +3,13 @@ SHELLEYV = shelleyv
 
 all: scy
 
-pdf: led.pdf timer.pdf trafficlight.pdf
+pdf: led.pdf timer.pdf trafficlight.pdf controller.pdf
 
-scy: trafficlight.scy
+scy: controller.scy
 
-trafficlight.scy: trafficlight.yml timer.scy led.scy
+trafficlight.scy: led.scy
+
+controller.scy: controller.yml trafficlight.scy timer.scy
 
 %.scy: %.yml
 	$(SHELLEYC) -u uses.yml -d $< -o $@
@@ -15,20 +17,20 @@ trafficlight.scy: trafficlight.yml timer.scy led.scy
 
 # Generate integration diagram (minimized)
 # Example:
-#   make trafficlight-i-d.pdf
+#   make controller-i-d.pdf
 %-i-d.pdf: %.int
 	$(SHELLEYV) --dfa --minimize --no-sink --format pdf $< -o $@
 
 
 # Generate integration diagram (full)
 # Example:
-#   make trafficlight-i-n.pdf
+#   make controller-i-n.pdf
 %-i-n.pdf: %.int
 	$(SHELLEYV) --no-sink --format pdf $< -o $@
 
 # Generate system diagram
 # Example:
-#   make trafficlight.pdf
+#   make controller.pdf
 %.pdf: %.scy
 	$(SHELLEYV) --format pdf $< -o $@
 

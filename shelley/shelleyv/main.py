@@ -42,20 +42,35 @@ def create_parser() -> argparse.ArgumentParser:
 def handle_fsm(
     n: regular.NFA[Any, str], args: argparse.Namespace
 ) -> regular.NFA[Any, str]:
-    if args.no_epsilon:
-        n = n.remove_epsilon_transitions()
-    if not args.dfa and args.no_sink:
-        n = n.remove_sink_states()
-    if not args.dfa:
+    if args.dfa:
+        print("Input:", len(n))
+        # Convert the DFA back into an NFA to possibly remove sink states
+        if args.minimize:
+            # Before minimizing, make sure we remove sink states, so that there
+            # is a unique sink state when we convert to DFA; this is a quick
+            # way of making the resulting DFA smaller
+            n = n.remove_sink_states()
+            print("No sinks:", len(n))
+            d: regular.DFA[Any, str] = regular.nfa_to_dfa(n)
+            print("DFA:", len(d))
+            d = d.minimize()
+            print("Minimized DFA:", len(d))
+        else:
+            d = regular.nfa_to_dfa(n).flatten()
+            print("DFA:", len(d))
+
+        n = regular.dfa_to_nfa(d)
+
+        if args.no_sink:
+            n = n.remove_sink_states()
+            print("NFA no sink:", len(n))
         return n
-    d: regular.DFA[Any, str] = regular.nfa_to_dfa(n).flatten()
-    if args.minimize:
-        d = d.minimize()
-    # Convert the DFA back into an NFA to possibly remove sink states
-    n = regular.dfa_to_nfa(d)
-    if args.no_sink:
-        n = n.remove_sink_states()
-    return n
+    else:
+        if args.no_epsilon:
+            n = n.remove_epsilon_transitions()
+        if args.no_sink:
+            n = n.remove_sink_states()
+        return n
 
 
 def main() -> None:

@@ -10,7 +10,7 @@ readme = 'README.rst'
 python = "^3.7"
 pyyaml = "^5.3.1"
 graphviz = "^0.14"
-karukuri = {git = "https://gitlab.com/cogumbreiro/karukuri.git", rev = "f3b34139e3aa02d24e8c3b20d7431dbb921bdd77"}
+karukuri = {git = "https://gitlab.com/cogumbreiro/karukuri.git", rev = "51cdf034c085e493f0364f710e0a4601cb85f1b9"}
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.770"

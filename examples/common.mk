@@ -34,6 +34,12 @@ SHELLEYV = shelleyv
 %.pdf: %.scy
 	$(SHELLEYV) --format pdf $< -o $@
 
+# Generate system diagram
+# Example:
+#   make trafficlightctrl.png
+%.png: %.scy
+	$(SHELLEYV) --format png $< -o $@
+
 # Generate the integration diagram
 %.int:  %.yml
 	$(SHELLEYC) -d $< --no-output -i $@ -u uses.yml

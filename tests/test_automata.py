@@ -10,6 +10,7 @@ from karakuri.regular import (
     concat,
     shuffle as And,
     nfa_to_dfa,
+    dfa_to_nfa,
     Star,
     NIL,
     Regex,
@@ -321,17 +322,17 @@ def test_encode_1() -> None:
 
 
 def test_encode_behavior2_1() -> None:
-    behavior = Union(Char(LEVEL1), Star(Concat(Char(LEVEL1), Char(LEVEL2))))
+    l1_l2 = Concat(Char(LEVEL1), Char(LEVEL2))
+    behavior = Union(Char(LEVEL1), Concat(l1_l2, Star(l1_l2)))
+    n_behavior = dfa_to_nfa(nfa_to_dfa(regex_to_nfa(behavior)).minimize())
     triggers: Dict[str, Regex[str]] = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    n_behavior = regex_to_nfa(behavior)
     expected = nfa_to_dfa(automata.encode_behavior(n_behavior, triggers))
     result = automata.MicroBehavior.make(n_behavior, triggers, set(expected.alphabet))
     assert result.is_valid
-    given = result.dfa
-    assert given.is_equivalent_to(expected)
+    assert_equiv_dfa(expected, result.dfa)
 
 
 def test_encode2() -> None:
@@ -348,7 +349,7 @@ def test_encode2() -> None:
 
 def test_ambiguity_1() -> None:
     behavior = Union(Char(LEVEL1), Star(Concat(Char(LEVEL1), Char(LEVEL2))))
-    n_behavior = regex_to_nfa(behavior)
+    n_behavior = dfa_to_nfa(nfa_to_dfa(regex_to_nfa(behavior)).minimize())
     triggers: Dict[str, Regex[str]] = {
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
@@ -932,22 +933,27 @@ def assert_equiv_dfa(lhs: DFA[Any, str], rhs: DFA[Any, str], msg=""):
     if msg != "":
         msg = f"{msg}: "
     missing = lhs.subtract(rhs)
+
+    def log_accept(lbl: str, d: DFA[Any, str], err: List[str]) -> None:
+        msg = "accept" if err in d else "reject"
+        print(f"{lbl} {msg} {err}")
+
     if not missing.is_empty():
         err_l = missing.get_shortest_string()
         assert err_l is not None
         err = list(err_l)
-        print(f"lhs accept {err}", err in lhs)
-        print(f"rhs accept {err}", err in rhs)
-        print(rhs)
-        print(lhs)
+        log_accept(f"lhs", lhs, err)
+        log_accept(f"rhs", rhs, err)
+        print("LHS:", lhs.minimize())
+        print("RHS:", rhs.minimize())
         assert False, f"{msg}rhs REJECTS string: {err}"
     missing = rhs.subtract(lhs)
     if not missing.is_empty():
         err_l = missing.get_shortest_string()
         assert err_l is not None
         err = list(err_l)
-        print(f"lhs accept {err}", err in lhs)
-        print(f"rhs accept {err}", err in rhs)
+        log_accept(f"lhs", lhs, err)
+        log_accept(f"rhs", rhs, err)
         print(lhs)
         print(rhs)
         assert False, f"{msg}lhs REJECTS string: {err}"

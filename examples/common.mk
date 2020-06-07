@@ -1,6 +1,9 @@
 SHELLEYC = shelleyc
 SHELLEYV = shelleyv
 
+DFA_OPTS = --dfa --minimize --no-sink
+NFA_OPTS = --no-sink
+
 %.scy: %.yml
 	$(SHELLEYC) -u uses.yml -d $< -o $@
 
@@ -8,25 +11,25 @@ SHELLEYV = shelleyv
 # Example:
 #   make trafficlightctrl-i-d.pdf
 %-i-d.pdf: %.int
-	$(SHELLEYV) --dfa --minimize --format pdf $< -o $@
+	$(SHELLEYV) $(DFA_OPTS) --format pdf $< -o $@
 
 # Generate integration diagram (minimized)
 # Example:
 #   make trafficlightctrl-i-d.png
 %-i-d.png: %.int
-	$(SHELLEYV) --dfa --minimize --format png $< -o $@
+	$(SHELLEYV) $(DFA_OPTS) --format png $< -o $@
 
 # Generate integration diagram (full)
 # Example:
 #   make trafficlightctrl-i-n.pdf
 %-i-n.pdf: %.int
-	$(SHELLEYV) --no-sink --format pdf $< -o $@
+	$(SHELLEYV) $(NFA_OPTS) --format pdf $< -o $@
 
 # Generate integration diagram (full)
 # Example:
 #   make trafficlightctrl-i-n.pdf
 %-i-n.png: %.int
-	$(SHELLEYV) --no-sink --format png $< -o $@
+	$(SHELLEYV) $(NFA_OPTS) --format png $< -o $@
 
 # Generate system diagram
 # Example:
@@ -42,6 +45,6 @@ SHELLEYV = shelleyv
 
 # Generate the integration diagram
 %.int:  %.yml
-	$(SHELLEYC) -d $< --no-output -i $@ -u uses.yml
+	$(SHELLEYC) -d $< --skip-checks --no-output -i $@ -u uses.yml
 
 .SUFFIXES: .yml .scy .int .pdf .png

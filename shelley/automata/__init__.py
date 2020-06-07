@@ -15,6 +15,7 @@ from typing import (
     cast,
     TypeVar,
     FrozenSet,
+    Sequence,
 )
 from karakuri.regular import (
     NFA,
@@ -365,14 +366,14 @@ class MicroBehavior:
         )
         self.validation_time = get_elapsed_time(start)
 
-    def convert_micro_to_macro(self, seq: Iterable[str]) -> Tuple[MacroTrace, ...]:
-        rest: List[MacroTrace] = [()]
-        for st in self.dfa.get_derivation(seq):
-            sts = set(filter(is_macro_state, st))
-            if len(sts) > 0:
-                new_rest = list(x + (st.event,) for x in rest for st in sts)
-                rest = new_rest
-        return tuple(rest)
+    def convert_micro_to_macro(self, seq: Sequence[str]) -> MacroTrace:
+        for der in self.nfa.get_derivations(seq):
+            rest: List[str] = []
+            for st in der:
+                if isinstance(st, MacroState) and st.event is not None:
+                    rest.append(st.event)
+            return tuple(rest)
+        raise ValueError(f"Sequence {seq} yields 0 derivations!")
 
     def get_traces_from_component_trace(
         self, component_alpha: Collection[str], component_seq: MicroTrace
@@ -537,7 +538,7 @@ class TriggerIntegrationFailure:
             dec_seq is not None
         ), "dec_seq can only be none if failure is empty, which cannot be"
         # There should be a unique macro trace
-        (macro_trace,) = micro.convert_micro_to_macro(dec_seq)
+        macro_trace = micro.convert_micro_to_macro(dec_seq)
         # We demutex by device
         errs = dict()
         for component, seq in demultiplex(dec_seq).items():

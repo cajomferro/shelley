@@ -66,10 +66,13 @@ def handle_fsm(
             print("NFA no sink:", len(n))
         return n
     else:
+        print("Input:", len(n))
         if args.no_epsilon:
             n = n.remove_epsilon_transitions()
+            print("Remove epsilon:", len(n))
         if args.no_sink:
             n = n.remove_sink_states()
+            print("Remove sink states:", len(n))
         return n
 
 

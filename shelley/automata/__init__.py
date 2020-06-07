@@ -405,7 +405,6 @@ class MicroBehavior:
         :return:
         """
         assert isinstance(external_behavior, NFA)
-        det_behavior: DFA[AbstractSet[str], str] = nfa_to_dfa(external_behavior)
         det_triggers: Dict[str, DFA[Any, str]] = dict()
         for k, rule in triggers.items():
             rule_alpha = set(regular.get_alphabet(rule))
@@ -415,8 +414,6 @@ class MicroBehavior:
             det_triggers[k] = nfa_to_dfa(regex_to_nfa(rule, alphabet))
         # det_triggers and triggers are so close together, make sure we don't mistype
         del triggers
-        # make sure we don't use external_behavior in the rest of the code
-        del external_behavior
 
         def tsx(src: DecodedState, char: Optional[str]) -> AbstractSet[DecodedState]:
             if isinstance(src, MacroState):
@@ -424,14 +421,15 @@ class MicroBehavior:
                     return frozenset()
                 # Macro-state
                 result = set()
-                for evt in det_behavior.alphabet:
-                    result.add(
-                        MicroState(
-                            macro=det_behavior.transition_func(src.state, evt),
-                            event=evt,
-                            micro=det_triggers[evt].start_state,
+                for evt in external_behavior.alphabet:
+                    for dst in external_behavior.transition_func(src.state, evt):
+                        result.add(
+                            MicroState(
+                                macro=dst,
+                                event=evt,
+                                micro=det_triggers[evt].start_state,
+                            )
                         )
-                    )
                 return frozenset(result)
             elif isinstance(src, MicroState):
                 dfa = det_triggers[src.event]
@@ -446,7 +444,9 @@ class MicroBehavior:
                 raise ValueError("Unknown state", src, char)
 
         def is_final(st) -> bool:
-            return isinstance(st, MacroState) and det_behavior.accepted_states(st.state)
+            return isinstance(st, MacroState) and external_behavior.accepted_states(
+                st.state
+            )
 
         if alphabet is None:
             # Infer the alphabet from each trigger
@@ -457,7 +457,7 @@ class MicroBehavior:
         nfa = NFA[DecodedState, str](
             alphabet=alphabet,
             transition_func=tsx,
-            start_state=MacroState(det_behavior.start_state),
+            start_state=MacroState(external_behavior.start_state),
             accepted_states=is_final,
         )
         return cls(nfa)

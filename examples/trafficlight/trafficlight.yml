@@ -7,6 +7,10 @@ device:
     - [yellow, off]
     - [red, green]
     - [red, off]
+    - [off, red]
+    - [off, yellow]
+    - [off, green]
+    - [off, off]
   components:
     lred: Led
     lgreen: Led
@@ -18,7 +22,7 @@ device:
         micro:
           seq: [lred.off, lgreen.on]
     - yellow:
-        start: False
+        start: True
         final: False
         micro:
           seq: [lgreen.off, lyellow.on]

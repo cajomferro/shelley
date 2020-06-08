@@ -1,17 +1,19 @@
 device:
   name: Controller
   behavior:
-    - [setup, main_go_sec_stop]
-    - [main_go_sec_stop, main_slow_sec_stop]
-    - [main_go_sec_stop, blinking]
-    - [main_slow_sec_stop, main_stop_sec_go]
-    - [main_slow_sec_stop, blinking]
-    - [main_stop_sec_go, main_stop_sec_slow]
-    - [main_stop_sec_go, blinking]
-    - [main_stop_sec_slow, main_go_sec_stop]
-    - [main_stop_sec_slow, blinking]
-    - [blinking, main_go_sec_stop]
-    - [main_go_sec_stop, off]
+    - [setup, blink]
+    - [setup, main_go]
+    - [main_go, main_slow]
+    - [main_go, off]
+    - [main_slow, sec_go]
+    - [main_slow, off]
+    - [sec_go, sec_slow]
+    - [sec_go, off]
+    - [sec_slow, main_go]
+    - [sec_slow, off]
+    - [off, setup]
+    - [blink, blink]
+    - [blink, off]
   components:
     main_rd: TrafficLight
     sec_rd: TrafficLight
@@ -21,22 +23,22 @@ device:
         start: True
         final: False
         micro: t.begin
-    - main_go_sec_stop:
+    - main_go:
         start: False
         final: False
         micro:
           seq: [t.timeout, main_rd.green, sec_rd.red, t.begin]
-    - main_slow_sec_stop:
+    - main_slow:
         start: False
         final: False
         micro:
           seq: [t.timeout, main_rd.yellow, t.begin]
-    - main_stop_sec_go:
+    - sec_go:
         start: False
         final: False
         micro:
           seq: [t.timeout, main_rd.red, sec_rd.green, t.begin]
-    - main_stop_sec_slow:
+    - sec_slow:
         start: False
         final: False
         micro:
@@ -46,10 +48,8 @@ device:
         final: True
         micro:
           seq: [t.timeout, main_rd.off, sec_rd.off]
-    - blinking:
+    - blink:
         start: False
         final: False
         micro:
-          seq:
-            - seq: [t.timeout, main_rd.off, sec_rd.off, t.begin]
-            - seq: [t.timeout, main_rd.yellow, sec_rd.yellow, t.begin]
+          seq: [t.timeout, main_rd.yellow, sec_rd.yellow, t.begin, t.timeout, main_rd.off, sec_rd.off, t.begin]

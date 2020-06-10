@@ -5,6 +5,7 @@ from typing import Union, Any
 from karakuri import regular
 from shelley.automata.view import fsm2dot, fsm2tex
 from pathlib import Path
+import json
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -43,36 +44,36 @@ def handle_fsm(
     n: regular.NFA[Any, str], args: argparse.Namespace
 ) -> regular.NFA[Any, str]:
     if args.dfa:
-        print("Input:", len(n))
+        print("Input:", len(n), file=sys.stderr)
         # Convert the DFA back into an NFA to possibly remove sink states
         if args.minimize:
             # Before minimizing, make sure we remove sink states, so that there
             # is a unique sink state when we convert to DFA; this is a quick
             # way of making the resulting DFA smaller
             n = n.remove_sink_states()
-            print("No sinks:", len(n))
+            print("No sinks:", len(n), file=sys.stderr)
             d: regular.DFA[Any, str] = regular.nfa_to_dfa(n)
-            print("DFA:", len(d))
+            print("DFA:", len(d), file=sys.stderr)
             d = d.minimize()
-            print("Minimized DFA:", len(d))
+            print("Minimized DFA:", len(d), file=sys.stderr)
         else:
             d = regular.nfa_to_dfa(n).flatten()
-            print("DFA:", len(d))
+            print("DFA:", len(d), file=sys.stderr)
 
         n = regular.dfa_to_nfa(d)
 
         if args.no_sink:
             n = n.remove_sink_states()
-            print("NFA no sink:", len(n))
+            print("NFA no sink:", len(n), file=sys.stderr)
         return n
     else:
         print("Input:", len(n))
         if args.no_epsilon:
             n = n.remove_epsilon_transitions()
-            print("Remove epsilon:", len(n))
+            print("Remove epsilon:", len(n), file=sys.stderr)
         if args.no_sink:
             n = n.remove_sink_states()
-            print("Remove sink states:", len(n))
+            print("Remove sink states:", len(n), file=sys.stderr)
         return n
 
 
@@ -83,6 +84,15 @@ def main() -> None:
         parser.error("The '--minimize' option requires '--dfa'")
     d = yaml.load(args.input, Loader=yaml.FullLoader)
     n: regular.NFA[Any, str] = handle_fsm(regular.NFA.from_dict(d), args)
+    if args.format == "json":
+        fp = sys.stdout if args.output is None else open(args.output, "w")
+        json.dump(n.as_dict(flatten=True), fp)
+        return
+    if args.format == "yaml":
+        fp = sys.stdout if args.output is None else open(args.output, "w")
+        yaml.dump(n.as_dict(flatten=True), fp)
+        return
+
     if args.format == "tex":
         dot = fsm2tex(n)
     else:

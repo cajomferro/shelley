@@ -2,13 +2,11 @@ include ../common.mk
 
 all: scy
 
-pdf: led.pdf timer.pdf trafficlight.pdf controller.pdf
+pdf: control.pdf controller.pdf led.pdf light_commands.pdf police_interrupt.pdf timer.pdf trafficlight.pdf
 
-scy: controller.scy
+scy: crossroad.scy controller.scy trafficlight.scy
 
-trafficlight.scy: led.scy
-
-controller.scy: controller.yml trafficlight.scy timer.scy
+crossroad.scy: crossroad.yml controller.scy trafficlight.scy
 
 clean:
 	rm -f *.scy *.pdf *.int

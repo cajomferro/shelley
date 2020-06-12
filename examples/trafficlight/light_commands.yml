@@ -1,0 +1,25 @@
+device:
+  name: LightCommands
+  events:
+    - displayRed:
+        start: True
+        final: True
+    - displayYellow:
+          start: True
+          final: True
+    - displayGreen:
+          start: True
+          final: True
+    - displayNone:
+          start: True
+          final: True
+  behavior:
+    # normal
+    - [displayGreen, displayYellow]
+    - [displayYellow, displayRed]
+    - [displayRed, displayGreen]
+    # police
+    - [displayRed, displayYellow]
+    - [displayGreen, displayYellow]
+    - [displayNone, displayYellow]
+    - [displayYellow, displayNone]

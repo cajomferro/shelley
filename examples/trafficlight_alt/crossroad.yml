@@ -1,0 +1,34 @@
+device:
+    name: Controller
+    components:
+        r: TrafficController
+        g: TrafficController
+    events:
+    - step1:
+        start: true
+        final: true
+        micro:
+            xor:
+            - seq: [r.run, g.halt]
+            - seq: [g.halt, r.run]
+    - step2:
+        start: true
+        final: true
+        micro:
+            xor:
+            - seq: [r.halt, g.run]
+            - seq: [g.run, r.halt]
+    - police:
+        start: true
+        final: true
+        micro:
+            xor:
+            - seq: [r.police, g.police]
+            - seq: [g.police, r.police]
+
+    behavior:
+    - [step1, step2]
+    - [step2, step1]
+    - [police, police]
+    - [police, step1]
+    - [step2, police]

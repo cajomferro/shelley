@@ -32,7 +32,7 @@ device:
         final: False
         micro:
           xor:
-            - seq: [PriorityControl.toggle]
+            - seq: [PriorityControl.toggle, InitTimeout5.begin]
             - seq: [PoliceInterrupt.police, PriorityPolice.police, SecondaryPolice.police] # THIS IS AMBIGUOUS
     - operating_priority_prepares:
         start: False
@@ -42,23 +42,31 @@ device:
             - xor:
               - seq: [InitTimeout5.timeout, PriorityControl.toggle]
               - seq: [PriorityTimeout4.timeout, PriorityControl.toggle]
+            - PriorityPreparesTimeout6.begin
     - operating_secondary:
         start: False
         final: False
         micro:
-          seq: [PriorityPreparesTimeout6.timeout, SecondaryControl.toggle, PriorityControl.toggle]
+          seq: [PriorityPreparesTimeout6.timeout, SecondaryControl.toggle, PriorityControl.toggle, SecondaryTimeout2.begin]
     - operating_secondary_prepares:
         start: False
         final: False
         micro:
-          seq: [SecondaryTimeout2.timeout, SecondaryControl.toggle]
+          seq: [SecondaryTimeout2.timeout, SecondaryControl.toggle, SecondaryPreparesTimeout3.begin]
     - operating_priority:
         start: False
         final: False
         micro:
-          seq: [SecondaryPreparesTimeout3.timeout, SecondaryControl.toggle, PriorityControl.toggle]
+          seq: [SecondaryPreparesTimeout3.timeout, SecondaryControl.toggle, PriorityControl.toggle, PriorityTimeout4.begin]
     - interrupted:
         start: False
         final: True
         micro:
-          seq: [PoliceInterrupt.police, PriorityPolice.police, SecondaryPolice.police] # THIS IS AMBIGUOUS
+          seq:
+            - SecondaryTimeout2.end
+            - SecondaryPreparesTimeout3.end
+            - PriorityTimeout4.end
+            - InitTimeout5.end
+            - PoliceInterrupt.police
+            - PriorityPolice.police
+            - SecondaryPolice.police

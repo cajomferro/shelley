@@ -8,6 +8,8 @@ scy: trafficlightctrl.scy
 
 trafficlightctrl.scy: trafficlightctrl.yml timer.scy control.scy policeinterrupt.scy lightcommands.scy
 
+controller.scy: controller.yml timer.scy control.scy policeinterrupt.scy
+
 clean:
 	rm -f *.scy *.pdf *.int
 

@@ -23,9 +23,9 @@ device:
     PriorityPreparesTimeout6: Timer
     PriorityControl: Control
     SecondaryControl: Control
-	PoliceInterrupt : PoliceInterrupt # input
-	PriorityPolice : PoliceInterrupt # output
-	SecondaryPolice : PoliceInterrupt # output
+    PoliceInterrupt : PoliceInterrupt # input
+    PriorityPolice : PoliceInterrupt # output
+    SecondaryPolice : PoliceInterrupt # output
   events:
     - operating_init:
         start: True
@@ -38,7 +38,11 @@ device:
         start: False
         final: False
         micro:
-          seq: [InitTimeout5.timeout, PriorityControl.toggle, PriorityPreparesTimeout6.begin]
+          seq:
+            - xor:
+              - seq: [InitTimeout5.timeout, PriorityControl.toggle]
+              - seq: [PriorityTimeout4.timeout, PriorityControl.toggle]
+            - PriorityPreparesTimeout6.begin
     - operating_secondary:
         start: False
         final: False
@@ -56,6 +60,13 @@ device:
           seq: [SecondaryPreparesTimeout3.timeout, SecondaryControl.toggle, PriorityControl.toggle, PriorityTimeout4.begin]
     - interrupted:
         start: False
-        final: False
+        final: True
         micro:
-          seq: [PoliceInterrupt.police, PriorityPolice.police, SecondaryPolice.police]
+          seq:
+            - SecondaryTimeout2.end
+            - SecondaryPreparesTimeout3.end
+            - PriorityTimeout4.end
+            - InitTimeout5.end
+            - PoliceInterrupt.police
+            - PriorityPolice.police
+            - SecondaryPolice.police

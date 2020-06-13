@@ -5,18 +5,18 @@ device:
         start: True
         final: False
     - end:
-        start: True
+        start: True # this is need in order to avoid extra events on controller
         final: True
     - timeout:
         start: False
         final: True
   behavior:
+    - [begin, end]
     - [begin, timeout]
     - [end, begin]
     - [timeout, begin]
-    - [begin, end]
-    - [timeout, end]
-    - [end, end]
+    - [timeout, end] # this is need in order to avoid an extra event on trafficlightctrl
+    - [end, end] # this is need in order to avoid extra events on controller
 
 #test_macro:
 #  ok:

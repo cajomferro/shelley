@@ -349,6 +349,7 @@ def pad_trace(trace: Tuple[A, ...], alphabet: Collection[A]) -> NFA[Any, A]:
 @dataclass
 class MicroBehavior:
     nfa: NFA[DecodedState, str]
+    system: NFA[Any, str]
     dfa: DFA[Any, str] = field(init=False)
     failure: Optional[AmbiguityFailure] = field(init=False)
     is_valid: bool = field(init=False)
@@ -372,7 +373,10 @@ class MicroBehavior:
             for st in der:
                 if isinstance(st, MacroState) and st.event is not None:
                     rest.append(st.event)
-            return tuple(rest)
+            # Some traces have no macro traces; and this would be an invalid
+            # trace. We therefore need to ensure the found macro-trace exists
+            if rest in self.system:
+                return tuple(rest)
         raise ValueError(f"Sequence {seq} yields 0 derivations!")
 
     def get_traces_from_component_trace(
@@ -461,7 +465,7 @@ class MicroBehavior:
             start_state=MacroState(external_behavior.start_state),
             accepted_states=is_final,
         )
-        return cls(nfa)
+        return cls(nfa, external_behavior)
 
 
 @dataclass
@@ -522,6 +526,49 @@ class TriggerIntegrationFailure:
     micro_trace: MicroTrace
     macro_trace: MacroTrace
     component_errors: Dict[str, Tuple[MacroTrace, int]]
+
+    def component_to_micro(self, component: str, macro_trace: MacroTrace) -> int:
+        ops = tuple(component + "." + op for op in macro_trace)
+        idx = 0
+        for micro_idx, x in enumerate(self.micro_trace):
+            if x == ops[idx]:
+                idx += 1
+                if idx == len(ops):
+                    return micro_idx
+        raise ValueError(f"Unknown: {component} {macro_trace}")
+
+    def _str_trace(self, lbl, trace, errs):
+        elems = []
+        for idx, op in enumerate(trace):
+            if idx in errs:
+                elems.append("^" * len(op))
+            else:
+                elems.append(" " * len(op))
+        micro = lbl + ", ".join(trace)
+        highlight = " " * len(lbl) + "  ".join(elems)
+        return micro, highlight
+
+    def __str__(self):
+        base = repr(self)
+        micro_idx = set()
+        for name, (macro_trace, idx) in self.component_errors.items():
+            micro_idx.add(self.component_to_micro(name, macro_trace[0 : idx + 1]))
+        # result = "Error trace: "
+        macro = "* system: " + ", ".join(self.macro_trace)
+        micro, micro_hl = self._str_trace(
+            "* integration: ", self.micro_trace, micro_idx
+        )
+        lines = []
+        for name, (macro_trace, err_idx) in sorted(
+            self.component_errors.items(), key=lambda x: x[0]
+        ):
+            trace, trace_hl = self._str_trace(
+                lbl=f"  {name!r}: ", trace=macro_trace, errs={err_idx,},
+            )
+            lines.append(trace)
+            lines.append(trace_hl)
+        err = "\n".join(lines)
+        return f"integration error\n\n{macro}\n{micro}\n{micro_hl}\nInstance errors:\n\n{err}"
 
     @classmethod
     def make(

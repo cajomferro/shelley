@@ -1,0 +1,29 @@
+device:
+    name: TrafficCtrl
+    components:
+        l: TrafficLight
+    events:
+    - run:
+        start: true
+        final: true
+        micro:
+            seq: [l.green]
+    - halt:
+        start: true
+        final: true
+        micro:
+            seq: [l.yellow, l.red]
+    - police:
+        start: true
+        final: true
+        micro:
+            seq: [l.blinkOff, l.blinkOn]
+
+    behavior:
+    - [run, halt]
+    - [halt, run]
+    - [police, run]
+    - [police, halt]
+    - [run, police]
+    - [halt, police]
+    - [police, police]

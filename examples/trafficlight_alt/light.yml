@@ -1,0 +1,33 @@
+device:
+    name: TrafficLight
+    events:
+    - red:
+        start: true
+        final: true
+    - green:
+        start: true
+        final: true
+    - yellow:
+        start: true
+        final: true
+    - blinkOff:
+        start: true
+        final: true
+    - blinkOn:
+        start: true
+        final: true
+
+    behavior:
+    - [red, green]
+    - [green, yellow]
+    - [yellow, red]
+
+    - [red, blinkOff]
+    - [green, blinkOff]
+
+    - [blinkOn, red]
+    - [blinkOn, green]
+    - [blinkOn, yellow]
+
+    - [blinkOff, blinkOn]
+    - [blinkOn, blinkOff]

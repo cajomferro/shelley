@@ -61,4 +61,7 @@ device:
         start: False
         final: True
         micro:
-          seq: [PoliceInterrupt.police, PriorityPolice.police, SecondaryPolice.police] # THIS IS AMBIGUOUS
+          seq:
+            - PoliceInterrupt.police
+            - PriorityPolice.police
+            - SecondaryPolice.police

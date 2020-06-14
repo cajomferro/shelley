@@ -1,0 +1,16 @@
+device:
+  name: Crossroad
+  behavior:
+    -
+  components:
+    controller: Controller
+    prior: TrafficLightCtrl
+    secondary: TrafficLightCtrl
+  events:
+    - ???:
+        start: True
+        final: False
+        micro:
+#          xor:
+#            - seq: [PriorityControl.toggle]
+            seq: [PoliceInterrupt.police, PriorityPolice.police, SecondaryPolice.police] # THIS IS AMBIGUOUS

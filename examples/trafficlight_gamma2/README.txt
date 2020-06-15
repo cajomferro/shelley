@@ -5,3 +5,5 @@ the two trafficlights and thus the controller is also the crossroad.
 
 I had to differentiate bettwen police "on" and "off". Otherwise it would be more difficult to model the example without
 having ambiguity.
+
+Also, in the original example, they ignore the 'blinking' event because TrafficLightCtrl and Controller are independent entities.

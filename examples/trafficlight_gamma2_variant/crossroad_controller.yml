@@ -1,0 +1,93 @@
+# A device that controls two traffic lights in a crossroad
+
+device:
+  name: CrossroadController
+  behavior:
+    # operating
+    - [operating_init, operating_priority_prepares]
+    - [operating_reset, operating_priority_prepares]
+    - [operating_priority_prepares, operating_secondary]
+    - [operating_secondary, operating_secondary_prepares]
+    - [operating_secondary_prepares, operating_priority]
+    - [operating_priority, operating_priority_prepares]
+    # interrupted -> operating
+    - [interrupted_blinkingyellow, operating_reset]
+    # operating -> interrupted
+    - [operating_init, interrupted]
+    - [operating_priority_prepares, interrupted]
+    - [operating_secondary, interrupted]
+    - [operating_secondary_prepares, interrupted]
+    - [operating_priority, interrupted]
+    - [interrupted, interrupted_blinkingyellow]
+    # interrupted
+    - [interrupted_blinkingyellow, interrupted_blinkingyellow]
+  components:
+    # timers to coordinate 2 traffic lights
+    SecondaryTimeout2: Timer
+    SecondaryPreparesTimeout3: Timer
+    PriorityTimeout4: Timer
+    InitTimeout5: Timer
+    PriorityPreparesTimeout6: Timer
+    # 2 traffic lights
+    PriorityControl: TrafficLightCtrl # Control
+    SecondaryControl: TrafficLightCtrl # Control
+#    PoliceInterrupt : PoliceInterrupt # input
+#    PriorityPolice : PoliceInterrupt # output
+#    SecondaryPolice : PoliceInterrupt # output
+  events:
+    - operating_init:
+        start: True
+        final: False
+        micro:
+          seq: [PriorityControl.init_normal, SecondaryControl.init_normal, PriorityControl.normal_green]
+#          xor:
+#            - seq: [PriorityControl.toggle]
+#            - seq: [PoliceInterrupt.police, PriorityPolice.police, SecondaryPolice.police] # THIS IS AMBIGUOUS
+    - operating_reset:
+        start: False
+        final: False
+        micro:
+          seq: [PriorityControl.reset_normal, SecondaryControl.reset_normal, PriorityControl.normal_green]
+    - operating_priority_prepares:
+        start: False
+        final: False
+        micro:
+          seq:
+            - xor:
+              - InitTimeout5.timeout
+              - PriorityTimeout4.timeout
+            - PriorityControl.normal_yellow
+#          seq:
+#            - xor:
+#              - InitTimeout5.timeout
+#              - PriorityTimeout4.timeout
+#            - PriorityControl.toggle
+    - operating_secondary:
+        start: False
+        final: False
+        micro:
+          seq: [PriorityPreparesTimeout6.timeout, SecondaryControl.normal_green, PriorityControl.normal_red]
+#          seq: [PriorityPreparesTimeout6.timeout, SecondaryControl.toggle, PriorityControl.toggle]
+    - operating_secondary_prepares:
+        start: False
+        final: False
+        micro:
+          seq: [SecondaryTimeout2.timeout, SecondaryControl.normal_yellow]
+#          seq: [SecondaryTimeout2.timeout, SecondaryControl.toggle]
+    - operating_priority:
+        start: False
+        final: False
+        micro:
+          seq: [SecondaryPreparesTimeout3.timeout, SecondaryControl.normal_red, PriorityControl.normal_green]
+#          seq: [SecondaryPreparesTimeout3.timeout, SecondaryControl.toggle, PriorityControl.toggle]
+    - interrupted:
+        start: False
+        final: False
+        micro:
+          seq: [PriorityControl.init_interrupted, SecondaryControl.init_interrupted]
+    - interrupted_blinkingyellow:
+        start: False
+        final: True
+        micro:
+          seq: [PriorityControl.interrupted_blinkingyellow, SecondaryControl.interrupted_blinkingyellow]
+#          seq: [PoliceInterrupt.police, PriorityPolice.police, SecondaryPolice.police]

@@ -5,29 +5,28 @@ device:
         start: true
         final: true
     - green:
-        start: true
+        start: false
         final: true
     - yellow:
         start: true
         final: true
-    - blinkOff:
-        start: true
-        final: true
-    - blinkOn:
-        start: true
+    - none:
+        start: false
         final: true
 
     behavior:
-    - [red, green]
-    - [green, yellow]
+    # Yellow
+    - [yellow, none]
     - [yellow, red]
-
-    - [red, blinkOff]
-    - [green, blinkOff]
-
-    - [blinkOn, red]
-    - [blinkOn, green]
-    - [blinkOn, yellow]
-
-    - [blinkOff, blinkOn]
-    - [blinkOn, blinkOff]
+    - [yellow, green]
+    # None
+    - [none, yellow]
+    - [none, red]
+    - [none, green]
+    - [none, none]
+    # Red
+    - [red, yellow]
+    - [red, green]
+    # Green
+    - [green, yellow]
+    - [green, none]

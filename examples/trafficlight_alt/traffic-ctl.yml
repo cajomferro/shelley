@@ -4,7 +4,7 @@ device:
         l: TrafficLight
     events:
     - run:
-        start: true
+        start: false
         final: true
         micro:
             seq: [l.green]
@@ -17,7 +17,7 @@ device:
         start: true
         final: true
         micro:
-            seq: [l.blinkOff, l.blinkOn]
+            seq: [l.yellow, l.none]
 
     behavior:
     - [run, halt]

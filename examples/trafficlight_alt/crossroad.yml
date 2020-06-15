@@ -4,22 +4,26 @@ device:
         r: TrafficController
         g: TrafficController
     events:
-    - step1:
+    - init:
         start: true
+        final: false
+        micro: [g.halt]
+    - step1:
+        start: false
         final: true
         micro:
             xor:
             - seq: [r.run, g.halt]
             - seq: [g.halt, r.run]
     - step2:
-        start: true
+        start: false
         final: true
         micro:
             xor:
             - seq: [r.halt, g.run]
             - seq: [g.run, r.halt]
     - police:
-        start: true
+        start: false
         final: true
         micro:
             xor:
@@ -27,6 +31,7 @@ device:
             - seq: [g.police, r.police]
 
     behavior:
+    - [init, step2]
     - [step1, step2]
     - [step2, step1]
     - [police, police]

@@ -6,12 +6,14 @@ device:
     - [normal_green, normal_yellow]
     - [normal_yellow, normal_red]
     # normal -> interrupted
-    - [normal_red, interrupted_blinkingyellow]
-    - [normal_green, interrupted_blinkingyellow]
-    - [normal_yellow, interrupted_blinkingyellow]
+    - [normal_red, police_on]
+    - [normal_green, police_on]
+    - [normal_yellow, police_on]
+    - [police_on, interrupted_blinkingyellow]
     # interrupted -> normal
-    - [interrupted_blinkingyellow, normal_red]
-    - [interrupted_black, normal_red]
+    - [interrupted_blinkingyellow, police_off]
+    - [interrupted_black, police_off]
+    - [police_off, normal_red]
     # interrupted
     - [interrupted_blinkingyellow, interrupted_black]
     - [interrupted_black, interrupted_blinkingyellow]
@@ -22,14 +24,20 @@ device:
     BlackTimeout4: Timer
     LightCommands: LightCommands # output
   events:
+    - police_on:
+        start: False
+        final: True
+        micro: PoliceInterrupt.on
+    - police_off:
+        start: False
+        final: True
+        micro: PoliceInterrupt.off
     - normal_red:
         start: True
         final: True
         micro:
           seq:
-            - xor:
-                - PoliceInterrupt.police
-                - Control.toggle
+            - Control.toggle
             - LightCommands.displayRed
     - normal_green:
         start: False
@@ -40,13 +48,11 @@ device:
         final: False
         micro: [Control.toggle, LightCommands.displayYellow]
     - interrupted_blinkingyellow:
-        start: True
+        start: False
         final: False
         micro:
           seq:
-            - xor:
-              - BlackTimeout4.timeout
-              - PoliceInterrupt.police
+            - BlackTimeout4.timeout
             - LightCommands.displayYellow
     - interrupted_black:
         start: False

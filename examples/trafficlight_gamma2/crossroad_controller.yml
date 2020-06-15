@@ -1,5 +1,5 @@
 device:
-  name: Controller
+  name: CrossroadController
   behavior:
     # operating
     - [operating_init, operating_priority_prepares]

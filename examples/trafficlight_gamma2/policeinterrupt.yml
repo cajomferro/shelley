@@ -1,8 +1,12 @@
 device:
   name: PoliceInterrupt
   events:
-    - police:
+    - on:
         start: True
         final: True
+    - off:
+        start: False
+        final: True
   behavior:
-    - [police, police]
+    - [on, off]
+    - [off, on]

@@ -6,21 +6,22 @@ device:
   name: TrafficLightCtrl
   behavior:
     # normal
-    - [init_normal, normal_green]
+    - [normal_entry0, normal_green]
     - [normal_red, normal_green]
     - [normal_green, normal_yellow]
     - [normal_yellow, normal_red]
     # normal -> interrupted
-    - [init_normal, interrupted]
-    - [reset_normal, interrupted]
-    - [normal_red, interrupted]
-    - [normal_green, interrupted]
-    - [normal_yellow, interrupted]
-    - [interrupted, interrupted_black]
+    - [normal_entry0, interrupted_entry1]
+    - [normal_entry2, interrupted_entry1]
+    - [normal_red, interrupted_entry1]
+    - [normal_green, interrupted_entry1]
+    - [normal_yellow, interrupted_entry1]
+    - [interrupted_entry1, interrupted_black]
     # interrupted -> normal
-    - [interrupted_blinkingyellow, reset_normal]
-    - [interrupted_black, reset_normal]
-    - [reset_normal, normal_green]
+    - [interrupted_blinkingyellow, normal_entry2]
+    - [interrupted_black, normal_entry2]
+    - [interrupted_entry1, normal_entry2]
+    - [normal_entry2, normal_green]
     # interrupted
     - [interrupted_blinkingyellow, interrupted_black]
     - [interrupted_black, interrupted_blinkingyellow]
@@ -31,36 +32,36 @@ device:
     BlackTimeout4: Timer
     LightCommands: LightCommands # output
   events:
-    - init_normal:
+    - normal_entry0:
         start: True
-        final: False
+        final: True
         micro: LightCommands.displayRed
-    - reset_normal:
+    - normal_entry2:
         start: False
-        final: False
+        final: True
         micro:
           seq: [PoliceInterrupt.off, LightCommands.displayRed]
     - normal_red:
         start: False
-        final: False
+        final: True
         micro:
           seq: [Control.toggle, LightCommands.displayRed]
     - normal_green:
         start: False
-        final: False
+        final: True
         micro: [Control.toggle, LightCommands.displayGreen]
     - normal_yellow:
         start: False
-        final: False
+        final: True
         micro: [Control.toggle, LightCommands.displayYellow]
-    - interrupted:
+    - interrupted_entry1:
         start: False
-        final: False
+        final: True
         micro:
           seq: [PoliceInterrupt.on, LightCommands.displayYellow]
     - interrupted_blinkingyellow:
         start: False
-        final: False
+        final: True
         micro:
           seq: [BlackTimeout4.timeout, LightCommands.displayYellow]
     - interrupted_black:

@@ -3,7 +3,7 @@ I am merging "crossroad" and "controller" as a single entity because in the orig
 a connector, it doesn't have any behavior. By modelling this example using Shelley, the controller "kind of incorporates"
 the two trafficlights and thus the controller is also the crossroad.
 
-I had to differentiate bettwen police "on" and "off". Otherwise it would be more difficult to model the example without
+I had to differentiate between police "on" and "off". Otherwise it would be more difficult to model the example without
 having ambiguity.
 
-Also, in the original example, they ignore the 'blinking' event because TrafficLightCtrl and Controller are independent entities.
+Also, in the original example, they ignore the 'blinking' event in Controller because TrafficLightCtrl and Controller are independent entities.

@@ -1,0 +1,38 @@
+device:
+  name: DeskLamp
+  behavior:
+    - [level2, level2]
+    - [level1, off]
+    - [off, level1]
+  components:
+    l: Led
+    b: Button
+  events:
+    - level1:
+        start: True
+        micro: [b.pressed, l.on]
+    - off:
+        micro: [b.pressed, l.off]
+    - level2: # this is unreachable!
+        start: False
+        micro: [l.on, l.off]
+
+
+test_macro:
+  ok:
+    valid1: [level1, off]
+    valid2: [level1, off, level1, off]
+    valid3: [level1, off, level1]
+  fail:
+    invalid1: [off]
+    invalid2: [level1, level1]
+
+test_micro:
+  ok:
+    valid1: [b.pressed, l.on, b.pressed, l.off]
+  fail:
+    invalid1: [l.on, b.pressed, l.off]
+    invalid2: [l.on, l.off, b.pressed]
+    invalid3: [b.pressed, l.on, l.off]
+    invalid4: [b.pressed, l.off, l.on]
+    invalid5: [b.pressed, l.on, b.pressed, l.on]

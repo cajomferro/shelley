@@ -72,7 +72,9 @@ device:
         start: False
         final: True
         micro:
-          seq: [PriorityControl.interrupted_entry1, SecondaryControl.interrupted_entry1]
+          xor:
+            - seq: [PriorityControl.interrupted_entry1, SecondaryControl.interrupted_entry1]
+            - seq: [SecondaryControl.interrupted_entry1, PriorityControl.interrupted_entry1]
     - blinking: # in the original example, they ignore this because TrafficLightCtrl and Controller are independent entities
         start: False
         final: True

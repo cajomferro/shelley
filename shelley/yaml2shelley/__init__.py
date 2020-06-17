@@ -236,6 +236,10 @@ def _parse_event(
         # XXX: this causes a bug
         try:
             _parse_triggers(micro, event, components, triggers)
+        except TriggersListDuplicatedError as err:
+            raise OperationDeclError(
+                names=[event_name], reason=f"{event_name} already exists!"
+            )
         except OperationDeclError:
             raise
         except ShelleyParserError as err:
@@ -332,6 +336,7 @@ def _parse_triggers(
         )
 
     assert trigger_rule is not None
+
     triggers.create(event, trigger_rule)
 
 

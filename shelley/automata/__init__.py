@@ -765,25 +765,23 @@ class AssembledMicroBehavior:
         )
 
 
-def ensure_well_formed(dev: Device):
+def ensure_well_formed(dev: Device) -> None:
     evts = set(dev.events)
     start_evts = set(dev.start_events)
     if not (start_evts <= evts):
-        return ValueError(
+        raise ValueError(
             "start_events must be included in events, got these extra: ",
             start_evts - evts,
         )
     # Get keys
     trigs = set(dev.triggers)
     if not (trigs <= evts):
-        return ValueError(
+        raise ValueError(
             "All events must be defined in triggers. These triggers are undefined events: ",
             trigs - evts,
         )
     if trigs != evts:
-        return ValueError(
-            "The following trigger rules were not defined: ", evts - trigs
-        )
+        raise ValueError("The following trigger rules were not defined: ", evts - trigs)
 
 
 def ensure_reachability(external_behavior: NFA[Any, str], events: List[str]):

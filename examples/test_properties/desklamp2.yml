@@ -1,0 +1,16 @@
+device:
+  name: DeskLamp
+  behavior:
+    - [level2, level1] # level2 is unreachable!
+    - [level1, off]
+    - [off, level1]
+  events:
+    - level1:
+        start: true
+        final: false
+    - off:
+        start: false
+        final: true
+    - level2:
+        start: false
+        final: true

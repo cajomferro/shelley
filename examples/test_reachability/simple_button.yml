@@ -1,4 +1,0 @@
-device:
-  name: SimpleButton
-  behavior:
-    - [pressed, pressed]

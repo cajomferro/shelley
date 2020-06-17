@@ -147,8 +147,8 @@ def build_external_behavior(
             f"Start state '{start_state}' cannot have the same name as an event."
         )
 
-    # build NFA states
-    states: Set[str] = set(final_events)
+    # build NFA accepted states
+    accepted_states: Set[str] = set(final_events)
 
     # build NFA transitions (arcs)
     tsx: TNFATransitions = _build_nfa_transitions(behavior, start_events, start_state)
@@ -158,7 +158,7 @@ def build_external_behavior(
         alphabet=frozenset(events),
         transition_func=NFA.transition_table(tsx),
         start_state=start_state,
-        accepted_states=states,
+        accepted_states=accepted_states,
     )
 
 
@@ -399,7 +399,7 @@ class MicroBehavior:
     ) -> "MicroBehavior":
         """
         Micro behavior
-        
+
         How:
             - convert external behavior (NFA) and triggers (REGEX) to DFA (needed for ambiguity)
             -
@@ -786,6 +786,18 @@ def ensure_well_formed(dev: Device):
         )
 
 
+def ensure_reachability(external_behavior: NFA[Any, str], events: List[str]):
+    """
+    Ensure that all events in the behavior are reachable states in the system NFA
+    :param external_behavior:
+    :param events:
+    :return:
+    """
+    for event in events:
+        if event not in external_behavior.states:
+            raise ValueError(f"The following event is unreachable: {event}")
+
+
 def demultiplex(seq: Iterable[str]) -> Mapping[str, List[str]]:
     sequences: Dict[str, List[str]] = dict()
     for msg in seq:
@@ -905,6 +917,7 @@ class AssembledDevice:
         external_behavior: NFA = build_external_behavior(
             dev.behavior, dev.start_events, dev.final_events, dev.events
         )
+        ensure_reachability(external_behavior, dev.events)
         ext = CheckedDevice(external_behavior)
         micro: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]] = None
         fail = None

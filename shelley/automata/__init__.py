@@ -791,8 +791,9 @@ def ensure_reachability(external_behavior: NFA[Any, str], events: List[str]):
     :param events:
     :return:
     """
+    all_states = set(external_behavior.states)
     for event in events:
-        if event not in external_behavior.states:
+        if event not in all_states:
             raise ValueError(f"The following event is unreachable: {event}")
 
 

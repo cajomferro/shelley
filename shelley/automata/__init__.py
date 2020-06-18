@@ -630,10 +630,11 @@ class TriggerIntegrationFailure:
 
 @dataclass
 class UnusableOperationsFailure:
-    operations: FrozenSet[str]
+    unusable_operations: FrozenSet[str]
+    sink_operations: FrozenSet[str]
 
     def __str__(self):
-        return f"Unusable operation error!\nThe following operations are unreachable: {', '.join(self.operations)}"
+        return f"Unusable operation error!\nThe following operations are unreachable: {', '.join(self.unusable_operations)}\nThe following operations are sink: {', '.join(self.sink_operations)}"
 
 
 TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure, UnusableOperationsFailure]
@@ -874,14 +875,30 @@ class AssembledDevice:
     unusable_operations_time: timedelta = field(init=False)
 
     def __post_init__(self):
-        # Calculate unreachable ops:
+        # Calculate unreachable and sink ops:
         start = timer()
+
+        # only includes states that are reachable (and remove start)
         all_states = set(self.external.nfa.states)
         all_states.remove(self.external.nfa.start_state)
+
+        # only includes states that are reachable and not sink (and remove start)
+        all_states_without_sink = set(self.external.nfa.remove_sink_states().states)
+        all_states_without_sink.remove(self.external.nfa.start_state)
+
+        # collect unreachable operations
         self.unusable_operations = frozenset(set(self.operations) - all_states)
+
+        # collect sink operations (does not include unreachable states!)
+        self.sink_operations = frozenset(all_states - all_states_without_sink)
+
         self.unusable_operations_time = get_elapsed_time(start)
-        if self.failure is None and len(self.unusable_operations) > 0:
-            self.failure = UnusableOperationsFailure(self.unusable_operations)
+
+        if self.failure is None:
+            if len(self.unusable_operations) > 0 or len(self.sink_operations) > 0:
+                self.failure = UnusableOperationsFailure(
+                    self.unusable_operations, self.sink_operations
+                )
         # End of unreachable ops
         self.is_valid = self.failure is None
 

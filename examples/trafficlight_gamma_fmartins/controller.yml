@@ -1,0 +1,58 @@
+# A device that controls two traffic lights in a crossroad
+
+device:
+  name: Controller
+  events:
+    - init: {start: true}
+    - toggle_init: {start: false}
+    - InitTimeout5: {start: false}
+    - priority_prepares: {start: false}
+    - toggle_priority_prepares: {start: false}
+    - PriorityPreparesTimeout6: {start: false}
+    - secondary: {start: false}
+    - toggle_secondary: {start: false}
+    - SecondaryTimeout2: {start: false}
+    - secondary_prepares: {start: false}
+    - toggle_secondary_prepares: {start: false}
+    - SecondaryPreparesTimeout3: {start: false}
+    - priority: {start: false}
+    - toggle_priority: {start: false}
+    - PriorityTimeout4: {start: false}
+    - police_on: {start: false}
+    - priority_police_on: {start: false}
+    - secondary_police_on: {start: false}
+    - police_off: {start: false}
+    - priority_police_off: {start: false}
+    - secondary_police_off: {start: false}
+    - interrupted: {start: false}
+  behavior:
+    # operating
+    - [init, toggle_init]
+    - [toggle_init, InitTimeout5]
+    - [InitTimeout5, priority_prepares]
+    - [priority_prepares, toggle_priority_prepares]
+    - [toggle_priority_prepares, PriorityPreparesTimeout6]
+    - [PriorityPreparesTimeout6, secondary]
+    - [secondary, toggle_secondary]
+    - [toggle_secondary, SecondaryTimeout2]
+    - [SecondaryTimeout2, secondary_prepares]
+    - [secondary_prepares, toggle_secondary_prepares]
+    - [toggle_secondary_prepares, SecondaryPreparesTimeout3]
+    - [SecondaryPreparesTimeout3, priority]
+    - [priority, toggle_priority]
+    - [toggle_priority, PriorityTimeout4]
+    - [PriorityTimeout4, priority_prepares]
+    # operating to interrupted
+    - [init, police_on]
+    - [priority_prepares, police_on]
+    - [secondary, police_on]
+    - [secondary_prepares, police_on]
+    - [priority, police_on]
+    - [police_on, priority_police_on]
+    - [priority_police_on, secondary_police_on]
+    - [secondary_police_on, interrupted]
+    # interrupted to operating
+    - [interrupted, police_off]
+    - [police_off, priority_police_off]
+    - [priority_police_off, secondary_police_off]
+    - [secondary_police_off, priority_prepares]

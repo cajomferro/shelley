@@ -1,0 +1,58 @@
+# A device that controls two traffic lights in a crossroad
+
+device:
+  name: Crossroad
+  components:
+    c : Controller
+    p : TrafficLightCtrl
+    s : TrafficLightCtrl
+  events:
+    - init:
+        start: true
+        micro:
+          seq: [c.init, c.toggle_init, p.display_red, s.display_red]
+    - police_interrupt: {start: false}
+    - lcp_red:
+        start: false
+        micro:
+          seq: [p.toggle_red, p.display_red]
+    - lcp_green:
+        start: false
+        micro:
+          seq: [p.toggle_green, p.display_green]
+    - lcp_yellow:
+          seq: [p.toggle_yellow, p.display_yellow]
+    - lcp_none: {start: false}
+    - lcs_red:
+        start: false
+        micro:
+        seq: [s.toggle_red, s.display_red]
+    - lcs_green:
+        seq: [s.toggle_green, s.display_green]
+    - lcs_yellow:
+        seq: [s.toggle_yellow, s.display_yellow]
+    - lcs_none: {start: false}
+  behavior:
+    # operating
+    - [init, lcp_green] # init
+    - [lcp_green, lcp_yellow] # priority_prepares
+    - [lcp_yellow, lcp_red] # priority_prepares
+    - [lcp_red, lcs_green] # secondary
+    - [lcs_green, lcs_yellow] # secondary_prepares
+    - [lcs_yellow, lcs_red] # secondary_prepares
+    # interrupted
+    - [init, police_interrupt]
+    - [lcp_red, police_interrupt]
+    - [lcp_green, police_interrupt]
+    - [lcp_yellow, police_interrupt]
+    - [lcp_none, police_interrupt]
+    - [lcs_red, police_interrupt]
+    - [lcs_green, police_interrupt]
+    - [lcs_yellow, police_interrupt]
+    - [lcs_none, police_interrupt]
+    # interrupted to operating
+    - [blink, police_interrupt_off]
+    - [police_interrupt_off, lcp_red]
+    # interrupted
+    - [police_interrupt, blink]
+    - [blink, blink]

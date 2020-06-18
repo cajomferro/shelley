@@ -868,9 +868,10 @@ class Timings:
 class AssembledDevice:
     external: CheckedDevice
     internal: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]]
-    is_valid: bool = field(init=False)
     failure: Optional[TFailure]
     operations: FrozenSet[str]
+    is_valid: bool = field(init=False)
+    sink_operations: FrozenSet[str] = field(init=False)
     unusable_operations: FrozenSet[str] = field(init=False)
     unusable_operations_time: timedelta = field(init=False)
 

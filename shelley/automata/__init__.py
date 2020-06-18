@@ -628,7 +628,12 @@ class TriggerIntegrationFailure:
         )
 
 
-TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure]
+@dataclass
+class UnusableOperationsFailure:
+    operations: FrozenSet[str]
+
+
+TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure, UnusableOperationsFailure]
 
 
 @dataclass
@@ -784,20 +789,6 @@ def ensure_well_formed(dev: Device) -> None:
         raise ValueError("The following trigger rules were not defined: ", evts - trigs)
 
 
-def ensure_reachability(external_behavior: NFA[Any, str], events: List[str]):
-    """
-    Ensure that all events in the behavior are reachable states in the system NFA
-    :param external_behavior:
-    :param events:
-    :return:
-    """
-    all_states = set(external_behavior.states)
-    unreachable = all_states - set(events)
-    unreachable.remove(external_behavior.start_state)
-    if len(unreachable) > 0:
-        raise ValueError(f"Unreachable operations: {unreachable}")
-
-
 def demultiplex(seq: Iterable[str]) -> Mapping[str, List[str]]:
     sequences: Dict[str, List[str]] = dict()
     for msg in seq:
@@ -850,6 +841,7 @@ def model_check(
 class Timings:
     ambiguity_check_time: Optional[timedelta]
     integration_check_time: Optional[timedelta]
+    unusable_operations_time: timedelta
     total_check_time: timedelta = field(init=False)
 
     def __post_init__(self):
@@ -863,7 +855,9 @@ class Timings:
             if self.integration_check_time is None
             else self.integration_check_time
         )
-        object.__setattr__(self, "total_check_time", t1 + t2)
+        object.__setattr__(
+            self, "total_check_time", t1 + t2 + self.unusable_operations_time
+        )
 
 
 @dataclass
@@ -871,9 +865,21 @@ class AssembledDevice:
     external: CheckedDevice
     internal: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]]
     is_valid: bool = field(init=False)
-    failure: Optional[Union[AmbiguityFailure, TriggerIntegrationFailure]]
+    failure: Optional[TFailure]
+    operations: FrozenSet[str]
+    unusable_operations: FrozenSet[str] = field(init=False)
+    unusable_operations_time: timedelta = field(init=False)
 
     def __post_init__(self):
+        # Calculate unreachable ops:
+        start = timer()
+        all_states = set(self.external.nfa.states)
+        all_states.remove(self.external.nfa.start_state)
+        self.unusable_operations = frozenset(all_states - set(self.operations))
+        self.unusable_operations_time = get_elapsed_time(start)
+        if self.failure is None and len(self.unusable_operations) > 0:
+            self.failure = UnusableOperationsFailure(self.unusable_operations)
+        # End of unreachable ops
         self.is_valid = self.failure is None
 
     def get_timings(self) -> Timings:
@@ -884,6 +890,7 @@ class AssembledDevice:
             integration_check_time=None
             if self.internal is None
             else self.internal.validation_time,
+            unusable_operations_time=self.unusable_operations_time,
         )
 
     def internal_model_check(
@@ -917,7 +924,6 @@ class AssembledDevice:
         external_behavior: NFA = build_external_behavior(
             dev.behavior, dev.start_events, dev.final_events, dev.events
         )
-        ensure_reachability(external_behavior, dev.events)
         ext = CheckedDevice(external_behavior)
         micro: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]] = None
         fail = None
@@ -941,4 +947,6 @@ class AssembledDevice:
                 )
             fail = micro.get_failure(known_devices, dev.components)
 
-        return cls(external=ext, internal=micro, failure=fail)
+        return cls(
+            external=ext, internal=micro, failure=fail, operations=frozenset(dev.events)
+        )

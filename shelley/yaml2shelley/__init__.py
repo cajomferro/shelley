@@ -209,7 +209,7 @@ def _parse_event(
 ) -> Event:
     event: Optional[Event] = None
 
-    #if isinstance(src, str):
+    # if isinstance(src, str):
     #    event = events.create(src)
     #    _parse_triggers(None, event, components, triggers)
     if isinstance(src, dict):

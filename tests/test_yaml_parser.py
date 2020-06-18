@@ -62,7 +62,10 @@ def test_events_from_behavior() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "behavior": [[{"pressed": {"start": True}}, {"released": {"start": False}}], ["released", "pressed"]],
+            "behavior": [
+                [{"pressed": {"start": True}}, {"released": {"start": False}}],
+                ["released", "pressed"],
+            ],
         }
     }
 
@@ -77,7 +80,10 @@ def test_events_no_components_but_triggers() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": [{"pressed": {"start": True}}, {"released": {"start": False, "micro": ["x.xxx"]}}],
+            "events": [
+                {"pressed": {"start": True}},
+                {"released": {"start": False, "micro": ["x.xxx"]}},
+            ],
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -96,7 +102,10 @@ def test_auto_create_declared_event_without_micro() -> None:
         "device": {
             "name": "SmartButton",
             "components": {"b": "Button"},
-            "events": [{"pressed": {"start": True}}, {"released": {"start": False, "micro": ["b.released"]}}],
+            "events": [
+                {"pressed": {"start": True}},
+                {"released": {"start": False, "micro": ["b.released"]}},
+            ],
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -115,7 +124,12 @@ def test_auto_create_undeclared_event_with_micro() -> None:
         "device": {
             "name": "SmartButton",
             "components": {"b": "Button"},
-            "events": [{"pressed": {"start": True}, "released": {"start": True, "micro": ["b.released"]}}],
+            "events": [
+                {
+                    "pressed": {"start": True},
+                    "released": {"start": True, "micro": ["b.released"]},
+                }
+            ],
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }

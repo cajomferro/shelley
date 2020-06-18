@@ -13,6 +13,16 @@ from shelley.shelleyc import DeviceMapping
 httpclient_yml = """
 device:
   name: HTTPClient
+  events:
+    - connected: {start: true}
+    - disconnected: {start: false}
+    - get: {start: false}
+    - post: {start: false}
+    - connect_failed: {start: false}
+    - response200: {start: false}
+    - response404: {start: false}
+    - response401: {start: false}
+    - response500: {start: false}
   behavior:
     - [connected, get]  # client.connect(host, port)) succeeded
     - [connected, post]  # client.connect(host, port)) succeeded
@@ -49,6 +59,13 @@ device:
         start: True
     - ssid_failed:
         start: True
+    - connection_timeout: {start: true}
+    - connected: {start: false}
+    - print_data_ready: {start: false}
+    - print_timeout: {start: false}
+    - ssid_left: {start: false}
+    - disconnected: {start: false}
+
   behavior:
     - [connection_timeout, connected]
     - [ssid_joined, connected]

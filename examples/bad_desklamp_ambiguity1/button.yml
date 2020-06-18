@@ -1,5 +1,12 @@
 device:
   name: Button
+  events:
+  - press:
+      start: true
+      final: true
+  - release:
+      start: false
+      final: true
   behavior:
     - [press, release]
     - [release, press]

@@ -11,7 +11,13 @@ def test_button() -> None:
 
     yaml_src = """device:
   name: Button
-  events: [pressed,released]
+  events:
+  - pressed:
+      start: true
+      final: true
+  - released:
+      start: false
+      final: true
   behavior:
     - [pressed, released]
     - [released, pressed]
@@ -34,7 +40,13 @@ def test_led() -> None:
 
     yaml_src = """device:
   name: Led
-  events: [on, off] # on is start event
+  events:
+  - on:
+      start: true
+      final: true
+  - off:
+      start: false
+      final: true
   behavior:
     - [on, off]
     - [off, on]"""
@@ -56,7 +68,16 @@ def test_timer() -> None:
 
     yaml_src = """device:
   name: Timer
-  events: [started, canceled, timeout] # started is start event
+  events:
+    - started:
+        start: True
+        final: true
+    - canceled:
+        start: False
+        final: True
+    - timeout:
+        start: False
+        final: True
   behavior:
     - [started, canceled]
     - [started, timeout]

@@ -209,10 +209,10 @@ def _parse_event(
 ) -> Event:
     event: Optional[Event] = None
 
-    if isinstance(src, str):
-        event = events.create(src)
-        _parse_triggers(None, event, components, triggers)
-    elif isinstance(src, dict):
+    #if isinstance(src, str):
+    #    event = events.create(src)
+    #    _parse_triggers(None, event, components, triggers)
+    if isinstance(src, dict):
         event_name: Optional[str] = None
         try:
             event_name = list(src)[0]

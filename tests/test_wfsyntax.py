@@ -5,21 +5,42 @@ from shelley.ast.visitors.wfsyntax import CheckWFSyntaxVisitor
 
 yaml_led = """device:
   name: Led
-  events: [on, off] # on is start event
+  events:
+  - on:
+      start: true
+      final: true
+  - off:
+      start: false
+      final: true
   behavior:
     - [on, off]
     - [off, on]"""
 
 yaml_button = """device:
   name: Button
-  events: [pressed,released]
+  events:
+  - pressed:
+      start: true
+      final: true
+  - released:
+      start: false
+      final: true
   behavior:
     - [pressed, released]
     - [released, pressed]"""
 
 yaml_timer = """device:
   name: Timer
-  events: [started, canceled, timeout] # started is start event
+  events:
+    - started:
+        start: True
+        final: False
+    - canceled:
+        start: False
+        final: True
+    - timeout:
+        start: False
+        final: True
   behavior:
     - [started, canceled]
     - [started, timeout]

@@ -1,5 +1,6 @@
 device:
   name: SimpleButton
-  events: [pressed]
+  events:
+    - pressed: {start: true}
   behavior:
     - [pressed, pressed]

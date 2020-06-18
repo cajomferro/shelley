@@ -14,6 +14,13 @@ from shelley.shelleyc import DeviceMapping
 simple_yml: str = """
 device:
   name: Simple
+  events:
+  - on:
+      start: true
+      final: true
+  - off:
+      start: false
+      final: true
   behavior:
     - [on, off]
     - [off, on]

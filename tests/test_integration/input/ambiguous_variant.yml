@@ -40,6 +40,7 @@ device:
                 - seq:
                     - b3.pressed
     - button3OrOthersv2:
+        start: false
         micro:
             - xor:
                 - xor:

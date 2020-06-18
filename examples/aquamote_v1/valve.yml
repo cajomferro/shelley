@@ -2,6 +2,13 @@
 
 device:
   name: Valve
+  events:
+  - on:
+      start: true
+      final: true
+  - off:
+      start: false
+      final: true
   behavior: # on is start event
     - [on, off]
     - [off, on]
@@ -19,4 +26,3 @@ test_macro:
     invalid4: [off, off]
     invalid5: [on, off, off]
     empty: []
-

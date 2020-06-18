@@ -12,6 +12,16 @@ from shelley.shelleyc import DeviceMapping
 httpclient_yml = """
 device:
   name: HTTPClient
+  events:
+    - connected: {start: true}
+    - disconnected: {start: false}
+    - get: {start: false}
+    - post: {start: false}
+    - connect_failed: {start: false}
+    - response200: {start: false}
+    - response404: {start: false}
+    - response401: {start: false}
+    - response500: {start: false}
   behavior:
     - [connected, get]  # client.connect(host, port)) succeeded
     - [connected, post]  # client.connect(host, port)) succeeded
@@ -48,6 +58,12 @@ device:
         start: True
     - ssid_failed:
         start: True
+    - connection_timeout: {start: true}
+    - connected: {start: false}
+    - print_data_ready: {start: false}
+    - print_timeout: {start: false}
+    - ssid_left: {start: false}
+    - disconnected: {start: false}
   behavior:
     - [connection_timeout, connected]
     - [ssid_joined, connected]
@@ -87,13 +103,16 @@ device:
               - [wc.joined, wc.connection_timeout]
               - [wc.ssid_failed]
     - send:
+        start: false
         micro:
           xor:
             - hc.get
             - hc.post
     - ok:
+        start: false
         micro: [wc.print_data_ready, hc.response200]
     - error:
+        start: false
         micro:
           xor:
             - [wc.print_data_ready, hc.response401]
@@ -105,6 +124,7 @@ device:
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
     - stopped:
+        start: false
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
   behavior:
     - [started, send]
@@ -157,14 +177,15 @@ def test_compile_wifihttp_event_undeclared() -> None:
         # introduce bad syntax on good yml
         regex = (
             r"    - send:\n"
+            r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.get\n"
             r"            - hc.post"
         )
-        replace = r""  # send will be auto discovered without specifying micro
+        replace = r"    - send: {start: false}\n"  # send will be auto discovered without specifying micro
         wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
-
+        print(wifihttp_yml_bad)
         # parse yaml and assemble device
         known_devices = {
             "HTTPClient": httpclient_assembled.external,
@@ -178,7 +199,6 @@ def test_compile_wifihttp_event_undeclared() -> None:
         wifihttp_assembled = AssembledDevice.make(
             wifihttp_aut, known_devices.__getitem__
         )
-
     assert (
         "operation declaration error in ['send']: Only declare an integration rule when there are components (system has 2 components).\nHint: write integration rule or remove all components."
         == str(exc_info.value)
@@ -195,6 +215,7 @@ def test_compile_wifihttp_event_declared_micro_empty1() -> None:
         # introduce bad syntax on good yml
         regex = (
             r"    - send:\n"
+            r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.get\n"
@@ -233,6 +254,7 @@ def test_compile_wifihttp_event_declared_micro_empty2() -> None:
         # introduce bad syntax on good yml
         regex = (
             r"    - send:\n"
+            r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.get\n"
@@ -271,6 +293,7 @@ def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
         # introduce bad syntax on good yml
         regex = (
             r"    - send:\n"
+            r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.get\n"
@@ -312,6 +335,7 @@ def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
         # introduce bad syntax on good yml
         regex = (
             r"    - send:\n"
+            r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.get\n"
@@ -319,6 +343,7 @@ def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
         )
         replace = (
             r"    - send:\n"
+            r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.post"
@@ -356,6 +381,7 @@ def XXX_test_compile_wifihttp_invalid_xor_3_options() -> None:
         # introduce bad syntax on good yml
         regex = (
             r"    - send:\n"
+            r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.get\n"
@@ -363,6 +389,7 @@ def XXX_test_compile_wifihttp_invalid_xor_3_options() -> None:
         )
         replace = (
             r"    - send:\n"
+            r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.get\n"

@@ -1,6 +1,15 @@
 device:
   name: Timer
-  events: [started, canceled, timeout] # started is start event
+  events:
+    - started:
+        start: True
+        final: False
+    - canceled:
+        start: False
+        final: True
+    - timeout:
+        start: False
+        final: True
   behavior:
     - [started, canceled]
     - [started, timeout]

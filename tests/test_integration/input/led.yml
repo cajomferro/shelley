@@ -1,6 +1,12 @@
 device:
   name: Led
-  events: [on, off] # on is start event
+  events:
+  - on:
+      start: true
+      final: true
+  - off:
+      start: false
+      final: true
   behavior:
     - [on, off]
     - [off, on]

@@ -1,5 +1,8 @@
 device:
   name: Button
-  start_events: [pressed]
+  events:
+  - pressed:
+      start: true
+      final: true
   behavior:
     - [pressed, pressed]

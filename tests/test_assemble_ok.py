@@ -15,6 +15,16 @@ from shelley.shelleyc import CompilationError
 httpclient_yml = """
 device:
   name: HTTPClient
+  events:
+    - connected: {start: true}
+    - disconnected: {start: false}
+    - get: {start: false}
+    - post: {start: false}
+    - connect_failed: {start: false}
+    - response200: {start: false}
+    - response404: {start: false}
+    - response401: {start: false}
+    - response500: {start: false}
   behavior:
     - [connected, get]  # client.connect(host, port)) succeeded
     - [connected, post]  # client.connect(host, port)) succeeded
@@ -51,6 +61,12 @@ device:
         start: True
     - ssid_failed:
         start: True
+    - connection_timeout: {start: true}
+    - connected: {start: false}
+    - print_data_ready: {start: false}
+    - print_timeout: {start: false}
+    - ssid_left: {start: false}
+    - disconnected: {start: false}
   behavior:
     - [connection_timeout, connected]
     - [ssid_joined, connected]
@@ -197,7 +213,11 @@ def empty_devices(name: str) -> CheckedDevice:
 yaml_button = """
 device:
   name: Button
-  events: [pressed,released]
+  events:
+  - pressed:
+      start: true
+  - released:
+      start: false
   behavior:
     - [pressed, released]
     - [released, pressed]
@@ -253,7 +273,9 @@ test_micro:
 yaml_led = """
 device:
   name: Led
-  events: [on, off] # on is start event
+  events:
+    - on: {start: true}
+    - off: {start: false} # on is start event
   behavior:
     - [on, off]
     - [off, on]"""
@@ -261,7 +283,10 @@ device:
 yaml_timer = """
 device:
   name: Timer
-  events: [started, canceled, timeout] # started is start event
+  events:
+    - started: {start: true}
+    - canceled: {start: false}
+    - timeout: {start: false} # started is start event
   behavior:
     - [started, canceled]
     - [started, timeout]
@@ -281,6 +306,7 @@ yaml_desklamp = """device:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
     - level2:
+        start: false
         micro:
           - b.pressed
           - b.released
@@ -289,8 +315,10 @@ yaml_desklamp = """device:
               - [ledB.on, t.canceled]
           - t.started
     - standby1:
+        start: false
         micro: [t.timeout, ledA.off]
     - standby2:
+        start: false
         micro:
           - xor:
               - [b.pressed, b.released, t.canceled]

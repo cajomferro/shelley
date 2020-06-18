@@ -35,7 +35,7 @@ def test_events_start() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": ["pressed", "released"],
+            "events": [{"pressed": {"start": True}}, {"released": {"start": False}}],
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -48,7 +48,7 @@ def test_events_start_specified() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": ["pressed", {"released": {"start": True}}],
+            "events": [{"pressed": {"start": False}}, {"released": {"start": True}}],
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -62,7 +62,7 @@ def test_events_from_behavior() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "behavior": [["pressed", "released"], ["released", "pressed"]],
+            "behavior": [[{"pressed": {"start": True}}, {"released": {"start": False}}], ["released", "pressed"]],
         }
     }
 
@@ -77,7 +77,7 @@ def test_events_no_components_but_triggers() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": ["pressed", {"released": {"micro": ["x.xxx"]}}],
+            "events": [{"pressed": {"start": True}}, {"released": {"start": False, "micro": ["x.xxx"]}}],
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -96,7 +96,7 @@ def test_auto_create_declared_event_without_micro() -> None:
         "device": {
             "name": "SmartButton",
             "components": {"b": "Button"},
-            "events": ["pressed", {"released": {"micro": ["b.released"]}}],
+            "events": [{"pressed": {"start": True}}, {"released": {"start": False, "micro": ["b.released"]}}],
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -115,7 +115,7 @@ def test_auto_create_undeclared_event_with_micro() -> None:
         "device": {
             "name": "SmartButton",
             "components": {"b": "Button"},
-            "events": [{"released": {"micro": ["b.released"]}}],
+            "events": [{"pressed": {"start": True}, "released": {"start": True, "micro": ["b.released"]}}],
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -370,7 +370,13 @@ def test_led() -> None:
     yaml_code = """
 device:
   name: Led
-  events: [on, off] # on is start event
+  events:
+  - on:
+      start: true
+      final: true
+  - off:
+      start: false
+      final: true
   behavior:
     - [on, off]
     - [off, on]    
@@ -400,7 +406,16 @@ def test_timer() -> None:
     yaml_code = """
 device:
   name: Timer
-  events: [started, canceled, timeout] # started is start event
+  events:
+    - started:
+        start: True
+        final: true
+    - canceled:
+        start: False
+        final: True
+    - timeout:
+        start: False
+        final: True
   behavior:
     - [started, canceled]
     - [started, timeout]

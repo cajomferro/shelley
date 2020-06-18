@@ -5,6 +5,10 @@ device:
         start: True
     - cancel:
         start: True
+    - wakeup:
+        start: false
+    - sleep:
+        start: false
   behavior:
     - [setup, sleep]
     - [sleep, wakeup]

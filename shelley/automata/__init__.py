@@ -632,6 +632,9 @@ class TriggerIntegrationFailure:
 class UnusableOperationsFailure:
     operations: FrozenSet[str]
 
+    def __str__(self):
+        return f"Unusable operation error!\nThe following operations are unreachable: {', '.join(self.operations)}"
+
 
 TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure, UnusableOperationsFailure]
 
@@ -875,7 +878,7 @@ class AssembledDevice:
         start = timer()
         all_states = set(self.external.nfa.states)
         all_states.remove(self.external.nfa.start_state)
-        self.unusable_operations = frozenset(all_states - set(self.operations))
+        self.unusable_operations = frozenset(set(self.operations) - all_states)
         self.unusable_operations_time = get_elapsed_time(start)
         if self.failure is None and len(self.unusable_operations) > 0:
             self.failure = UnusableOperationsFailure(self.unusable_operations)

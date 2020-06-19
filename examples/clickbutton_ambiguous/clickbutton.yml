@@ -9,21 +9,21 @@ device:
   B: Button
   T: Timer
  events:
-   - single:
+   single:
        start: True
        final: True
        micro:
          seq:
-         - seq: [B.press, T.begin]
+         - seq: [B.press, T.start]
          - xor:
            - seq: [T.timeout, B.release]
            - seq: [B.release, T.timeout] # , B.press
-   - double:
+   double:
        start: True
        final: True
        micro:
          seq:
-         - seq: [B.press, T.begin, B.release] # t.timeout may fire here?
+         - seq: [B.press, T.start, B.release] # t.timeout may fire here?
          - xor:
-           - seq: [B.press, T.end, B.release]
+           - seq: [B.press, T.cancel, B.release]
            - seq: [T.timeout]

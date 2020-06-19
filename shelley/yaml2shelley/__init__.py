@@ -156,8 +156,8 @@ def _parse_behavior(
         discovered_events.add(left)
         discovered_events.add(right)
         try:
-            e1 = _parse_event_name(left, events, components, triggers)
-            e2 = _parse_event_name(right, events, components, triggers)
+            e1 = events[left]
+            e2 = events[right]
             behaviors.create(e1, e2)
         except BehaviorsListDuplicatedError as err:
             raise BehaviorError(reason=f"duplicated behavior '{err}'")
@@ -207,14 +207,6 @@ def parse_bool_field(
             )
         else:
             return default_value
-
-
-def _parse_event_name(
-    src: str, events: Events, components: Components, triggers: Triggers
-) -> Event:
-    event = events[src]
-    #    _parse_triggers(None, event, components, triggers)
-    return event
 
 
 def _parse_event(

@@ -6,20 +6,20 @@ device:
     - [double, double]
     - [double, single]
   components:
-    b: Button
+    b: PressedButton
     t: Timer
   events:
-    - single:
+    single:
         start: True
-        micro: [b.in, t.start, b.out, t.stop, t.start, t.timeout]
+        micro: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
         # micro: [b.in, t.start, b.out, t.timeout, t.start, t.timeout] e se omitir isto?
-    - double:
+    double:
         start: True
         micro:
-          - [ b.in, t.start, b.out, t.stop, t.start, b.in]
+          - [ b.in, t.start, b.out, t.cancel, t.start, b.in]
           - xor:
-              - [t.stop, b.out]
-              - [b.out, t.stop]
+              - [t.cancel, b.out]
+              - [b.out, t.cancel]
 
 test_macro:
   ok:
@@ -34,13 +34,12 @@ test_macro:
 
 test_micro:
   ok:
-    single: [b.in, t.start, b.out, t.stop, t.start, t.timeout]
-    double_a: [b.in, t.start, b.out, t.stop, t.start, b.in, t.stop, b.out]
-    double_b: [b.in, t.start, b.out, t.stop, t.start, b.in, b.out, t.stop]
-    single_double_a: [b.in, t.start, b.out, t.stop, t.start, t.timeout, b.in, t.start, b.out, t.stop, t.start, b.in, t.stop, b.out]
-    single_double_b: [b.in, t.start, b.out, t.stop, t.start, t.timeout, b.in, t.start, b.out, t.stop, t.start, b.in, b.out, t.stop]
+    single: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
+    double_a: [b.in, t.start, b.out, t.cancel, t.start, b.in, t.cancel, b.out]
+    double_b: [b.in, t.start, b.out, t.cancel, t.start, b.in, b.out, t.cancel]
+    single_double_a: [b.in, t.start, b.out, t.cancel, t.start, t.timeout, b.in, t.start, b.out, t.cancel, t.start, b.in, t.cancel, b.out]
+    single_double_b: [b.in, t.start, b.out, t.cancel, t.start, t.timeout, b.in, t.start, b.out, t.cancel, t.start, b.in, b.out, t.cancel]
   fail:
-    single_missing_timeout: [b.in, t.start, b.out, t.stop, t.start] #, t.timeout]
+    single_missing_timeout: [b.in, t.start, b.out, t.cancel, t.start] #, t.timeout]
     invalid: false
     empty: []
-

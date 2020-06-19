@@ -22,6 +22,11 @@ def create_parser() -> argparse.ArgumentParser:
         "--no-epsilon", action="store_true", help="Remove epsilon transitions"
     )
     parser.add_argument(
+        "--minimize-slow",
+        action="store_true",
+        help="Runs the naive DFA minimization algorithm",
+    )
+    parser.add_argument(
         "--format",
         "-f",
         default="dot",
@@ -50,8 +55,9 @@ def handle_fsm(
             # Before minimizing, make sure we remove sink states, so that there
             # is a unique sink state when we convert to DFA; this is a quick
             # way of making the resulting DFA smaller
-            n = n.remove_sink_states()
-            print("No sinks:", len(n), file=sys.stderr)
+            if not args.minimize_slow:
+                n = n.remove_sink_states()
+                print("No sinks:", len(n), file=sys.stderr)
             d: regular.DFA[Any, str] = regular.nfa_to_dfa(n)
             print("DFA:", len(d), file=sys.stderr)
             d = d.minimize()

@@ -1,4 +1,5 @@
 include ../common.mk
+USES = -u uses.yml
 
 all: scy
 

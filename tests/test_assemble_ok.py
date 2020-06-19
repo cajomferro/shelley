@@ -61,11 +61,11 @@ device:
         start: True
     - ssid_failed:
         start: True
+    - ssid_left: {start: false}
     - connection_timeout: {start: true}
     - connected: {start: false}
     - print_data_ready: {start: false}
     - print_timeout: {start: false}
-    - ssid_left: {start: false}
     - disconnected: {start: false}
   behavior:
     - [connection_timeout, connected]
@@ -106,13 +106,16 @@ device:
               - [wc.ssid_joined, wc.connection_timeout]
               - [wc.ssid_failed]
     - send:
+        start: false
         micro:
           xor:
             - hc.get
             - hc.post
     - ok:
+        start: false
         micro: [wc.print_data_ready, hc.response200]
     - error:
+        start: false
         micro:
           xor:
             - [wc.print_data_ready, hc.response401]
@@ -124,6 +127,7 @@ device:
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
     - stopped:
+        start: false
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
   behavior:
     - [started, send]

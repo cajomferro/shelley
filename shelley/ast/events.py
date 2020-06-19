@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Optional, List
+from typing import TYPE_CHECKING, Optional, List, Dict
 from dataclasses import dataclass
 from shelley.ast.node import Node
 
@@ -22,15 +22,18 @@ class Event(Node):
 
 class Events(Node):
     _data: List[Event]
+    _events: Dict[str, Event]
 
     def __init__(self) -> None:
         self._data = []
+        self._events = dict()
 
     def add(self, elem: Event) -> None:
-        if elem not in self._data:
-            self._data.append(elem)
-        else:
+        if elem.name in self._events:
             raise EventsListDuplicatedError()
+
+        self._events[elem.name] = elem
+        self._data.append(elem)
 
     def contains(self, elem: Event) -> bool:
         return elem in self._data
@@ -45,27 +48,17 @@ class Events(Node):
         return len(self._data)
 
     def find_by_name(self, name: str) -> Optional[Event]:
-        # XXX: This should be the standard method: get
-        for x in self._data:
-            if x.name == name:
-                return x
-        return None
+        return self._events.get(name, None)
 
     def __getitem__(self, name: str) -> Event:
-        res = self.find_by_name(name)
-        if res is None:
-            raise KeyError(name)
-        return res
+        return self._events[name]
 
     def accept(self, visitor: Visitor) -> None:
         visitor.visit_events(self)
 
     def create(self, name: str, is_start=False, is_final=True) -> Event:
         event = Event(name, is_start, is_final)
-        if event not in self._data:
-            self._data.append(event)
-        else:
-            raise EventsListDuplicatedError()
+        self.add(event)
         return event
 
     def start_events(self) -> List[Event]:

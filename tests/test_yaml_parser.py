@@ -35,13 +35,21 @@ def test_events_start() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": [{"pressed": {"start": True}}, {"released": {"start": False}}],
+            "events": [
+                {"pressed": {"start": True, "final": False}},
+                {"released": {"start": False}},
+            ],
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
 
     shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
     assert shelley_device.events["pressed"].is_start
+    assert not shelley_device.events["pressed"].is_final
+    assert not shelley_device.events["released"].is_start
+    assert shelley_device.events["released"].is_final
+    assert shelley_device.behaviors.contains_events_pair("pressed", "released")
+    assert shelley_device.behaviors.contains_events_pair("released", "pressed")
 
 
 def test_events_start_specified() -> None:
@@ -62,10 +70,8 @@ def test_events_from_behavior() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "behavior": [
-                [{"pressed": {"start": True}}, {"released": {"start": False}}],
-                ["released", "pressed"],
-            ],
+            "events": [{"pressed": {"start": True}}, {"released": {"start": False}}],
+            "behavior": [["released", "pressed"],],
         }
     }
 

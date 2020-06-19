@@ -59,6 +59,7 @@ yaml_desklamp = """device:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
     - level2:
+        start: False
         micro:
           - b.pressed
           - b.released
@@ -67,8 +68,10 @@ yaml_desklamp = """device:
               - [ledB.on, t.canceled]
           - t.started
     - standby1:
+        start: false
         micro: [t.timeout, ledA.off]
     - standby2:
+        start: false
         micro:
           - xor:
               - [b.pressed, b.released, t.canceled]

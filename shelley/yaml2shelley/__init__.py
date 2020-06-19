@@ -122,13 +122,17 @@ def _parse_behavior(
 
     for beh_transition in src:
         left = beh_transition[0]
+        if not isinstance(left, str):
+            raise BehaviorError(reason=f"Expecting a string, but got: {left!r}")
+
         try:
             right = beh_transition[1]
         except IndexError:
             raise BehaviorError(
                 reason="Missing behavior right side: [{0}, ???]".format(left)
             )
-
+        if not isinstance(right, str):
+            raise BehaviorError(reason=f"Expecting a string, but got: {right!r}")
         # TODO: do we want to force user to declare all events? right now I am creating if not declared
         # and device has no components. To autocreate events from behaviors when there is components,
         # it is required to have the notion of a empty trigger rule
@@ -136,23 +140,18 @@ def _parse_behavior(
         try:
             e1 = events[left]
         except KeyError as err:
-            e1 = _parse_event(left, events, components, triggers)
-            # raise ShelleyParserError(
-            #     "Behavior uses undeclared event '{0}'".format(left)
-            # )
+            raise ShelleyParserError(title=f"Behavior uses undeclared event {left!r}")
 
         try:
             e2 = events[right]
         except KeyError as err:
-            e2 = _parse_event(right, events, components, triggers)
-            # raise ShelleyParserError(
-            #     "Behavior uses undeclared event '{0}'".format(right)
-            # )
+            raise ShelleyParserError(title=f"Behavior uses undeclared event {right!r}")
 
-        discovered_events.add(e1.name)
-        discovered_events.add(e2.name)
-
+        discovered_events.add(left)
+        discovered_events.add(right)
         try:
+            e1 = _parse_event_name(left, events, components, triggers)
+            e2 = _parse_event_name(right, events, components, triggers)
             behaviors.create(e1, e2)
         except BehaviorsListDuplicatedError as err:
             raise BehaviorError(reason=f"duplicated behavior '{err}'")
@@ -204,52 +203,49 @@ def parse_bool_field(
             return default_value
 
 
+def _parse_event_name(
+    src: str, events: Events, components: Components, triggers: Triggers
+) -> Event:
+    event = events[src]
+    #    _parse_triggers(None, event, components, triggers)
+    return event
+
+
 def _parse_event(
-    src: Union[str, dict], events: Events, components: Components, triggers: Triggers
+    src: dict, events: Events, components: Components, triggers: Triggers
 ) -> Event:
     event: Optional[Event] = None
 
-    # if isinstance(src, str):
-    #    event = events.create(src)
-    #    _parse_triggers(None, event, components, triggers)
-    if isinstance(src, dict):
-        event_name: Optional[str] = None
-        try:
-            event_name = list(src)[0]
-            event_data = src[event_name]
-        except Exception as err:
-            name = [event_name] if event_name is not None else None
-            raise OperationDeclError(
-                names=name, reason=f"Invalid syntax for event {src!r}"
-            )
-        assert event_name is not None
-        is_start: bool = parse_bool_field("start", False, event_name, event_data)
-        is_final: bool = parse_bool_field("final", True, event_name, event_data)
-        micro: Optional[Dict] = None
-        try:
-            micro = event_data["micro"]
-        except KeyError:
-            pass
+    event_name: Optional[str] = None
+    try:
+        event_name = list(src)[0]
+        event_data = src[event_name]
+    except Exception as err:
+        name = [event_name] if event_name is not None else None
+        raise OperationDeclError(names=name, reason=f"Invalid syntax for event {src!r}")
+    assert event_name is not None
+    is_start: bool = parse_bool_field("start", False, event_name, event_data)
+    is_final: bool = parse_bool_field("final", True, event_name, event_data)
+    micro: Optional[Dict] = None
+    try:
+        micro = event_data["micro"]
+    except KeyError:
+        pass
 
-        event = events.create(event_name, is_start, is_final)
+    event = events.create(event_name, is_start, is_final)
 
-        # XXX: this causes a bug
-        try:
-            _parse_triggers(micro, event, components, triggers)
-        except TriggersListDuplicatedError as err:
-            raise OperationDeclError(
-                names=[event_name], reason=f"{event_name} already exists!"
-            )
-        except OperationDeclError:
-            raise
-        except ShelleyParserError as err:
-            raise OperationDeclError(names=[event_name], parent=err)
-
-    else:
-        raise ShelleyParserError(
-            title="invalid operation declaration",
-            reason=f"Expecting a string or a dict but found: {src!r}",
+    # XXX: this causes a bug
+    try:
+        _parse_triggers(micro, event, components, triggers)
+    except TriggersListDuplicatedError as err:
+        raise OperationDeclError(
+            names=[event_name], reason=f"{event_name} already exists!"
         )
+    except OperationDeclError:
+        raise
+    except ShelleyParserError as err:
+        raise OperationDeclError(names=[event_name], parent=err)
+
     assert event is not None
 
     return event
@@ -285,7 +281,13 @@ def _parse_events(
         )
 
     for src_event in src_events:
-        _parse_event(src_event, events, components, triggers)
+        if isinstance(src_event, dict):
+            _parse_event(src_event, events, components, triggers)
+        else:
+            raise ShelleyParserError(
+                title="invalid operation declaration",
+                reason=f"Expecting a string or a dict but found: {src_event!r}",
+            )
 
 
 def _parse_triggers(

@@ -9,21 +9,21 @@ device:
   B: Button
   T: Timer
  events:
-   - single:
+   single:
        start: True
        final: True
        micro:
          seq:
-         - seq: [B.press, T.begin]
+         - seq: [B.press, T.start]
          - xor:
            - [T.timeout, B.release] # user ir slow
-           - [B.release, T.begin] # user is fast # INTEGRATION ERROR HERE
-   - double:
+           - [B.release, T.start] # user is fast # INTEGRATION ERROR HERE
+   double:
        start: True
        final: True
        micro:
          seq:
-         - [B.press, T.begin, B.release, B.press]
+         - [B.press, T.start, B.release, B.press]
          - xor:
            - [T.timeout, B.release] # user is slow
-           - [B.release, T.end] # user is fast
+           - [B.release, T.cancel] # user is fast

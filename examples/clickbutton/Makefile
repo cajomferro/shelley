@@ -7,7 +7,7 @@ pdf: button.pdf timer.pdf clickbutton.pdf
 
 scy: clickbutton.scy
 
-clickbutton.scy: clickbutton.yml timer.scy button.scy
+clickbutton.scy: clickbutton.yml ../base/timer.scy ../base/button.scy
 
 clean:
 	rm -f *.scy *.pdf *.int

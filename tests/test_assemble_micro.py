@@ -147,9 +147,7 @@ def _get_wifi_client_assembled() -> AssembledDevice:
     )
     wificlient_aut: AutomataDevice = shelley2automata.shelley2automata(wificlient_shy)
 
-    return AssembledDevice.make(
-        wificlient_aut, DeviceMapping(dict(), False).__getitem__
-    )
+    return AssembledDevice.make(wificlient_aut, DeviceMapping().__getitem__)
 
 
 def _get_http_client_assembled() -> AssembledDevice:
@@ -158,9 +156,7 @@ def _get_http_client_assembled() -> AssembledDevice:
     )
     httpclient_aut: AutomataDevice = shelley2automata.shelley2automata(httpclient_shy)
 
-    return AssembledDevice.make(
-        httpclient_aut, DeviceMapping(dict(), False).__getitem__
-    )
+    return AssembledDevice.make(httpclient_aut, DeviceMapping().__getitem__)
 
 
 httpclient_assembled = _get_http_client_assembled()
@@ -200,7 +196,7 @@ def test_compile_wifihttp_event_undeclared() -> None:
             wifihttp_aut, known_devices.__getitem__
         )
     assert (
-        "operation declaration error in ['send']: Only declare an integration rule when there are components (system has 2 components).\nHint: write integration rule or remove all components."
+        "operation declaration error in ['send']: Integration rule missing. Only declare an integration rule when there are components (system has 2 components).\nHint: write integration rule or remove all components."
         == str(exc_info.value)
     )
 
@@ -320,7 +316,7 @@ def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
 
     assert (
         str(exc_info.value)
-        == "operation declaration error in ['send']: Only declare an integration rule when there are components (system has 2 components).\nHint: write integration rule or remove all components."
+        == "operation declaration error in ['send']: Integration rule missing. Only declare an integration rule when there are components (system has 2 components).\nHint: write integration rule or remove all components."
     )
 
 

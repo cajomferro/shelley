@@ -1,13 +1,13 @@
 device:
   name: LowPower
   events:
-    - setup: # if sleeping, cancels timer
+    setup: # if sleeping, cancels timer
         start: True
         final: True
-    - sleep:
+    sleep:
         start: False
         final: False
-    - wakeup:
+    wakeup:
         start: False
   behavior:
     - [setup, sleep]

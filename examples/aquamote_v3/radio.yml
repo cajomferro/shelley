@@ -4,12 +4,12 @@ device:
       hc: HTTPClient
       wc: WiFiClient
   events:
-    - begin:
+    begin:
         start: True
         final: False
         micro:
           seq: [wc.ssid_joined, wc.connected, hc.connected]
-    - begin_err:
+    begin_err:
         start: True
         final: True
         micro:
@@ -17,24 +17,24 @@ device:
             - seq: [wc.ssid_joined, wc.connected, hc.connect_failed, wc.disconnected, wc.ssid_left]
             - seq: [wc.ssid_joined, wc.connection_timeout]
             - wc.ssid_failed
-    - stopped:
+    stopped:
         start: False
         final: True
         micro:
           seq: [wc.disconnected, hc.disconnected, wc.ssid_left]
-    - send:
+    send:
         start: False
         final: False
         micro:
           xor:
             - hc.get
             - hc.post
-    - send_ok:
+    send_ok:
         start: False
         final: False
         micro:
           seq: [wc.print_data_ready, hc.response200]
-    - send_err:
+    send_err:
         start: False
         final: False
         micro:

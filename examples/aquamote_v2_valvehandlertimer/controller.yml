@@ -14,16 +14,16 @@ device:
     rs: RadioSimplest
     lp: LowPower
   events:
-    - start:
+    start:
         start: True
         micro: [m.locked, m.unlocked, lp.cancel]
-    - wakeup:
+    wakeup:
         micro: [lp.wakeup]
-    - update:
+    update:
         micro: [rs.send, rs.ok]
-    - runValves:
+    runValves:
         micro: [v.v1, v.v2, v.v3, v.v4]
-    - sleep:
+    sleep:
         micro: [lp.setup, lp.sleep]
 
 test_micro:

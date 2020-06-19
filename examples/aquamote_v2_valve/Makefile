@@ -6,11 +6,17 @@ pdf: magnetic.pdf radio.pdf radiosimple.pdf radiosimplest.pdf valve.pdf lowpower
 
 scy: controller.scy radiosimple.scy
 
-radiosimple.scy: radiosimple.yml radio.scy
+radiosimple.scy: radiosimple.yml ../aquamote_v1/radio.scy
 
 radiosimplest.scy: radiosimplest.yml radiosimple.scy
 
-controller.scy: controller.yml valve.scy magnetic.scy radiosimplest.scy lowpower-strict.scy
+USES = -u uses.yml
+
+controller.scy: controller.yml \
+	../aquamote_v1/valve.scy \
+	../aquamote_v1/magnetic.scy \
+	radiosimplest.scy \
+	../aquamote_v2/lowpower-strict.yml
 
 clean:
 	rm -f *.scy *.pdf *.gv

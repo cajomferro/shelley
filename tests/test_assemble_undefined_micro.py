@@ -9,7 +9,7 @@ from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley import yaml2shelley
 from shelley.shelleyc import DeviceMapping
-
+from pathlib import Path
 
 simple_yml: str = """
 device:
@@ -79,8 +79,7 @@ composition_yml = composition_yml_src + composition_yml_tests
 def _get_simple_assembled() -> AssembledDevice:
     simple_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(simple_yml)
     simple_aut: AutomataDevice = shelley2automata.shelley2automata(simple_shy)
-
-    return AssembledDevice.make(simple_aut, DeviceMapping(dict(), False).__getitem__)
+    return AssembledDevice.make(simple_aut, DeviceMapping().__getitem__)
 
 
 simple_assembled = _get_simple_assembled()

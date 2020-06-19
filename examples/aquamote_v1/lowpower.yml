@@ -1,11 +1,11 @@
 device:
   name: LowPower
   events:
-    - setup:
+    setup:
         start: True
-    - wakeup:
+    wakeup:
         start: True
-    - sleep:
+    sleep:
         start: True
   behavior:
     - [setup, sleep]

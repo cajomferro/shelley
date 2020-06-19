@@ -1,4 +1,4 @@
-Valve: valve.scy
-Magnetic: magnetic.scy
+Valve: ../aquamote_v1/valve.scy
+Magnetic: ../aquamote_v1/magnetic.scy
 Radio: radio.scy
 LowPower: lowpower-strict.scy

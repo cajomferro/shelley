@@ -16,9 +16,9 @@ device:
   components:
       rs: RadioSimple
   events:
-    - send:
+    send:
         micro: [rs.start, rs.send]
-    - ok:
+    ok:
         micro: [rs.receive, rs.stop]
 
 test_micro:

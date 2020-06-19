@@ -99,7 +99,7 @@ def test_events_no_components_but_triggers() -> None:
 
     assert (
         str(exc_info.value)
-        == "operation declaration error in ['released']: Only declare an integration rule when there are components (system has 0 components).\nHint: remove integration rule or declare a component."
+        == "operation declaration error in ['released']: Invalid integration rule. Only declare an integration rule when there are components (system has 0 components).\nHint: remove integration rule or declare a component."
     )
 
 
@@ -121,7 +121,7 @@ def test_auto_create_declared_event_without_micro() -> None:
 
     assert (
         str(exc_info.value)
-        == "operation declaration error in ['pressed']: Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
+        == "operation declaration error in ['pressed']: Integration rule missing. Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
     )
 
 
@@ -143,7 +143,7 @@ def test_auto_create_undeclared_event_with_micro() -> None:
 
     assert (
         str(exc_info.value)
-        == "operation declaration error in ['pressed']: Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
+        == "operation declaration error in ['pressed']: Integration rule missing. Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
     )
 
 

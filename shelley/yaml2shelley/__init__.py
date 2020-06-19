@@ -319,7 +319,7 @@ def _parse_triggers(
     ):  # simple device with micro (not allowed!)
         raise OperationDeclError(
             names=[event.name],
-            reason="Only declare an integration rule when there are components (system has 0 components).",
+            reason="Invalid integration rule. Only declare an integration rule when there are components (system has 0 components).",
             hints=["remove integration rule or declare a component."],
         )
     elif (
@@ -328,7 +328,7 @@ def _parse_triggers(
         count = len(components)
         raise OperationDeclError(
             names=[event.name],
-            reason=f"Only declare an integration rule when there are components (system has {count} components).",
+            reason=f"Integration rule missing. Only declare an integration rule when there are components (system has {count} components).",
             hints=["write integration rule or remove all components."],
         )
     elif src is None and len(components) == 0:  # simple device without micro (ok!)

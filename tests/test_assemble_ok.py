@@ -150,9 +150,7 @@ def _get_wifi_client_assembled() -> AssembledDevice:
     )
     wificlient_aut: AutomataDevice = shelley2automata.shelley2automata(wificlient_shy)
 
-    return AssembledDevice.make(
-        wificlient_aut, DeviceMapping(dict(), False).__getitem__
-    )
+    return AssembledDevice.make(wificlient_aut, DeviceMapping().__getitem__)
 
 
 def _get_http_client_assembled() -> AssembledDevice:
@@ -161,9 +159,7 @@ def _get_http_client_assembled() -> AssembledDevice:
     )
     httpclient_aut: AutomataDevice = shelley2automata.shelley2automata(httpclient_shy)
 
-    return AssembledDevice.make(
-        httpclient_aut, DeviceMapping(dict(), False).__getitem__
-    )
+    return AssembledDevice.make(httpclient_aut, DeviceMapping().__getitem__)
 
 
 httpclient_assembled = _get_http_client_assembled()
@@ -202,7 +198,7 @@ def test_compile_wifihttp_no_known_devices() -> None:
 
     with pytest.raises(CompilationError) as exc_info:
         wifihttp_assembled = AssembledDevice.make(
-            wifihttp_aut, DeviceMapping(dict(), False).__getitem__
+            wifihttp_aut, DeviceMapping().__getitem__
         )
 
     assert "Error loading system 'HTTPClient': system not defined" == str(

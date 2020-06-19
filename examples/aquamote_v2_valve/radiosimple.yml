@@ -10,13 +10,13 @@ device:
   components:
       r: Radio
   events:
-    - start:
+    start:
         micro: [r.start, r.HTTPsetup, r.HTTPconnect]
-    - send:
+    send:
         micro: [r.HTTPsend]
-    - receive:
+    receive:
         micro: [r.HTTPreceive]
-    - stop:
+    stop:
         micro: [r.HTTPdisconnect, r.HTTPdisable]
 
 test_micro:

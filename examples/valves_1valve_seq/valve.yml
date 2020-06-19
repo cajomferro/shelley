@@ -3,10 +3,10 @@
 device:
   name: Valve
   events:
-  - on:
+    on:
       start: true
       final: true
-  - off:
+    off:
       start: false
       final: true
   behavior:

@@ -25,8 +25,14 @@ logger = logging.getLogger("shelleyc")
 
 
 class DeviceMapping:
-    def __init__(self, files: Dict[str, Path], binary: bool, base_dir:Path):
-        self.files = files
+    def __init__(
+        self,
+        *,
+        files: Optional[Dict[str, Path]] = None,
+        binary: bool = False,
+        base_dir: Path = Path.cwd(),
+    ):
+        self.files = dict() if files is None else files
         self.binary = binary
         self.loaded: Dict[str, CheckedDevice] = dict()
         self.base_dir = base_dir
@@ -137,7 +143,7 @@ def compile_shelley(
     known_devices = DeviceMapping(
         files=dict((k, Path(v)) for (k, v) in uses.items()),
         binary=binary,
-        base_dir=uses_base_dir
+        base_dir=uses_base_dir,
     )
     automata_device = shelley2automata(shelley_device)
 

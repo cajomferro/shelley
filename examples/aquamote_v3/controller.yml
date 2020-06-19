@@ -13,20 +13,20 @@ device:
     r: Radio
     lp: LowPower
   events:
-    - wakeup:
+    wakeup:
         start: True
         final: False
         micro: [m.locked, m.unlocked, lp.cancel]
-    - sleepTimeout:
+    sleepTimeout:
         final: False
         micro: [lp.wakeup]
-    - update:
+    update:
         final: False
         micro: [r.begin, r.send, r.send_ok, r.stopped]
-    - runValves:
+    runValves:
         final: False
         micro: [v.v1, v.v2, v.v3, v.v4]
-    - sleep:
+    sleep:
         final: True
         micro: [lp.setup, lp.sleep]
 

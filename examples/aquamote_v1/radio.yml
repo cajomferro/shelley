@@ -1,25 +1,25 @@
 device:
   name: Radio
   events:
-  - start:
+    start:
       start: true
       final: true
-  - HTTPsetup:
+    HTTPsetup:
       start: false
       final: true
-  - HTTPconnect:
+    HTTPconnect:
       start: false
       final: true
-  - HTTPreceive:
+    HTTPreceive:
       start: false
       final: true
-  - HTTPdisconnect:
+    HTTPdisconnect:
       start: false
       final: true
-  - HTTPdisable:
+    HTTPdisable:
       start: false
       final: true
-  - HTTPsend:
+    HTTPsend:
       start: false
       final: true
   behavior: # start is start event

@@ -3,12 +3,12 @@ device:
   behavior:
     - [single, single]
   components:
-    b: Button
+    b: PressedButton
     t: Timer
   events:
-    - single:
+    single:
         start: True
-        micro: [b.in, t.start, b.out, t.stop, t.start, t.timeout]
+        micro: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
 
 test_macro:
   ok:
@@ -20,11 +20,10 @@ test_macro:
 
 test_micro:
   ok:
-    single1x: [b.in, t.start, b.out, t.stop, t.start, t.timeout]
-    single2x: [b.in, t.start, b.out, t.stop, t.start, t.timeout, b.in, t.start, b.out, t.stop, t.start, t.timeout]
+    single1x: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
+    single2x: [b.in, t.start, b.out, t.cancel, t.start, t.timeout, b.in, t.start, b.out, t.cancel, t.start, t.timeout]
   fail:
     b_in_t_timeout: [b.in, t.start, t.timeout, b.out, t.start, t.timeout]
-    t_timeout_t_stop: [b.in, t.start, t.timeout, b.out, t.stop, t.start, t.timeout]
+    t_timeout_t_stop: [b.in, t.start, t.timeout, b.out, t.cancel, t.start, t.timeout]
     invalid: false
     empty: []
-

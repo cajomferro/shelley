@@ -6,6 +6,8 @@ pdf: magnetic.pdf radio.pdf valve.pdf lowpower.pdf controller.pdf
 
 scy: controller.scy
 
+USES = -u uses.yml
+
 controller.scy: controller.yml valve.scy magnetic.scy radio.scy lowpower.scy
 
 clean:

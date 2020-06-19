@@ -3,40 +3,40 @@
 device:
   name: Valve
   events:
-  - x1:
+    x1:
       start: true
       final: true
-  - x2:
+    x2:
       start: false
       final: true
-  - x3:
+    x3:
       start: false
       final: true
-  - x4:
+    x4:
       start: false
       final: true
-  - x5:
+    x5:
       start: false
       final: true
-  - x6:
+    x6:
       start: false
       final: true
-  - x7:
+    x7:
       start: false
       final: true
-  - x8:
+    x8:
       start: false
       final: true
-  - x9:
+    x9:
       start: false
       final: true
-  - x10:
+    x10:
       start: false
       final: true
-  - x11:
+    x11:
       start: false
       final: true
-  - x12:
+    x12:
       start: false
       final: true
   behavior:

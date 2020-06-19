@@ -3,28 +3,28 @@
 device:
   name: WiFiClient
   events:
-    - ssid_joined:
+    ssid_joined:
         start: True
         final: False
-    - ssid_failed:
+    ssid_failed:
         start: True
         final: True
-    - ssid_left:
+    ssid_left:
         start: True
         final: True
-    - print_timeout:
+    print_timeout:
         start: True
         final: False
-    - print_data_ready:
+    print_data_ready:
         start: True
         final: False
-    - connected:
+    connected:
         start: True
         final: False
-    - disconnected:
+    disconnected:
         start: True
         final: False
-    - connection_timeout:
+    connection_timeout:
         start: True
         final: True
   behavior:
@@ -109,4 +109,3 @@ device:
 #    invalid7: [connect_failed]
 #    get2x_noresponse: [connect, get, get, response200, disconnect] # response200 missing
 #    empty: []
-

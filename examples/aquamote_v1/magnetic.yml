@@ -4,9 +4,9 @@
 device:
   name: Magnetic
   events:
-    - unlocked:
+    unlocked:
         start: True
-    - locked:
+    locked:
         start: True
   behavior:
     - [locked, unlocked]

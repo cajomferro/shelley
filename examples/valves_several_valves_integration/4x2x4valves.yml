@@ -8,5 +8,5 @@ device:
     vh3: SuperValveHandler # 2x4 valves
     vh4: SuperValveHandler # 2x4 valves
   events:
-    - go:
+    go:
         micro: [vh1.go, vh2.go, vh3.go, vh4.go]

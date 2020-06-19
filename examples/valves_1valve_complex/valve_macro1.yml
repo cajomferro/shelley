@@ -25,25 +25,25 @@ device:
   components:
     v: Valve
   events:
-    - go2: # (v.x1, v.x2) x 1 ~ 0.42s
+    go2: # (v.x1, v.x2) x 1 ~ 0.42s
         micro: [v.x1, v.x2]
-    - go3:
+    go3:
         micro: [v.x1, v.x3]
-    - go4:
+    go4:
         micro: [v.x1, v.x4]
-    - go5:
+    go5:
         micro: [v.x1, v.x5]
-    - go6:
+    go6:
         micro: [v.x1, v.x6]
-    - go7:
+    go7:
         micro: [v.x1, v.x7]
-    - go8:
+    go8:
         micro: [v.x1, v.x8]
-    - go9:
+    go9:
         micro: [v.x1, v.x9]
-    - go10:
+    go10:
         micro: [v.x1, v.x10]
-    - go11:
+    go11:
         micro: [v.x1, v.x11]
-    - go12:
+    go12:
         micro: [v.x1, v.x12]

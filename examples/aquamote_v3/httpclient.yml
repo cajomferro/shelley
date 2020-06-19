@@ -3,31 +3,31 @@
 device:
   name: HTTPClient
   events:
-    - connected:
+    connected:
         start: True
         final: False
-    - connect_failed:
+    connect_failed:
         start: True
         final: True
-    - get:
+    get:
         start: False
         final: False
-    - post:
+    post:
         start: False
         final: False
-    - response200:
+    response200:
         start: False
         final: False
-    - response401:
+    response401:
         start: False
         final: False
-    - response404:
+    response404:
         start: False
         final: False
-    - response500:
+    response500:
         start: False
         final: False
-    - disconnected:
+    disconnected:
         start: False
         final: True
   behavior:

@@ -12,5 +12,5 @@ device:
     vh7: ValveHandler # 4x valves
     vh8: ValveHandler # 4x valves
   events:
-    - go:
+    go:
         micro: [vh1.go, vh2.go, vh3.go, vh4.go, vh5.go, vh6.go, vh7.go, vh8.go]

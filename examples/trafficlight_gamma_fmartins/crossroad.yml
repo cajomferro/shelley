@@ -7,20 +7,22 @@ device:
     p: TrafficLightCtrl
     s: TrafficLightCtrl
   events: # based on the ports (requires and provides) of the components of the crossroad.gcd
-    init:
+    init_lcp_yellow_lcs_red_first:
+      # xor is not an alternative here because it would generate an integration error for Controller
       start: true
       micro:
         - seq: [p.display_red, s.display_red] # this is the auto init of both traffic controllers
         - seq: [c.init, c.toggle_init, p.toggle_green, p.display_green] # controller sends the first toggle and priority goes to green
-      # current states after init: c.init, p.green, s.red
+        # current states at this point: c.init, p.green, s.red
+        - seq: [c.InitTimeout5, c.priority_prepares, c.toggle_priority_prepares]
+        - seq: [p.toggle_yellow, p.display_yellow]
+        # current states at this point: c.priority_prepares, p.yellow, s.red
     lcp_yellow_lcs_red: # priority prepares
       start: false
       micro:
         seq:
-          - xor:
-            - c.InitTimeout5
-            - c.PriorityTimeout4
-          - seq: [c.priority_prepares, c.toggle_priority_prepares, p.toggle_yellow, p.display_yellow]
+          - seq: [c.PriorityTimeout4, c.priority_prepares, c.toggle_priority_prepares]
+          - seq: [p.toggle_yellow, p.display_yellow]
       # current states after lcp_yellow_lcs_red: c.priority_prepares, p.yellow, s.red
     lcp_red_lcs_green: # secondary
         start: false
@@ -44,30 +46,48 @@ device:
             - seq: [c.SecondaryPreparesTimeout3, c.priority, c.toggle_priority]
             - seq: [p.toggle_green, p.display_green]
             - seq: [s.toggle_red, s.display_red]
-      # current states after lcp_green_lcs_red: c.priority, p.green, s.red
-#    - police_interrupt_on: {start: false}
-#    - police_interrupt_off: {start: false}
+    police_interrupt_on: # operating -> interrupted
+        start: false
+        micro:
+          seq:
+            - seq: [c.police_on, c.priority_police_on, p.police_on, c.secondary_police_on, s.police_on, c.interrupted]
+      # current states after police_interrupt_on: c.interrupted, p.?, s.? (depends on the last operating state)
+    blink: # blinking (part of interrupted)
+        start: false
+        micro:
+          seq:
+            - seq: [p.display_byellow, s.display_byellow, p.BlackTimeout4, s.BlackTimeout4, p.display_black, s.display_black, p.BlinkingYellowTimeout3, s.BlinkingYellowTimeout3]
+      # current states after blink: c.interrupted, p.none, s.none
+    police_interrupt_off: # interrupted -> operating
+        start: false
+        micro:
+          seq:
+            - seq: [c.police_off, c.priority_police_off, p.police_off, c.secondary_police_off, s.police_off]
+            # current states at this point: c.interrupted, p.none, s.none
+            # everything below is duplicated with init!
+            - seq: [p.display_red, s.display_red] # this is the auto init of both traffic controllers
+            - seq: [c.init, c.toggle_init, p.toggle_green, p.display_green] # controller sends the first toggle and priority goes to green
+            # current states at this point: c.init, p.green, s.red
+            - seq: [c.InitTimeout5, c.priority_prepares, c.toggle_priority_prepares]
+            - seq: [p.toggle_yellow, p.display_yellow]
+            # current states at this point: c.priority_prepares, p.yellow, s.red
   behavior:
     # operating
-    - [init, lcp_yellow_lcs_red] # c.init -> c.priority_prepares
-    - [lcp_yellow_lcs_red, lcp_red_lcs_green] # c.priority_prepares -> c.secondary
+    - [init_lcp_yellow_lcs_red_first, lcp_red_lcs_green] # c.init -> c.priority_prepares -> c.secondary (first time only)
     - [lcp_red_lcs_green, lcp_red_lcs_yellow] # c.secondary -> c.secondary_prepares
     - [lcp_red_lcs_yellow, lcp_green_lcs_red] # c.secondary_prepares -> c.priority
-    - [lcp_green_lcs_red, lcp_yellow_lcs_red] # c.priority -> c.priority_prepares
-# TODO: complete this
-#    # interrupted
-#    - [init, police_interrupt]
-#    - [lcp_red, police_interrupt]
-#    - [lcp_green, police_interrupt]
-#    - [lcp_yellow, police_interrupt]
-#    - [lcp_none, police_interrupt]
-#    - [lcs_red, police_interrupt]
-#    - [lcs_green, police_interrupt]
-#    - [lcs_yellow, police_interrupt]
-#    - [lcs_none, police_interrupt]
-#    # interrupted to operating
-#    - [blink, police_interrupt_off]
-#    - [police_interrupt_off, lcp_red]
-#    # interrupted
-#    - [police_interrupt, blink]
-#    - [blink, blink]
+    - [lcp_green_lcs_red, lcp_yellow_lcs_red] # c.priority -> c.priority_prepares (from second time on)
+    - [lcp_yellow_lcs_red, lcp_red_lcs_green] # c.priority_prepares -> c.secondary
+    # operating -> interrupted
+    - [init_lcp_yellow_lcs_red_first, police_interrupt_on]
+    - [lcp_red_lcs_green, police_interrupt_on]
+    - [lcp_red_lcs_yellow, police_interrupt_on]
+    - [lcp_green_lcs_red, police_interrupt_on]
+    - [lcp_yellow_lcs_red, police_interrupt_on]
+    - [police_interrupt_on, blink]
+    # interrupted
+    - [blink, blink]
+    # TO BE EVEN MORE ACCURATE TO ORIGINAL EXAMPLE WE SHOULD HAVE: blink_on -> blink_off and vice-versa
+    # interrupted -> operating
+    - [blink, police_interrupt_off]
+    - [police_interrupt_off, lcp_red_lcs_green]

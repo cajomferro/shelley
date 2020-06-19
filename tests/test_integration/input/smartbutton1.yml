@@ -4,11 +4,10 @@ device:
     b: Button
   events:
     on:
+        next: $ANY
         start: True
         final: True
         micro: [ b.pressed, b.released]
-  behavior:
-    - [on, on]
 
 
 test_macro:

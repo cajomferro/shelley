@@ -7,9 +7,11 @@ device:
     t: Timer
   events:
     level1:
+        next: [standby1, level2]
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
     level2:
+        next: [standby2]
         micro:
           - b.pressed
           - b.released
@@ -18,8 +20,10 @@ device:
               - [ledB.on, t.canceled]
           - t.started
     standby1:
+        next: [level1]
         micro: [t.timeout, ledA.off]
     standby2:
+        next: [level1]
         micro:
           - xor:
               - [b.pressed, b.released, t.canceled]
@@ -27,12 +31,6 @@ device:
           - xor:
                 - [ledB.off, ledA.off]
                 - [ledA.off, ledB.off]
-  behavior:
-    - [level1, standby1]
-    - [level1, level2]
-    - [level2, standby2]
-    - [standby1, level1]
-    - [standby2, level1]
 
 test_micro:
   ok:

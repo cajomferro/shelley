@@ -83,9 +83,6 @@ class OperationDeclError(ShelleyParserError):
         )
 
 
-#    return ShelleyParserError(title=title, reason=reason, hints=hints, parent=parent)
-
-
 class IntegrationRuleError(ShelleyParserError):
     def __init__(self, reason: str, hints=()):
         super(IntegrationRuleError, self).__init__(
@@ -209,6 +206,43 @@ def parse_bool_field(
             return default_value
 
 
+def _parse_event_list(data: dict, key: str, events: Events,) -> List[Event]:
+    ANY = "$ANY"
+    TITLE = f"section {key!r}"
+    HINTS = [
+        f"To list all operations write '{key}: {ANY}'",
+    ]
+    try:
+        obj = data[key]
+    except KeyError:
+        raise ShelleyParserError(
+            title=TITLE, reason=f"section {key!r} is missing", hints=HINTS,
+        )
+    if not (isinstance(obj, list) or (isinstance(obj, str) and obj.strip() == ANY)):
+        raise ShelleyParserError(
+            title=TITLE,
+            reason=f"expecting string '{ANY}', or a list of operation names (strings), but got: {obj!r}",
+            hints=HINTS,
+        )
+
+    if isinstance(obj, str):
+        return events.list()
+    if isinstance(obj, list):
+        result = []
+        for elem in obj:
+            try:
+                result.append(events[elem])
+            except KeyError:
+                raise ShelleyParserError(
+                    title=TITLE,
+                    reason=f"unknown operation {elem!r}",
+                    hints=HINTS + [f"Declare operation {elem!r}"],
+                )
+        return result
+
+    raise ValueError("Should not reach here!", obj)
+
+
 def _parse_event(
     event_name: str,
     event_data: dict,
@@ -217,16 +251,12 @@ def _parse_event(
     triggers: Triggers,
 ) -> Event:
     event: Optional[Event] = None
-    """
-    event_name: Optional[str] = None
-    try:
-        event_name = list(src)[0]
-        event_data = src[event_name]
-    except Exception as err:
-        name = [event_name] if event_name is not None else None
-        raise OperationDeclError(names=name, reason=f"Invalid syntax for event {src!r}")
-    assert event_name is not None
-    """
+    unknown_keys = set(event_data.keys()) - {"start", "final", "micro", "next"}
+    if len(unknown_keys) > 0:
+        raise OperationDeclError(
+            names=[event_name], reason=f"remove unexpected keys: {unknown_keys!r}"
+        )
+
     is_start: bool = parse_bool_field("start", False, event_name, event_data)
     is_final: bool = parse_bool_field("final", True, event_name, event_data)
     micro: Optional[Dict] = None
@@ -250,12 +280,15 @@ def _parse_event(
         raise OperationDeclError(names=[event_name], parent=err)
 
     assert event is not None
-
     return event
 
 
 def _parse_events(
-    src: Mapping, events: Events, components: Components, triggers: Triggers
+    src: Mapping,
+    events: Events,
+    components: Components,
+    triggers: Triggers,
+    behaviors: Behaviors,
 ) -> None:
     """
 
@@ -282,15 +315,35 @@ def _parse_events(
             title="syntax error in operation declarations section",
             reason=f"Expecting a dictionary but found {type(src_events).__name__}: {src_events!r}",
         )
-
     for event_name, event_data in src_events.items():
         if isinstance(event_data, dict):
-            _parse_event(event_name, event_data, events, components, triggers)
+            _parse_event(
+                event_name=event_name,
+                event_data=event_data,
+                events=events,
+                components=components,
+                triggers=triggers,
+            )
         else:
             raise ShelleyParserError(
                 title="invalid operation declaration",
                 reason=f"Expecting a dictionary but found: {event_data!r}",
             )
+
+    for event_name, event_data in src_events.items():
+        try:
+            e1: Event = events[event_name]
+            for e2 in _parse_event_list(event_data, "next", events):
+                try:
+                    behaviors.create(e1, e2)
+                except BehaviorsListDuplicatedError:
+                    raise OperationDeclError(
+                        names=[event_name],
+                        reason=f"Repeated operation {event_name!r} in section 'next'",
+                        hints=["Ensure that there are no repeated operations in list."],
+                    )
+        except ShelleyParserError as err:
+            raise OperationDeclError(names=[event_name], parent=err)
 
 
 def _parse_triggers(
@@ -399,11 +452,6 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
         raise SystemDeclError("Device must have a name")
 
     try:
-        device_behavior = yaml_code["device"]["behavior"]
-    except KeyError:
-        raise SystemDeclError("Device must have a behavior")
-
-    try:
         device_components = yaml_code["device"]["components"]
     except KeyError:
         device_components = dict()
@@ -449,9 +497,15 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
     components: Components = Components()
     triggers: Triggers = Triggers()
     _parse_components(device_components, components)
-    _parse_events(copy.deepcopy(device_events), events, components, triggers)
+    _parse_events(
+        src=copy.deepcopy(device_events),
+        events=events,
+        components=components,
+        triggers=triggers,
+        behaviors=behaviors,
+    )
     _found_events_count: int = len(events)
-    _parse_behavior(device_behavior, events, behaviors, components, triggers)
+    # _parse_behavior(device_behavior, events, behaviors, components, triggers)
 
     # TODO: not required if we create empty micro for auto discovered event in behaviors
     # if len(components) > 0 and len(events) != _found_events_count:

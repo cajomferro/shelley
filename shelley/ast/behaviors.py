@@ -61,6 +61,13 @@ class Behaviors(Node):
     def __init__(self) -> None:
         self._data = []
 
+    def __eq__(self, other):
+        return (
+            other is not None
+            and isinstance(other, Behaviors)
+            and set(self._data) == set(other._data)
+        )
+
     def add(self, elem: Behavior) -> None:
         if elem not in self._data:
             self._data.append(elem)

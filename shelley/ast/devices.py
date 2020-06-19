@@ -80,11 +80,17 @@ class Device(Node):
             )
 
     def __eq__(self, other: object) -> bool:
-        if not isinstance(other, Device):
-            # don't attempt to compare against unrelated types
-            raise Exception("Instance is not of Device type")
-
-        return self.name == other.name
+        if other is None or not isinstance(other, Device):
+            return False
+        return (
+            self.name == other.name
+            and self.actions == other.actions
+            and self.events == other.events
+            and self.behaviors == other.behaviors
+            and self.uses == other.uses
+            and self.components == other.components
+            and self.triggers == other.triggers
+        )
 
 
 class DevicesListDuplicatedError(Exception):

@@ -13,41 +13,33 @@ httpclient_yml = """
 device:
   name: HTTPClient
   events:
-    connected: {start: true}
-    disconnected: {start: false}
-    get: {start: false}
-    post: {start: false}
-    connect_failed: {start: false}
-    response200: {start: false}
-    response404: {start: false}
-    response401: {start: false}
-    response500: {start: false}
-  behavior:
-    - [connected, get]  # client.connect(host, port)) succeeded
-    - [connected, post]  # client.connect(host, port)) succeeded
-    - [connected, connect_failed]  # !client.connect(host, port))
-    - [connect_failed, connected]
-    - [get, response200]
-    - [get, response404]
-    - [get, response401]
-    - [get, response500]
-    - [post, response200]
-    - [post, response404]
-    - [post, response401]
-    - [post, response500]
-    - [response200, get]
-    - [response200, post]
-    - [response200, disconnected]
-    - [response404, get]
-    - [response404, disconnected]
-    - [response404, post]
-    - [response401, get]
-    - [response401, disconnected]
-    - [response401, post]
-    - [response500, get]
-    - [response500, disconnected]
-    - [response500, post]
-    - [disconnected, connected]
+    connected:
+        start: true
+        next: [get, post, connect_failed]
+    disconnected:
+        start: false
+        next: [connected]
+    get:
+        start: false
+        next: [response200, response404, response401, response500]
+    post:
+        start: false
+        next: [response200, response404, response401, response500]
+    connect_failed:
+        start: false
+        next: [connected]
+    response200:
+        start: false
+        next: [get, post, disconnected]
+    response404:
+        start: false
+        next: [get, post, disconnected]
+    response401:
+        next: [get, post, disconnected]
+        start: false
+    response500:
+        next: [get, post, disconnected]
+        start: false
 """
 
 wificlient_yml = """
@@ -56,32 +48,28 @@ device:
   events:
     ssid_joined:
         start: True
+        next: [connected, ssid_left]
     ssid_failed:
         start: True
-    connection_timeout: {start: true}
-    connected: {start: false}
-    print_data_ready: {start: false}
-    print_timeout: {start: false}
-    ssid_left: {start: false}
-    disconnected: {start: false}
-  behavior:
-    - [connection_timeout, connected]
-    - [ssid_joined, connected]
-    - [ssid_joined, ssid_left]
-    - [ssid_left, ssid_joined]
-    - [ssid_left, ssid_failed]
-    - [ssid_failed, ssid_failed]
-    - [ssid_failed, ssid_joined]
-    - [connected, disconnected]
-    - [connected, print_timeout]
-    - [connected, print_data_ready]
-    - [print_data_ready, print_data_ready]
-    - [print_timeout, print_timeout]
-    - [print_data_ready, disconnected]
-    - [print_timeout, disconnected]
-    - [disconnected, connected]
-    - [disconnected, connection_timeout]
-    - [disconnected, ssid_left]
+        next: [ssid_failed, ssid_joined]
+    connection_timeout:
+        start: true
+        next: [connected]
+    connected:
+        start: false
+        next: [disconnected, print_timeout, print_data_ready]
+    print_data_ready:
+        start: false
+        next: [print_data_ready, disconnected]
+    print_timeout:
+        start: false
+        next: [print_timeout, disconnected]
+    ssid_left:
+        start: false
+        next: [ssid_joined, ssid_failed]
+    disconnected:
+        start: false
+        next: [connected, connection_timeout, ssid_left]
 """
 
 wifihttp_yml = """
@@ -93,17 +81,20 @@ device:
   events:
     started:
         start: True
-        micro: [wc.joined, wc.connected, hc.connected]
+        micro: [wc.ssid_joined, wc.connected, hc.connected]
+        next: [send]
     notconnected:
         start: True
+        next: [started]
         micro:
           xor:
-            - [wc.joined, wc.connected, hc.connect_failed]
+            - [wc.ssid_joined, wc.connected, hc.connect_failed]
             - xor:
-              - [wc.joined, wc.connection_timeout]
+              - [wc.ssid_joined, wc.connection_timeout]
               - [wc.ssid_failed]
     send:
         start: false
+        next: [stopped, ok, error]
         micro:
           xor:
             - hc.get
@@ -111,8 +102,10 @@ device:
     ok:
         start: false
         micro: [wc.print_data_ready, hc.response200]
+        next: [stopped, send]
     error:
         start: false
+        next: [stopped, send]
         micro:
           xor:
             - [wc.print_data_ready, hc.response401]
@@ -126,18 +119,7 @@ device:
     stopped:
         start: false
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
-  behavior:
-    - [started, send]
-    - [notconnected, started]
-    - [send, stopped]
-    - [send, ok]
-    - [send, error]
-    - [error, send]
-    - [ok, send]
-    - [ok, stopped]
-    - [error, stopped]
-    - [stopped, started]
-    - [stopped, notconnected]
+        next: [started, notconnected]
 """
 
 
@@ -162,6 +144,22 @@ def _get_http_client_assembled() -> AssembledDevice:
 httpclient_assembled = _get_http_client_assembled()
 wificlient_assembled = _get_wifi_client_assembled()
 
+SEND_REGEX = r"""    send:
+        start: false
+        next: [stopped, ok, error]
+        micro:
+          xor:
+            - hc.get
+            - hc.post
+"""
+
+
+def replace_send(yml: str, *lines: str) -> str:
+    replace = "    send:\n" "        next: [stopped, ok, error]\n"
+    for line in lines:
+        replace += "        " + line + "\n"
+    return yml.replace(SEND_REGEX, replace)
+
 
 def test_compile_wifihttp_event_undeclared() -> None:
     """
@@ -171,16 +169,7 @@ def test_compile_wifihttp_event_undeclared() -> None:
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
-        regex = (
-            r"    send:\n"
-            r"        start: false\n"
-            r"        micro:\n"
-            r"          xor:\n"
-            r"            - hc.get\n"
-            r"            - hc.post"
-        )
-        replace = r"    send: {start: false}\n"  # send will be auto discovered without specifying micro
-        wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
+        wifihttp_yml_bad = replace_send(wifihttp_yml)
         print(wifihttp_yml_bad)
         # parse yaml and assemble device
         known_devices = {
@@ -209,16 +198,7 @@ def test_compile_wifihttp_event_declared_micro_empty1() -> None:
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
-        regex = (
-            r"    send:\n"
-            r"        start: false\n"
-            r"        micro:\n"
-            r"          xor:\n"
-            r"            - hc.get\n"
-            r"            - hc.post"
-        )
-        replace = r"    send:\n" r"        micro: {}"
-        wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
+        wifihttp_yml_bad = replace_send(wifihttp_yml, "micro: {}")
 
         # parse yaml and assemble device
         known_devices = {
@@ -248,17 +228,8 @@ def test_compile_wifihttp_event_declared_micro_empty2() -> None:
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
-        regex = (
-            r"    send:\n"
-            r"        start: false\n"
-            r"        micro:\n"
-            r"          xor:\n"
-            r"            - hc.get\n"
-            r"            - hc.post"
-        )
-        replace = r"    send:\n" r"        micro: []"
-        wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
-
+        wifihttp_yml_bad = replace_send(wifihttp_yml, "micro: []")
+        print(wifihttp_yml_bad)
         # parse yaml and assemble device
         known_devices = {
             "HTTPClient": httpclient_assembled.external,
@@ -286,19 +257,8 @@ def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
     """
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
-        # introduce bad syntax on good yml
-        regex = (
-            r"    send:\n"
-            r"        start: false\n"
-            r"        micro:\n"
-            r"          xor:\n"
-            r"            - hc.get\n"
-            r"            - hc.post"
-        )
-        replace = (
-            r"    send:\n" r"        start: True\n"
-        )  # micro is now undefined but send event is still declared
-        wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
+        # micro is now undefined but send event is still declared
+        wifihttp_yml_bad = replace_send(wifihttp_yml, "start: True")
 
         # parse yaml and assemble device
         known_devices = {
@@ -329,22 +289,9 @@ def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
-        regex = (
-            r"    send:\n"
-            r"        start: false\n"
-            r"        micro:\n"
-            r"          xor:\n"
-            r"            - hc.get\n"
-            r"            - hc.post"
+        wifihttp_yml_bad = replace_send(
+            wifihttp_yml, "micro:", "  xor:", "    - hc.post"
         )
-        replace = (
-            r"    send:\n"
-            r"        start: false\n"
-            r"        micro:\n"
-            r"          xor:\n"
-            r"            - hc.post"
-        )
-        wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
 
         # parse yaml and assemble device
         known_devices = {
@@ -375,24 +322,14 @@ def XXX_test_compile_wifihttp_invalid_xor_3_options() -> None:
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
-        regex = (
-            r"    send:\n"
-            r"        start: false\n"
-            r"        micro:\n"
-            r"          xor:\n"
-            r"            - hc.get\n"
-            r"            - hc.post"
+        wifihttp_yml_bad = replace_send(
+            wifihttp_yml,
+            "micro:",
+            "  xor:",
+            "    - hc.get",
+            "    - hc.get",
+            "    - hc.post",
         )
-        replace = (
-            r"    send:\n"
-            r"        start: false\n"
-            r"        micro:\n"
-            r"          xor:\n"
-            r"            - hc.get\n"
-            r"            - hc.get\n"
-            r"            - hc.post"
-        )
-        wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
 
         # parse yaml and assemble device
         known_devices = {

@@ -15,13 +15,12 @@ def test_button() -> None:
     pressed:
       start: true
       final: true
+      next: [released]
     released:
       start: false
       final: true
-  behavior:
-    - [pressed, released]
-    - [released, pressed]
-    """
+      next: [pressed]
+"""
 
     expected = AutomataDevice(
         start_events=["pressed"],
@@ -44,12 +43,12 @@ def test_led() -> None:
     on:
       start: true
       final: true
+      next: [off]
     off:
       start: false
       final: true
-  behavior:
-    - [on, off]
-    - [off, on]"""
+      next: [on]
+"""
 
     expected = AutomataDevice(
         start_events=["on"],
@@ -72,17 +71,15 @@ def test_timer() -> None:
     started:
         start: True
         final: true
+        next: [canceled, timeout]
     canceled:
         start: False
         final: True
+        next: [started]
     timeout:
         start: False
         final: True
-  behavior:
-    - [started, canceled]
-    - [started, timeout]
-    - [canceled, started]
-    - [timeout, started]
+        next: [started]
 """
 
     expected = AutomataDevice(
@@ -114,8 +111,8 @@ def test_smartbutton1() -> None:
         start: True
         final: True
         micro: [ b.pressed, b.released]
-  behavior:
-    - [on, on]"""
+        next: [on]
+    """
 
     expected = AutomataDevice(
         start_events=["on"],
@@ -143,7 +140,9 @@ def test_desklamp() -> None:
     level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
+        next: [standby1, level2]
     level2:
+        next: [standby2]
         micro:
           - b.pressed
           - b.released
@@ -152,8 +151,10 @@ def test_desklamp() -> None:
               - [ledB.on, t.canceled]
           - t.started
     standby1:
+        next: [level1]
         micro: [t.timeout, ledA.off]
     standby2:
+        next: [level1]
         micro:
           - xor:
               - [b.pressed, b.released, t.canceled]
@@ -161,12 +162,7 @@ def test_desklamp() -> None:
           - xor:
                 - [ledB.off, ledA.off]
                 - [ledA.off, ledB.off]
-  behavior:
-    - [level1, standby1]
-    - [level1, level2]
-    - [level2, standby2]
-    - [standby1, level1]
-    - [standby2, level1]"""
+"""
 
     expected = AutomataDevice(
         start_events=["level1"],
@@ -230,8 +226,8 @@ def test_clickbutton():
         events=["single", "double"],
         behavior=[
             ("single", "single"),
-            ("double", "single"),
             ("single", "double"),
+            ("double", "single"),
             ("double", "double"),
         ],
         components={"B": "Button", "T": "Timer"},
@@ -283,16 +279,12 @@ def test_clickbutton():
     yaml_code = """
 device:
  name: ClickButtonVariation
- behavior:
-   - [single, single]
-   - [double, single]
-   - [single, double]
-   - [double, double]
  components:
   B: Button
   T: Timer
  events:
     single:
+       next: $ANY
        start: True
        final: True
        micro:
@@ -302,6 +294,7 @@ device:
            - seq: [T.timeout, B.release] # user ir slow
            - seq: [B.release, T.timeout] # user is fast
     double:
+       next: $ANY
        start: True
        final: True
        micro:

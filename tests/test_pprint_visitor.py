@@ -9,12 +9,12 @@ yaml_led = """device:
     on:
       start: true
       final: true
+      next: [off]
     off:
       start: false
       final: true
-  behavior:
-    - [on, off]
-    - [off, on]"""
+      next: [on]
+"""
 
 yaml_button = """device:
   name: Button
@@ -22,12 +22,12 @@ yaml_button = """device:
     pressed:
       start: true
       final: true
+      next: [released]
     released:
       start: false
       final: true
-  behavior:
-    - [pressed, released]
-    - [released, pressed]"""
+      next: [pressed]
+"""
 
 yaml_timer = """device:
   name: Timer
@@ -35,17 +35,16 @@ yaml_timer = """device:
     started:
         start: True
         final: False
+        next: [canceled, timeout]
     canceled:
         start: False
         final: True
+        next: [started]
     timeout:
         start: False
         final: True
-  behavior:
-    - [started, canceled]
-    - [started, timeout]
-    - [canceled, started]
-    - [timeout, started]"""
+        next: [started]
+"""
 
 yaml_desklamp = """device:
   name: DeskLamp
@@ -58,8 +57,10 @@ yaml_desklamp = """device:
     level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
+        next: [standby1, level2]
     level2:
         start: False
+        next: [standby2]
         micro:
           - b.pressed
           - b.released
@@ -68,9 +69,11 @@ yaml_desklamp = """device:
               - [ledB.on, t.canceled]
           - t.started
     standby1:
+        next: [level1]
         start: false
         micro: [t.timeout, ledA.off]
     standby2:
+        next: [level1]
         start: false
         micro:
           - xor:
@@ -79,12 +82,7 @@ yaml_desklamp = """device:
           - xor:
                 - [ledB.off, ledA.off]
                 - [ledA.off, ledB.off]
-  behavior:
-    - [level1, standby1]
-    - [level1, level2]
-    - [level2, standby2]
-    - [standby1, level1]
-    - [standby2, level1]"""
+"""
 
 
 def test_pprint_led() -> None:

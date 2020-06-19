@@ -36,10 +36,9 @@ def test_events_start() -> None:
         "device": {
             "name": "Button",
             "events": {
-                "pressed": {"start": True, "final": False},
-                "released": {"start": False},
+                "pressed": {"start": True, "final": False, "next": ["released"]},
+                "released": {"start": False, "next": ["pressed"],},
             },
-            "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
 
@@ -56,8 +55,10 @@ def test_events_start_specified() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": {"pressed": {"start": False}, "released": {"start": True}},
-            "behavior": [["pressed", "released"], ["released", "pressed"]],
+            "events": {
+                "pressed": {"start": False, "next": ["released"]},
+                "released": {"start": True, "next": ["pressed"]},
+            },
         }
     }
 
@@ -70,8 +71,10 @@ def test_events_from_behavior() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": {"pressed": {"start": True}, "released": {"start": False}},
-            "behavior": [["released", "pressed"],],
+            "events": {
+                "pressed": {"start": True, "next": [],},
+                "released": {"start": False, "next": ["pressed"],},
+            },
         }
     }
 
@@ -87,10 +90,9 @@ def test_events_no_components_but_triggers() -> None:
         "device": {
             "name": "Button",
             "events": {
-                "pressed": {"start": True},
-                "released": {"start": False, "micro": ["x.xxx"]},
+                "pressed": {"start": True, "next": ["released"],},
+                "released": {"start": False, "micro": ["x.xxx"], "next": ["pressed"]},
             },
-            "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
 
@@ -109,10 +111,13 @@ def test_auto_create_declared_event_without_micro() -> None:
             "name": "SmartButton",
             "components": {"b": "Button"},
             "events": {
-                "pressed": {"start": True},
-                "released": {"start": False, "micro": ["b.released"]},
+                "pressed": {"start": True, "next": ["released"]},
+                "released": {
+                    "start": False,
+                    "micro": ["b.released"],
+                    "next": ["pressed"],
+                },
             },
-            "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
 
@@ -131,10 +136,13 @@ def test_auto_create_undeclared_event_with_micro() -> None:
             "name": "SmartButton",
             "components": {"b": "Button"},
             "events": {
-                "pressed": {"start": True},
-                "released": {"start": True, "micro": ["b.released"]},
+                "pressed": {"start": True, "next": ["released"]},
+                "released": {
+                    "next": ["pressed"],
+                    "start": True,
+                    "micro": ["b.released"],
+                },
             },
-            "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
 
@@ -151,14 +159,13 @@ def test_empty_integration() -> None:
     yaml_code = """
 device:
   name: WrongButton
-  behavior:
-    - [on, on]
   components:
     b: SingleClickButton
   events:
     on:
         start: true
         micro: [] # ERROR: empty integration
+        next: [on]
     off:
         start: true
         micro: [ b.pressed, b.released]
@@ -169,32 +176,6 @@ device:
     assert (
         str(exc_info.value)
         == "operation declaration error in ['on']: integration rule error: An empty sequence introduces ambiguity.\nHint: remove empty sequence or add subsystem call to sequence."
-    )
-
-
-def test_events_triggers_different_number() -> None:
-    yaml_code = """
-device:
-  name: WrongButton
-  behavior:
-    - [on, on]
-  components:
-    b: SingleClickButton
-  events:
-    on:
-        start: true
-        micro: [ b.pressed, b.released]
-    off:
-        start: true
-        micro: [ b.pressed, b.released] # ERROR: off is undeclared!
-    """
-
-    with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
-        device: Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
-
-    assert (
-        str(exc_info.value)
-        == "operation declaration error in ['off']: Every operation declaration must be referred in the behavior.\nHint: remove the definition of 'off' or add a transition with 'off' to the behavior section."
     )
 
 
@@ -396,12 +377,11 @@ device:
     on:
       start: true
       final: true
+      next: [off]
     off:
       start: false
       final: true
-  behavior:
-    - [on, off]
-    - [off, on]    
+      next: [on]
     """
     shelley_device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
     visitor = PrettyPrintVisitor(components=shelley_device.components)
@@ -432,17 +412,15 @@ device:
     started:
         start: True
         final: true
+        next: [canceled, timeout]
     canceled:
         start: False
         final: True
+        next: [started]
     timeout:
         start: False
         final: True
-  behavior:
-    - [started, canceled]
-    - [started, timeout]
-    - [canceled, started]
-    - [timeout, started]    
+        next: [started]
     """
     shelley_device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
     visitor = PrettyPrintVisitor(components=shelley_device.components)
@@ -481,7 +459,9 @@ device:
     level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
+        next: [standby1, level2]
     level2:
+        next: [standby2]
         micro:
           - b.pressed
           - b.released
@@ -491,7 +471,9 @@ device:
           - t.started
     standby1:
         micro: [t.timeout, ledA.off]
+        next: [level1]
     standby2:
+        next: [level1]
         micro:
           - xor:
               - [b.pressed, b.released, t.canceled]
@@ -499,12 +481,6 @@ device:
           - xor:
                 - [ledB.off, ledA.off]
                 - [ledA.off, ledB.off]
-  behavior:
-    - [level1, standby1]
-    - [level1, level2]
-    - [level2, standby2]
-    - [standby1, level1]
-    - [standby2, level1]
     """
 
     shelley_device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
@@ -547,20 +523,18 @@ device:
     lred: Led
   events:
     send:
+        next: [ok, off]
         start: True
         micro: [ b1.pressed, b1.released]
     ok:
+        next: [send]
         micro:
           - xor:
               - [ lred.on, lred.off ]
               - [ lgreen.on, lgreen.off ]
     off:
+        next: [send]
         micro: [ b2.pressed, b2.released]
-  behavior:
-    - [send, ok]
-    - [send, off]
-    - [ok, send]
-    - [off, send]
         """
 
     shelley_device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
@@ -599,11 +573,10 @@ device:
     b: Button
   events:
     on:
+        next: [on]
         start: True
         final: True
         micro: [ b.pressed, b.released]
-  behavior:
-    - [on, on]
 
 
 test_macro:
@@ -687,6 +660,7 @@ device:
     b3: Button
   events:
     button1AndOther:
+        next: $ANY
         start: True
         micro:
           - xor:
@@ -697,6 +671,7 @@ device:
                   - [b2.pressed, b1.pressed]
                   - [b3.pressed, b1.pressed]
     button3OrOthers:
+          next: $ANY
           start: True
           micro:
             - xor:
@@ -708,11 +683,6 @@ device:
                         - b2.pressed
                         - b1.pressed
                 - b3.pressed
-  behavior:
-    - [button1AndOther, button1AndOther]
-    - [button1AndOther, button3OrOthers]
-    - [button3OrOthers, button3OrOthers]
-    - [button3OrOthers, button1AndOther]   
     """
     shelley_device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
     visitor = PrettyPrintVisitor(components=shelley_device.components)
@@ -729,8 +699,8 @@ device:
   behaviours:
     button1AndOther -> button1AndOther
     button1AndOther -> button3OrOthers
-    button3OrOthers -> button3OrOthers
     button3OrOthers -> button1AndOther
+    button3OrOthers -> button3OrOthers
   components:
     Button b1, Button b2, Button b3
   triggers:

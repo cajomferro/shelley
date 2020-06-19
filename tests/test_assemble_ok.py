@@ -16,41 +16,33 @@ httpclient_yml = """
 device:
   name: HTTPClient
   events:
-    connected: {start: true}
-    disconnected: {start: false}
-    get: {start: false}
-    post: {start: false}
-    connect_failed: {start: false}
-    response200: {start: false}
-    response404: {start: false}
-    response401: {start: false}
-    response500: {start: false}
-  behavior:
-    - [connected, get]  # client.connect(host, port)) succeeded
-    - [connected, post]  # client.connect(host, port)) succeeded
-    - [connected, connect_failed]  # !client.connect(host, port))
-    - [connect_failed, connected]
-    - [get, response200]
-    - [get, response404]
-    - [get, response401]
-    - [get, response500]
-    - [post, response200]
-    - [post, response404]
-    - [post, response401]
-    - [post, response500]
-    - [response200, get]
-    - [response200, post]
-    - [response200, disconnected]
-    - [response404, get]
-    - [response404, disconnected]
-    - [response404, post]
-    - [response401, get]
-    - [response401, disconnected]
-    - [response401, post]
-    - [response500, get]
-    - [response500, disconnected]
-    - [response500, post]
-    - [disconnected, connected]
+    connected:
+        start: true
+        next: [get, post, connect_failed]
+    disconnected:
+        start: false
+        next: [connected]
+    get:
+        start: false
+        next: [response200, response404, response401, response500]
+    post:
+        start: false
+        next: [response200, response404, response401, response500]
+    connect_failed:
+        start: false
+        next: [connected]
+    response200:
+        start: false
+        next: [get, post, disconnected]
+    response404:
+        start: false
+        next: [get, post, disconnected]
+    response401:
+        next: [get, post, disconnected]
+        start: false
+    response500:
+        next: [get, post, disconnected]
+        start: false
 """
 
 wificlient_yml = """
@@ -59,32 +51,28 @@ device:
   events:
     ssid_joined:
         start: True
+        next: [connected, ssid_left]
     ssid_failed:
         start: True
-    ssid_left: {start: false}
-    connection_timeout: {start: true}
-    connected: {start: false}
-    print_data_ready: {start: false}
-    print_timeout: {start: false}
-    disconnected: {start: false}
-  behavior:
-    - [connection_timeout, connected]
-    - [ssid_joined, connected]
-    - [ssid_joined, ssid_left]
-    - [ssid_left, ssid_joined]
-    - [ssid_left, ssid_failed]
-    - [ssid_failed, ssid_failed]
-    - [ssid_failed, ssid_joined]
-    - [connected, disconnected]
-    - [connected, print_timeout]
-    - [connected, print_data_ready]
-    - [print_data_ready, print_data_ready]
-    - [print_timeout, print_timeout]
-    - [print_data_ready, disconnected]
-    - [print_timeout, disconnected]
-    - [disconnected, connected]
-    - [disconnected, connection_timeout]
-    - [disconnected, ssid_left]
+        next: [ssid_failed, ssid_joined]
+    connection_timeout:
+        start: true
+        next: [connected]
+    connected:
+        start: false
+        next: [disconnected, print_timeout, print_data_ready]
+    print_data_ready:
+        start: false
+        next: [print_data_ready, disconnected]
+    print_timeout:
+        start: false
+        next: [print_timeout, disconnected]
+    ssid_left:
+        start: false
+        next: [ssid_joined, ssid_failed]
+    disconnected:
+        start: false
+        next: [connected, connection_timeout, ssid_left]
 """
 
 wifihttp_yml = """
@@ -97,8 +85,10 @@ device:
     started:
         start: True
         micro: [wc.ssid_joined, wc.connected, hc.connected]
+        next: [send]
     notconnected:
         start: True
+        next: [started]
         micro:
           xor:
             - [wc.ssid_joined, wc.connected, hc.connect_failed]
@@ -107,6 +97,7 @@ device:
               - [wc.ssid_failed]
     send:
         start: false
+        next: [stopped, ok, error]
         micro:
           xor:
             - hc.get
@@ -114,8 +105,10 @@ device:
     ok:
         start: false
         micro: [wc.print_data_ready, hc.response200]
+        next: [stopped, send]
     error:
         start: false
+        next: [stopped, send]
         micro:
           xor:
             - [wc.print_data_ready, hc.response401]
@@ -129,18 +122,7 @@ device:
     stopped:
         start: false
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
-  behavior:
-    - [started, send]
-    - [notconnected, started]
-    - [send, stopped]
-    - [send, ok]
-    - [send, error]
-    - [error, send]
-    - [ok, send]
-    - [ok, stopped]
-    - [error, stopped]
-    - [stopped, started]
-    - [stopped, notconnected]
+        next: [started, notconnected]
 """
 
 
@@ -216,11 +198,10 @@ device:
   events:
     pressed:
       start: true
+      next: [released]
     released:
       start: false
-  behavior:
-    - [pressed, released]
-    - [released, pressed]
+      next: [pressed]
 
 test_macro:
   ok:
@@ -243,8 +224,7 @@ device:
         start: True
         final: True
         micro: [ b.pressed, b.released]
-  behavior:
-    - [on, on]
+        next: [on]
 
 
 test_macro:
@@ -274,24 +254,26 @@ yaml_led = """
 device:
   name: Led
   events:
-    on: {start: true}
-    off: {start: false} # on is start event
-  behavior:
-    - [on, off]
-    - [off, on]"""
+    on:
+        start: true
+        next: [off]
+    off:
+        start: false
+        next: [on]"""
 
 yaml_timer = """
 device:
   name: Timer
   events:
-    started: {start: true}
-    canceled: {start: false}
-    timeout: {start: false} # started is start event
-  behavior:
-    - [started, canceled]
-    - [started, timeout]
-    - [canceled, started]
-    - [timeout, started]
+    started:
+        start: true
+        next: [canceled, timeout]
+    canceled:
+        start: false
+        next: [started]
+    timeout:
+        start: false
+        next: [started]
 """
 
 yaml_desklamp = """device:
@@ -305,7 +287,9 @@ yaml_desklamp = """device:
     level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
+        next: [standby1, level2]
     level2:
+        next: [standby2]
         start: false
         micro:
           - b.pressed
@@ -317,8 +301,10 @@ yaml_desklamp = """device:
     standby1:
         start: false
         micro: [t.timeout, ledA.off]
+        next: [level1]
     standby2:
         start: false
+        next: [level1]
         micro:
           - xor:
               - [b.pressed, b.released, t.canceled]
@@ -326,12 +312,7 @@ yaml_desklamp = """device:
           - xor:
                 - [ledB.off, ledA.off]
                 - [ledA.off, ledB.off]
-  behavior:
-    - [level1, standby1]
-    - [level1, level2]
-    - [level2, standby2]
-    - [standby1, level1]
-    - [standby2, level1]"""
+"""
 
 
 def test_assemble_smart_button() -> None:

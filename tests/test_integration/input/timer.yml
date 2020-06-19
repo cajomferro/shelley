@@ -4,14 +4,12 @@ device:
     started:
         start: True
         final: False
+        next: [canceled, timeout]
     canceled:
         start: False
         final: True
+        next: [started]
     timeout:
         start: False
         final: True
-  behavior:
-    - [started, canceled]
-    - [started, timeout]
-    - [canceled, started]
-    - [timeout, started]
+        next: [started]

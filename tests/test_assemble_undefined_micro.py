@@ -18,12 +18,11 @@ device:
     on:
       start: true
       final: true
+      next: [off]
     off:
       start: false
       final: true
-  behavior:
-    - [on, off]
-    - [off, on]
+      next: [on]
 """
 
 composition_yml_src: str = """
@@ -35,18 +34,15 @@ device:
     go:
         start: True
         micro: [s.on]
+        next: [stop]
     stop:
         start: False
         micro: [s.off]
+        next: [go]
     bad:
         start: True
         micro: [s.badbadbad] # WRONG! DOESN'T EXIST IN MICRO!
-  behavior:
-    - [go, stop]
-    - [stop, go]
-    - [bad, bad]
-
-
+        next: [bad]
 """
 
 composition_yml_tests = """

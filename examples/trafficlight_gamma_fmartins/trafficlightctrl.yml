@@ -25,12 +25,13 @@ device:
     - [display_red, police_on]
     - [display_yellow, police_on]
     - [display_green, police_on]
-    #  interrupted
     - [police_on, display_byellow]
-    - [display_byellow, police_off]
+    #  interrupted
     - [display_byellow, BlackTimeout4]
     - [BlackTimeout4, display_black]
-    - [display_black, police_off]
     - [display_black, BlinkingYellowTimeout3]
+    - [BlinkingYellowTimeout3, display_byellow]
     # interrupted to normal
+    - [BlinkingYellowTimeout3, police_off]
+    - [BlackTimeout4, police_off]
     - [police_off, display_red]

@@ -161,10 +161,9 @@ def test_smartbutton_file_not_found_uses_file() -> None:
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
-
+    path = Path.cwd() / "buttonBAD.scy"
     assert (
-        str(exc_info.value)
-        == "Use device not found: buttonBAD.scy. Please compile it first!"
+        str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
     )
 
     _remove_compiled_dir()
@@ -229,9 +228,10 @@ def test_compile_desklamp_dependency_not_found_2() -> None:
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
 
+    path = Path.cwd() / "tests/test_integration/input/compiled/led.scy"
+
     assert (
-        str(exc_info.value)
-        == "Use device not found: tests/test_integration/input/compiled/led.scy. Please compile it first!"
+        str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
     )
 
     _remove_compiled_dir()

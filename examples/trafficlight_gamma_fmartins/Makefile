@@ -2,9 +2,11 @@ include ../common.mk
 
 all: scy
 
-pdf: controller.pdf trafficlightctrl.pdf
+pdf: trafficlightctrl.pdf controller.pdf crossroad.pdf
 
-scy: controller.scy trafficlightctrl.scy
+scy: crossroad.scy
+
+crossroad.scy: crossroad.yml trafficlightctrl.scy controller.scy
 
 clean:
 	rm -f *.scy *.pdf *.int

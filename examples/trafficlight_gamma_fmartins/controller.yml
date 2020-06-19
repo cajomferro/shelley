@@ -3,28 +3,28 @@
 device:
   name: Controller
   events:
-    - init: {start: true}
-    - toggle_init: {start: false}
-    - InitTimeout5: {start: false}
-    - priority_prepares: {start: false}
-    - toggle_priority_prepares: {start: false}
-    - PriorityPreparesTimeout6: {start: false}
-    - secondary: {start: false}
-    - toggle_secondary: {start: false}
-    - SecondaryTimeout2: {start: false}
-    - secondary_prepares: {start: false}
-    - toggle_secondary_prepares: {start: false}
-    - SecondaryPreparesTimeout3: {start: false}
-    - priority: {start: false}
-    - toggle_priority: {start: false}
-    - PriorityTimeout4: {start: false}
-    - police_on: {start: false}
-    - priority_police_on: {start: false}
-    - secondary_police_on: {start: false}
-    - police_off: {start: false}
-    - priority_police_off: {start: false}
-    - secondary_police_off: {start: false}
-    - interrupted: {start: false}
+    init: {start: true}
+    toggle_init: {start: false}
+    InitTimeout5: {start: false}
+    priority_prepares: {start: false}
+    toggle_priority_prepares: {start: false}
+    PriorityPreparesTimeout6: {start: false}
+    secondary: {start: false}
+    toggle_secondary: {start: false}
+    SecondaryTimeout2: {start: false}
+    secondary_prepares: {start: false}
+    toggle_secondary_prepares: {start: false}
+    SecondaryPreparesTimeout3: {start: false}
+    priority: {start: false}
+    toggle_priority: {start: false}
+    PriorityTimeout4: {start: false}
+    police_on: {start: false}
+    priority_police_on: {start: false}
+    secondary_police_on: {start: false}
+    police_off: {start: false}
+    priority_police_off: {start: false}
+    secondary_police_off: {start: false}
+    interrupted: {start: false}
   behavior:
     # operating
     - [init, toggle_init]

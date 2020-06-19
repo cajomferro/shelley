@@ -1,18 +1,18 @@
 device:
   name: TrafficLightCtrl
   events:
-    - toggle_yellow : {start: false}
-    - display_yellow : {start: false}
-    - toggle_red : {start: false}
-    - display_red : {start: true}
-    - toggle_green : {start: false}
-    - display_green : {start: false}
-    - police_on : {start: false}
-    - police_off : {start: false}
-    - display_byellow : {start: false}
-    - display_black : {start: false}
-    - BlinkingYellowTimeout3 : {start: false}
-    - BlackTimeout4 : {start: false}
+    toggle_red : {start: false}
+    display_red : {start: true}
+    toggle_yellow : {start: false}
+    display_yellow : {start: false}
+    toggle_green : {start: false}
+    display_green : {start: false}
+    police_on : {start: false}
+    police_off : {start: false}
+    display_byellow : {start: false}
+    display_black : {start: false}
+    BlinkingYellowTimeout3 : {start: false}
+    BlackTimeout4 : {start: false}
   behavior:
     # normal
     - [toggle_yellow, display_yellow]

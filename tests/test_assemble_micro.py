@@ -13,15 +13,15 @@ httpclient_yml = """
 device:
   name: HTTPClient
   events:
-    - connected: {start: true}
-    - disconnected: {start: false}
-    - get: {start: false}
-    - post: {start: false}
-    - connect_failed: {start: false}
-    - response200: {start: false}
-    - response404: {start: false}
-    - response401: {start: false}
-    - response500: {start: false}
+    connected: {start: true}
+    disconnected: {start: false}
+    get: {start: false}
+    post: {start: false}
+    connect_failed: {start: false}
+    response200: {start: false}
+    response404: {start: false}
+    response401: {start: false}
+    response500: {start: false}
   behavior:
     - [connected, get]  # client.connect(host, port)) succeeded
     - [connected, post]  # client.connect(host, port)) succeeded
@@ -54,16 +54,16 @@ wificlient_yml = """
 device:
   name: WiFiClient
   events:
-    - ssid_joined:
+    ssid_joined:
         start: True
-    - ssid_failed:
+    ssid_failed:
         start: True
-    - connection_timeout: {start: true}
-    - connected: {start: false}
-    - print_data_ready: {start: false}
-    - print_timeout: {start: false}
-    - ssid_left: {start: false}
-    - disconnected: {start: false}
+    connection_timeout: {start: true}
+    connected: {start: false}
+    print_data_ready: {start: false}
+    print_timeout: {start: false}
+    ssid_left: {start: false}
+    disconnected: {start: false}
   behavior:
     - [connection_timeout, connected]
     - [ssid_joined, connected]
@@ -91,10 +91,10 @@ device:
       hc: HTTPClient
       wc: WiFiClient
   events:
-    - started:
+    started:
         start: True
         micro: [wc.joined, wc.connected, hc.connected]
-    - notconnected:
+    notconnected:
         start: True
         micro:
           xor:
@@ -102,16 +102,16 @@ device:
             - xor:
               - [wc.joined, wc.connection_timeout]
               - [wc.ssid_failed]
-    - send:
+    send:
         start: false
         micro:
           xor:
             - hc.get
             - hc.post
-    - ok:
+    ok:
         start: false
         micro: [wc.print_data_ready, hc.response200]
-    - error:
+    error:
         start: false
         micro:
           xor:
@@ -123,7 +123,7 @@ device:
                 - xor:
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
-    - stopped:
+    stopped:
         start: false
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
   behavior:
@@ -176,14 +176,14 @@ def test_compile_wifihttp_event_undeclared() -> None:
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
         regex = (
-            r"    - send:\n"
+            r"    send:\n"
             r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.get\n"
             r"            - hc.post"
         )
-        replace = r"    - send: {start: false}\n"  # send will be auto discovered without specifying micro
+        replace = r"    send: {start: false}\n"  # send will be auto discovered without specifying micro
         wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
         print(wifihttp_yml_bad)
         # parse yaml and assemble device
@@ -214,14 +214,14 @@ def test_compile_wifihttp_event_declared_micro_empty1() -> None:
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
         regex = (
-            r"    - send:\n"
+            r"    send:\n"
             r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.get\n"
             r"            - hc.post"
         )
-        replace = r"    - send:\n" r"        micro: {}"
+        replace = r"    send:\n" r"        micro: {}"
         wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
 
         # parse yaml and assemble device
@@ -253,14 +253,14 @@ def test_compile_wifihttp_event_declared_micro_empty2() -> None:
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
         regex = (
-            r"    - send:\n"
+            r"    send:\n"
             r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
             r"            - hc.get\n"
             r"            - hc.post"
         )
-        replace = r"    - send:\n" r"        micro: []"
+        replace = r"    send:\n" r"        micro: []"
         wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
 
         # parse yaml and assemble device
@@ -292,7 +292,7 @@ def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
         regex = (
-            r"    - send:\n"
+            r"    send:\n"
             r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
@@ -300,7 +300,7 @@ def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
             r"            - hc.post"
         )
         replace = (
-            r"    - send:\n" r"        start: True\n"
+            r"    send:\n" r"        start: True\n"
         )  # micro is now undefined but send event is still declared
         wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
 
@@ -334,7 +334,7 @@ def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
         regex = (
-            r"    - send:\n"
+            r"    send:\n"
             r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
@@ -342,7 +342,7 @@ def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
             r"            - hc.post"
         )
         replace = (
-            r"    - send:\n"
+            r"    send:\n"
             r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
@@ -380,7 +380,7 @@ def XXX_test_compile_wifihttp_invalid_xor_3_options() -> None:
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
         regex = (
-            r"    - send:\n"
+            r"    send:\n"
             r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"
@@ -388,7 +388,7 @@ def XXX_test_compile_wifihttp_invalid_xor_3_options() -> None:
             r"            - hc.post"
         )
         replace = (
-            r"    - send:\n"
+            r"    send:\n"
             r"        start: false\n"
             r"        micro:\n"
             r"          xor:\n"

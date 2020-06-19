@@ -12,10 +12,10 @@ def test_button() -> None:
     yaml_src = """device:
   name: Button
   events:
-  - pressed:
+    pressed:
       start: true
       final: true
-  - released:
+    released:
       start: false
       final: true
   behavior:
@@ -41,10 +41,10 @@ def test_led() -> None:
     yaml_src = """device:
   name: Led
   events:
-  - on:
+    on:
       start: true
       final: true
-  - off:
+    off:
       start: false
       final: true
   behavior:
@@ -69,13 +69,13 @@ def test_timer() -> None:
     yaml_src = """device:
   name: Timer
   events:
-    - started:
+    started:
         start: True
         final: true
-    - canceled:
+    canceled:
         start: False
         final: True
-    - timeout:
+    timeout:
         start: False
         final: True
   behavior:
@@ -110,7 +110,7 @@ def test_smartbutton1() -> None:
   components:
     b: Button
   events:
-    - on:
+    on:
         start: True
         final: True
         micro: [ b.pressed, b.released]
@@ -140,10 +140,10 @@ def test_desklamp() -> None:
     b: Button
     t: Timer
   events:
-    - level1:
+    level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
-    - level2:
+    level2:
         micro:
           - b.pressed
           - b.released
@@ -151,9 +151,9 @@ def test_desklamp() -> None:
               - [t.canceled, ledB.on]
               - [ledB.on, t.canceled]
           - t.started
-    - standby1:
+    standby1:
         micro: [t.timeout, ledA.off]
-    - standby2:
+    standby2:
         micro:
           - xor:
               - [b.pressed, b.released, t.canceled]
@@ -292,7 +292,7 @@ device:
   B: Button
   T: Timer
  events:
-   - single:
+    single:
        start: True
        final: True
        micro:
@@ -301,7 +301,7 @@ device:
          - xor:
            - seq: [T.timeout, B.release] # user ir slow
            - seq: [B.release, T.timeout] # user is fast
-   - double:
+    double:
        start: True
        final: True
        micro:

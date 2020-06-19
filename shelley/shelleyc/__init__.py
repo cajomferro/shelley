@@ -25,10 +25,11 @@ logger = logging.getLogger("shelleyc")
 
 
 class DeviceMapping:
-    def __init__(self, files: Dict[str, Path], binary: bool):
+    def __init__(self, files: Dict[str, Path], binary: bool, base_dir:Path):
         self.files = files
         self.binary = binary
         self.loaded: Dict[str, CheckedDevice] = dict()
+        self.base_dir = base_dir
 
     def __getitem__(self, key):
         dev = self.loaded.get(key, None)
@@ -36,6 +37,8 @@ class DeviceMapping:
             return dev
         try:
             fname = self.files[key]
+            if not fname.is_absolute():
+                fname = self.base_dir / fname
             self.loaded[key] = dev = deserialize(fname, self.binary)
             return dev
         except KeyError:
@@ -99,7 +102,9 @@ def _get_ext(binary: bool = False) -> str:
 
 
 def compile_shelley(
+    *,
     src_path: Path,
+    uses_base_dir: Path,
     uses: Dict[str, str],
     dst_path: Optional[Path] = None,
     binary: bool = False,
@@ -129,7 +134,11 @@ def compile_shelley(
     if dst_path is None:
         dst_path = src_path.parent / (src_path.stem + "." + _get_ext(binary))
 
-    known_devices = DeviceMapping(dict((k, Path(v)) for (k, v) in uses.items()), binary)
+    known_devices = DeviceMapping(
+        files=dict((k, Path(v)) for (k, v) in uses.items()),
+        binary=binary,
+        base_dir=uses_base_dir
+    )
     automata_device = shelley2automata(shelley_device)
 
     if slow_check:

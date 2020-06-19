@@ -5,6 +5,6 @@ device:
   components:
     b: Button
   events:
-    - on:
+    on:
         start: True
         micro: [ b.pressed, b.pressed] # this is not an allowed sequence for SingleClickButton

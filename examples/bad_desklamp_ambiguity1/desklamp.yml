@@ -12,11 +12,11 @@ device:
     b: Button
     t: Timer
   events:
-    - level1:
+    level1:
         start: True
         final: False
         micro: [b.press, b.release, ledA.on, t.start]
-    - level2:
+    level2:
         final: False
         micro:
           - b.press
@@ -26,10 +26,10 @@ device:
               - [ledA.on]
               # - [ledB.on, t.cancel]
           - t.start
-    - standby1:
+    standby1:
         final: True
         micro: [t.timeout, ledA.off]
-    - standby2:
+    standby2:
         final: True
         micro:
           - xor:
@@ -58,7 +58,7 @@ test_macro:
 
 test_micro:
   ok:
-    valid1: [b.press, b.release, ledA.on, t.start, b.press, b.release, t.cancel, ledB.on, t.start, t.timeout, ledB.off, ledA.off]
+    valid1: [b.press, b.release, ledA.on, t.start, b.pressed, b.release, t.cancel, ledB.on, t.start, t.timeout, ledB.off, ledA.off]
     valid3: true
 #    valid2:
 #      possibly:

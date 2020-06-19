@@ -16,15 +16,15 @@ httpclient_yml = """
 device:
   name: HTTPClient
   events:
-    - connected: {start: true}
-    - disconnected: {start: false}
-    - get: {start: false}
-    - post: {start: false}
-    - connect_failed: {start: false}
-    - response200: {start: false}
-    - response404: {start: false}
-    - response401: {start: false}
-    - response500: {start: false}
+    connected: {start: true}
+    disconnected: {start: false}
+    get: {start: false}
+    post: {start: false}
+    connect_failed: {start: false}
+    response200: {start: false}
+    response404: {start: false}
+    response401: {start: false}
+    response500: {start: false}
   behavior:
     - [connected, get]  # client.connect(host, port)) succeeded
     - [connected, post]  # client.connect(host, port)) succeeded
@@ -57,16 +57,16 @@ wificlient_yml = """
 device:
   name: WiFiClient
   events:
-    - ssid_joined:
+    ssid_joined:
         start: True
-    - ssid_failed:
+    ssid_failed:
         start: True
-    - ssid_left: {start: false}
-    - connection_timeout: {start: true}
-    - connected: {start: false}
-    - print_data_ready: {start: false}
-    - print_timeout: {start: false}
-    - disconnected: {start: false}
+    ssid_left: {start: false}
+    connection_timeout: {start: true}
+    connected: {start: false}
+    print_data_ready: {start: false}
+    print_timeout: {start: false}
+    disconnected: {start: false}
   behavior:
     - [connection_timeout, connected]
     - [ssid_joined, connected]
@@ -94,10 +94,10 @@ device:
       hc: HTTPClient
       wc: WiFiClient
   events:
-    - started:
+    started:
         start: True
         micro: [wc.ssid_joined, wc.connected, hc.connected]
-    - notconnected:
+    notconnected:
         start: True
         micro:
           xor:
@@ -105,16 +105,16 @@ device:
             - xor:
               - [wc.ssid_joined, wc.connection_timeout]
               - [wc.ssid_failed]
-    - send:
+    send:
         start: false
         micro:
           xor:
             - hc.get
             - hc.post
-    - ok:
+    ok:
         start: false
         micro: [wc.print_data_ready, hc.response200]
-    - error:
+    error:
         start: false
         micro:
           xor:
@@ -126,7 +126,7 @@ device:
                 - xor:
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
-    - stopped:
+    stopped:
         start: false
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
   behavior:
@@ -218,9 +218,9 @@ yaml_button = """
 device:
   name: Button
   events:
-  - pressed:
+    pressed:
       start: true
-  - released:
+    released:
       start: false
   behavior:
     - [pressed, released]
@@ -243,7 +243,7 @@ device:
   components:
     b: Button
   events:
-    - on:
+    on:
         start: True
         final: True
         micro: [ b.pressed, b.released]
@@ -278,8 +278,8 @@ yaml_led = """
 device:
   name: Led
   events:
-    - on: {start: true}
-    - off: {start: false} # on is start event
+    on: {start: true}
+    off: {start: false} # on is start event
   behavior:
     - [on, off]
     - [off, on]"""
@@ -288,9 +288,9 @@ yaml_timer = """
 device:
   name: Timer
   events:
-    - started: {start: true}
-    - canceled: {start: false}
-    - timeout: {start: false} # started is start event
+    started: {start: true}
+    canceled: {start: false}
+    timeout: {start: false} # started is start event
   behavior:
     - [started, canceled]
     - [started, timeout]
@@ -306,10 +306,10 @@ yaml_desklamp = """device:
     b: Button
     t: Timer
   events:
-    - level1:
+    level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
-    - level2:
+    level2:
         start: false
         micro:
           - b.pressed
@@ -318,10 +318,10 @@ yaml_desklamp = """device:
               - [t.canceled, ledB.on]
               - [ledB.on, t.canceled]
           - t.started
-    - standby1:
+    standby1:
         start: false
         micro: [t.timeout, ledA.off]
-    - standby2:
+    standby2:
         start: false
         micro:
           - xor:

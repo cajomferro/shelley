@@ -1,5 +1,5 @@
-SHELLEYC = shelleyc
-SHELLEYV = shelleyv
+include ../common.mk
+.PHONY: all pdf scy clean all
 
 all: scy
 
@@ -7,16 +7,9 @@ pdf: button.pdf smartbutton.pdf
 
 scy: smartbutton.scy
 
+USES = -u uses.yml
+
 smartbutton.scy: smartbutton.yml button.scy
-
-%.scy: %.yml
-	$(SHELLEYC) -u uses.yml -d $<
-
-%.gv: %.scy
-	$(SHELLEYV) $< -o $@
-
-%.pdf: %.gv
-	dot -Tpdf -o $@ $<
 
 clean:
 	rm -f *.scy *.pdf *.gv

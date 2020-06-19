@@ -1,10 +1,10 @@
 device:
   name: Button
   events:
-  - pressed:
+    pressed:
       start: true
       final: true
-  - released:
+    released:
       start: false
       final: true
   behavior:

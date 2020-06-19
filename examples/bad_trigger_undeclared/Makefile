@@ -1,5 +1,5 @@
-SHELLEYC = shelleyc
-SHELLEYV = shelleyv
+include ../common.mk
+.PHONY: all pdf scy clean all
 
 all: scy
 
@@ -7,18 +7,9 @@ pdf: button.pdf
 
 scy: trigger_undeclared.scy
 
-trigger_undeclared.scy: trigger_undeclared.yml button.scy
+trigger_undeclared.scy: trigger_undeclared.yml ../base/button.scy
 	# Shelley parser error: Events declared not used in behavior: '{'off'}'
-	! $(SHELLEYC) -d $< -u uses.yml
-
-%.scy: %.yml
-	$(SHELLEYC) -d $<
-
-%.gv: %.scy
-	$(SHELLEYV) $< -o $@
-
-%.pdf: %.gv
-	dot -Tpdf -o $@ $<
+	! $(SHELLEYC) $(USES) -d $<
 
 clean:
 	rm -f *.scy *.pdf *.gv

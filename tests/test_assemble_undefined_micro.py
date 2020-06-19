@@ -15,10 +15,10 @@ simple_yml: str = """
 device:
   name: Simple
   events:
-  - on:
+    on:
       start: true
       final: true
-  - off:
+    off:
       start: false
       final: true
   behavior:
@@ -32,13 +32,13 @@ device:
   components:
     s: Simple
   events:
-    - go:
+    go:
         start: True
         micro: [s.on]
-    - stop:
+    stop:
         start: False
         micro: [s.off]
-    - bad:
+    bad:
         start: True
         micro: [s.badbadbad] # WRONG! DOESN'T EXIST IN MICRO!
   behavior:

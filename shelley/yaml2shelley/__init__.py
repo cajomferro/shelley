@@ -139,13 +139,19 @@ def _parse_behavior(
 
         try:
             e1 = events[left]
-        except KeyError as err:
-            raise ShelleyParserError(title=f"Behavior uses undeclared event {left!r}")
+        except KeyError:
+            raise ShelleyParserError(
+                title="invalid transition",
+                reason=f"Behavior uses undeclared event {left!r}",
+            )
 
         try:
             e2 = events[right]
-        except KeyError as err:
-            raise ShelleyParserError(title=f"Behavior uses undeclared event {right!r}")
+        except KeyError:
+            raise ShelleyParserError(
+                title="invalid transition",
+                reason=f"Behavior uses undeclared event {right!r}",
+            )
 
         discovered_events.add(left)
         discovered_events.add(right)
@@ -212,10 +218,14 @@ def _parse_event_name(
 
 
 def _parse_event(
-    src: dict, events: Events, components: Components, triggers: Triggers
+    event_name: str,
+    event_data: dict,
+    events: Events,
+    components: Components,
+    triggers: Triggers,
 ) -> Event:
     event: Optional[Event] = None
-
+    """
     event_name: Optional[str] = None
     try:
         event_name = list(src)[0]
@@ -224,6 +234,7 @@ def _parse_event(
         name = [event_name] if event_name is not None else None
         raise OperationDeclError(names=name, reason=f"Invalid syntax for event {src!r}")
     assert event_name is not None
+    """
     is_start: bool = parse_bool_field("start", False, event_name, event_data)
     is_final: bool = parse_bool_field("final", True, event_name, event_data)
     micro: Optional[Dict] = None
@@ -274,19 +285,19 @@ def _parse_events(
         return
 
     src_events = copy.deepcopy(src)
-    if not isinstance(src_events, list):
+    if not isinstance(src_events, dict):
         raise ShelleyParserError(
             title="syntax error in operation declarations section",
-            reason=f"Expecting list but found {type(src_events).__name__}: {src_events!r}",
+            reason=f"Expecting a dictionary but found {type(src_events).__name__}: {src_events!r}",
         )
 
-    for src_event in src_events:
-        if isinstance(src_event, dict):
-            _parse_event(src_event, events, components, triggers)
+    for event_name, event_data in src_events.items():
+        if isinstance(event_data, dict):
+            _parse_event(event_name, event_data, events, components, triggers)
         else:
             raise ShelleyParserError(
                 title="invalid operation declaration",
-                reason=f"Expecting a string or a dict but found: {src_event!r}",
+                reason=f"Expecting a dictionary but found: {event_data!r}",
             )
 
 

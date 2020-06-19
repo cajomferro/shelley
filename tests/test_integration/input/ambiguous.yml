@@ -5,7 +5,7 @@ device:
     b2: SimpleButton
     b3: SimpleButton
   events:
-    - button1AndOther:
+    button1AndOther:
         start: True
         micro:
           - xor:
@@ -15,7 +15,7 @@ device:
               - xor:
                   - [b2.pressed, b1.pressed]
                   - [b3.pressed, b1.pressed]
-    - button3OrOthers:
+    button3OrOthers:
           start: True
           micro:
               - xor:

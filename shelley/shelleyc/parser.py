@@ -91,9 +91,10 @@ def parse() -> None:
 
     try:
         compile_shelley(
-            args.device,
-            parse_uses(args.uses),
-            args.output,
+            src_path=args.device,
+            uses_base_dir=args.uses.parent if args.uses is not None else Path.cwd(),
+            uses=parse_uses(args.uses),
+            dst_path=args.output,
             binary=args.binary,
             integration=args.integration,
             dump_timings=args.dump_timings,

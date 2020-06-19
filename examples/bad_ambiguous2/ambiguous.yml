@@ -9,9 +9,9 @@ device:
     b: SingleClickButton
     t: Timer
   events:
-    - buttonPressedOnce:
+    buttonPressedOnce:
         start: True
-        micro: [b.pressed, t.started, b.released, t.canceled, t.started, t.timeout]
-    - buttonPressedTwice:
+        micro: [b.pressed, t.start, b.released, t.cancel, t.start, t.timeout]
+    buttonPressedTwice:
         start: True
-        micro: [ b.pressed, t.started, b.released, t.canceled, t.started, t.timeout] # this shouldn't be allowed since it is equivalent to other trigger
+        micro: [ b.pressed, t.start, b.released, t.cancel, t.start, t.timeout] # this shouldn't be allowed since it is equivalent to other trigger

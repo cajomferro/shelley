@@ -1,10 +1,10 @@
 device:
-  name: Button
+  name: PressedButton
   events:
-  - in:
+    in:
       start: true
       final: true
-  - out:
+    out:
       start: false
       final: true
   behavior:

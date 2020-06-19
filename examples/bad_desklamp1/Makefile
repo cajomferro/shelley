@@ -7,9 +7,10 @@ pdf: button.pdf led.pdf timer.pdf desklamp.pdf
 
 scy: desklamp.scy
 
-desklamp.scy: desklamp.yml timer.scy led.scy button.scy
+desklamp.scy: desklamp.yml ../base/timer.scy ../base/led.scy ../base/button.scy
 	# Negate the result, since this should fail
-	! $(SHELLEYC) -d $< -u uses.yml -o $@ # -v
+	@$(SHELLEYC) $(USES) -d $< -o $@ --skip-checks
+	! $(SHELLEYC) $(USES) -d $< --no-output
 
 clean:
 	rm -f *.scy *.pdf

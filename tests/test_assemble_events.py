@@ -14,15 +14,15 @@ httpclient_yml = """
 device:
   name: HTTPClient
   events:
-    - connected: {start: true}
-    - disconnected: {start: false}
-    - get: {start: false}
-    - post: {start: false}
-    - connect_failed: {start: false}
-    - response200: {start: false}
-    - response404: {start: false}
-    - response401: {start: false}
-    - response500: {start: false}
+    connected: {start: true}
+    disconnected: {start: false}
+    get: {start: false}
+    post: {start: false}
+    connect_failed: {start: false}
+    response200: {start: false}
+    response404: {start: false}
+    response401: {start: false}
+    response500: {start: false}
   behavior:
     - [connected, get]  # client.connect(host, port)) succeeded
     - [connected, post]  # client.connect(host, port)) succeeded
@@ -55,16 +55,16 @@ wificlient_yml = """
 device:
   name: WiFiClient
   events:
-    - ssid_joined:
+    ssid_joined:
         start: True
-    - ssid_failed:
+    ssid_failed:
         start: True
-    - connection_timeout: {start: true}
-    - connected: {start: false}
-    - print_data_ready: {start: false}
-    - print_timeout: {start: false}
-    - ssid_left: {start: false}
-    - disconnected: {start: false}
+    connection_timeout: {start: true}
+    connected: {start: false}
+    print_data_ready: {start: false}
+    print_timeout: {start: false}
+    ssid_left: {start: false}
+    disconnected: {start: false}
 
   behavior:
     - [connection_timeout, connected]
@@ -93,10 +93,10 @@ device:
       hc: HTTPClient
       wc: WiFiClient
   events:
-    - started:
+    started:
         start: True
         micro: [wc.joined, wc.connected, hc.connected]
-    - notconnected:
+    notconnected:
         start: True
         micro:
           xor:
@@ -104,14 +104,17 @@ device:
             - xor:
               - [wc.joined, wc.connection_timeout]
               - [wc.ssid_failed]
-    - send:
+    send:
+        start: True
         micro:
           xor:
             - hc.get
             - hc.post
-    - ok:
+    ok:
+        start: Trie
         micro: [wc.print_data_ready, hc.response200]
-    - error:
+    error:
+        start: True
         micro:
           xor:
             - [wc.print_data_ready, hc.response401]
@@ -122,7 +125,8 @@ device:
                 - xor:
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
-    - stopped:
+    stopped:
+        start: True
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
   behavior:
     - [started, send]
@@ -167,8 +171,8 @@ wificlient_assembled = _get_wifi_client_assembled()
 
 def test_start_missing_true() -> None:
 
-    regex = r"  events:\n" r"    - started:\n" r"        start: True"
-    replace = r"  events:\n" r"    - started:\n" r"        start: "  # Missing True here
+    regex = r"  events:\n" r"    started:\n" r"        start: True"
+    replace = r"  events:\n" r"    started:\n" r"        start: "  # Missing True here
 
     wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
 
@@ -184,9 +188,9 @@ def test_start_missing_true() -> None:
 
 
 def test_start_not_bool() -> None:
-    regex = r"  events:\n" r"    - started:\n" r"        start: True"
+    regex = r"  events:\n" r"    started:\n" r"        start: True"
     replace = (
-        r"  events:\n" r"    - started:\n" r"        start: Txrxuxe"
+        r"  events:\n" r"    started:\n" r"        start: Txrxuxe"
     )  # Invalid type !
 
     wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)

@@ -6,10 +6,10 @@ device:
     b: Button
     t: Timer
   events:
-    - level1:
+    level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
-    - level2:
+    level2:
         micro:
           - b.pressed
           - b.released
@@ -17,9 +17,9 @@ device:
               - [t.canceled, ledB.on]
               - [ledB.on, t.canceled]
           - t.started
-    - standby1:
+    standby1:
         micro: [t.timeout, ledA.off]
-    - standby2:
+    standby2:
         micro:
           - xor:
               - [b.pressed, b.released, t.canceled]

@@ -1,9 +1,9 @@
 device:
   name: Led
   events:
-    - on:
+    on:
         start: True
-    - off:
+    off:
         start: True
   behavior:
     - [on, on]

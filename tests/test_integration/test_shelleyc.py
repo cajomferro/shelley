@@ -1,6 +1,6 @@
 import os
 import pytest
-from typing import Optional
+from typing import Optional, Any
 from pathlib import Path
 import argparse
 
@@ -15,6 +15,20 @@ COMPILED_PATH = EXAMPLES_PATH / "compiled"
 
 def empty_devices(name: str) -> CheckedDevice:
     raise ValueError()
+
+
+def call_shelleyc(args: argparse.Namespace, **kwargs: Any) -> Path:
+    data = dict(
+        src_path=args.device,
+        uses=shelleyc_parser.parse_uses(args.uses),
+        uses_base_dir=Path.cwd(),
+        dst_path=args.output,
+        binary=args.binary,
+        skip_checks=args.skip_checks,
+        save_output=args.save_output,
+    )
+    data.update(kwargs)
+    return shelleyc.compile_shelley(**data)
 
 
 def _remove_compiled_dir() -> None:
@@ -92,14 +106,7 @@ def make_args(src_path: Path, uses_path: Optional[Path] = None) -> argparse.Name
 def _compile_simple_device(device_name: str) -> Path:
     src_path = EXAMPLES_PATH / (device_name + ".yml")
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
-    args = make_args(src_path)
-    return shelleyc.compile_shelley(
-        args.device,
-        shelleyc_parser.parse_uses(args.uses),
-        args.output,
-        args.binary,
-        save_output=True,
-    )
+    return call_shelleyc(make_args(src_path), save_output=True)
 
 
 def test_not_found_device() -> None:
@@ -108,9 +115,7 @@ def test_not_found_device() -> None:
     args = parser.parse_args(["-d", src_path])
 
     with pytest.raises(FileNotFoundError) as exc_info:
-        shelleyc.compile_shelley(
-            args.device, args.uses, dst_path=args.output, binary=args.binary
-        )
+        call_shelleyc(args)
 
 
 def test_compile_buton_no_output() -> None:
@@ -122,14 +127,7 @@ def test_compile_buton_no_output() -> None:
     args: argparse.Namespace = parser.parse_args(
         ["-d", str(src_path), "-o", str(outpath), "--no-output"]
     )
-    shelleyc.compile_shelley(
-        args.device,
-        shelleyc_parser.parse_uses(args.uses),
-        dst_path=args.output,
-        binary=args.binary,
-        skip_checks=args.skip_checks,
-        save_output=args.save_output,
-    )
+    call_shelleyc(args)
     assert not outpath.exists()
 
 
@@ -144,9 +142,7 @@ def test_smartbutton_file_invalid_dict_uses_file() -> None:
     args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(
-            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
-        )
+        call_shelleyc(args)
 
     assert (
         str(exc_info.value)
@@ -164,9 +160,7 @@ def test_smartbutton_file_not_found_uses_file() -> None:
     args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(
-            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
-        )
+        call_shelleyc(args)
 
     assert (
         str(exc_info.value)
@@ -184,9 +178,7 @@ def test_smartbutton_not_in_uses_file() -> None:
     args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(
-            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
-        )
+        call_shelleyc(args)
 
     assert str(exc_info.value) == "Error loading system 'Button': system not defined"
 
@@ -201,9 +193,7 @@ def test_smartbutton_empty_uses_file() -> None:
     args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(
-            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
-        )
+        call_shelleyc(args)
 
     assert str(exc_info.value) == "Error loading system 'Button': system not defined"
 
@@ -219,9 +209,7 @@ def test_compile_desklamp_dependency_not_found() -> None:
     args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(
-            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
-        )
+        call_shelleyc(args)
 
     assert str(exc_info.value) == "Error loading system 'Led': system not defined"
 
@@ -239,9 +227,7 @@ def test_compile_desklamp_dependency_not_found_2() -> None:
     args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(
-            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
-        )
+        call_shelleyc(args)
 
     assert (
         str(exc_info.value)
@@ -260,9 +246,7 @@ def test_compile_ambiguous() -> None:
     args = make_args(src_path, uses_path)
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
-        shelleyc.compile_shelley(
-            args.device, shelleyc_parser.parse_uses(args.uses), args.output, args.binary
-        )
+        call_shelleyc(args)
 
     assert "Invalid device: AmbiguityFailure" in str(exc_info.value)
 

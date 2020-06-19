@@ -1,13 +1,13 @@
 device:
   name: Timer
   events:
-    - started:
+    started:
         start: True
         final: False
-    - canceled:
+    canceled:
         start: False
         final: True
-    - timeout:
+    timeout:
         start: False
         final: True
   behavior:

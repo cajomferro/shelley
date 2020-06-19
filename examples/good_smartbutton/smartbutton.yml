@@ -3,7 +3,7 @@ device:
   behavior:
     - [click, click]
   components:
-    b: Button
+    b: PressedButton
   events:
-    - click:
+    click:
         micro: [ b.in, b.out]

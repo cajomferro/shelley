@@ -3,7 +3,7 @@ device:
   components:
     b: Button
   events:
-    - on:
+    on:
         start: True
         final: True
         micro: [ b.pressed, b.released]

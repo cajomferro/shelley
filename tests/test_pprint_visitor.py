@@ -6,10 +6,10 @@ from shelley.ast.visitors.pprint import PrettyPrintVisitor
 yaml_led = """device:
   name: Led
   events:
-  - on:
+    on:
       start: true
       final: true
-  - off:
+    off:
       start: false
       final: true
   behavior:
@@ -19,10 +19,10 @@ yaml_led = """device:
 yaml_button = """device:
   name: Button
   events:
-  - pressed:
+    pressed:
       start: true
       final: true
-  - released:
+    released:
       start: false
       final: true
   behavior:
@@ -32,13 +32,13 @@ yaml_button = """device:
 yaml_timer = """device:
   name: Timer
   events:
-    - started:
+    started:
         start: True
         final: False
-    - canceled:
+    canceled:
         start: False
         final: True
-    - timeout:
+    timeout:
         start: False
         final: True
   behavior:
@@ -55,10 +55,10 @@ yaml_desklamp = """device:
     b: Button
     t: Timer
   events:
-    - level1:
+    level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
-    - level2:
+    level2:
         start: False
         micro:
           - b.pressed
@@ -67,10 +67,10 @@ yaml_desklamp = """device:
               - [t.canceled, ledB.on]
               - [ledB.on, t.canceled]
           - t.started
-    - standby1:
+    standby1:
         start: false
         micro: [t.timeout, ledA.off]
-    - standby2:
+    standby2:
         start: false
         micro:
           - xor:

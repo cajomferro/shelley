@@ -26,7 +26,7 @@ def test_events_invalid_event_syntax() -> None:
         yaml2shelley._create_device_from_yaml(yaml_as_dict)
 
     assert (
-        "invalid operation declaration: Expecting a string or a dict but found: ['pressed']"
+        "syntax error in operation declarations section: Expecting a dictionary but found list: [['pressed'], 'released']"
         == str(exc_info.value)
     )
 
@@ -35,10 +35,10 @@ def test_events_start() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": [
-                {"pressed": {"start": True, "final": False}},
-                {"released": {"start": False}},
-            ],
+            "events": {
+                "pressed": {"start": True, "final": False},
+                "released": {"start": False},
+            },
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -56,7 +56,7 @@ def test_events_start_specified() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": [{"pressed": {"start": False}}, {"released": {"start": True}}],
+            "events": {"pressed": {"start": False}, "released": {"start": True}},
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -70,7 +70,7 @@ def test_events_from_behavior() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": [{"pressed": {"start": True}}, {"released": {"start": False}}],
+            "events": {"pressed": {"start": True}, "released": {"start": False}},
             "behavior": [["released", "pressed"],],
         }
     }
@@ -86,10 +86,10 @@ def test_events_no_components_but_triggers() -> None:
     yaml_as_dict = {
         "device": {
             "name": "Button",
-            "events": [
-                {"pressed": {"start": True}},
-                {"released": {"start": False, "micro": ["x.xxx"]}},
-            ],
+            "events": {
+                "pressed": {"start": True},
+                "released": {"start": False, "micro": ["x.xxx"]},
+            },
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -108,10 +108,10 @@ def test_auto_create_declared_event_without_micro() -> None:
         "device": {
             "name": "SmartButton",
             "components": {"b": "Button"},
-            "events": [
-                {"pressed": {"start": True}},
-                {"released": {"start": False, "micro": ["b.released"]}},
-            ],
+            "events": {
+                "pressed": {"start": True},
+                "released": {"start": False, "micro": ["b.released"]},
+            },
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -130,12 +130,10 @@ def test_auto_create_undeclared_event_with_micro() -> None:
         "device": {
             "name": "SmartButton",
             "components": {"b": "Button"},
-            "events": [
-                {
-                    "pressed": {"start": True},
-                    "released": {"start": True, "micro": ["b.released"]},
-                }
-            ],
+            "events": {
+                "pressed": {"start": True},
+                "released": {"start": True, "micro": ["b.released"]},
+            },
             "behavior": [["pressed", "released"], ["released", "pressed"]],
         }
     }
@@ -158,9 +156,11 @@ device:
   components:
     b: SingleClickButton
   events:
-    - on:
+    on:
+        start: true
         micro: [] # ERROR: empty integration
-    - off:
+    off:
+        start: true
         micro: [ b.pressed, b.released]
     """
 
@@ -181,9 +181,11 @@ device:
   components:
     b: SingleClickButton
   events:
-    - on:
+    on:
+        start: true
         micro: [ b.pressed, b.released]
-    - off:
+    off:
+        start: true
         micro: [ b.pressed, b.released] # ERROR: off is undeclared!
     """
 
@@ -391,10 +393,10 @@ def test_led() -> None:
 device:
   name: Led
   events:
-  - on:
+    on:
       start: true
       final: true
-  - off:
+    off:
       start: false
       final: true
   behavior:
@@ -427,13 +429,13 @@ def test_timer() -> None:
 device:
   name: Timer
   events:
-    - started:
+    started:
         start: True
         final: true
-    - canceled:
+    canceled:
         start: False
         final: True
-    - timeout:
+    timeout:
         start: False
         final: True
   behavior:
@@ -476,10 +478,10 @@ device:
     b: Button
     t: Timer
   events:
-    - level1:
+    level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
-    - level2:
+    level2:
         micro:
           - b.pressed
           - b.released
@@ -487,9 +489,9 @@ device:
               - [t.canceled, ledB.on]
               - [ledB.on, t.canceled]
           - t.started
-    - standby1:
+    standby1:
         micro: [t.timeout, ledA.off]
-    - standby2:
+    standby2:
         micro:
           - xor:
               - [b.pressed, b.released, t.canceled]
@@ -544,15 +546,15 @@ device:
     lgreen: Led
     lred: Led
   events:
-    - send:
+    send:
         start: True
         micro: [ b1.pressed, b1.released]
-    - ok:
+    ok:
         micro:
           - xor:
               - [ lred.on, lred.off ]
               - [ lgreen.on, lgreen.off ]
-    - off:
+    off:
         micro: [ b2.pressed, b2.released]
   behavior:
     - [send, ok]
@@ -596,7 +598,7 @@ device:
   components:
     b: Button
   events:
-    - on:
+    on:
         start: True
         final: True
         micro: [ b.pressed, b.released]
@@ -684,7 +686,7 @@ device:
     b2: Button
     b3: Button
   events:
-    - button1AndOther:
+    button1AndOther:
         start: True
         micro:
           - xor:
@@ -694,7 +696,7 @@ device:
               - xor:
                   - [b2.pressed, b1.pressed]
                   - [b3.pressed, b1.pressed]
-    - button3OrOthers:
+    button3OrOthers:
           start: True
           micro:
             - xor:

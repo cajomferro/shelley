@@ -8,12 +8,12 @@ device:
   components:
     led1: Led
     led2: Led
-    b1: Button
-    b2: Button
+    b1: SimpleButton
+    b2: SimpleButton
   events:
-    - led1:
+    led1:
         start: True
-        micro: [b1.pressed, led1.on]
-    - led2:
+        micro: [b1.press, led1.on]
+    led2:
         start: True
-        micro: [b2.pressed, led2.on]
+        micro: [b2.press, led2.on]

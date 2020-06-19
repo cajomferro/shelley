@@ -7,9 +7,9 @@ pdf: simple.pdf
 
 scy: ambiguous.scy
 
-ambiguous.scy: ambiguous.yml simple.scy
+ambiguous.scy: ambiguous.yml ../base/simple_button.scy
 	# Invalid device: AmbiguousTriggersFailure
-	! $(SHELLEYC) -d $< -u uses.yml
+	! $(SHELLEYC) $(USES) -d $<
 
 clean:
 	rm -f *.scy *.pdf *.gv

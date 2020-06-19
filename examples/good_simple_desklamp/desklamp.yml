@@ -5,26 +5,26 @@ device:
     - [level2, off]
     - [off, level1]
   components:
-    ledA: Led
-    ledB: Led
-    b: Button
+    ledA: LedStrict
+    ledB: LedStrict
+    b: SimpleButton
   events:
-    - level1:
+    level1:
         start: True
-        micro: [b.pressed, ledA.on]
-    - level2:
-        micro: [b.pressed, ledB.on]
-    - off:
+        micro: [b.press, ledA.on]
+    level2:
+        micro: [b.press, ledB.on]
+    off:
         micro:
-          - [b.pressed]
+          - [b.press]
           - xor:
               - [ledB.off, ledA.off]
               - [ledA.off, ledB.off]
 
 test_micro:
   ok:
-    valid1: [b.pressed, ledA.on, b.pressed, ledB.on, b.pressed, ledB.off, ledA.off]
-    valid2: [b.pressed, ledA.on, b.pressed, ledB.on, b.pressed, ledA.off, ledB.off]
+    valid1: [b.press, ledA.on, b.press, ledB.on, b.press, ledB.off, ledA.off]
+    valid2: [b.press, ledA.on, b.press, ledB.on, b.press, ledA.off, ledB.off]
   fail:
     # wrong order for leds
-    invalid1: [b.pressed, ledB.on, b.pressed, ledA.on, b.pressed, ledB.off, ledA.off]
+    invalid1: [b.press, ledB.on, b.press, ledA.on, b.press, ledB.off, ledA.off]

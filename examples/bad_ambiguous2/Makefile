@@ -7,7 +7,7 @@ pdf: singleclick.pdf timer.pdf
 
 scy: ambiguous.scy
 
-ambiguous.scy: ambiguous.yml singleclick.scy timer.scy
+ambiguous.scy: ambiguous.yml singleclick.scy ../base/timer.scy
 	# Invalid device: AmbiguousTriggersFailure
 	! $(SHELLEYC) -u uses.yml -d $<
 

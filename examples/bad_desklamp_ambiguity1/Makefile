@@ -1,20 +1,14 @@
-SHELLEYC = shelleyc
-SHELLEYV = shelleyv
+include ../common.mk
+.PHONY: all pdf scy clean all
 
 all: scy
 
 scy: desklamp.scy
 
-desklamp.scy: desklamp.yml timer.scy led.scy button.scy
-	@$(SHELLEYC) -u uses.yml -d $< -o $@ --skip-checks
-	! $(SHELLEYC) -u uses.yml -d $< --no-output
-
-%.scy: %.yml
-	$(SHELLEYC) -u uses.yml -d $< -o $@
+desklamp.scy: desklamp.yml ../base/timer.scy ../base/led.scy ../base/button.scy
+	# Negate the result, since this should fail
+	@$(SHELLEYC) $(USES) -d $< -o $@ --skip-checks
+	! $(SHELLEYC) $(USES) -d $< --no-output
 
 clean:
 	rm -f *.scy *.pdf
-
-.PHONY: all pdf scy
-
-.SUFFIXES: .yml .scy

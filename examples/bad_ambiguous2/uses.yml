@@ -1,2 +1,2 @@
 SingleClickButton: singleclick.scy
-Timer: timer.scy
+Timer: ../base/timer.scy

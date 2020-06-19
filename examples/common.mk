@@ -3,9 +3,10 @@ SHELLEYV = shelleyv
 
 DFA_OPTS = --dfa --minimize --no-sink
 NFA_OPTS = --no-sink
+USES = -u ../base/uses.yml
 
 %.scy: %.yml
-	$(SHELLEYC) -u uses.yml -d $< -o $@
+	$(SHELLEYC) $(USES) -d $< -o $@
 
 # Generate integration diagram (minimized)
 # Example:

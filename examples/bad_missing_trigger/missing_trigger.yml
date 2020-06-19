@@ -5,7 +5,7 @@ device:
   components:
     b: Button
   events:
-    - on:
+    on:
         micro: [ b.pressed]
     # - off:
     #      micro: [ b.released] # ERROR: off is missing!

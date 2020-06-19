@@ -5,7 +5,7 @@ device:
   components:
     b: Button
   events:
-    - on:
-        micro: [ b.pressed, b.released]
-    - off:
-        micro: [ b.pressed, b.released] # ERROR: off is undeclared!
+    on:
+        micro: [ b.press, b.release]
+    off:
+        micro: [ b.press, b.release] # ERROR: off is undeclared!

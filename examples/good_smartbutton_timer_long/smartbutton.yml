@@ -15,9 +15,11 @@ device:
     t: Timer
   events:
     single:
+        next: $ANY
         start: True
         micro: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
     double:
+        next: $ANY
         start: True
         micro:
           - [ b.in, t.start, b.out, t.cancel, t.start, b.in]
@@ -25,5 +27,6 @@ device:
               - [t.cancel, b.out]
               - [b.out, t.cancel]
     long:
+        next: $ANY
         start: True
         micro: [b.in, t.start, t.timeout, b.out]

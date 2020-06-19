@@ -7,6 +7,7 @@ device:
   events:
     - button1AndOther:
         start: True
+        next: $ANY
         micro:
           - xor:
               - xor:
@@ -17,17 +18,13 @@ device:
                   - [b3.pressed, b1.pressed]
     - button3OrOthers:
           start: True
+          next: $ANY
           micro:
               - xor:
                   - xor:
                       - [b1.pressed, b2.pressed]
                       - [b2.pressed, b1.pressed]
                   - b3.pressed
-  behavior:
-    - [button1AndOther, button1AndOther]
-    - [button1AndOther, button3OrOthers]
-    - [button3OrOthers, button3OrOthers]
-    - [button3OrOthers, button1AndOther]
 
 
 # button1AndOther <- b1.pressed and (b2.pressed or b3.pressed) <=> b1.pressed; (b2.pressed or b3.pressed) or (b2.pressed or b3.pressed); b1.pressed

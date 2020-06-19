@@ -1,17 +1,12 @@
 device:
   name: 3Buttons
-  behavior:
-    - [button1AndOther, button3OrOthersv2]
-    - [button1AndOther, button1AndOther]
-    - [button1AndOther, button3OrOthers]
-    - [button3OrOthers, button3OrOthers]
-    - [button3OrOthers, button1AndOther]
   components:
     b1: Button
     b2: Button
     b3: Button
   events:
     - button1AndOther:
+        next: $ANY
         start: True
         micro:
             - xor:
@@ -26,6 +21,7 @@ device:
                         - b3.pressed
                     - b1.pressed
     - button3OrOthers:
+        next: [button3OrOthers, button1AndOther]
         start: True
         micro:
             - xor:

@@ -1,10 +1,9 @@
 device:
   name: SuperValveHandler # controls total 8 valves
-  behavior:
-    - [go, go]
   components:
     vh1: ValveHandler # 4x valves
     vh2: ValveHandler # 4x valves
   events:
     go:
+        next: [go]
         micro: [vh1.go, vh2.go]

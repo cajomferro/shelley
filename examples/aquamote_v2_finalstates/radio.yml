@@ -2,30 +2,26 @@ device:
   name: Radio
   events:
     start:
+        next: [HTTPsetup]
         final: False
     HTTPsetup:
+        next: [HTTPconnect]
         final: False
     HTTPconnect:
+        next: [HTTPsend]
         final: False
     HTTPsend:
+        next: [HTTPsend, HTTPreceive, HTTPdisconnect]
         final: False
     HTTPreceive:
+        next: [HTTPsend, HTTPdisconnect]
         final: False
     HTTPdisconnect:
+        next: [HTTPdisable]
         final: False
     HTTPdisable:
+        next: [start]
         final: True
-  behavior: # start is start event
-    - [start, HTTPsetup]
-    - [HTTPsetup,HTTPconnect]
-    - [HTTPconnect, HTTPsend]
-    - [HTTPsend, HTTPsend]
-    - [HTTPsend, HTTPreceive]
-    - [HTTPsend, HTTPdisconnect]
-    - [HTTPreceive, HTTPsend]
-    - [HTTPreceive, HTTPdisconnect]
-    - [HTTPdisconnect, HTTPdisable]
-    - [HTTPdisable, start]
 
 test_macro:
   ok:

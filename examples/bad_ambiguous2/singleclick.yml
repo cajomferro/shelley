@@ -4,9 +4,8 @@ device:
     pressed:
       start: true
       final: true
+      next: [released]
     released:
       start: false
       final: true
-  behavior:
-    - [pressed, released]
-    - [released, pressed]
+      next: [pressed]

@@ -1,10 +1,5 @@
 device:
   name: LedButton
-  behavior:
-    - [led1, led1]
-    - [led1, led2]
-    - [led2, led1]
-    - [led2, led2]
   components:
     led1: Led
     led2: Led
@@ -12,8 +7,10 @@ device:
     b2: SimpleButton
   events:
     led1:
+        next: $ANY
         start: True
         micro: [b1.press, led1.on]
     led2:
+        next: $ANY
         start: True
         micro: [b2.press, led2.on]

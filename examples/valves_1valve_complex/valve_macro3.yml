@@ -1,49 +1,38 @@
 device:
   name: ValveHandler
-  behavior:
-    - [go2, go2]
-    - [go2, go3]
-    - [go2, go4]
-    - [go2, go5]
-    - [go2, go6]
-    - [go2, go7]
-    - [go2, go8]
-    - [go2, go9]
-    - [go2, go10]
-    - [go2, go11]
-    - [go2, go12]
-    - [go3, go2]
-    - [go4, go2]
-    - [go5, go2]
-    - [go6, go2]
-    - [go7, go2]
-    - [go8, go2]
-    - [go9, go2]
-    - [go10, go2]
-    - [go11, go2]
-    - [go12, go2]
   components:
     v: Valve
   events:
     go2: # (v.x1, v.x2) x 42 ~ 6.52s
+        next: $ANY
         micro: [v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2]
     go3:
+        next: [go2]
         micro: [v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3, v.x1, v.x3]
     go4:
+        next: [go2]
         micro: [v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4, v.x1, v.x4]
     go5:
+        next: [go2]
         micro: [v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5, v.x1, v.x5]
     go6:
+        next: [go2]
         micro: [v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6, v.x1, v.x6]
     go7:
+        next: [go2]
         micro: [v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7, v.x1, v.x7]
     go8:
+        next: [go2]
         micro: [v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8, v.x1, v.x8]
     go9:
+        next: [go2]
         micro: [v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9, v.x1, v.x9]
     go10:
+        next: [go2]
         micro: [v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10, v.x1, v.x10]
     go11:
+        next: [go2]
         micro: [v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11, v.x1, v.x11]
     go12:
+        next: [go2]
         micro: [v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12, v.x1, v.x12]

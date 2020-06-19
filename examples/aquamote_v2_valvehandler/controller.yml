@@ -1,13 +1,5 @@
 device:
   name: Controller
-  behavior:
-    - [start, activateAllValves]
-    - [wakeup, activateAllValves]
-    - [activateAllValves, update]
-    - [update, deactivateAllValves]
-    - [deactivateAllValves, sleep]
-    - [sleep, start]
-    - [sleep, wakeup]
   components:
     v: ValveHandler
     m: Magnetic
@@ -15,16 +7,22 @@ device:
     lp: LowPower
   events:
     start:
+        next: [activateAllValves]
         micro: [m.locked, m.unlocked, lp.cancel]
     wakeup:
+        next: [activateAllValves]
         micro: [lp.wakeup]
     update:
+        next: [deactivateAllValves]
         micro: [rs.send, rs.ok]
     activateAllValves:
+        next: [update]
         micro: [v.on]
     deactivateAllValves:
+        next: [sleep]
         micro: [v.off]
     sleep:
+        next: [start, wakeup]
         micro: [lp.setup, lp.sleep]
 
 test_micro:

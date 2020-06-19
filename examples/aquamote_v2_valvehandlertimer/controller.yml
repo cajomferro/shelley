@@ -1,13 +1,6 @@
 device:
   name: Controller
   start_events: [start]
-  behavior:
-    - [start, update]
-    - [wakeup, update]
-    - [update, runValves]
-    - [runValves, sleep]
-    - [sleep, start]
-    - [sleep, wakeup]
   components:
     v: ValveHandlerTimer
     m: Magnetic
@@ -15,15 +8,20 @@ device:
     lp: LowPower
   events:
     start:
+        next: [update]
         start: True
         micro: [m.locked, m.unlocked, lp.cancel]
     wakeup:
+        next: [update]
         micro: [lp.wakeup]
     update:
+        next: [runValves]
         micro: [rs.send, rs.ok]
     runValves:
+        next: [sleep]
         micro: [v.v1, v.v2, v.v3, v.v4]
     sleep:
+        next: [start, wakeup]
         micro: [lp.setup, lp.sleep]
 
 test_micro:

@@ -4,5 +4,4 @@ device:
     press:
       start: true
       final: true
-  behavior:
-    - [press, press]
+      next: [press]

@@ -1,22 +1,19 @@
 device:
   name: RadioSimple
-  behavior:
-    - [start, send]
-    - [send, receive]
-    - [receive, send]
-    - [send, stop]
-    - [receive, stop]
-    - [stop, start] # comment this to be more strict
   components:
       r: Radio
   events:
     start:
+        next: [send]
         micro: [r.start, r.HTTPsetup, r.HTTPconnect]
     send:
+        next: [receive, stop]
         micro: [r.HTTPsend]
     receive:
+        next: [send, stop]
         micro: [r.HTTPreceive]
     stop:
+        next: [start] # comment this to be more strict
         micro: [r.HTTPdisconnect, r.HTTPdisable]
 
 test_micro:

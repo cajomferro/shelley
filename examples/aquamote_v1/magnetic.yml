@@ -6,11 +6,10 @@ device:
   events:
     unlocked:
         start: True
+        next: [locked]
     locked:
+        next: [unlocked]
         start: True
-  behavior:
-    - [locked, unlocked]
-    - [unlocked, locked]
 
 test_macro:
   ok:

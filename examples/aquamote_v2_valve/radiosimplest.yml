@@ -10,15 +10,14 @@
 
 device:
   name: RadioSimplest
-  behavior:
-    - [send, ok]
-    - [ok, send] # comment this to be more strict
   components:
       rs: RadioSimple
   events:
     send:
+        next: [ok]
         micro: [rs.start, rs.send]
     ok:
+        next: [send] # comment this to be more strict
         micro: [rs.receive, rs.stop]
 
 test_micro:

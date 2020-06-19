@@ -4,17 +4,15 @@ device:
     start:
         start: true
         final: false
+        next: [cancel, timeout]
     cancel:
         start: false
         final: true
+        next: [start]
     timeout:
         start: false
         final: true
-  behavior:
-    - [start, cancel]
-    - [start, timeout]
-    - [cancel, start]
-    - [timeout, start]
+        next: [start]
 
 test_macro:
   ok:

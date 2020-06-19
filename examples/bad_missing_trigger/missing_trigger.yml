@@ -1,11 +1,10 @@
 device:
   name: WrongButton
-  behavior:
-    - [on, off]
   components:
     b: Button
   events:
     on:
+        next: [off]
         micro: [ b.pressed]
     # - off:
     #      micro: [ b.released] # ERROR: off is missing!

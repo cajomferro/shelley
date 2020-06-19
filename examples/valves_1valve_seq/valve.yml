@@ -6,9 +6,8 @@ device:
     on:
       start: true
       final: true
+      next: [off]
     off:
       start: false
       final: true
-  behavior:
-    - [on, off]
-    - [off, on]
+      next: [on]

@@ -2,11 +2,8 @@ device:
   name: Led
   events:
     on:
+        next: $ANY
         start: True
     off:
+        next: $ANY
         start: True
-  behavior:
-    - [on, on]
-    - [on, off]
-    - [off, on]
-    - [off, off]

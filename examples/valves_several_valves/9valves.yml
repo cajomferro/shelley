@@ -1,7 +1,5 @@
 device:
   name: ValveHandler
-  behavior:
-    - [go, go]
   components:
     v1: Valve
     v2: Valve
@@ -14,4 +12,5 @@ device:
     v9: Valve
   events:
     go:
+        next: [go]
         micro: [v1.on, v1.off] #, v2.on, v2.off, v3.on, v3.off, v4.on, v4.off, v5.on, v5.off, v6.on, v6.off, v7.on, v7.off, v8.on, v8.off, v9.on, v9.off, v10.on, v10.off, v11.on, v11.off, v12.on, v12.off]

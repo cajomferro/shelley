@@ -36,6 +36,7 @@ all:
 	$(MAKE) -C valves_several_valves
 	$(MAKE) -C valves_several_valves_integration
 clean:
+	rm base/*.scy
 	$(MAKE) -C bad_desklamp1 clean
 	$(MAKE) -C bad_desklamp_ambiguity1 clean
 	$(MAKE) -C bad_desklamp_ambiguity2 clean

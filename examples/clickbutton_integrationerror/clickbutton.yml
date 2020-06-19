@@ -1,15 +1,11 @@
 device:
  name: ClickButton
- behavior:
-   - [single, single]
-   - [double, single]
-   - [single, double]
-   - [double, double]
  components:
   B: Button
   T: Timer
  events:
    single:
+       next: $ANY
        start: True
        final: True
        micro:
@@ -19,6 +15,7 @@ device:
            - [T.timeout, B.release] # user ir slow
            - [B.release, T.start] # user is fast # INTEGRATION ERROR HERE
    double:
+       next: $ANY
        start: True
        final: True
        micro:

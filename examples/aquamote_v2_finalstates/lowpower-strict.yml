@@ -2,19 +2,16 @@ device:
   name: LowPower
   events:
     setup: # if sleeping, cancels timer
+        next: [sleep, setup]
         start: True
         final: True
     sleep:
+        next: [wakeup, setup]
         start: False
         final: False
     wakeup:
+        next: [setup]
         start: False
-  behavior:
-    - [setup, sleep]
-    - [setup, setup]
-    - [sleep, wakeup]
-    - [sleep, setup]
-    - [wakeup, setup]
 
 test_macro:
   ok:

@@ -1,13 +1,5 @@
 device:
   name: Controller
-  behavior:
-    - [start, activateAllValves]
-    - [wakeup, activateAllValves]
-    - [activateAllValves, update]
-    - [update, deactivateAllValves]
-    - [deactivateAllValves, sleep]
-    - [sleep, start]
-    - [sleep, wakeup]
   components:
     v1: Valve
     v2: Valve
@@ -18,16 +10,22 @@ device:
     lp: LowPower
   events:
     start: # start event by default
+        next: [activateAllValves]
         micro: [m.locked, m.unlocked, lp.cancel]
     wakeup:
+        next: [activateAllValves]
         micro: [lp.wakeup]
     update:
+        next: [deactivateAllValves]
         micro: [rs.send, rs.ok]
     activateAllValves:
+        next: [update]
         micro: [v1.on, v2.on, v3.on, v4.on]
     deactivateAllValves:
+        next: [sleep]
         micro: [v1.off, v2.off, v3.off, v4.off]
     sleep:
+        next: [start, wakeup]
         micro: [lp.setup, lp.sleep]
 
 test_micro:

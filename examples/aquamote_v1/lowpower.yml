@@ -3,14 +3,10 @@ device:
   events:
     setup:
         start: True
+        next: [sleep]
     wakeup:
+        next: [sleep, setup]
         start: True
     sleep:
+        next: $ANY
         start: True
-  behavior:
-    - [setup, sleep]
-    - [sleep, wakeup]
-    - [wakeup, sleep]
-    - [wakeup, setup]
-    - [sleep, setup]
-    - [sleep, sleep]

@@ -1,16 +1,15 @@
 device:
   name: DeskLamp
-  behavior:
-    - [level1, off]
-    - [off, level1]
   components:
     l: LedStrict
     b: SimpleButton
   events:
     level1:
+        next: [off]
         start: True
         micro: [b.press, l.on]
     off:
+        next: [level1]
         micro: [b.press, l.off]
 
 test_macro:

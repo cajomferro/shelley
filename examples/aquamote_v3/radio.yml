@@ -5,11 +5,13 @@ device:
       wc: WiFiClient
   events:
     begin:
+        next: [stopped, send]
         start: True
         final: False
         micro:
           seq: [wc.ssid_joined, wc.connected, hc.connected]
     begin_err:
+        next: [begin_err, begin]
         start: True
         final: True
         micro:
@@ -18,11 +20,13 @@ device:
             - seq: [wc.ssid_joined, wc.connection_timeout]
             - wc.ssid_failed
     stopped:
+        next: [begin, begin_err]
         start: False
         final: True
         micro:
           seq: [wc.disconnected, hc.disconnected, wc.ssid_left]
     send:
+        next: [send_ok, send_err]
         start: False
         final: False
         micro:
@@ -30,11 +34,13 @@ device:
             - hc.get
             - hc.post
     send_ok:
+        next: [stopped, send]
         start: False
         final: False
         micro:
           seq: [wc.print_data_ready, hc.response200]
     send_err:
+        next: [stopped]
         start: False
         final: False
         micro:
@@ -43,19 +49,6 @@ device:
             - seq: [wc.print_data_ready, hc.response404]
             - seq: [wc.print_data_ready, hc.response500]
             - wc.print_timeout
-  behavior:
-    - [begin, stopped]
-    - [stopped, begin] # this is a restart
-    - [begin_err, begin_err] # trying to start but always fails
-    - [begin_err, begin] # starting after >= 1 fail
-    - [stopped, begin_err] # restart fails
-    - [begin, send]
-    - [send, send_ok]
-    - [send, send_err]
-    - [send_ok, stopped]
-    - [send_ok, send]
-#    - [send_err, send]
-    - [send_err, stopped]
 
 #test_micro:
 #  ok:

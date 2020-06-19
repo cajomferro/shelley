@@ -1,11 +1,11 @@
 device:
   name: WrongButton
-  behavior:
-    - [on, on]
   components:
     b: Button
   events:
     on:
+        next: [on]
         micro: [ b.press, b.release]
     off:
+        next: []
         micro: [ b.press, b.release] # ERROR: off is undeclared!

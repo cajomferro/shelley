@@ -6,59 +6,48 @@ device:
     x1:
       start: true
       final: true
+      next: $ANY
     x2:
       start: false
       final: true
+      next: $ANY
     x3:
+      next: $ANY
       start: false
       final: true
     x4:
+      next: $ANY
       start: false
       final: true
     x5:
+      next: $ANY
       start: false
       final: true
     x6:
+      next: $ANY
       start: false
       final: true
     x7:
+      next: $ANY
       start: false
       final: true
     x8:
+      next: $ANY
       start: false
       final: true
     x9:
+      next: $ANY
       start: false
       final: true
     x10:
+      next: $ANY
       start: false
       final: true
     x11:
+      next: $ANY
       start: false
       final: true
     x12:
+      next: $ANY
       start: false
       final: true
-  behavior:
-    - [x1, x2]
-    - [x1, x3]
-    - [x1, x4]
-    - [x1, x5]
-    - [x1, x6]
-    - [x1, x7]
-    - [x1, x8]
-    - [x1, x9]
-    - [x1, x10]
-    - [x1, x11]
-    - [x1, x12] # 0.19 s
-    - [x2, x1]
-    - [x3, x1]
-    - [x4, x1]
-    - [x5, x1]
-    - [x6, x1]
-    - [x7, x1]
-    - [x8, x1]
-    - [x9, x1]
-    - [x10, x1]
-    - [x11, x1]
-    - [x12, x1] # 0.45s

@@ -4,64 +4,41 @@ device:
   name: HTTPClient
   events:
     connected:
+        next: [get, post, connect_failed, disconnected]
         start: True
         final: False
     connect_failed:
+        next: [connected, connect_failed]
         start: True
         final: True
     get:
+        next: [response200, response404, response401, response500, disconnected]
         start: False
         final: False
     post:
+        next: [response200, response404, response401, response500, disconnected]
         start: False
         final: False
     response200:
+        next: [get, post, disconnected]
         start: False
         final: False
     response401:
+        next: [get, post, disconnected]
         start: False
         final: False
     response404:
+        next: [get, post, disconnected]
         start: False
         final: False
     response500:
+        next: [get, post, disconnected]
         start: False
         final: False
     disconnected:
+        next: [connected, connect_failed, disconnected]
         start: False
         final: True
-  behavior:
-    - [connected, get]  # client.connect(host, port)) succeeded
-    - [connected, post]  # client.connect(host, port)) succeeded
-    - [connected, connect_failed]  # !client.connect(host, port))
-    - [connected, disconnected]
-    - [connect_failed, connected]
-    - [connect_failed, connect_failed]
-    - [get, response200]
-    - [get, response404]
-    - [get, response401]
-    - [get, response500]
-    - [post, response200]
-    - [post, response404]
-    - [post, response401]
-    - [post, response500]
-    - [post, disconnected]
-    - [get, disconnected]
-    - [response200, get]
-    - [response200, post]
-    - [response200, disconnected]
-    - [response404, get]
-    - [response404, post]
-    - [response404, disconnected]
-    - [response401, get]
-    - [response401, post]
-    - [response401, disconnected]
-    - [response500, get]
-    - [response500, post]
-    - [response500, disconnected]
-    - [disconnected, connected]
-    - [disconnected, connect_failed]
-    - [disconnected, disconnected]
 
 test_macro:
   ok:

@@ -1,13 +1,12 @@
 device:
   name: SmartButton
-  behavior:
-    - [single, single]
   components:
     b: PressedButton
     t: Timer
   events:
     single:
         start: True
+        next: [single]
         micro: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
 
 test_macro:

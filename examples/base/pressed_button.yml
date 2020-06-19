@@ -4,9 +4,8 @@ device:
     in:
       start: true
       final: true
+      next: [out]
     out:
       start: false
       final: true
-  behavior:
-    - [in, out]
-    - [out, in]
+      next: [in]

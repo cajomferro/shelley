@@ -7,12 +7,6 @@
 device:
   name: DeskLamp
   start_events: [level1]
-  behavior:
-    - [level1, standby1]
-    - [level1, level2]
-    - [level2, standby2]
-    - [standby1, level1]
-    - [standby2, level1]
   components:
     ledA: Led
     ledB: Led
@@ -20,9 +14,11 @@ device:
     t: Timer
   events:
     level1:
+        next: [standby1, level2]
         start: True
         micro: [b.release, b.press, ledA.on, t.start] # THIS IS WRONG
     level2:
+        next: [standby2]
         micro:
           - b.press
           - b.release
@@ -31,8 +27,10 @@ device:
               - [ledB.on, t.cancel]
           - t.start
     standby1:
+        next: [level1]
         micro: [t.timeout, ledA.off]
     standby2:
+        next: [level1]
         micro:
           - xor:
               - [b.press, b.release, t.cancel]

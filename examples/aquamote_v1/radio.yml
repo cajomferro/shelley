@@ -4,35 +4,31 @@ device:
     start:
       start: true
       final: true
+      next: [HTTPsetup]
     HTTPsetup:
+      next: [HTTPconnect]
       start: false
       final: true
     HTTPconnect:
+      next: [HTTPsend]
       start: false
       final: true
     HTTPreceive:
+      next: [HTTPsend, HTTPdisconnect]
       start: false
       final: true
     HTTPdisconnect:
+      next: [HTTPdisable]
       start: false
       final: true
     HTTPdisable:
+      next: [start]
       start: false
       final: true
     HTTPsend:
+      next: [HTTPsend, HTTPreceive, HTTPdisconnect]
       start: false
       final: true
-  behavior: # start is start event
-    - [start, HTTPsetup]
-    - [HTTPsetup,HTTPconnect]
-    - [HTTPconnect, HTTPsend]
-    - [HTTPsend, HTTPsend]
-    - [HTTPsend, HTTPreceive]
-    - [HTTPsend, HTTPdisconnect]
-    - [HTTPreceive, HTTPsend]
-    - [HTTPreceive, HTTPdisconnect]
-    - [HTTPdisconnect, HTTPdisable]
-    - [HTTPdisable, start]
 
 test_macro:
   ok:

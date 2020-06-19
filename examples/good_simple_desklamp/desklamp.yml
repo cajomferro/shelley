@@ -1,20 +1,19 @@
 device:
   name: DeskLamp
-  behavior:
-    - [level1, level2]
-    - [level2, off]
-    - [off, level1]
   components:
     ledA: LedStrict
     ledB: LedStrict
     b: SimpleButton
   events:
     level1:
+        next: [level2]
         start: True
         micro: [b.press, ledA.on]
     level2:
+        next: [off]
         micro: [b.press, ledB.on]
     off:
+        next: [level1]
         micro:
           - [b.press]
           - xor:

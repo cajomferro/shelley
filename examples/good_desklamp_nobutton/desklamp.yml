@@ -1,29 +1,27 @@
 device:
   name: DeskLamp
-  behavior:
-    - [level1, standby1]
-    - [level1, level2]
-    - [level2, standby2]
-    - [standby1, level1]
-    - [standby2, level1]
   components:
     ledA: Led
     ledB: Led
     t: Timer
   events:
     - level1:
+        next: [standby1, level2]
         start: True
         final: False
         micro: [ledA.on, t.start]
     - level2:
+        next: [standby2]
         start: False
         final: False
         micro: [t.cancel, ledB.on, t.start]
     - standby1:
+        next: [level1]
         start: False
         final: True
         micro: [t.timeout, ledA.off]
     - standby2:
+        next: [level1]
         start: False
         final: True
         micro:

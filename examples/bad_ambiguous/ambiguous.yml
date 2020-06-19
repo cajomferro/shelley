@@ -1,16 +1,12 @@
 device:
   name: AmbiguousButton
-  behavior:
-    - [button1AndOther, button1AndOther]
-    - [button1AndOther, button3OrOthers]
-    - [button3OrOthers, button3OrOthers]
-    - [button3OrOthers, button1AndOther]
   components:
     b1: SimpleButton
     b2: SimpleButton
     b3: SimpleButton
   events:
     button1AndOther:
+        next: $ANY
         start: True
         micro:
           - xor:
@@ -21,6 +17,7 @@ device:
                   - [b2.pressed, b1.pressed] # B -> AMBIGUOUS
                   - [b3.pressed, b1.pressed]
     button3OrOthers:
+        next: $ANY
         start: True
         micro:
           - xor:

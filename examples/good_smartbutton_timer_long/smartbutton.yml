@@ -11,19 +11,19 @@ device:
     - [long, double]
     - [long, single]
   components:
-    b: Button
+    b: PressedButton
     t: Timer
   events:
-    - single:
+    single:
         start: True
-        micro: [b.in, t.start, b.out, t.stop, t.start, t.timeout]
-    - double:
+        micro: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
+    double:
         start: True
         micro:
-          - [ b.in, t.start, b.out, t.stop, t.start, b.in]
+          - [ b.in, t.start, b.out, t.cancel, t.start, b.in]
           - xor:
-              - [t.stop, b.out]
-              - [b.out, t.stop]
-    - long:
+              - [t.cancel, b.out]
+              - [b.out, t.cancel]
+    long:
         start: True
         micro: [b.in, t.start, t.timeout, b.out]

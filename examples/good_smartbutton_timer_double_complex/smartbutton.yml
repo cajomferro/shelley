@@ -6,29 +6,29 @@ device:
     - [double, double]
     - [double, single]
   components:
-    b: Button
+    b: PressedButton
     t: Timer
   events:
-    - single:
+    single:
         start: True
         final: True
         micro: 
           - [b.in, t.start]
           - xor:
 #              - [b.out, t.cancel, t.start, t.timeout] # ISTO N DÁ ERRO E DEVIA DAR PORQUE CANCEL N EXISTE!
-              - [b.out, t.stop]
+              - [b.out, t.cancel]
               - [t.timeout, b.out]
           - [t.start, t.timeout]
-    - double:
+    double:
         start: True
         final: True
         micro:
           - [b.in, t.start]
           - xor:
-              - [b.out, t.stop]
+              - [b.out, t.cancel]
               - [t.timeout, b.out]
 #         - [t.start, b.in, t.cancel, t.start] # ISTO N DÁ ERRO E DEVIA DAR E ALÉM DISSO É INFINITO!
-          - [t.start, b.in, t.stop, t.start]
+          - [t.start, b.in, t.cancel, t.start]
           - xor:
-              - [b.out, t.stop]
+              - [b.out, t.cancel]
               - [t.timeout, b.out]

@@ -12,8 +12,8 @@ from shelley.yaml2shelley.util import MySafeLoader
 
 def test_events_invalid_event_syntax() -> None:
     yaml_as_dict = {
-            "name": "Button",
-            "operations": [["pressed"], "released"],
+        "name": "Button",
+        "operations": [["pressed"], "released"],
     }
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
@@ -27,11 +27,11 @@ def test_events_invalid_event_syntax() -> None:
 
 def test_events_start() -> None:
     yaml_as_dict = {
-            "name": "Button",
-            "operations": {
-                "pressed": {"start": True, "final": False, "next": ["released"]},
-                "released": {"start": False, "next": ["pressed"],},
-            },
+        "name": "Button",
+        "operations": {
+            "pressed": {"start": True, "final": False, "next": ["released"]},
+            "released": {"start": False, "next": ["pressed"],},
+        },
     }
 
     shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
@@ -45,11 +45,11 @@ def test_events_start() -> None:
 
 def test_events_start_specified() -> None:
     yaml_as_dict = {
-            "name": "Button",
-            "operations": {
-                "pressed": {"start": False, "next": ["released"]},
-                "released": {"start": True, "next": ["pressed"]},
-            },
+        "name": "Button",
+        "operations": {
+            "pressed": {"start": False, "next": ["released"]},
+            "released": {"start": True, "next": ["pressed"]},
+        },
     }
 
     shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
@@ -59,11 +59,11 @@ def test_events_start_specified() -> None:
 
 def test_events_from_behavior() -> None:
     yaml_as_dict = {
-            "name": "Button",
-            "operations": {
-                "pressed": {"start": True, "next": [],},
-                "released": {"start": False, "next": ["pressed"],},
-            },
+        "name": "Button",
+        "operations": {
+            "pressed": {"start": True, "next": [],},
+            "released": {"start": False, "next": ["pressed"],},
+        },
     }
 
     shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
@@ -75,11 +75,11 @@ def test_events_from_behavior() -> None:
 
 def test_events_no_components_but_triggers() -> None:
     yaml_as_dict = {
-            "name": "Button",
-            "operations": {
-                "pressed": {"start": True, "next": ["released"],},
-                "released": {"start": False, "micro": ["x.xxx"], "next": ["pressed"]},
-            },
+        "name": "Button",
+        "operations": {
+            "pressed": {"start": True, "next": ["released"],},
+            "released": {"start": False, "micro": ["x.xxx"], "next": ["pressed"]},
+        },
     }
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
@@ -93,16 +93,12 @@ def test_events_no_components_but_triggers() -> None:
 
 def test_auto_create_declared_event_without_micro() -> None:
     yaml_as_dict = {
-            "name": "SmartButton",
-            "components": {"b": "Button"},
-            "operations": {
-                "pressed": {"start": True, "next": ["released"]},
-                "released": {
-                    "start": False,
-                    "micro": ["b.released"],
-                    "next": ["pressed"],
-                },
-            },
+        "name": "SmartButton",
+        "components": {"b": "Button"},
+        "operations": {
+            "pressed": {"start": True, "next": ["released"]},
+            "released": {"start": False, "micro": ["b.released"], "next": ["pressed"],},
+        },
     }
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
@@ -116,16 +112,12 @@ def test_auto_create_declared_event_without_micro() -> None:
 
 def test_auto_create_undeclared_event_with_micro() -> None:
     yaml_as_dict = {
-            "name": "SmartButton",
-            "components": {"b": "Button"},
-            "operations": {
-                "pressed": {"start": True, "next": ["released"]},
-                "released": {
-                    "next": ["pressed"],
-                    "start": True,
-                    "micro": ["b.released"],
-                },
-            },
+        "name": "SmartButton",
+        "components": {"b": "Button"},
+        "operations": {
+            "pressed": {"start": True, "next": ["released"]},
+            "released": {"next": ["pressed"], "start": True, "micro": ["b.released"],},
+        },
     }
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
@@ -153,7 +145,7 @@ def test_empty_integration() -> None:
     """
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
-         Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
+        Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
     assert (
         str(exc_info.value)
         == "operation declaration error in ['on']: integration rule error: An empty sequence introduces ambiguity.\nHint: remove empty sequence or add subsystem call to sequence."

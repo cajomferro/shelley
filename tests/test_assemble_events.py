@@ -146,7 +146,9 @@ wificlient_assembled = _get_wifi_client_assembled()
 def test_start_missing_true() -> None:
 
     regex = r"  operations:\n" r"    started:\n" r"        start: True"
-    replace = r"  operations:\n" r"    started:\n" r"        start: "  # Missing True here
+    replace = (
+        r"  operations:\n" r"    started:\n" r"        start: "
+    )  # Missing True here
 
     wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
 

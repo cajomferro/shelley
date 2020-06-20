@@ -1,5 +1,18 @@
 import yaml
-from typing import List, Mapping, Dict, Optional, Union, Set, Iterable, Collection, Any, NoReturn, TypeVar, Type
+from typing import (
+    List,
+    Mapping,
+    Dict,
+    Optional,
+    Union,
+    Set,
+    Iterable,
+    Collection,
+    Any,
+    NoReturn,
+    TypeVar,
+    Type,
+)
 import copy
 import pathlib
 from dataclasses import dataclass, field
@@ -316,7 +329,7 @@ def _parse_events(
             reason=f"Expecting a dictionary but found {type(src_events).__name__}: {src_events!r}",
         )
     for event_name, event_data in src_events.items():
-        if isinstance(event_data, dict):
+        if event_data is not None and isinstance(event_data, dict):
             _parse_event(
                 event_name=event_name,
                 event_data=event_data,
@@ -326,7 +339,7 @@ def _parse_events(
             )
         else:
             raise ShelleyParserError(
-                title="invalid operation declaration",
+                title=f"error parsing operation {event_name!r}",
                 reason=f"Expecting a dictionary but found: {event_data!r}",
             )
 
@@ -438,44 +451,43 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
     else:
         raise IntegrationRuleError(reason="Unknown option {src!r}")
 
+
 T = TypeVar("T")
+
 
 @dataclass
 class Parser:
-    hints:List[str] = field(default_factory=list)
+    hints: List[str] = field(default_factory=list)
 
-    def _error(self, title:str, reason:str) -> NoReturn:
+    def _error(self, title: str, reason: str) -> NoReturn:
         raise ShelleyParserError(title=title, reason=reason, hints=self.hints)
 
-    def _wrap_error(self, title:str, error:ShelleyParserError) -> NoReturn:
+    def _wrap_error(self, title: str, error: ShelleyParserError) -> NoReturn:
         raise ShelleyParserError(title=title, parent=error)
 
-    def dict_get(self, data:Dict[Any,Any], key:str) -> Any:
+    def dict_get(self, data: Dict[Any, Any], key: str) -> Any:
         try:
             return data[key]
         except KeyError:
-            self._error(
-                title=f"section {key!r} error",
-                reason="section is undeclared"
-            )
+            self._error(title=f"section {key!r} error", reason="section is undeclared")
 
-    def expect_type(self, obj:Any, ty:Type[T]) -> T:
+    def expect_type(self, obj: Any, ty: Type[T]) -> T:
         if obj is not None and isinstance(obj, ty):
             return obj
         self._error(
             title="type mismatch",
-            reason=f"expecting a {ty.__name__} but got {type(obj).__name__}: {obj!r}"
+            reason=f"expecting a {ty.__name__} but got {type(obj).__name__}: {obj!r}",
         )
 
-    def expect_opt_type(self, obj:Any, ty:Type[T]) -> Optional[T]:
+    def expect_opt_type(self, obj: Any, ty: Type[T]) -> Optional[T]:
         if obj is None or isinstance(obj, ty):
             return obj
         self._error(
             title="type mismatch",
-            reason=f"expecting a {ty.__name__} or 'null' but got {type(obj).__name__}: {obj!r}"
+            reason=f"expecting a {ty.__name__} or 'null' but got {type(obj).__name__}: {obj!r}",
         )
 
-    def dict_get_str(self, data:Dict[Any,Any], key:str) -> str:
+    def dict_get_str(self, data: Dict[Any, Any], key: str) -> str:
         obj = self.dict_get(data, key)
         try:
             return self.expect_type(obj, str)
@@ -484,12 +496,18 @@ class Parser:
 
 
 def _create_device_from_yaml(yaml_code: Dict) -> Device:
-    EXPECTED_KEYS = {"components", "test_system", "test_integration", "operations", "name"}
+    EXPECTED_KEYS = {
+        "components",
+        "test_system",
+        "test_integration",
+        "operations",
+        "name",
+    }
     unexpected_keys = set(yaml_code.keys()) - EXPECTED_KEYS
     if len(unexpected_keys) > 0:
         raise ShelleyParserError(
             title=f"Unexpected section names: {unexpected_keys}",
-            reason=f"Expected: {EXPECTED_KEYS}"
+            reason=f"Expected: {EXPECTED_KEYS}",
         )
     p = Parser()
     device_name = p.dict_get_str(yaml_code, "name")

@@ -28,9 +28,11 @@ def test_events_invalid_event_syntax() -> None:
 def test_events_start() -> None:
     yaml_as_dict = {
         "name": "Button",
+        "start_with": ["pressed"],
+        "end_with": ["released"],
         "operations": {
-            "pressed": {"start": True, "final": False, "next": ["released"]},
-            "released": {"start": False, "next": ["pressed"],},
+            "pressed": {"next": ["released"]},
+            "released": {"next": ["pressed"],},
         },
     }
 
@@ -46,23 +48,29 @@ def test_events_start() -> None:
 def test_events_start_specified() -> None:
     yaml_as_dict = {
         "name": "Button",
+        "start_with": ["released"],
+        "end_with": "$ANY",
         "operations": {
-            "pressed": {"start": False, "next": ["released"]},
-            "released": {"start": True, "next": ["pressed"]},
+            "pressed": {"next": ["released"]},
+            "released": {"next": ["pressed"]},
         },
     }
 
     shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
     assert not shelley_device.events["pressed"].is_start
     assert shelley_device.events["released"].is_start
+    assert shelley_device.events["pressed"].is_final
+    assert shelley_device.events["released"].is_final
 
 
 def test_events_from_behavior() -> None:
     yaml_as_dict = {
         "name": "Button",
+        "start_with": ["pressed"],
+        "end_with": "$ANY",
         "operations": {
-            "pressed": {"start": True, "next": [],},
-            "released": {"start": False, "next": ["pressed"],},
+            "pressed": {"next": [],},
+            "released": {"next": ["pressed"],},
         },
     }
 
@@ -76,9 +84,11 @@ def test_events_from_behavior() -> None:
 def test_events_no_components_but_triggers() -> None:
     yaml_as_dict = {
         "name": "Button",
+        "start_with": ["pressed"],
+        "end_with": "$ANY",
         "operations": {
-            "pressed": {"start": True, "next": ["released"],},
-            "released": {"start": False, "micro": ["x.xxx"], "next": ["pressed"]},
+            "pressed": {"next": ["released"],},
+            "released": {"micro": ["x.xxx"], "next": ["pressed"]},
         },
     }
 
@@ -94,10 +104,12 @@ def test_events_no_components_but_triggers() -> None:
 def test_auto_create_declared_event_without_micro() -> None:
     yaml_as_dict = {
         "name": "SmartButton",
+        "start_with": ["pressed"],
+        "end_with": "$ANY",
         "components": {"b": "Button"},
         "operations": {
-            "pressed": {"start": True, "next": ["released"]},
-            "released": {"start": False, "micro": ["b.released"], "next": ["pressed"],},
+            "pressed": {"next": ["released"]},
+            "released": {"micro": ["b.released"], "next": ["pressed"],},
         },
     }
 
@@ -114,9 +126,11 @@ def test_auto_create_undeclared_event_with_micro() -> None:
     yaml_as_dict = {
         "name": "SmartButton",
         "components": {"b": "Button"},
+        "start_with": ["pressed", "released"],
+        "end_with": "$ANY",
         "operations": {
-            "pressed": {"start": True, "next": ["released"]},
-            "released": {"next": ["pressed"], "start": True, "micro": ["b.released"],},
+            "pressed": {"next": ["released"]},
+            "released": {"next": ["pressed"], "micro": ["b.released"],},
         },
     }
 
@@ -134,13 +148,13 @@ def test_empty_integration() -> None:
   name: WrongButton
   components:
     b: SingleClickButton
+  start_with: $ANY
+  end_with: $ANY
   operations:
     on:
-        start: true
         micro: [] # ERROR: empty integration
         next: [on]
     off:
-        start: true
         micro: [ b.pressed, b.released]
     """
 
@@ -346,14 +360,12 @@ def test_led() -> None:
     yaml_code = """
 
 name: Led
+start_with: [on]
+end_with: $ANY
 operations:
     on:
-      start: true
-      final: true
       next: [off]
     off:
-      start: false
-      final: true
       next: [on]
     """
     shelley_device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
@@ -381,18 +393,14 @@ def test_timer() -> None:
     yaml_code = """
 
 name: Timer
+start_with: [started]
+end_with: $ANY
 operations:
     started:
-        start: True
-        final: true
         next: [canceled, timeout]
     canceled:
-        start: False
-        final: True
         next: [started]
     timeout:
-        start: False
-        final: True
         next: [started]
     """
     shelley_device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
@@ -423,6 +431,8 @@ def test_desklamp() -> None:
     yaml_code = """
 
 name: DeskLamp
+start_with: [level1]
+end_with: $ANY
 components:
     ledA: Led
     ledB: Led
@@ -430,7 +440,6 @@ components:
     t: Timer
 operations:
     level1:
-        start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
@@ -489,6 +498,8 @@ def test_sendok() -> None:
     yaml_code = """
 
 name: SendOK
+start_with: [send]
+end_with: $ANY
 components:
     b1: Button
     b2: Button
@@ -497,7 +508,6 @@ components:
 operations:
     send:
         next: [ok, off]
-        start: True
         micro: [ b1.pressed, b1.released]
     ok:
         next: [send]
@@ -542,13 +552,13 @@ def test_smartbutton() -> None:
     yaml_code = """
 
 name: SmartButton
+start_with: $ANY
+end_with: $ANY
 components:
     b: Button
 operations:
     on:
         next: [on]
-        start: True
-        final: True
         micro: [ b.pressed, b.released]
 
 
@@ -627,6 +637,8 @@ def test_ambiguous_3buttons() -> None:
     yaml_code = """
 
   name: 3Buttons
+  start_with: $ANY
+  end_with: $ANY
   components:
     b1: Button
     b2: Button
@@ -634,7 +646,6 @@ def test_ambiguous_3buttons() -> None:
   operations:
     button1AndOther:
         next: $ANY
-        start: True
         micro:
           - xor:
               - xor:
@@ -645,7 +656,6 @@ def test_ambiguous_3buttons() -> None:
                   - [b3.pressed, b1.pressed]
     button3OrOthers:
           next: $ANY
-          start: True
           micro:
             - xor:
                 - xor:

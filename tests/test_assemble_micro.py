@@ -10,78 +10,65 @@ from shelley import yaml2shelley
 from shelley.shelleyc import DeviceMapping
 
 httpclient_yml = """
+  start_with: [connected]
+  end_with: $ANY
   name: HTTPClient
   operations:
     connected:
-        start: true
         next: [get, post, connect_failed]
     disconnected:
-        start: false
         next: [connected]
     get:
-        start: false
         next: [response200, response404, response401, response500]
     post:
-        start: false
         next: [response200, response404, response401, response500]
     connect_failed:
-        start: false
         next: [connected]
     response200:
-        start: false
         next: [get, post, disconnected]
     response404:
-        start: false
         next: [get, post, disconnected]
     response401:
         next: [get, post, disconnected]
-        start: false
     response500:
         next: [get, post, disconnected]
-        start: false
 """
 
 wificlient_yml = """
   name: WiFiClient
+  start_with: [ssid_joined, ssid_failed, connection_timeout]
+  end_with: $ANY
   operations:
     ssid_joined:
-        start: True
         next: [connected, ssid_left]
     ssid_failed:
-        start: True
         next: [ssid_failed, ssid_joined]
     connection_timeout:
-        start: true
         next: [connected]
     connected:
-        start: false
         next: [disconnected, print_timeout, print_data_ready]
     print_data_ready:
-        start: false
         next: [print_data_ready, disconnected]
     print_timeout:
-        start: false
         next: [print_timeout, disconnected]
     ssid_left:
-        start: false
         next: [ssid_joined, ssid_failed]
     disconnected:
-        start: false
         next: [connected, connection_timeout, ssid_left]
 """
 
 wifihttp_yml = """
   name: WiFiHTTP
+  start_with: [started, notconnected]
+  end_with: $ANY
   components:
       hc: HTTPClient
       wc: WiFiClient
   operations:
     started:
-        start: True
         micro: [wc.ssid_joined, wc.connected, hc.connected]
         next: [send]
     notconnected:
-        start: True
         next: [started]
         micro:
           xor:
@@ -90,18 +77,15 @@ wifihttp_yml = """
               - [wc.ssid_joined, wc.connection_timeout]
               - [wc.ssid_failed]
     send:
-        start: false
         next: [stopped, ok, error]
         micro:
           xor:
             - hc.get
             - hc.post
     ok:
-        start: false
         micro: [wc.print_data_ready, hc.response200]
         next: [stopped, send]
     error:
-        start: false
         next: [stopped, send]
         micro:
           xor:
@@ -114,7 +98,6 @@ wifihttp_yml = """
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
     stopped:
-        start: false
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
         next: [started, notconnected]
 """
@@ -142,7 +125,6 @@ httpclient_assembled = _get_http_client_assembled()
 wificlient_assembled = _get_wifi_client_assembled()
 
 SEND_REGEX = r"""    send:
-        start: false
         next: [stopped, ok, error]
         micro:
           xor:
@@ -255,7 +237,7 @@ def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # micro is now undefined but send event is still declared
-        wifihttp_yml_bad = replace_send(wifihttp_yml, "start: True")
+        wifihttp_yml_bad = replace_send(wifihttp_yml)
 
         # parse yaml and assemble device
         known_devices = {

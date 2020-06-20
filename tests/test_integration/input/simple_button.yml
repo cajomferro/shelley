@@ -1,5 +1,6 @@
 name: SimpleButton
+start_with: $ANY
+end_with: $ANY
 operations:
     pressed:
-        start: true
         next: $ANY

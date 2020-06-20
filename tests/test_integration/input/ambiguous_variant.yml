@@ -1,4 +1,6 @@
 name: 3Buttons
+start_with: $ANY
+end_with: $ANY
 components:
     b1: SimpleButton
     b2: SimpleButton

@@ -1,4 +1,6 @@
 name: DeskLamp
+start_with: [level1]
+end_with: $ANY
 components:
     ledA: Led
     ledB: Led
@@ -7,7 +9,6 @@ components:
 operations:
     level1:
         next: [standby1, level2]
-        start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
     level2:
         next: [standby2]

@@ -114,76 +114,6 @@ def SystemDeclError(reason: str):
     return ShelleyParserError(title="system error", reason=reason)
 
 
-def _parse_behavior(
-    src: List[List[str]],
-    events: Events,
-    behaviors: Behaviors,
-    components: Components,
-    triggers: Triggers,
-) -> None:
-    """
-    Parse behavior by creating discovered events and creating the corresponding transitions
-    :param src: behavior input to be parsed, example: [['pressed', 'released'], ['released', 'pressed']]
-    :param events: empty collection to store events
-    :param behaviors: empty collection to store behavior transitions
-    """
-
-    discovered_events: Set[str] = set()
-
-    for beh_transition in src:
-        left = beh_transition[0]
-        if not isinstance(left, str):
-            raise BehaviorError(reason=f"Expecting a string, but got: {left!r}")
-
-        try:
-            right = beh_transition[1]
-        except IndexError:
-            raise BehaviorError(
-                reason="Missing behavior right side: [{0}, ???]".format(left)
-            )
-        if not isinstance(right, str):
-            raise BehaviorError(reason=f"Expecting a string, but got: {right!r}")
-        # TODO: do we want to force user to declare all events? right now I am creating if not declared
-        # and device has no components. To autocreate events from behaviors when there is components,
-        # it is required to have the notion of a empty trigger rule
-
-        try:
-            e1 = events[left]
-        except KeyError:
-            raise ShelleyParserError(
-                title="invalid transition",
-                reason=f"Behavior uses undeclared event {left!r}",
-            )
-
-        try:
-            e2 = events[right]
-        except KeyError:
-            raise ShelleyParserError(
-                title="invalid transition",
-                reason=f"Behavior uses undeclared event {right!r}",
-            )
-
-        discovered_events.add(left)
-        discovered_events.add(right)
-        try:
-            e1 = events[left]
-            e2 = events[right]
-            behaviors.create(e1, e2)
-        except BehaviorsListDuplicatedError as err:
-            raise BehaviorError(reason=f"duplicated behavior '{err}'")
-
-    difference = set(events.list_str()).difference(discovered_events)
-    if len(difference) > 0:
-        evt1 = list(sorted(difference))[0]
-        raise OperationDeclError(
-            names=difference,
-            reason="Every operation declaration must be referred in the behavior.",
-            hints=[
-                f"remove the definition of {evt1!r} or add a transition with {evt1!r} to the behavior section."
-            ],
-        )
-
-
 def _parse_components(src: Mapping[str, str], components: Components) -> None:
     """
 
@@ -264,21 +194,19 @@ def _parse_event(
     triggers: Triggers,
 ) -> Event:
     event: Optional[Event] = None
-    unknown_keys = set(event_data.keys()) - {"start", "final", "micro", "next"}
+    unknown_keys = set(event_data.keys()) - {"micro", "next"}
     if len(unknown_keys) > 0:
         raise OperationDeclError(
             names=[event_name], reason=f"remove unexpected keys: {unknown_keys!r}"
         )
 
-    is_start: bool = parse_bool_field("start", False, event_name, event_data)
-    is_final: bool = parse_bool_field("final", True, event_name, event_data)
     micro: Optional[Dict] = None
     try:
         micro = event_data["micro"]
     except KeyError:
         pass
 
-    event = events.create(event_name, is_start, is_final)
+    event = events.create(event_name, False, False)
 
     # XXX: this causes a bug
     try:
@@ -314,13 +242,6 @@ def _parse_events(
 
     assert len(events) == 0
     assert len(triggers) == 0
-
-    #   # there are defined components but no triggers
-    #   raise ShelleyParserError("Device with components must also have triggers!")
-
-    # there are no events declared, they will be auto discovered on behavior
-    if len(src) == 0:
-        return
 
     src_events = copy.deepcopy(src)
     if not isinstance(src_events, dict):
@@ -497,6 +418,8 @@ class Parser:
 
 def _create_device_from_yaml(yaml_code: Dict) -> Device:
     EXPECTED_KEYS = {
+        "start_with",
+        "end_with",
         "components",
         "test_system",
         "test_integration",
@@ -551,8 +474,12 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
         triggers=triggers,
         behaviors=behaviors,
     )
+    starts_with = set(ev.name for ev in _parse_event_list(yaml_code, "start_with", events))
+    ends_with = set(ev.name for ev in _parse_event_list(yaml_code, "end_with", events))
+    for evt in events.list():
+        evt.is_start = evt.name in starts_with
+        evt.is_final = evt.name in ends_with
     _found_events_count: int = len(events)
-    # _parse_behavior(device_behavior, events, behaviors, components, triggers)
 
     # TODO: not required if we create empty micro for auto discovered event in behaviors
     # if len(components) > 0 and len(events) != _found_events_count:
@@ -561,9 +488,9 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
     #     )
 
     # if not specified, first event is the start event
-    if len(events.start_events()) == 0:
-        first_event = events.list()[0]
-        first_event.is_start = True
+    #if len(events.start_events()) == 0:
+    #    first_event = events.list()[0]
+    #    first_event.is_start = True
 
     # we do not allow triggers without at least one trigger rule
     for event in events.list():

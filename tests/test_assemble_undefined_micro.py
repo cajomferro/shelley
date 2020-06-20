@@ -13,32 +13,29 @@ from pathlib import Path
 
 simple_yml: str = """
 name: Simple
+start_with: [on]
+end_with: $ANY
 operations:
     on:
-      start: true
-      final: true
       next: [off]
     off:
-      start: false
-      final: true
       next: [on]
 """
 
 composition_yml_src: str = """
 name: Composition
+start_with: [go, bad]
+end_with: $ANY
 components:
     s: Simple
 operations:
     go:
-        start: True
         micro: [s.on]
         next: [stop]
     stop:
-        start: False
         micro: [s.off]
         next: [go]
     bad:
-        start: True
         micro: [s.badbadbad] # WRONG! DOESN'T EXIST IN MICRO!
         next: [bad]
 """

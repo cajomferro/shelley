@@ -1,11 +1,11 @@
 name: SmartButton
+start_with: $ANY
+end_with: $ANY
 components:
     b: Button
 operations:
     on:
         next: $ANY
-        start: True
-        final: True
         micro: [ b.pressed, b.released]
 
 

@@ -11,78 +11,65 @@ from shelley.shelleyc import DeviceMapping
 
 
 httpclient_yml = """
+  start_with: [connected]
+  end_with: $ANY
   name: HTTPClient
   operations:
       connected:
-        start: true
         next: [get, post, connect_failed]
       disconnected:
-        start: false
         next: [connected]
       get:
-        start: false
         next: [response200, response404, response401, response500]
       post:
-        start: false
         next: [response200, response404, response401, response500]
       connect_failed:
-        start: false
         next: [connected]
       response200:
-        start: false
         next: [get, post, disconnected]
       response404:
-        start: false
         next: [get, post, disconnected]
       response401:
-        start: false
         next: [get, post, disconnected]
       response500:
-        start: false
         next: [get, post, disconnected]
 """
 
 wificlient_yml = """
   name: WiFiClient
+  start_with: [ssid_joined, ssid_failed, connection_timeout]
+  end_with: $ANY
   operations:
     ssid_joined:
-        start: True
         next: [connected, ssid_left]
     ssid_failed:
-        start: True
         next: [ssid_failed, ssid_joined]
     connection_timeout:
-        start: true
         next: [connected]
     connected:
-        start: false
         next: [disconnected, print_timeout, print_data_ready]
     print_data_ready:
-        start: false
         next: [print_data_ready, disconnected]
     print_timeout:
-        start: false
         next: [print_timeout, disconnected]
     ssid_left:
-        start: false
         next: [ssid_joined, ssid_failed]
     disconnected:
-        start: false
         next: [connected, connection_timeout, ssid_left]
 """
 
 wifihttp_yml = """
   name: WiFiHTTP
+  start_with: $ANY
+  end_with: $ANY
   components:
       hc: HTTPClient
       wc: WiFiClient
   operations:
     started:
-        start: True
         micro: [wc.joined, wc.connected, hc.connected]
         next: [send]
     notconnected:
-        start: True
         micro:
           xor:
             - [wc.joined, wc.connected, hc.connect_failed]
@@ -91,18 +78,15 @@ wifihttp_yml = """
               - [wc.ssid_failed]
         next: [started]
     send:
-        start: True
         micro:
           xor:
             - hc.get
             - hc.post
         next: [stopped, ok, error]
     ok:
-        start: True
         next: [send, stopped]
         micro: [wc.print_data_ready, hc.response200]
     error:
-        start: True
         next: [send, stopped]
         micro:
           xor:
@@ -116,7 +100,6 @@ wifihttp_yml = """
                   - wc.print_timeout
     stopped:
         next: [started, notconnected]
-        start: True
         micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
 """
 
@@ -142,15 +125,12 @@ def _get_http_client_assembled() -> AssembledDevice:
 httpclient_assembled = _get_http_client_assembled()
 wificlient_assembled = _get_wifi_client_assembled()
 
+def replace_start_with(s:str, expr:str, prefix:str="start_with: ") -> str:
+    return s.replace("start_with: $ANY\n", prefix + f"{expr}\n")
 
 def test_start_missing_true() -> None:
-
-    regex = r"  operations:\n" r"    started:\n" r"        start: True"
-    replace = (
-        r"  operations:\n" r"    started:\n" r"        start: "
-    )  # Missing True here
-
-    wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
+    # Missing True here
+    wifihttp_yml_bad = replace_start_with(wifihttp_yml, expr="")
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
@@ -158,18 +138,13 @@ def test_start_missing_true() -> None:
         )
 
     assert (
-        "operation declaration error in ['started']: Expecting a boolean, but found NoneType: None"
+        "section 'start_with': expecting string '$ANY', or a list of operation names (strings), but got: None\nHint: To list all operations write 'start_with: $ANY'"
         == str(exc_info.value)
     )
 
 
 def test_start_not_bool() -> None:
-    regex = r"  operations:\n" r"    started:\n" r"        start: True"
-    replace = (
-        r"  operations:\n" r"    started:\n" r"        start: Txrxuxe"
-    )  # Invalid type !
-
-    wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
+    wifihttp_yml_bad = replace_start_with(wifihttp_yml, expr="Txrxuxe")
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
@@ -177,6 +152,6 @@ def test_start_not_bool() -> None:
         )
 
     assert (
-        "operation declaration error in ['started']: Expecting a boolean, but found str: 'Txrxuxe'"
+        "section 'start_with': expecting string '$ANY', or a list of operation names (strings), but got: 'Txrxuxe'\nHint: To list all operations write 'start_with: $ANY'"
         == str(exc_info.value)
     )

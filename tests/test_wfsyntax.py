@@ -5,49 +5,43 @@ from shelley.ast.visitors.wfsyntax import CheckWFSyntaxVisitor
 
 yaml_led = """
   name: Led
+  start_with: [on]
+  end_with: $ANY
   operations:
     on:
-      start: true
-      final: true
       next: [off]
     off:
-      start: false
-      final: true
       next: [on]
     """
 
 yaml_button = """
   name: Button
+  start_with: [pressed]
+  end_with: $ANY
   operations:
     pressed:
-      start: true
-      final: true
       next: [released]
     released:
-      start: false
-      final: true
       next: [pressed]
     """
 
 yaml_timer = """
   name: Timer
+  start_with: [started]
+  end_with: $ANY
   operations:
     started:
-        start: True
-        final: False
         next: [canceled, timeout]
     canceled:
-        start: False
-        final: True
         next: [started]
     timeout:
-        start: False
-        final: True
         next: [started]
     """
 
 yaml_desklamp = """
   name: DeskLamp
+  start_with: [level1]
+  end_with: $ANY
   components:
     ledA: Led
     ledB: Led
@@ -55,7 +49,6 @@ yaml_desklamp = """
     t: Timer
   operations:
     level1:
-        start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:

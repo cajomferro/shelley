@@ -5,44 +5,36 @@ from shelley.ast.visitors.pprint import PrettyPrintVisitor
 
 yaml_led = """
   name: Led
+  start_with: [on]
+  end_with: $ANY
   operations:
     on:
-      start: true
-      final: true
       next: [off]
     off:
-      start: false
-      final: true
       next: [on]
 """
 
 yaml_button = """
   name: Button
+  start_with: [pressed]
+  end_with: $ANY
   operations:
     pressed:
-      start: true
-      final: true
       next: [released]
     released:
-      start: false
-      final: true
       next: [pressed]
 """
 
 yaml_timer = """
   name: Timer
+  start_with: [started]
+  end_with: [canceled, timeout]
   operations:
     started:
-        start: True
-        final: False
         next: [canceled, timeout]
     canceled:
-        start: False
-        final: True
         next: [started]
     timeout:
-        start: False
-        final: True
         next: [started]
 """
 
@@ -53,13 +45,13 @@ yaml_desklamp = """
     ledB: Led
     b: Button
     t: Timer
+  start_with: [level1]
+  end_with: $ANY
   operations:
     level1:
-        start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
-        start: False
         next: [standby2]
         micro:
           - b.pressed
@@ -70,11 +62,9 @@ yaml_desklamp = """
           - t.started
     standby1:
         next: [level1]
-        start: false
         micro: [t.timeout, ledA.off]
     standby2:
         next: [level1]
-        start: false
         micro:
           - xor:
               - [b.pressed, b.released, t.canceled]

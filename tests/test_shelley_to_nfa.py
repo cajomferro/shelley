@@ -11,14 +11,12 @@ def test_button() -> None:
 
     yaml_src = """
   name: Button
+  start_with: [pressed]
+  end_with: $ANY
   operations:
     pressed:
-      start: true
-      final: true
       next: [released]
     released:
-      start: false
-      final: true
       next: [pressed]
 """
 
@@ -39,14 +37,12 @@ def test_led() -> None:
 
     yaml_src = """
   name: Led
+  start_with: [on]
+  end_with: $ANY
   operations:
     on:
-      start: true
-      final: true
       next: [off]
     off:
-      start: false
-      final: true
       next: [on]
 """
 
@@ -67,18 +63,14 @@ def test_timer() -> None:
 
     yaml_src = """
   name: Timer
+  start_with: [started]
+  end_with: $ANY
   operations:
     started:
-        start: True
-        final: true
         next: [canceled, timeout]
     canceled:
-        start: False
-        final: True
         next: [started]
     timeout:
-        start: False
-        final: True
         next: [started]
 """
 
@@ -104,12 +96,12 @@ def test_smartbutton1() -> None:
 
     yaml_src = """
   name: SmartButton
+  start_with: $ANY
+  end_with: $ANY
   components:
     b: Button
   operations:
     on:
-        start: True
-        final: True
         micro: [ b.pressed, b.released]
         next: [on]
     """
@@ -131,6 +123,8 @@ def test_desklamp() -> None:
 
     yaml_src = """
   name: DeskLamp
+  start_with: [level1]
+  end_with: $ANY
   components:
     ledA: Led
     ledB: Led
@@ -138,7 +132,6 @@ def test_desklamp() -> None:
     t: Timer
   operations:
     level1:
-        start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
@@ -279,14 +272,14 @@ def test_clickbutton():
     yaml_code = """
 
  name: ClickButtonVariation
+ start_with: $ANY
+ end_with: $ANY
  components:
   B: Button
   T: Timer
  operations:
     single:
        next: $ANY
-       start: True
-       final: True
        micro:
          seq:
          - seq: [B.press, T.begin]
@@ -295,8 +288,6 @@ def test_clickbutton():
            - seq: [B.release, T.timeout] # user is fast
     double:
        next: $ANY
-       start: True
-       final: True
        micro:
          seq:
          - seq: [B.press, T.begin, B.release]

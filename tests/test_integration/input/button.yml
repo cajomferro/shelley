@@ -1,12 +1,10 @@
 name: Button
+start_with: [pressed]
+end_with: $ANY
 operations:
     pressed:
-      start: true
-      final: true
       next: [released]
     released:
-      start: false
-      final: true
       next: [pressed]
 
 test_system:

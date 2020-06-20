@@ -1,16 +1,12 @@
 name: Timer
+start_with: [start]
+end_with: [cancel, timeout]
 operations:
     start:
-        start: true
-        final: false
         next: [cancel, timeout]
     cancel:
-        start: false
-        final: true
         next: [start]
     timeout:
-        start: false
-        final: true
         next: [start]
 
 test_system:

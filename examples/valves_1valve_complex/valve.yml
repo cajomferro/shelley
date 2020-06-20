@@ -1,51 +1,29 @@
 # Water valve
 name: Valve
+start_with: [x1]
+end_with: $ANY
 operations:
     x1:
-      start: true
-      final: true
       next: $ANY
     x2:
-      start: false
-      final: true
       next: $ANY
     x3:
       next: $ANY
-      start: false
-      final: true
     x4:
       next: $ANY
-      start: false
-      final: true
     x5:
       next: $ANY
-      start: false
-      final: true
     x6:
       next: $ANY
-      start: false
-      final: true
     x7:
       next: $ANY
-      start: false
-      final: true
     x8:
       next: $ANY
-      start: false
-      final: true
     x9:
       next: $ANY
-      start: false
-      final: true
     x10:
       next: $ANY
-      start: false
-      final: true
     x11:
       next: $ANY
-      start: false
-      final: true
     x12:
       next: $ANY
-      start: false
-      final: true

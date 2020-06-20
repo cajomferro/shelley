@@ -1,4 +1,6 @@
 name: LedButton
+start_with: $ANY
+end_with: $ANY
 components:
     led1: Led
     led2: Led
@@ -7,9 +9,7 @@ components:
 operations:
     led1:
         next: $ANY
-        start: True
         micro: [b1.press, led1.on]
     led2:
         next: $ANY
-        start: True
         micro: [b2.press, led2.on]

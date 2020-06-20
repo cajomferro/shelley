@@ -1,13 +1,13 @@
 # A magnetic contact switch
 # https://www.adafruit.com/product/375
 name: Magnetic
+start_with: $ANY
+end_with: $ANY
 operations:
     unlocked:
-        start: True
         next: [locked]
     locked:
         next: [unlocked]
-        start: True
 
 test_system:
   ok:

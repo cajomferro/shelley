@@ -1,4 +1,6 @@
 name: SuperValveHandler # controls total 32 valves
+start_with: $ANY
+end_with: $ANY
 components:
     vh1: SuperValveHandler # 2x4 valves
     vh2: SuperValveHandler # 2x4 valves

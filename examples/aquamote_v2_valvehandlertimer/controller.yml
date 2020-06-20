@@ -1,4 +1,6 @@
 name: Controller
+start_with: [start]
+end_with: $ANY
 components:
     v: ValveHandlerTimer
     m: Magnetic
@@ -7,7 +9,6 @@ components:
 operations:
     start:
         next: [update]
-        start: True
         micro: [m.locked, m.unlocked, lp.cancel]
     wakeup:
         next: [update]

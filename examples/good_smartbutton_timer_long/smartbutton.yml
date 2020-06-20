@@ -1,15 +1,15 @@
 name: SmartButton
+start_with: $ANY
+end_with: $ANY
 components:
     b: PressedButton
     t: Timer
 operations:
     single:
         next: $ANY
-        start: True
         micro: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
     double:
         next: $ANY
-        start: True
         micro:
           - [ b.in, t.start, b.out, t.cancel, t.start, b.in]
           - xor:
@@ -17,5 +17,4 @@ operations:
               - [b.out, t.cancel]
     long:
         next: $ANY
-        start: True
         micro: [b.in, t.start, t.timeout, b.out]

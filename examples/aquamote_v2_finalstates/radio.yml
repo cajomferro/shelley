@@ -1,26 +1,21 @@
 name: Radio
+start_with: [start]
+end_with: [HTTPdisable]
 operations:
     start:
         next: [HTTPsetup]
-        final: False
     HTTPsetup:
         next: [HTTPconnect]
-        final: False
     HTTPconnect:
         next: [HTTPsend]
-        final: False
     HTTPsend:
         next: [HTTPsend, HTTPreceive, HTTPdisconnect]
-        final: False
     HTTPreceive:
         next: [HTTPsend, HTTPdisconnect]
-        final: False
     HTTPdisconnect:
         next: [HTTPdisable]
-        final: False
     HTTPdisable:
         next: [start]
-        final: True
 
 test_system:
   ok:

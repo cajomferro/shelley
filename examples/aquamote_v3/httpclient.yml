@@ -1,42 +1,26 @@
 # https://docs.python.org/3.3/library/http.client.html
 name: HTTPClient
+start_with: [connected, connect_failed]
+end_with: [connect_failed, disconnected]
 operations:
     connected:
         next: [get, post, connect_failed, disconnected]
-        start: True
-        final: False
     connect_failed:
         next: [connected, connect_failed]
-        start: True
-        final: True
     get:
         next: [response200, response404, response401, response500, disconnected]
-        start: False
-        final: False
     post:
         next: [response200, response404, response401, response500, disconnected]
-        start: False
-        final: False
     response200:
         next: [get, post, disconnected]
-        start: False
-        final: False
     response401:
         next: [get, post, disconnected]
-        start: False
-        final: False
     response404:
         next: [get, post, disconnected]
-        start: False
-        final: False
     response500:
         next: [get, post, disconnected]
-        start: False
-        final: False
     disconnected:
         next: [connected, connect_failed, disconnected]
-        start: False
-        final: True
 
 test_system:
   ok:

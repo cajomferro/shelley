@@ -1,12 +1,10 @@
 # Water valve
 
 name: Valve
+start_with: [on]
+end_with: $ANY
 operations:
     on:
-      start: true
-      final: true
       next: [off]
     off:
       next: [on]
-      start: false
-      final: true

@@ -1,11 +1,10 @@
 name: LowPower
+start_with: $ANY
+end_with: $ANY
 operations:
     setup:
-        start: True
         next: [sleep]
     wakeup:
         next: [sleep, setup]
-        start: True
     sleep:
         next: $ANY
-        start: True

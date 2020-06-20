@@ -1,4 +1,6 @@
 name: LedButton
+start_with: $ANY
+end_with: $ANY
 components:
     led1: LedStrict
     led2: LedStrict

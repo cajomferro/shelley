@@ -1,4 +1,6 @@
 name: ValveHandler
+start_with: $ANY
+end_with: $ANY
 components:
     v1: Valve
 operations:

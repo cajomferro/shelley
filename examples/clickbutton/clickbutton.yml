@@ -1,12 +1,12 @@
 name: ClickButton
+start_with: $ANY
+end_with: $ANY
 components:
   B: Button
   T: Timer
 operations:
    single:
        next: $ANY
-       start: True
-       final: True
        micro:
          seq:
          - seq: [B.press, T.start]
@@ -15,8 +15,6 @@ operations:
            - seq: [B.release, T.timeout] # , B.press
    double:
        next: $ANY
-       start: True
-       final: True
        micro:
          seq:
          - seq: [B.press, T.start, B.release] # t.timeout may fire here?

@@ -1,16 +1,13 @@
 name: LowPower
+start_with: [setup]
+end_with: [setup, wakeup]
 operations:
     setup: # if sleeping, cancels timer
         next: [sleep, setup]
-        start: True
-        final: True
     sleep:
         next: [wakeup, setup]
-        start: False
-        final: False
     wakeup:
         next: [setup]
-        start: False
 
 test_system:
   ok:

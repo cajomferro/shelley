@@ -1,8 +1,9 @@
 name: SmartButton
+start_with: $ANY
+end_with: $ANY
 components:
     b: Button
 operations:
     on:
         next: [on]
-        start: True
         micro: [ b.pressed, b.pressed] # this is not an allowed sequence for SingleClickButton

@@ -1,10 +1,8 @@
 name: Led
+start_with: [on]
+end_with: $ANY
 operations:
     on:
-      start: true
-      final: true
       next: [off]
     off:
-      start: false
-      final: true
       next: [on]

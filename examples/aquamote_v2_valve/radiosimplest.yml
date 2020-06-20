@@ -8,6 +8,8 @@
 #  triggers:
 #    send: [rs.start, rs.send, rs.receive, rs.stop]
 name: RadioSimplest
+start_with: [send]
+end_with: $ANY
 components:
       rs: RadioSimple
 operations:

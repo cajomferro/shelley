@@ -1,4 +1,6 @@
 name: WrongButton
+start_with: $ANY
+end_with: $ANY
 components:
     b: Button
 operations:

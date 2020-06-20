@@ -1,11 +1,12 @@
 name: DeskLamp
+start_with: [level1]
+end_with: $ANY
 components:
     l: LedStrict
     b: SimpleButton
 operations:
     level1:
         next: [off]
-        start: True
         micro: [b.press, l.on]
     off:
         next: [level1]

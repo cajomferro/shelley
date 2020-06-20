@@ -4,6 +4,8 @@
 #            'standby1': [{'xor': [['b.press', 'b.release', 't.cancelled'], 't.timeout']},
 #                         {'xor': [['ledA.off', 'ledB.off'], ['ledB.off', 'ledA.of']]}]}}}
 name: DeskLamp
+start_with: [level1]
+end_with: $ANY
 components:
     ledA: Led
     ledB: Led
@@ -12,7 +14,6 @@ components:
 operations:
     level1:
         next: [standby1, level2]
-        start: True
         micro: [b.release, b.press, ledA.on, t.start] # THIS IS WRONG
     level2:
         next: [standby2]

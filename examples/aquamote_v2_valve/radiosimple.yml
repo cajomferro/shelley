@@ -1,4 +1,6 @@
 name: RadioSimple
+start_with: [start]
+end_with: $ANY
 components:
       r: Radio
 operations:

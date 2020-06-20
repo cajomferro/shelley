@@ -1,10 +1,8 @@
 name: Button
+start_with: [press]
+end_with: $ANY
 operations:
     press:
-      start: true
-      final: true
       next: [release]
     release:
-      start: false
-      final: true
       next: [press]

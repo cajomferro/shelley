@@ -1,4 +1,6 @@
 name: DeskLamp
+start_with: [level1]
+end_with: [standby1, standby2]
 components:
     ledA: Led
     ledB: Led
@@ -7,12 +9,9 @@ components:
 operations:
     level1:
         next: [standby1, level2]
-        start: True
-        final: False
         micro: [b.press, b.release, ledA.on, t.start]
     level2:
         next: [standby2]
-        final: False
         micro:
           - b.press
           - b.release
@@ -23,11 +22,9 @@ operations:
           - t.start
     standby1:
         next: [level1]
-        final: True
         micro: [t.timeout, ledA.off]
     standby2:
         next: [level1]
-        final: True
         micro:
           - xor:
               - [b.press, b.release, t.cancel]

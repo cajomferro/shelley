@@ -1,4 +1,6 @@
 name: Controller
+start_with: [update]
+end_with: [update, wakeup, activateAllValves, deactivateAllValves]
 components:
     v1: Valve
     v2: Valve
@@ -25,7 +27,6 @@ operations:
         micro: [v1.off, v2.off, v3.off, v4.off]
     sleep:
         next: [wakeup]
-        final: False
         micro: [lp.setup, lp.sleep]
 
 test_integration:

@@ -1,39 +1,25 @@
 # https://www.arduino.cc/en/Reference/WiFiClientConnect
 # disconnected event might be external (device error) or internal (user called disconnect() function)
 name: WiFiClient
+start_with: [ssid_joined, ssid_failed, ssid_left, print_timeout, print_data_ready, connected, disconnected, connection_timeout]
+end_with: [ssid_failed, ssid_left, connection_timeout]
 operations:
     ssid_joined:
         next: [connected, connection_timeout, ssid_left]
-        start: True
-        final: False
     ssid_failed:
         next: [ssid_failed, ssid_joined]
-        start: True
-        final: True
     ssid_left:
         next: [ssid_joined, ssid_failed]
-        start: True
-        final: True
     print_timeout:
         next: [print_timeout, disconnected]
-        start: True
-        final: False
     print_data_ready:
         next: [print_data_ready, disconnected, print_timeout]
-        start: True
-        final: False
     connected:
         next: [disconnected, print_timeout, print_data_ready]
-        start: True
-        final: False
     disconnected:
         next: [connected, connection_timeout, ssid_left]
-        start: True
-        final: False
     connection_timeout:
         next: [connected, ssid_failed, ssid_joined]
-        start: True
-        final: True
     # before "print_timeout" or "print_data_ready" or "print_disconnected":
     # client.print(String("GET ") + url + " HTTP/1.1\r\n" +
     #                 "Host: " + host + "\r\n" +

@@ -1,10 +1,8 @@
 name: PressedButton
+start_with: [in]
+end_with: $ANY
 operations:
     in:
-      start: true
-      final: true
       next: [out]
     out:
-      start: false
-      final: true
       next: [in]

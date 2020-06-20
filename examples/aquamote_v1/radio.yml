@@ -1,33 +1,21 @@
 name: Radio
+start_with: [start]
+end_with: $ANY
 operations:
     start:
-      start: true
-      final: true
       next: [HTTPsetup]
     HTTPsetup:
       next: [HTTPconnect]
-      start: false
-      final: true
     HTTPconnect:
       next: [HTTPsend]
-      start: false
-      final: true
     HTTPreceive:
       next: [HTTPsend, HTTPdisconnect]
-      start: false
-      final: true
     HTTPdisconnect:
       next: [HTTPdisable]
-      start: false
-      final: true
     HTTPdisable:
       next: [start]
-      start: false
-      final: true
     HTTPsend:
       next: [HTTPsend, HTTPreceive, HTTPdisconnect]
-      start: false
-      final: true
 
 test_system:
   ok:

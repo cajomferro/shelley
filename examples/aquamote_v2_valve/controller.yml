@@ -1,4 +1,6 @@
 name: Controller
+start_with: [start]
+end_with: $ANY
 components:
     v1: Valve
     v2: Valve

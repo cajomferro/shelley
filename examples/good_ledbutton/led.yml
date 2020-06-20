@@ -1,8 +1,8 @@
 name: Led
+start_with: $ANY
+end_with: $ANY
 operations:
     on:
         next: $ANY
-        start: True
     off:
         next: $ANY
-        start: True

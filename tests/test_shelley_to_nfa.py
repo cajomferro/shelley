@@ -9,9 +9,9 @@ from shelley import yaml2shelley
 
 def test_button() -> None:
 
-    yaml_src = """device:
+    yaml_src = """
   name: Button
-  events:
+  operations:
     pressed:
       start: true
       final: true
@@ -37,9 +37,9 @@ def test_button() -> None:
 
 def test_led() -> None:
 
-    yaml_src = """device:
+    yaml_src = """
   name: Led
-  events:
+  operations:
     on:
       start: true
       final: true
@@ -65,9 +65,9 @@ def test_led() -> None:
 
 def test_timer() -> None:
 
-    yaml_src = """device:
+    yaml_src = """
   name: Timer
-  events:
+  operations:
     started:
         start: True
         final: true
@@ -102,11 +102,11 @@ def test_timer() -> None:
 
 def test_smartbutton1() -> None:
 
-    yaml_src = """device:
+    yaml_src = """
   name: SmartButton
   components:
     b: Button
-  events:
+  operations:
     on:
         start: True
         final: True
@@ -129,14 +129,14 @@ def test_smartbutton1() -> None:
 
 def test_desklamp() -> None:
 
-    yaml_src = """device:
+    yaml_src = """
   name: DeskLamp
   components:
     ledA: Led
     ledB: Led
     b: Button
     t: Timer
-  events:
+  operations:
     level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
@@ -277,12 +277,12 @@ def test_clickbutton():
     )
 
     yaml_code = """
-device:
+
  name: ClickButtonVariation
  components:
   B: Button
   T: Timer
- events:
+ operations:
     single:
        next: $ANY
        start: True

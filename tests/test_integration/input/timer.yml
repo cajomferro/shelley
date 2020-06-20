@@ -1,6 +1,5 @@
-device:
-  name: Timer
-  events:
+name: Timer
+operations:
     started:
         start: True
         final: False

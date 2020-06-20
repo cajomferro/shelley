@@ -1,6 +1,5 @@
-device:
-  name: SimpleButton
-  events:
+name: SimpleButton
+operations:
     pressed:
         start: true
         next: $ANY

@@ -1,6 +1,5 @@
-device:
-  name: Button
-  events:
+name: Button
+operations:
     pressed:
       start: true
       final: true
@@ -10,7 +9,7 @@ device:
       final: true
       next: [pressed]
 
-test_macro:
+test_system:
   ok:
     valid1: [pressed, released, pressed, released, pressed, released, pressed, released]
     valid2: [pressed]

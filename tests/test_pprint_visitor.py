@@ -3,9 +3,9 @@ from shelley import yaml2shelley
 from shelley.ast.devices import Device
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
 
-yaml_led = """device:
+yaml_led = """
   name: Led
-  events:
+  operations:
     on:
       start: true
       final: true
@@ -16,9 +16,9 @@ yaml_led = """device:
       next: [on]
 """
 
-yaml_button = """device:
+yaml_button = """
   name: Button
-  events:
+  operations:
     pressed:
       start: true
       final: true
@@ -29,9 +29,9 @@ yaml_button = """device:
       next: [pressed]
 """
 
-yaml_timer = """device:
+yaml_timer = """
   name: Timer
-  events:
+  operations:
     started:
         start: True
         final: False
@@ -46,14 +46,14 @@ yaml_timer = """device:
         next: [started]
 """
 
-yaml_desklamp = """device:
+yaml_desklamp = """
   name: DeskLamp
   components:
     ledA: Led
     ledB: Led
     b: Button
     t: Timer
-  events:
+  operations:
     level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]

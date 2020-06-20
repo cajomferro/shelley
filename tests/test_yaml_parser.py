@@ -12,14 +12,8 @@ from shelley.yaml2shelley.util import MySafeLoader
 
 def test_events_invalid_event_syntax() -> None:
     yaml_as_dict = {
-        "device": {
             "name": "Button",
-            "events": [["pressed"], "released"],
-            "behavior": [
-                ["pressed", "released"],
-                ["released", "pressed"],
-            ],  # THIS IS WRONG
-        }
+            "operations": [["pressed"], "released"],
     }
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
@@ -33,13 +27,11 @@ def test_events_invalid_event_syntax() -> None:
 
 def test_events_start() -> None:
     yaml_as_dict = {
-        "device": {
             "name": "Button",
-            "events": {
+            "operations": {
                 "pressed": {"start": True, "final": False, "next": ["released"]},
                 "released": {"start": False, "next": ["pressed"],},
             },
-        }
     }
 
     shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
@@ -53,13 +45,11 @@ def test_events_start() -> None:
 
 def test_events_start_specified() -> None:
     yaml_as_dict = {
-        "device": {
             "name": "Button",
-            "events": {
+            "operations": {
                 "pressed": {"start": False, "next": ["released"]},
                 "released": {"start": True, "next": ["pressed"]},
             },
-        }
     }
 
     shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
@@ -69,13 +59,11 @@ def test_events_start_specified() -> None:
 
 def test_events_from_behavior() -> None:
     yaml_as_dict = {
-        "device": {
             "name": "Button",
-            "events": {
+            "operations": {
                 "pressed": {"start": True, "next": [],},
                 "released": {"start": False, "next": ["pressed"],},
             },
-        }
     }
 
     shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)
@@ -87,13 +75,11 @@ def test_events_from_behavior() -> None:
 
 def test_events_no_components_but_triggers() -> None:
     yaml_as_dict = {
-        "device": {
             "name": "Button",
-            "events": {
+            "operations": {
                 "pressed": {"start": True, "next": ["released"],},
                 "released": {"start": False, "micro": ["x.xxx"], "next": ["pressed"]},
             },
-        }
     }
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
@@ -107,10 +93,9 @@ def test_events_no_components_but_triggers() -> None:
 
 def test_auto_create_declared_event_without_micro() -> None:
     yaml_as_dict = {
-        "device": {
             "name": "SmartButton",
             "components": {"b": "Button"},
-            "events": {
+            "operations": {
                 "pressed": {"start": True, "next": ["released"]},
                 "released": {
                     "start": False,
@@ -118,7 +103,6 @@ def test_auto_create_declared_event_without_micro() -> None:
                     "next": ["pressed"],
                 },
             },
-        }
     }
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
@@ -132,10 +116,9 @@ def test_auto_create_declared_event_without_micro() -> None:
 
 def test_auto_create_undeclared_event_with_micro() -> None:
     yaml_as_dict = {
-        "device": {
             "name": "SmartButton",
             "components": {"b": "Button"},
-            "events": {
+            "operations": {
                 "pressed": {"start": True, "next": ["released"]},
                 "released": {
                     "next": ["pressed"],
@@ -143,7 +126,6 @@ def test_auto_create_undeclared_event_with_micro() -> None:
                     "micro": ["b.released"],
                 },
             },
-        }
     }
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
@@ -157,11 +139,10 @@ def test_auto_create_undeclared_event_with_micro() -> None:
 
 def test_empty_integration() -> None:
     yaml_code = """
-device:
   name: WrongButton
   components:
     b: SingleClickButton
-  events:
+  operations:
     on:
         start: true
         micro: [] # ERROR: empty integration
@@ -172,7 +153,7 @@ device:
     """
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
-        device: Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
+         Device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
     assert (
         str(exc_info.value)
         == "operation declaration error in ['on']: integration rule error: An empty sequence introduces ambiguity.\nHint: remove empty sequence or add subsystem call to sequence."
@@ -371,9 +352,9 @@ micro:
 
 def test_led() -> None:
     yaml_code = """
-device:
-  name: Led
-  events:
+
+name: Led
+operations:
     on:
       start: true
       final: true
@@ -406,9 +387,9 @@ device:
 
 def test_timer() -> None:
     yaml_code = """
-device:
-  name: Timer
-  events:
+
+name: Timer
+operations:
     started:
         start: True
         final: true
@@ -448,14 +429,14 @@ device:
 
 def test_desklamp() -> None:
     yaml_code = """
-device:
-  name: DeskLamp
-  components:
+
+name: DeskLamp
+components:
     ledA: Led
     ledB: Led
     b: Button
     t: Timer
-  events:
+operations:
     level1:
         start: True
         micro: [b.pressed, b.released, ledA.on, t.started]
@@ -514,14 +495,14 @@ device:
 
 def test_sendok() -> None:
     yaml_code = """
-device:
-  name: SendOK
-  components:
+
+name: SendOK
+components:
     b1: Button
     b2: Button
     lgreen: Led
     lred: Led
-  events:
+operations:
     send:
         next: [ok, off]
         start: True
@@ -567,11 +548,11 @@ device:
 
 def test_smartbutton() -> None:
     yaml_code = """
-device:
-  name: SmartButton
-  components:
+
+name: SmartButton
+components:
     b: Button
-  events:
+operations:
     on:
         next: [on]
         start: True
@@ -579,7 +560,7 @@ device:
         micro: [ b.pressed, b.released]
 
 
-test_macro:
+test_system:
   ok:
     valid1: [on]
     valid2: [on, on, on, on]
@@ -587,7 +568,7 @@ test_macro:
   fail:
     invalid1: False
 
-test_micro:
+test_integration:
   ok:
     valid1: [b.pressed, b.released]
     valid2: [b.pressed, b.released, b.pressed, b.released]
@@ -652,13 +633,13 @@ test_micro:
 
 def test_ambiguous_3buttons() -> None:
     yaml_code = """
-device:
+
   name: 3Buttons
   components:
     b1: Button
     b2: Button
     b3: Button
-  events:
+  operations:
     button1AndOther:
         next: $ANY
         start: True

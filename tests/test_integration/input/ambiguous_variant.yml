@@ -1,10 +1,9 @@
-device:
-  name: 3Buttons
-  components:
+name: 3Buttons
+components:
     b1: SimpleButton
     b2: SimpleButton
     b3: SimpleButton
-  events:
+operations:
     button1AndOther:
         next: $ANY
         start: True

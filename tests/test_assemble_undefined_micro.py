@@ -12,9 +12,8 @@ from shelley.shelleyc import DeviceMapping
 from pathlib import Path
 
 simple_yml: str = """
-device:
-  name: Simple
-  events:
+name: Simple
+operations:
     on:
       start: true
       final: true
@@ -26,11 +25,10 @@ device:
 """
 
 composition_yml_src: str = """
-device:
-  name: Composition
-  components:
+name: Composition
+components:
     s: Simple
-  events:
+operations:
     go:
         start: True
         micro: [s.on]
@@ -46,7 +44,7 @@ device:
 """
 
 composition_yml_tests = """
-test_macro:
+test_system:
   ok:
     valid1: [go, stop]
     valid2: [go, stop, go, stop]
@@ -58,7 +56,7 @@ test_macro:
     invalid2: [stop, go]    
     invalid3: [go, bad]    
 
-test_micro:
+test_integration:
   ok:
     valid1: [s.on, s.off]
     valid2: [s.on, s.off, s.on, s.off]

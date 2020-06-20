@@ -13,9 +13,8 @@ from shelley.shelleyc import DeviceMapping
 from shelley.shelleyc import CompilationError
 
 httpclient_yml = """
-device:
   name: HTTPClient
-  events:
+  operations:
     connected:
         start: true
         next: [get, post, connect_failed]
@@ -46,9 +45,8 @@ device:
 """
 
 wificlient_yml = """
-device:
   name: WiFiClient
-  events:
+  operations:
     ssid_joined:
         start: True
         next: [connected, ssid_left]
@@ -76,12 +74,11 @@ device:
 """
 
 wifihttp_yml = """
-device:
   name: WiFiHTTP
   components:
       hc: HTTPClient
       wc: WiFiClient
-  events:
+  operations:
     started:
         start: True
         micro: [wc.ssid_joined, wc.connected, hc.connected]
@@ -193,9 +190,8 @@ def empty_devices(name: str) -> CheckedDevice:
 
 
 yaml_button = """
-device:
-  name: Button
-  events:
+name: Button
+operations:
     pressed:
       start: true
       next: [released]
@@ -203,7 +199,7 @@ device:
       start: false
       next: [pressed]
 
-test_macro:
+test_system:
   ok:
     valid1: [pressed, released, pressed, released, pressed, released, pressed, released]
     valid2: [pressed]
@@ -215,11 +211,10 @@ test_macro:
     invalid2: [released]"""
 
 yaml_smartbutton = """
-device:
-  name: SmartButton
-  components:
+name: SmartButton
+components:
     b: Button
-  events:
+operations:
     on:
         start: True
         final: True
@@ -227,7 +222,7 @@ device:
         next: [on]
 
 
-test_macro:
+test_system:
   ok:
     valid1: [on]
     valid2: [on, on, on, on]
@@ -235,7 +230,7 @@ test_macro:
     invalid1: False
     empty: []
 
-test_micro:
+test_integration:
   ok:
     valid1: [b.pressed, b.released]
     valid2: [b.pressed, b.released, b.pressed, b.released]
@@ -251,9 +246,8 @@ test_micro:
 """
 
 yaml_led = """
-device:
   name: Led
-  events:
+  operations:
     on:
         start: true
         next: [off]
@@ -262,9 +256,8 @@ device:
         next: [on]"""
 
 yaml_timer = """
-device:
   name: Timer
-  events:
+  operations:
     started:
         start: true
         next: [canceled, timeout]
@@ -276,9 +269,9 @@ device:
         next: [started]
 """
 
-yaml_desklamp = """device:
+yaml_desklamp = """
   name: DeskLamp
-  components:
+  operations:
     ledA: Led
     ledB: Led
     b: Button

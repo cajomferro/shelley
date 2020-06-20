@@ -10,9 +10,8 @@ from shelley import yaml2shelley
 from shelley.shelleyc import DeviceMapping
 
 httpclient_yml = """
-device:
   name: HTTPClient
-  events:
+  operations:
     connected:
         start: true
         next: [get, post, connect_failed]
@@ -43,9 +42,8 @@ device:
 """
 
 wificlient_yml = """
-device:
   name: WiFiClient
-  events:
+  operations:
     ssid_joined:
         start: True
         next: [connected, ssid_left]
@@ -73,12 +71,11 @@ device:
 """
 
 wifihttp_yml = """
-device:
   name: WiFiHTTP
   components:
       hc: HTTPClient
       wc: WiFiClient
-  events:
+  operations:
     started:
         start: True
         micro: [wc.ssid_joined, wc.connected, hc.connected]

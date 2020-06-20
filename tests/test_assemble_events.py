@@ -11,9 +11,8 @@ from shelley.shelleyc import DeviceMapping
 
 
 httpclient_yml = """
-device:
   name: HTTPClient
-  events:
+  operations:
       connected:
         start: true
         next: [get, post, connect_failed]
@@ -44,9 +43,8 @@ device:
 """
 
 wificlient_yml = """
-device:
   name: WiFiClient
-  events:
+  operations:
     ssid_joined:
         start: True
         next: [connected, ssid_left]
@@ -74,12 +72,11 @@ device:
 """
 
 wifihttp_yml = """
-device:
   name: WiFiHTTP
   components:
       hc: HTTPClient
       wc: WiFiClient
-  events:
+  operations:
     started:
         start: True
         micro: [wc.joined, wc.connected, hc.connected]
@@ -148,8 +145,8 @@ wificlient_assembled = _get_wifi_client_assembled()
 
 def test_start_missing_true() -> None:
 
-    regex = r"  events:\n" r"    started:\n" r"        start: True"
-    replace = r"  events:\n" r"    started:\n" r"        start: "  # Missing True here
+    regex = r"  operations:\n" r"    started:\n" r"        start: True"
+    replace = r"  operations:\n" r"    started:\n" r"        start: "  # Missing True here
 
     wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)
 
@@ -165,9 +162,9 @@ def test_start_missing_true() -> None:
 
 
 def test_start_not_bool() -> None:
-    regex = r"  events:\n" r"    started:\n" r"        start: True"
+    regex = r"  operations:\n" r"    started:\n" r"        start: True"
     replace = (
-        r"  events:\n" r"    started:\n" r"        start: Txrxuxe"
+        r"  operations:\n" r"    started:\n" r"        start: Txrxuxe"
     )  # Invalid type !
 
     wifihttp_yml_bad = re.sub(regex, replace, wifihttp_yml)

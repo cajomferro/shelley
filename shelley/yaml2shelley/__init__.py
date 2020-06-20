@@ -1,7 +1,9 @@
 import yaml
-from typing import List, Mapping, Dict, Optional, Union, Set, Iterable, Collection, Any
+from typing import List, Mapping, Dict, Optional, Union, Set, Iterable, Collection, Any, NoReturn, TypeVar, Type
 import copy
 import pathlib
+from dataclasses import dataclass, field
+
 from shelley.yaml2shelley.util import MySafeLoader
 from shelley.ast.events import Event, Events
 from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError
@@ -18,8 +20,6 @@ from shelley.ast.rules import (
 
 
 class ShelleyParserError(Exception):
-    # "invalid operation declaration {event.name!r}: integration section missing. Only declare an integration rule when there are components (system has {count} components). Hint: write integration rule or remove all components."
-
     def __init__(
         self,
         *,
@@ -381,13 +381,7 @@ def _parse_triggers(
     elif (
         src is not None and len(components) > 0
     ):  # composition device declaring trigger for this event (ok!)
-        # try:
         trigger_rule = _parse_trigger_rule(src, components)
-        # except ShelleyParserError as err:
-        #    raise OperationDeclError(
-        #        names=[event.name],
-        #        parent=err
-        #    )
     else:
         raise OperationDeclError(
             names=[event.name], reason=f"unknown option for operation: {src!r}"
@@ -444,28 +438,66 @@ def _parse_trigger_rule(src, components: Components) -> TriggerRule:
     else:
         raise IntegrationRuleError(reason="Unknown option {src!r}")
 
+T = TypeVar("T")
+
+@dataclass
+class Parser:
+    hints:List[str] = field(default_factory=list)
+
+    def _error(self, title:str, reason:str) -> NoReturn:
+        raise ShelleyParserError(title=title, reason=reason, hints=self.hints)
+
+    def _wrap_error(self, title:str, error:ShelleyParserError) -> NoReturn:
+        raise ShelleyParserError(title=title, parent=error)
+
+    def dict_get(self, data:Dict[Any,Any], key:str) -> Any:
+        try:
+            return data[key]
+        except KeyError:
+            self._error(
+                title=f"section {key!r} error",
+                reason="section is undeclared"
+            )
+
+    def expect_type(self, obj:Any, ty:Type[T]) -> T:
+        if obj is not None and isinstance(obj, ty):
+            return obj
+        self._error(
+            title="type mismatch",
+            reason=f"expecting a {ty.__name__} but got {type(obj).__name__}: {obj!r}"
+        )
+
+    def expect_opt_type(self, obj:Any, ty:Type[T]) -> Optional[T]:
+        if obj is None or isinstance(obj, ty):
+            return obj
+        self._error(
+            title="type mismatch",
+            reason=f"expecting a {ty.__name__} or 'null' but got {type(obj).__name__}: {obj!r}"
+        )
+
+    def dict_get_str(self, data:Dict[Any,Any], key:str) -> str:
+        obj = self.dict_get(data, key)
+        try:
+            return self.expect_type(obj, str)
+        except ShelleyParserError as err:
+            self._wrap_error(title=f"section {key!r} error", error=err)
+
 
 def _create_device_from_yaml(yaml_code: Dict) -> Device:
-    try:
-        device_name = yaml_code["device"]["name"]
-    except KeyError:
-        raise SystemDeclError("Device must have a name")
+    EXPECTED_KEYS = {"components", "test_system", "test_integration", "operations", "name"}
+    unexpected_keys = set(yaml_code.keys()) - EXPECTED_KEYS
+    if len(unexpected_keys) > 0:
+        raise ShelleyParserError(
+            title=f"Unexpected section names: {unexpected_keys}",
+            reason=f"Expected: {EXPECTED_KEYS}"
+        )
+    p = Parser()
+    device_name = p.dict_get_str(yaml_code, "name")
 
-    try:
-        device_components = yaml_code["device"]["components"]
-    except KeyError:
-        device_components = dict()
+    device_components = yaml_code.get("components", dict())
+    device_events = yaml_code.get("operations", dict())
 
-    try:
-        device_events = yaml_code["device"]["events"]
-    except KeyError:
-        device_events = dict()
-        # raise ShelleyParserError("Device must have events")
-
-    try:
-        test_macro = yaml_code["test_macro"]
-    except KeyError:
-        test_macro = {"ok": dict(), "fail": dict()}
+    test_macro = yaml_code.get("test_system", {"ok": dict(), "fail": dict()})
 
     try:
         test_macro["ok"]
@@ -477,10 +509,7 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
     except KeyError:
         raise SystemDeclError("Missing key 'fail' for test macro!")
 
-    try:
-        test_micro = yaml_code["test_micro"]
-    except KeyError:
-        test_micro = {"ok": dict(), "fail": dict()}
+    test_micro = yaml_code.get("test_integration", {"ok": dict(), "fail": dict()})
 
     try:
         test_micro["ok"]

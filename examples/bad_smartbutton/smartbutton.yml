@@ -1,8 +1,7 @@
-device:
-  name: SmartButton
-  components:
+name: SmartButton
+components:
     b: Button
-  events:
+operations:
     on:
         next: [on]
         start: True

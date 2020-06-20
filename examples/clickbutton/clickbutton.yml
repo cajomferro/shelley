@@ -1,9 +1,8 @@
-device:
- name: ClickButton
- components:
+name: ClickButton
+components:
   B: Button
   T: Timer
- events:
+operations:
    single:
        next: $ANY
        start: True

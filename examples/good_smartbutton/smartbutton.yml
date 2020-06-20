@@ -1,8 +1,7 @@
-device:
-  name: SmartButton
-  components:
+name: SmartButton
+components:
     b: PressedButton
-  events:
+operations:
     click:
         next: $ANY
         micro: [ b.in, b.out]

@@ -1,10 +1,9 @@
-device:
-  name: DeskLamp
-  components:
+name: DeskLamp
+components:
     ledA: Led
     ledB: Led
     t: Timer
-  events:
+operations:
     - level1:
         next: [standby1, level2]
         start: True

@@ -1,6 +1,5 @@
-device:
-  name: Led
-  events:
+name: Led
+operations:
     on:
         next: $ANY
         start: True

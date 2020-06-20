@@ -1,19 +1,8 @@
-device:
-  name: SmartButton
-  behavior:
-    - [single, single]
-    - [single, double]
-    - [single, long]
-    - [double, double]
-    - [double, single]
-    - [double, long]
-    - [long, long]
-    - [long, double]
-    - [long, single]
-  components:
+name: SmartButton
+components:
     b: PressedButton
     t: Timer
-  events:
+operations:
     single:
         next: $ANY
         start: True

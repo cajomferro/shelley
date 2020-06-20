@@ -1,10 +1,9 @@
-device:
-  name: DeskLamp
-  components:
+name: DeskLamp
+components:
     ledA: LedStrict
     ledB: LedStrict
     b: SimpleButton
-  events:
+operations:
     level1:
         next: [level2]
         start: True
@@ -20,7 +19,7 @@ device:
               - [ledB.off, ledA.off]
               - [ledA.off, ledB.off]
 
-test_micro:
+test_integration:
   ok:
     valid1: [b.press, ledA.on, b.press, ledB.on, b.press, ledB.off, ledA.off]
     valid2: [b.press, ledA.on, b.press, ledB.on, b.press, ledA.off, ledB.off]

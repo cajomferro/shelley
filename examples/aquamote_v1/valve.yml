@@ -1,8 +1,6 @@
 # Water valve
-
-device:
-  name: Valve
-  events:
+name: Valve
+operations:
     on:
       start: true
       final: true
@@ -12,7 +10,7 @@ device:
       final: true
       next: [on]
 
-test_macro:
+test_system:
   ok:
     valid1: [on]
     valid2: [on, off]

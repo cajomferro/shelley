@@ -1,6 +1,5 @@
-device:
-  name: Radio
-  events:
+name: Radio
+operations:
     start:
       start: true
       final: true
@@ -30,7 +29,7 @@ device:
       start: false
       final: true
 
-test_macro:
+test_system:
   ok:
     valid1: [start, HTTPsetup, HTTPconnect, HTTPsend, HTTPreceive, HTTPdisconnect, HTTPdisable]
     valid2: [start]

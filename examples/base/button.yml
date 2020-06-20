@@ -1,6 +1,5 @@
-device:
-  name: Button
-  events:
+name: Button
+operations:
     press:
       start: true
       final: true

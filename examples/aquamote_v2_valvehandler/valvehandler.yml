@@ -1,13 +1,12 @@
 # Water valves handler
 
-device:
-  name: ValveHandler
-  components:
+name: ValveHandler
+components:
     v1: Valve
     v2: Valve
     v3: Valve
     v4: Valve
-  events:
+operations:
     on:
         next: [off]
         micro: [v1.on, v2.on, v3.on, v4.on]

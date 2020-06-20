@@ -1,8 +1,7 @@
-device:
-  name: WrongButton
-  components:
+name: WrongButton
+components:
     b: Button
-  events:
+operations:
     on:
         next: [on]
         micro: [ b.press, b.release]

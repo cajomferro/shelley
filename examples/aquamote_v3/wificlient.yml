@@ -1,8 +1,7 @@
 # https://www.arduino.cc/en/Reference/WiFiClientConnect
 # disconnected event might be external (device error) or internal (user called disconnect() function)
-device:
-  name: WiFiClient
-  events:
+name: WiFiClient
+operations:
     ssid_joined:
         next: [connected, connection_timeout, ssid_left]
         start: True

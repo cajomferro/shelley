@@ -1,8 +1,6 @@
 # Water valve
-
-device:
-  name: Valve
-  events:
+name: Valve
+operations:
     on:
       start: true
       final: true

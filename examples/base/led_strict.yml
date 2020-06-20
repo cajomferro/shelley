@@ -1,6 +1,5 @@
-device:
-  name: LedStrict
-  events:
+name: LedStrict
+operations:
     on:
       start: true
       final: true

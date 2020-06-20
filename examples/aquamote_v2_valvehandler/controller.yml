@@ -1,11 +1,10 @@
-device:
-  name: Controller
-  components:
+name: Controller
+components:
     v: ValveHandler
     m: Magnetic
     rs: RadioSimplest
     lp: LowPower
-  events:
+operations:
     start:
         next: [activateAllValves]
         micro: [m.locked, m.unlocked, lp.cancel]
@@ -25,7 +24,7 @@ device:
         next: [start, wakeup]
         micro: [lp.setup, lp.sleep]
 
-test_micro:
+test_integration:
   ok:
     valid1: [m.locked, m.unlocked, lp.cancel, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, lp.wakeup]
     valid2: [m.locked, m.unlocked, lp.cancel, v.on, rs.send, rs.ok, v.off, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel]

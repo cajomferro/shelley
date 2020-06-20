@@ -7,12 +7,10 @@
 #      rs: RadioSimple
 #  triggers:
 #    send: [rs.start, rs.send, rs.receive, rs.stop]
-
-device:
-  name: RadioSimplest
-  components:
+name: RadioSimplest
+components:
       rs: RadioSimple
-  events:
+operations:
     send:
         next: [ok]
         micro: [rs.start, rs.send]
@@ -20,7 +18,7 @@ device:
         next: [send] # comment this to be more strict
         micro: [rs.receive, rs.stop]
 
-test_micro:
+test_integration:
   ok:
     valid1: [rs.start, rs.send]
     valid2: [rs.start, rs.send, rs.receive, rs.stop]

@@ -1,11 +1,10 @@
-device:
-  name: LedButton
-  components:
+name: LedButton
+components:
     led1: Led # Let's use a strict led here!
     led2: Led # Let's use a strict led here!
     b1: Button
     b2: Button
-  events: # this is wrong: led1->led1 and led2->led2 are invalid!
+operations: # this is wrong: led1->led1 and led2->led2 are invalid!
     led1:
         next: $ANY
         start: True

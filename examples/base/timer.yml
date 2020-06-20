@@ -1,6 +1,5 @@
-device:
-  name: Timer
-  events:
+name: Timer
+operations:
     start:
         start: true
         final: false
@@ -14,7 +13,7 @@ device:
         final: true
         next: [start]
 
-test_macro:
+test_system:
   ok:
     valid1: [start, cancel]
     valid2: [start, timeout]

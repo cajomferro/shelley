@@ -1,11 +1,10 @@
-device:
-  name: LedButton
-  components:
+name: LedButton
+components:
     led1: Led
     led2: Led
     b1: SimpleButton
     b2: SimpleButton
-  events:
+operations:
     led1:
         next: $ANY
         start: True

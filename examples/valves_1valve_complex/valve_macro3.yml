@@ -1,8 +1,7 @@
-device:
-  name: ValveHandler
-  components:
+name: ValveHandler
+components:
     v: Valve
-  events:
+operations:
     go2: # (v.x1, v.x2) x 42 ~ 6.52s
         next: $ANY
         micro: [v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2, v.x1, v.x2]

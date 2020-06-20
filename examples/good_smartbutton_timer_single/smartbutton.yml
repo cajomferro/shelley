@@ -1,15 +1,14 @@
-device:
-  name: SmartButton
-  components:
+name: SmartButton
+components:
     b: PressedButton
     t: Timer
-  events:
+operations:
     single:
         start: True
         next: [single]
         micro: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
 
-test_macro:
+test_system:
   ok:
     single1x: [single]
     single2x: [single, single]
@@ -17,7 +16,7 @@ test_macro:
     empty: []
     invalid: false
 
-test_micro:
+test_integration:
   ok:
     single1x: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
     single2x: [b.in, t.start, b.out, t.cancel, t.start, t.timeout, b.in, t.start, b.out, t.cancel, t.start, t.timeout]

@@ -1,10 +1,9 @@
-device:
-  name: WrongButton
-  components:
+name: WrongButton
+components:
     b: Button
-  events:
+operations:
     on:
         next: [off]
-        micro: [ b.pressed]
+        micro: [ b.press]
     # - off:
     #      micro: [ b.released] # ERROR: off is missing!

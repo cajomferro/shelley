@@ -1,8 +1,7 @@
-device:
-  name: RadioSimple
-  components:
+name: RadioSimple
+components:
       r: Radio
-  events:
+operations:
     start:
         next: [send]
         micro: [r.start, r.HTTPsetup, r.HTTPconnect]
@@ -16,7 +15,7 @@ device:
         next: [start] # comment this to be more strict
         micro: [r.HTTPdisconnect, r.HTTPdisable]
 
-test_micro:
+test_integration:
   ok:
     valid1: [r.start, r.HTTPsetup, r.HTTPconnect, r.HTTPsend, r.HTTPreceive, r.HTTPdisconnect, r.HTTPdisable]
     valid4: [r.start, r.HTTPsetup, r.HTTPconnect]

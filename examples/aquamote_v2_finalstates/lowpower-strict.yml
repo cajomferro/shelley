@@ -1,6 +1,5 @@
-device:
-  name: LowPower
-  events:
+name: LowPower
+operations:
     setup: # if sleeping, cancels timer
         next: [sleep, setup]
         start: True
@@ -13,7 +12,7 @@ device:
         next: [setup]
         start: False
 
-test_macro:
+test_system:
   ok:
 #    valid1: [setup, sleep]
     valid2: [setup, sleep, wakeup]

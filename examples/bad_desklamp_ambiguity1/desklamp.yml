@@ -1,11 +1,10 @@
-device:
-  name: DeskLamp
-  components:
+name: DeskLamp
+components:
     ledA: Led
     ledB: Led
     b: Button
     t: Timer
-  events:
+operations:
     level1:
         next: [standby1, level2]
         start: True
@@ -37,7 +36,7 @@ device:
                 - [ledB.off, ledA.off]
                 - [ledA.off, ledB.off]
 
-test_macro:
+test_system:
   ok:
     valid1: [level1, standby1]
     valid2: [level1, level2, standby2]
@@ -54,7 +53,7 @@ test_macro:
     invalid6: false
     invalid7: false
 
-test_micro:
+test_integration:
   ok:
     valid1: [b.press, b.release, ledA.on, t.start, b.pressed, b.release, t.cancel, ledB.on, t.start, t.timeout, ledB.off, ledA.off]
     valid3: true

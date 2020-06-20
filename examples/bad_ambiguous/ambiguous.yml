@@ -1,38 +1,37 @@
-device:
-  name: AmbiguousButton
-  components:
+name: AmbiguousButton
+components:
     b1: SimpleButton
     b2: SimpleButton
     b3: SimpleButton
-  events:
+operations:
     button1AndOther:
         next: $ANY
         start: True
         micro:
           - xor:
               - xor:
-                  - [b1.pressed, b2.pressed] # A -> AMBIGUOUS
-                  - [b1.pressed, b3.pressed]
+                  - [b1.press, b2.press] # A -> AMBIGUOUS
+                  - [b1.press, b3.press]
               - xor:
-                  - [b2.pressed, b1.pressed] # B -> AMBIGUOUS
-                  - [b3.pressed, b1.pressed]
+                  - [b2.press, b1.press] # B -> AMBIGUOUS
+                  - [b3.press, b1.press]
     button3OrOthers:
         next: $ANY
         start: True
         micro:
           - xor:
               - xor:
-                  - [b1.pressed, b2.pressed] # A -> AMBIGUOUS
-                  - [b2.pressed, b1.pressed] # B -> AMBIGUOUS
-              - b3.pressed
+                  - [b1.press, b2.press] # A -> AMBIGUOUS
+                  - [b2.press, b1.press] # B -> AMBIGUOUS
+              - b3.press
 
-# button1AndOther <- b1.pressed and (b2.pressed or b3.pressed) <=> b1.pressed; (b2.pressed or b3.pressed) or (b2.pressed or b3.pressed); b1.pressed
-# b1.pressed, b2.pressed
-# b1.pressed, b3.pressed
-# b2.pressed, b1.pressed
-# b3.pressed, b1.pressed
+# button1AndOther <- b1.press and (b2.press or b3.press) <=> b1.press; (b2.press or b3.press) or (b2.press or b3.press); b1.press
+# b1.press, b2.press
+# b1.press, b3.press
+# b2.press, b1.press
+# b3.press, b1.press
 
-# button3OrOthers <- (b1.pressed and b2.pressed) or b3.pressed <=> (b1.pressed; b2.pressed or b2.pressed; b1.pressed) or b3.pressed
-# b1.pressed, b2.pressed
-# b2.pressed, b1.pressed
-# b3.pressed
+# button3OrOthers <- (b1.press and b2.press) or b3.press <=> (b1.press; b2.press or b2.press; b1.press) or b3.press
+# b1.press, b2.press
+# b2.press, b1.press
+# b3.press

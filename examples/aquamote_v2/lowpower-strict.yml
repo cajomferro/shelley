@@ -1,6 +1,5 @@
-device:
-  name: LowPower
-  events:
+name: LowPower
+operations:
     setup:
         start: True
         next: [sleep]

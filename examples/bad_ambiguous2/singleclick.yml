@@ -1,6 +1,5 @@
-device:
-  name: SingleClickButton
-  events:
+name: SingleClickButton
+operations:
     pressed:
       start: true
       final: true

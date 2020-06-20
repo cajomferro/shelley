@@ -1,8 +1,7 @@
-device:
-  name: ValveHandler
-  components:
+name: ValveHandler
+components:
     v1: Valve
-  events:
+operations:
     go:
         next: [go]
         micro: [v1.on, v1.off]

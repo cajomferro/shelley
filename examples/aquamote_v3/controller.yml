@@ -1,11 +1,10 @@
-device:
-  name: Controller
-  components:
+name: Controller
+components:
     v: ValveHandlerTimer
     m: Magnetic
     r: Radio
     lp: LowPower
-  events:
+operations:
     wakeup:
         next: [update]
         start: True
@@ -28,7 +27,7 @@ device:
         final: True
         micro: [lp.setup, lp.sleep]
 
-test_macro:
+test_system:
   ok:
     valid1: [wakeup, update, runValves, sleep]
     valid2: [wakeup, update, runValves, sleep, sleepTimeout, update, runValves, sleep]
@@ -36,7 +35,7 @@ test_macro:
     invalid1: [sleepTimeout, update, runValves, sleep]
 
 
-test_micro:
+test_integration:
   ok:
     valid1: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
     valid2: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]

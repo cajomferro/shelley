@@ -1,9 +1,8 @@
-device:
-  name: AmbiguousButton
-  components:
+name: AmbiguousButton
+components:
     b: SingleClickButton
     t: Timer
-  events:
+operations:
     buttonPressedOnce:
         next: [buttonPressedOnce, buttonPressedTwice]
         start: True

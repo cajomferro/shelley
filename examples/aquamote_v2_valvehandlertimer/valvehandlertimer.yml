@@ -1,15 +1,13 @@
 # Water valves handler
 
-device:
-  name: ValveHandlerTimer
-  behavior:
-  components:
+name: ValveHandlerTimer
+components:
     v1: Valve
     v2: Valve
     v3: Valve
     v4: Valve
     t: Timer
-  events:
+operations:
     v1:
         next: [v2]
         micro: [v1.on, t.start, t.timeout, v1.off]

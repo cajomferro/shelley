@@ -3,16 +3,13 @@
 #                'components': {'ledA': 'Led', 'ledB': 'Led', 'b': 'Button', 't': 'Timer'}, 'trigger': {
 #            'standby1': [{'xor': [['b.press', 'b.release', 't.cancelled'], 't.timeout']},
 #                         {'xor': [['ledA.off', 'ledB.off'], ['ledB.off', 'ledA.of']]}]}}}
-
-device:
-  name: DeskLamp
-  start_events: [level1]
-  components:
+name: DeskLamp
+components:
     ledA: Led
     ledB: Led
     b: Button
     t: Timer
-  events:
+operations:
     level1:
         next: [standby1, level2]
         start: True

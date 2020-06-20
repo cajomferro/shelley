@@ -1,9 +1,7 @@
 # A magnetic contact switch
 # https://www.adafruit.com/product/375
-
-device:
-  name: Magnetic
-  events:
+name: Magnetic
+operations:
     unlocked:
         start: True
         next: [locked]
@@ -11,7 +9,7 @@ device:
         next: [unlocked]
         start: True
 
-test_macro:
+test_system:
   ok:
     valid1: [unlocked, locked, unlocked, locked]
     valid2: [locked, unlocked, locked, unlocked]

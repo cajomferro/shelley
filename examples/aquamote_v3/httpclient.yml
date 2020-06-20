@@ -1,8 +1,6 @@
 # https://docs.python.org/3.3/library/http.client.html
-
-device:
-  name: HTTPClient
-  events:
+name: HTTPClient
+operations:
     connected:
         next: [get, post, connect_failed, disconnected]
         start: True
@@ -40,7 +38,7 @@ device:
         start: False
         final: True
 
-test_macro:
+test_system:
   ok:
     connect_failed: [connected, connect_failed]
     connect_failed_start: [connect_failed]

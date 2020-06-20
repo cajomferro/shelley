@@ -1,9 +1,8 @@
-device:
-  name: SmartButton
-  components:
+name: SmartButton
+components:
     b: PressedButton
     t: Timer
-  events:
+operations:
     single:
         next: $ANY
         start: True
@@ -18,7 +17,7 @@ device:
               - [t.cancel, b.out]
               - [b.out, t.cancel]
 
-test_macro:
+test_system:
   ok:
     single: [single]
     double: [single]
@@ -29,7 +28,7 @@ test_macro:
   fail:
     invalid: false
 
-test_micro:
+test_integration:
   ok:
     single: [b.in, t.start, b.out, t.cancel, t.start, t.timeout]
     double_a: [b.in, t.start, b.out, t.cancel, t.start, b.in, t.cancel, b.out]

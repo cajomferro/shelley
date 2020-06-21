@@ -46,6 +46,6 @@ USES = -u ../base/uses.yml
 
 # Generate the integration diagram
 %.int:  %.yml
-	$(SHELLEYC) -d $< --skip-checks --no-output -i $@ -u uses.yml
+	$(SHELLEYC) $(USES) -d $< --skip-checks --no-output -i $@
 
 .SUFFIXES: .yml .scy .int .pdf .png

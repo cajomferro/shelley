@@ -477,7 +477,14 @@ class ComponentUsage:
 
     def __post_init__(self) -> None:
         start = timer()
+
+        # TODO: this should be a failure class
+        # TODO: there is no info avout component name here
+        if len(list(self.projected.end_states)) == 0:
+            raise ValueError(f"Component is declared but no operation is invoked.")
+
         self.is_valid = self.component.contains(self.projected)
+
         self.validation_time = get_elapsed_time(start)
 
     def __equals__(self, other: Any) -> bool:

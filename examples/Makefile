@@ -4,6 +4,7 @@ all:
 	$(MAKE) -C bad_desklamp_ambiguity2
 	$(MAKE) -C bad_desklamp_ambiguity3
 	$(MAKE) -C good_desklamp
+	$(MAKE) -C good_desklamp_nobutton
 	$(MAKE) -C good_simple_desklamp
 	$(MAKE) -C good_simple_desklamp2
 	$(MAKE) -C smartled clean
@@ -42,6 +43,7 @@ clean:
 	$(MAKE) -C bad_desklamp_ambiguity2 clean
 	$(MAKE) -C bad_desklamp_ambiguity3 clean
 	$(MAKE) -C good_desklamp clean
+	$(MAKE) -C good_desklamp_nobutton clean
 	$(MAKE) -C good_simple_desklamp clean
 	$(MAKE) -C good_simple_desklamp2 clean
 	$(MAKE) -C smartled clean

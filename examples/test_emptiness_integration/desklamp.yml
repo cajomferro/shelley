@@ -1,0 +1,67 @@
+# Based on example good_desklamp_nobutton
+
+name: DeskLamp
+start_with: [level1]
+end_with: [level1]
+components:
+    b: Button
+    l: Led
+operations:
+    level1:
+      next: [level1]
+      micro: [l.on, l.off]
+
+#name: DeskLamp
+#start_with: [level1]
+#end_with: [standby1, standby2]
+#components:
+#    b: Button
+#    ledA: Led
+#    ledB: Led
+#    t: Timer
+#operations:
+#    level1:
+#      next: [standby1, level2]
+#      micro: [ledA.on, t.start]
+#    level2:
+#      next: [standby2]
+#      micro: [t.cancel, ledB.on, t.start]
+#    standby1:
+#      next: [level1]
+#      micro: [t.timeout, ledA.off]
+#    standby2:
+#      next: [level1]
+#      micro:
+#        seq:
+#          - t.timeout
+#          - xor:
+#            - [ledB.off, ledA.off]
+#            - [ledA.off, ledB.off]
+#            # - [ledA.off, ledB.on] # integration
+#            # - [ledA.off] # ambiguity -> right now is also integration but i think it is wrong
+#
+#test_system:
+#  ok:
+#    valid1: [level1, standby1]
+#    valid2: [level1, level2, standby2]
+#  fail:
+#    # This is an incomplete trace, and is therefore reject
+#    invalid1: [level1, standby1, standby2]
+#    invalid2: [standby1, standby2]
+
+#test_integration:
+#  ok:
+#    valid1: [b.press, b.release, ledA.on, t.start, b.press, b.release, t.cancel, ledB.on, t.start, t.timeout, ledB.off, ledA.off]
+#    valid3: true
+##    valid2:
+##      possibly:
+##      - b.press
+##      - necessarily:
+##        - b.release
+##        - ledA.on
+##        - t.start
+##        - true
+#  fail:
+#    # This is an incomplete trace, and is therefore reject
+#    invalid1: [b.press, b.release]
+#    invalid2: false

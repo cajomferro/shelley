@@ -1,4 +1,5 @@
 include ../common.mk
+.PHONY: all pdf scy clean all
 
 all: scy
 
@@ -6,9 +7,8 @@ pdf: led.pdf timer.pdf desklamp.pdf
 
 scy: desklamp.scy
 
-desklamp.scy: desklamp.yml timer.scy led.scy
+desklamp.scy: desklamp.yml ../base/timer.scy ../base/led.scy
 
 clean:
-	rm -f *.scy *.pdf *.int
+	rm -f *.scy *.pdf *.gv
 
-.PHONY: all pdf scy

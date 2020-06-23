@@ -125,8 +125,10 @@ def _get_http_client_assembled() -> AssembledDevice:
 httpclient_assembled = _get_http_client_assembled()
 wificlient_assembled = _get_wifi_client_assembled()
 
-def replace_start_with(s:str, expr:str, prefix:str="start_with: ") -> str:
+
+def replace_start_with(s: str, expr: str, prefix: str = "start_with: ") -> str:
     return s.replace("start_with: $ANY\n", prefix + f"{expr}\n")
+
 
 def test_start_missing_true() -> None:
     # Missing True here

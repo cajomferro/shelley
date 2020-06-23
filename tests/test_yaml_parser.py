@@ -68,10 +68,7 @@ def test_events_from_behavior() -> None:
         "name": "Button",
         "start_with": ["pressed"],
         "end_with": "$ANY",
-        "operations": {
-            "pressed": {"next": [],},
-            "released": {"next": ["pressed"],},
-        },
+        "operations": {"pressed": {"next": [],}, "released": {"next": ["pressed"],},},
     }
 
     shelley_device = yaml2shelley._create_device_from_yaml(yaml_as_dict)

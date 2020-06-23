@@ -474,7 +474,9 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
         triggers=triggers,
         behaviors=behaviors,
     )
-    starts_with = set(ev.name for ev in _parse_event_list(yaml_code, "start_with", events))
+    starts_with = set(
+        ev.name for ev in _parse_event_list(yaml_code, "start_with", events)
+    )
     ends_with = set(ev.name for ev in _parse_event_list(yaml_code, "end_with", events))
     for evt in events.list():
         evt.is_start = evt.name in starts_with
@@ -488,7 +490,7 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
     #     )
 
     # if not specified, first event is the start event
-    #if len(events.start_events()) == 0:
+    # if len(events.start_events()) == 0:
     #    first_event = events.list()[0]
     #    first_event.is_start = True
 

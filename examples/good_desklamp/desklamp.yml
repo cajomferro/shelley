@@ -52,16 +52,24 @@ test_system:
 test_integration:
   ok:
     valid1: [b.press, b.release, ledA.on, t.start, b.press, b.release, t.cancel, ledB.on, t.start, t.timeout, ledB.off, ledA.off]
-    valid3: true
-#    valid2:
-#      possibly:
-#      - b.press
-#      - necessarily:
-#        - b.release
-#        - ledA.on
-#        - t.start
-#        - true
+    valid2: true
+    valid4:
+      necessarily:
+      - ledA.on
+      - true
+    valid3:
+      possibly:
+      - ledA.on
+      - necessarily:
+        - ledA.off
+        - true
   fail:
     # This is an incomplete trace, and is therefore reject
     invalid1: [b.press, b.release]
     invalid2: false
+    invalid3:
+      possibly:
+      - ledA.on
+      - necessarily:
+        - ledA.on
+        - true

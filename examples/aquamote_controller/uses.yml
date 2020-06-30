@@ -9,3 +9,7 @@ RadioV3: ../aquamote_radio_simple/radio_v3.scy
 RadioFinalStates: ../aquamote_radio_simple/radio_finalstates.scy
 ValveHandler: ../aquamote_valvehandler/valvehandler.scy
 ValveHandlerTimer: ../aquamote_valvehandlertimer/valvehandlertimer.scy
+Timer: ../base/timer.scy
+RadioClient: ../aquamote_radio_client/radioclient.scy
+WiFiClient: ../aquamote_radio_client/wificlient.scy
+HTTPClient: ../aquamote_radio_client/httpclient.scy

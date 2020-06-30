@@ -1,8 +1,1 @@
-Valve: ../aquamote_v1/valve.scy
-Magnetic: ../aquamote_v1/magnetic.scy
-LowPower: ../aquamote_v2/lowpower-strict.scy
-Radio: ../aquamote_v2_valve/radio.scy
-RadioSimple: ../aquamote_v2_valve/radiosimple.scy
-RadioSimplest: ../aquamote_v2_valve/radiosimplest.scy
-
-ValveHandler: valvehandler.scy
+Valve: ../aquamote_valve/valve.scy

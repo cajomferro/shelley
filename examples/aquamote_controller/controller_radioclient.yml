@@ -4,8 +4,8 @@ end_with: [sleep]
 components:
     v: ValveHandlerTimer
     m: Magnetic
-    r: Radio
-    lp: LowPower
+    r: RadioClient
+    lp: LowPowerStrict
 operations:
     wakeup:
         next: [update]

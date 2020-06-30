@@ -7,8 +7,8 @@ components:
     v3: Valve
     v4: Valve
     m: Magnetic
-    r: Radio
-    lp: LowPower
+    r: RadioSimple
+    lp: LowPowerStrictFinalStates
 operations:
     update:
         next: [activateAllValves]

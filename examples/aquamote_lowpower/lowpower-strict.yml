@@ -1,4 +1,4 @@
-name: LowPower
+name: LowPowerStrict
 start_with: [setup, cancel]
 end_with: $ANY
 operations:

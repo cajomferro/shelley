@@ -1,4 +1,4 @@
-name: Radio
+name: RadioV3
 start_with: [begin, begin_err]
 end_with: [begin_err, stopped]
 components:

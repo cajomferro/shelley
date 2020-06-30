@@ -1,0 +1,10 @@
+Valve: ../aquamote_valve/valve.scy
+Magnetic: ../aquamote_magnetic/magnetic.scy
+LowPowerStrict: ../aquamote_lowpower/lowpower-strict.scy
+LowPowerStrictFinalStates: ../aquamote_lowpower/lowpower-strict-finalstates.scy
+LowPower: ../aquamote_lowpower/lowpower.scy
+Radio: ../aquamote_radio/radio.scy
+RadioSimple: ../aquamote_radio_simple/radio_simple.scy
+RadioSimplest: ../aquamote_v2_valve/radiosimplest.scy
+ValveHandler: ../aquamote_valvehandler/valvehandler.scy
+ValveHandlerTimer: ../aquamote_valvehandlertimer/valvehandlertimer.scy

@@ -16,7 +16,7 @@ controller.scy: controller.yml \
 	../aquamote_v1/valve.scy \
 	../aquamote_v1/magnetic.scy \
 	radiosimplest.scy \
-	../aquamote_v2/lowpower-strict.yml
+	../aquamote_lowpower/lowpower-strict.yml
 
 clean:
 	rm -f *.scy *.pdf *.gv

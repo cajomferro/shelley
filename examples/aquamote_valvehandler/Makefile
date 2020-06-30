@@ -14,7 +14,7 @@ USES = -u uses.yml
 
 valvehandler.scy: valvehandler.yml ../aquamote_v1/valve.scy
 
-controller.scy: controller.yml \
+controller.scy: ../aquamote_controller_v2_valvehandler/controller.yml \
 	valvehandler.scy \
 	../aquamote_v1/magnetic.scy \
 	../aquamote_v2_valve/radiosimplest.scy \

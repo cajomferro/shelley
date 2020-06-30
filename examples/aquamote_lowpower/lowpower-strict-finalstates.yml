@@ -1,4 +1,4 @@
-name: LowPower
+name: LowPowerStrictFinalStates
 start_with: [setup]
 end_with: [setup, wakeup]
 operations:

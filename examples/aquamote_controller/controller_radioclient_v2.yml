@@ -1,0 +1,57 @@
+name: Controller
+start_with: [wakeup]
+end_with: [sleep]
+components:
+    v: ValveHandlerTimer
+    m: Magnetic
+    r: RadioClient
+    lp: LowPowerStrict
+operations:
+    wakeup:
+        next: [update, update_err]
+        micro: [m.locked, m.unlocked, lp.cancel]
+    sleepTimeout:
+        next: [update]
+        micro: [lp.wakeup]
+    update:
+        next: [runValves]
+        micro: [r.begin, r.send, r.send_ok, r.stopped]
+    update_err:
+        next: [update, update_err, sleep]
+        micro:
+          seq:
+            - xor:
+              - seq: [r.begin, r.send, r.send_err, r.stopped]
+              - r.begin_err
+    runValves:
+        next: [sleep]
+        micro: [v.v1, v.v2, v.v3, v.v4]
+    sleep:
+        next: [wakeup, sleepTimeout]
+        micro: [lp.setup, lp.sleep]
+
+test_system:
+  ok:
+    valid1: [wakeup, update, runValves, sleep]
+    valid2: [wakeup, update, runValves, sleep, sleepTimeout, update, runValves, sleep]
+    4evererror: [wakeup, update_err, update_err, update_err, update_err, update_err, sleep]
+  fail:
+    invalid1: [sleepTimeout, update, runValves, sleep]
+
+
+test_integration:
+  ok:
+    valid1: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
+    valid2: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
+  fail:
+    invalid1a: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing r.send_ok on macro behavior update
+    invalid1b: [m.locked, m.unlocked, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'lp.cancel' on macro behavior 'wakeup'
+    invalid1c: [m.locked, lp.cancel, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'm.unlocked' on macro behavior 'wakeup'
+    invalid1d: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # wakeup is not final
+    invalid2a: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.sleep, m.locked, m.unlocked, lp.cancel] # missing r.send_ok on macro behavior update
+    invalid2b: [m.locked, m.unlocked, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.sleep, m.locked, m.unlocked, lp.cancel] # missing 'lp.cancel' on macro behavior 'wakeup'
+    invalid3: [m.locked, m.unlocked]
+    invalid4: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.stopped, v.v1, v.v2, v.v3, v.v4]
+    invalid5: [m.locked, m.unlocked, lp.cancel]
+    invalid7: false
+    empty: []

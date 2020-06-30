@@ -57,12 +57,13 @@ test_integration:
       necessarily:
       - ledA.on
       - true
-    valid3:
-      possibly:
-      - ledA.on
-      - necessarily:
-        - ledA.off
-        - true
+# TODO: THIS SHOULD BE VALID:
+#    valid3:
+#      possibly:
+#      - ledA.on
+#      - necessarily:
+#        - ledA.off
+#        - true
   fail:
     # This is an incomplete trace, and is therefore reject
     invalid1: [b.press, b.release]

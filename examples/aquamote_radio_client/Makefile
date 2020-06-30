@@ -2,11 +2,11 @@ include ../common.mk
 
 all: scy
 
-pdf: httpclient.pdf wificlient.pdf radio.pdf
+pdf: httpclient.pdf wificlient.pdf radioclient.pdf
 
-scy: radio.scy
+scy: radioclient.scy
 
-radio.scy: radio.yml wificlient.scy httpclient.scy
+radioclient.scy: radioclient.yml wificlient.scy httpclient.scy
 
 USES = -u uses.yml
 

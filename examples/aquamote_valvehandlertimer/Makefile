@@ -2,9 +2,9 @@ include ../common.mk
 
 all: scy
 
-pdf: valvehandler.pdf
+pdf: valvehandlertimer.pdf
 
-scy: valvehandler.scy
+scy: valvehandlertimer.scy
 
 USES = -u uses.yml
 

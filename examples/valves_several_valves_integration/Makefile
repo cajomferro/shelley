@@ -10,6 +10,8 @@ USES = -u uses.yml
 
 valve.scy: valve.yml
 
+4valves.scy: 4valves.yml valve.scy
+
 2x4valves.scy: 2x4valves.yml 4valves.scy
 
 3x4valves.scy: 3x4valves.yml 4valves.scy

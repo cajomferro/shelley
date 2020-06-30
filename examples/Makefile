@@ -24,17 +24,18 @@ all:
 	$(MAKE) -C clickbutton
 	$(MAKE) -C clickbutton_integrationerror
 	$(MAKE) -C clickbutton_ambiguous
-	$(MAKE) -C aquamote_v1
-	$(MAKE) -C aquamote_v2
-	$(MAKE) -C aquamote_v2_finalstates
-	$(MAKE) -C aquamote_v2_valve
-	$(MAKE) -C aquamote_v2_valvehandler
-	$(MAKE) -C aquamote_v2_valvehandlertimer
-	$(MAKE) -C aquamote_v3
+	$(MAKE) -C aquamote_lowpower
+	$(MAKE) -C aquamote_magnetic
+	$(MAKE) -C aquamote_radio_client
+	$(MAKE) -C aquamote_radio_simple
+	$(MAKE) -C aquamote_valve
+	$(MAKE) -C aquamote_valvehandler
+	$(MAKE) -C aquamote_valvehandlertimer
+	$(MAKE) -C aquamote_controller
 	$(MAKE) -C valves_1valve_complex
 	$(MAKE) -C valves_1valve_seq
 	#$(MAKE) -C valves_4valves_xorvsseq --> TODO: FIX THIS
-	$(MAKE) -C valves_several_valves
+	#$(MAKE) -C valves_several_valves --> TODO: this is not compiling because valves are declares but not being used
 	$(MAKE) -C valves_several_valves_integration
 clean:
 	rm base/*.scy
@@ -63,13 +64,14 @@ clean:
 	$(MAKE) -C clickbutton clean
 	$(MAKE) -C clickbutton_integrationerror clean
 	$(MAKE) -C clickbutton_ambiguous clean
-	$(MAKE) -C aquamote_v1 clean
-	$(MAKE) -C aquamote_v2 clean
-	$(MAKE) -C aquamote_v2_finalstates clean
-	$(MAKE) -C aquamote_v2_valve clean
-	$(MAKE) -C aquamote_v2_valvehandler clean
-	$(MAKE) -C aquamote_v2_valvehandlertimer clean
-	$(MAKE) -C aquamote_v3 clean
+	$(MAKE) -C aquamote_lowpower clean
+	$(MAKE) -C aquamote_magnetic clean
+	$(MAKE) -C aquamote_radio_client clean
+	$(MAKE) -C aquamote_radio_simple clean
+	$(MAKE) -C aquamote_valve clean
+	$(MAKE) -C aquamote_valvehandler clean
+	$(MAKE) -C aquamote_valvehandlertimer clean
+	$(MAKE) -C aquamote_controller clean
 	$(MAKE) -C valves_1valve_complex clean
 	$(MAKE) -C valves_1valve_seq clean
 	$(MAKE) -C valves_4valves_xorvsseq clean

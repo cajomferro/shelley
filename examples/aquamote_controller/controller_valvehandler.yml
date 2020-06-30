@@ -4,8 +4,8 @@ end_with: $ANY
 components:
     v: ValveHandler
     m: Magnetic
-    rs: RadioSimplest
-    lp: LowPower
+    rs: RadioV3
+    lp: LowPowerStrict
 operations:
     start:
         next: [activateAllValves]

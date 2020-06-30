@@ -7,11 +7,11 @@
 #      rs: RadioSimple
 #  triggers:
 #    send: [rs.start, rs.send, rs.receive, rs.stop]
-name: RadioV2
+name: RadioV3
 start_with: [send]
 end_with: $ANY
 components:
-      rs: RadioV1
+      rs: RadioV2
 operations:
     send:
         next: [ok]

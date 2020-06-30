@@ -3,8 +3,9 @@ Magnetic: ../aquamote_magnetic/magnetic.scy
 LowPowerStrict: ../aquamote_lowpower/lowpower-strict.scy
 LowPowerStrictFinalStates: ../aquamote_lowpower/lowpower-strict-finalstates.scy
 LowPower: ../aquamote_lowpower/lowpower.scy
-Radio: ../aquamote_radio/radio.scy
-RadioSimple: ../aquamote_radio_simple/radio_simple.scy
-RadioSimplest: ../aquamote_v2_valve/radiosimplest.scy
+RadioV1: ../aquamote_radio_simple/radio_v1.scy
+RadioV2: ../aquamote_radio_simple/radio_v2.scy
+RadioV3: ../aquamote_radio_simple/radio_v3.scy
+RadioFinalStates: ../aquamote_radio_simple/radio_finalstates.scy
 ValveHandler: ../aquamote_valvehandler/valvehandler.scy
 ValveHandlerTimer: ../aquamote_valvehandlertimer/valvehandlertimer.scy

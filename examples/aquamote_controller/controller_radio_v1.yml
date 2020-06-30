@@ -7,7 +7,7 @@ components:
     v3: Valve
     v4: Valve
     m: Magnetic
-    r: RadioSimple
+    r: RadioV1
     lp: LowPower
 operations:
     start:

@@ -1,3 +1,5 @@
+# Experimenting Radio and LowPower modules that require specific final states
+
 name: Controller
 start_with: [update]
 end_with: [update, wakeup, activateAllValves, deactivateAllValves]
@@ -7,7 +9,7 @@ components:
     v3: Valve
     v4: Valve
     m: Magnetic
-    r: RadioSimple
+    r: RadioFinalStates
     lp: LowPowerStrictFinalStates
 operations:
     update:

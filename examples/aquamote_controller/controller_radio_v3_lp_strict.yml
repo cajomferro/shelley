@@ -7,8 +7,8 @@ components:
     v3: Valve
     v4: Valve
     m: Magnetic
-    rs: RadioSimplest
-    lp: LowPower
+    rs: RadioV3 # --> requires RadioV2 --> requires RadioV1
+    lp: LowPowerStrict
 operations:
     start: # start event by default
         next: [activateAllValves]

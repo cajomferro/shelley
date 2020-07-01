@@ -641,7 +641,13 @@ class UnusableOperationsFailure:
     sink_operations: FrozenSet[str]
 
     def __str__(self):
-        return f"Unusable operation error\nUnreachable operations: {', '.join(self.unusable_operations)}\nThese operations do not reach a yield point: {', '.join(self.sink_operations)}"
+        unusable_msg = f"Unusable operation error\n"
+        if self.unusable_operations:
+            unusable_msg += f"Unreachable operations: {', '.join(self.unusable_operations)}\n"
+        if self.sink_operations:
+            unusable_msg += f"These operations do not reach a yield point: {', '.join(self.sink_operations)}"
+
+        return unusable_msg
 
 
 TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure, UnusableOperationsFailure]

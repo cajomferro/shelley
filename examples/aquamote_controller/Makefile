@@ -81,15 +81,15 @@ controller_radioclient.scy: controller_radioclient.yml \
 	../aquamote_radio_client/radioclient.scy \
 	../aquamote_lowpower/lowpower-strict.scy \
 
-# same as before but handling radioclient error cases
+# similar to controller_radioclient but different radioclient that handles more error cases
 controller_radioclient_v2.scy: controller_radioclient_v2.yml \
 	../base/timer.scy \
 	../aquamote_valve/valve.scy \
 	../aquamote_valvehandlertimer/valvehandlertimer.scy \
 	../aquamote_magnetic/magnetic.scy \
-	../aquamote_radio_client/httpclient.scy \
-	../aquamote_radio_client/wificlient.scy \
-	../aquamote_radio_client/radioclient.scy \
+	../aquamote_radio_client_v2/httpclient.scy \
+	../aquamote_radio_client_v2/wificlient.scy \
+	../aquamote_radio_client_v2/radioclient.scy \
 	../aquamote_lowpower/lowpower-strict.scy \
 
 clean:

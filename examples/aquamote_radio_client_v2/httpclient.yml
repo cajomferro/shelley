@@ -1,43 +1,31 @@
-# https://docs.python.org/3.3/library/http.client.html
+# https://laravel.com/docs/7.x/http-client (kind of resembles)
 name: HTTPClient
-start_with: [connected, connect_failed]
-end_with: [connect_failed, disconnected]
+start_with: [get, post]
+end_with: $ANY
 operations:
-    connected:
-        next: [get, post, connect_failed, disconnected]
-    connect_failed:
-        next: [connected, connect_failed]
     get:
-        next: [get, post, response200, response404, response401, response500, disconnected]
+        next: [get, post, response200, response404, response401, response500]
     post:
-        next: [get, post, response200, response404, response401, response500, disconnected]
+        next: [get, post, response200, response404, response401, response500]
     response200:
-        next: [get, post, disconnected]
+        next: [get, post]
     response401:
-        next: [get, post, disconnected]
+        next: [get, post]
     response404:
-        next: [get, post, disconnected]
+        next: [get, post]
     response500:
-        next: [get, post, disconnected]
-    disconnected:
-        next: [connected, connect_failed, disconnected]
+        next: [get, post]
 
 test_system:
   ok:
-    connect_failed: [connected, connect_failed]
-    connect_failed_start: [connect_failed]
-    getok: [connected, get, response200, disconnected]
-    connect_failed_getok: [connect_failed, connected, get, response200, disconnected]
-    postok: [connected, post, response200, disconnected]
-    get2x: [connected, get, response404, get, response200, disconnected]
-    get2x_noresponse: [connected, get, get, response200, disconnected] # server doesn't respond, try again
+    getok: [get, response200]
+    postok: [post, response200]
+    get2x: [get, response404, get, response200]
+    get_noresponse: [get] # server doesn't respond
+    post_noresponse: [post] # server doesn't respond
+    get_retry: [get, get, response200] # server doesn't respond, try again
   fail:
-    invalid1: [get]
-    invalid2: [post]
     invalid3: [response200]
     invalid4: [response404]
     invalid5: [response500]
-    invalid6: [disconnected]
-    get2x_nodisconnected: [connected, get, response404, get, response200] # response200 is not final state, disconnected missing
-    invalid_final: [connected]
     empty: []

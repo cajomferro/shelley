@@ -89,7 +89,6 @@ Same as controller_radio_v3_lp_strict.yml but now focusing on having a valve han
 ## Controller with RadioClient 
 ### Main files:
 - controller_radioclient.yml
-- controller_radioclient_v2.yml
 
 ### Deps:
 - ../aquamote_valvehandlertimer/valvehandlertimer.scy --> (../aquamote_valve/valve.scy AND ../base/timer.scy)
@@ -101,6 +100,25 @@ Same as controller_radio_v3_lp_strict.yml but now focusing on having a valve han
 RadioClient is a version of radio that better models a real-world scenario. It integrates on HTTPClient and WiFiClient modules.
 
 ### Comments
-The "problem" of these controllers is that, although they tolerate error situations, the way "RadioClient" is designed
+The "problem" of this controller is that, although it tolerates error situations, the way "RadioClient" is designed
 forces to stop and restart the radioclient (this includes disconnecting from server and from Wi-Fi router) every time
 an error occurs.
+
+--
+
+## Controller with RadioClientV2
+### Main files:
+- controller_radioclient_v2.yml
+
+### Deps:
+- ../aquamote_valvehandlertimer/valvehandlertimer.scy --> (../aquamote_valve/valve.scy AND ../base/timer.scy)
+- ../aquamote_magnetic/magnetic.scy
+- ../aquamote_radio_client_v2/radioclient.scy  --> (../aquamote_radio_client_v2/httpclient.scy AND ../aquamote_radio_client_v2/wificlient.scy)
+- ../aquamote_lowpower/lowpower-strict.scy
+
+### Goal
+RadioClientV2 improves RadioClient by better handling error scenarios. We can now connect and disconnect from server while
+keeping Wi-Fi connection.
+
+### Comments
+The only problem of this solution is that we must have more operations in order to support the error scenarios.

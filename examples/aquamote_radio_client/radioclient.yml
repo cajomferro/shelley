@@ -31,7 +31,7 @@ operations:
         micro:
           seq: [wc.print_data_ready, hc.response200]
     send_err:
-        next: [stopped]
+        next: [stopped] # if we allow "send" here we are in trouble
         micro:
           xor:
             - seq: [wc.print_data_ready, hc.response401]

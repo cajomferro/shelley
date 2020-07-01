@@ -1,3 +1,6 @@
+# This version of Controller improves controller_radioclient.yml by handing some erorr cases
+# and by allowing sequential "update" operations
+
 name: Controller
 start_with: [wakeup]
 end_with: [sleep]
@@ -11,10 +14,10 @@ operations:
         next: [update, update_err]
         micro: [m.locked, m.unlocked, lp.cancel]
     sleepTimeout:
-        next: [update]
+        next: [update, update_err]
         micro: [lp.wakeup]
     update:
-        next: [runValves]
+        next: [runValves, update, update_err]
         micro: [r.begin, r.send, r.send_ok, r.stopped]
     update_err:
         next: [update, update_err, sleep]
@@ -34,9 +37,11 @@ test_system:
   ok:
     valid1: [wakeup, update, runValves, sleep]
     valid2: [wakeup, update, runValves, sleep, sleepTimeout, update, runValves, sleep]
+    update2x: [wakeup, update, update, runValves, sleep]
+    update3x: [wakeup, update, update_err, update, runValves, sleep]
     4evererror: [wakeup, update_err, update_err, update_err, update_err, update_err, sleep]
   fail:
-    invalid1: [sleepTimeout, update, runValves, sleep]
+    invalid_start: [sleepTimeout, update, runValves, sleep] # sleepTimeout is not a start operation
 
 
 test_integration:

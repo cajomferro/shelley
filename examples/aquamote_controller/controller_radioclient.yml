@@ -28,7 +28,8 @@ test_system:
     valid1: [wakeup, update, runValves, sleep]
     valid2: [wakeup, update, runValves, sleep, sleepTimeout, update, runValves, sleep]
   fail:
-    invalid1: [sleepTimeout, update, runValves, sleep]
+    invalid_start: [sleepTimeout, update, runValves, sleep] # sleepTimeout is not a start operation
+    invalid1: [wakeup, update, update, runValves, sleep] # update is invoked twice
 
 
 test_integration:

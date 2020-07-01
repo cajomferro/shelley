@@ -8,14 +8,21 @@ components:
     lp: LowPowerStrict
 operations:
     wakeup:
-        next: [update]
-        micro: [m.locked, m.unlocked, lp.cancel]
+        next: [update, update_err]
+        micro: [m.locked, m.unlocked, lp.cancel] # cancels low power timer (even if it's not activated), this avoids having an extra operation for only the first time
     sleepTimeout:
-        next: [update]
+        next: [update, update_err]
         micro: [lp.wakeup]
     update:
-        next: [runValves]
+        next: [runValves, update, update_err]
         micro: [r.begin, r.send, r.send_ok, r.stopped]
+    update_err:
+        next: [update, update_err, sleep]
+        micro:
+          seq:
+            - xor:
+              - seq: [r.begin, r.send, r.send_err, r.stopped]
+              - r.begin_err
     runValves:
         next: [sleep]
         micro: [v.v1, v.v2, v.v3, v.v4]
@@ -27,9 +34,11 @@ test_system:
   ok:
     valid1: [wakeup, update, runValves, sleep]
     valid2: [wakeup, update, runValves, sleep, sleepTimeout, update, runValves, sleep]
+    update2x: [wakeup, update, update, runValves, sleep]
+    update3x: [wakeup, update, update_err, update, runValves, sleep]
+    4evererror: [wakeup, update_err, update_err, update_err, update_err, update_err, sleep]
   fail:
     invalid_start: [sleepTimeout, update, runValves, sleep] # sleepTimeout is not a start operation
-    invalid1: [wakeup, update, update, runValves, sleep] # update is invoked twice
 
 
 test_integration:

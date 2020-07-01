@@ -1,0 +1,82 @@
+# Same as RadioClient but with more error cases
+
+name: RadioClientV2
+start_with: [begin, begin_err]
+end_with: [begin_err, stopped]
+components:
+      hc: HTTPClient
+      wc: WiFiClient
+operations:
+    begin:
+        next: [stopped, send]
+        micro:
+          seq: [wc.ssid_joined, wc.connected, hc.connected]
+    begin_err:
+        next: [begin_err, begin]
+        micro:
+          xor:
+            - seq: [wc.ssid_joined, wc.connected, hc.connect_failed, wc.disconnected, wc.ssid_left]
+            - seq: [wc.ssid_joined, wc.connection_timeout]
+            - wc.ssid_failed
+    stopped:
+        next: [begin, begin_err]
+        micro:
+          seq: [wc.disconnected, hc.disconnected, wc.ssid_left]
+    send:
+        next: [send_ok, send_err_401, send_err_404, send_err_500, send_err_timeout]
+        micro:
+          xor:
+            - hc.get
+            - hc.post
+    send_ok:
+        next: [stopped, send]
+        micro:
+          seq: [wc.print_data_ready, hc.response200]
+    send_err_401:
+        next: [stopped, send]
+        micro:
+          seq: [wc.print_data_ready, hc.response401]
+    send_err_404:
+        next: [stopped, send]
+        micro:
+          seq: [wc.print_data_ready, hc.response404]
+    send_err_500:
+        next: [stopped, send]
+        micro:
+          seq: [wc.print_data_ready, hc.response500]
+    send_err_timeout:
+        next: [stopped, send]
+        micro: wc.print_timeout
+
+test_system:
+  ok:
+    send_nothing: [begin, stopped]
+    send_ok: [begin, send, send_ok, stopped]
+    double_ok: [begin, send, send_ok, send, send_ok, stopped]
+    # 401
+    send_err_401: [begin, send, send_err_401, stopped]
+    send_err_401_resend: [begin, send, send_err_401, send, send_ok, stopped]
+    send_ok_send_err_401: [begin, send, send_ok, send, send_err_401, stopped]
+    double_err_401: [begin, send, send_err_401, send, send_err_401, stopped]
+    # 404
+    send_err_404: [begin, send, send_err_404, stopped]
+    send_err_404_resend: [begin, send, send_err_404, send, send_ok, stopped]
+    send_ok_send_err_404: [begin, send, send_ok, send, send_err_404, stopped]
+    double_err_404: [begin, send, send_err_404, send, send_err_404, stopped]
+    # 500
+    send_err_500: [begin, send, send_err_500, stopped]
+    send_err_500_resend: [begin, send, send_err_500, send, send_ok, stopped]
+    send_ok_send_err_500: [begin, send, send_ok, send, send_err_500, stopped]
+    double_err_500: [begin, send, send_err_500, send, send_err_500, stopped]
+    # timeout (no server response)
+    send_err_timeout: [begin, send, send_err_timeout, stopped]
+    send_err_timeout_resend: [begin, send, send_err_timeout, send, send_ok, stopped]
+    send_ok_send_err_timeout: [begin, send, send_ok, send, send_err_timeout, stopped]
+    double_err_timeout: [begin, send, send_err_timeout, send, send_err_timeout, stopped]
+    # mix
+    err_mix: [begin, send, send_err_404, send, send_err_401, send, send_err_500, stopped]
+  fail:
+    invalid_start: [send, send_ok, stopped] # missing 'begin'
+    double_send: [begin, send, send, stopped]
+    double_ok: [begin, send, send_ok, send_ok, stopped]
+    double_err: [begin, send, send_err_401, send_err_401, stopped]

@@ -1,0 +1,82 @@
+# https://www.arduino.cc/en/Reference/WiFiClientConnect
+# disconnected event might be external (device error) or internal (user called disconnect() function)
+name: WiFiClient
+start_with: [ssid_joined, ssid_failed, ssid_left, print_timeout, print_data_ready, connected, disconnected, connection_timeout]
+end_with: [ssid_failed, ssid_left, connection_timeout]
+operations:
+    ssid_joined:
+        next: [connected, connection_timeout, ssid_left]
+    ssid_failed:
+        next: [ssid_failed, ssid_joined]
+    ssid_left:
+        next: [ssid_joined, ssid_failed]
+    print_timeout:
+        next: [print_timeout, print_data_ready, disconnected]
+    print_data_ready:
+        next: [print_timeout, print_data_ready, disconnected]
+    connected:
+        next: [disconnected, print_timeout, print_data_ready]
+    disconnected:
+        next: [connected, connection_timeout, ssid_left]
+    connection_timeout:
+        next: [connected, ssid_failed, ssid_joined]
+    # before "print_timeout" or "print_data_ready" or "print_disconnected":
+    # client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+    #                 "Host: " + host + "\r\n" +
+    #                 "Connection: close\r\n\r\n");
+    #    while (client.available() == 0) {
+    #        if (millis() - timeout > 5000) {
+    #            Serial.println(">>> Client Timeout !");
+    #            client.stop();
+    #            return;
+    #        }
+    #    // Read all the lines of the reply from server and print them to Serial
+    #    while(client.available()) {
+    #        String line = client.readStringUntil('\r');
+    #        Serial.print(line);
+    #    }
+
+## before "print":
+## client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+##                 "Host: " + host + "\r\n" +
+##                 "Connection: close\r\n\r\n");
+#    - [connected, print] # data has been written
+#    - [connection_timeout, connected]
+## before "print_timeout" or "print_data_ready":
+##    while (client.available() == 0) {
+##        if (millis() - timeout > 5000) {
+##            Serial.println(">>> Client Timeout !");
+##            client.stop();
+##            return;
+##        }
+##    // Read all the lines of the reply from server and print them to Serial
+##    while(client.available()) {
+##        String line = client.readStringUntil('\r');
+##        Serial.print(line);
+##    }
+#    - [print, print_timeout]
+#    - [print, print_data_ready]
+#    - [print_data_ready, print]
+#    - [print_timeout, print]
+#    - [print, disconnect]
+#    - [print_data_ready, disconnect]
+#    - [print_timeout, disconnect]
+
+#test_macro:
+#  ok:
+#    connect_failed: [connect, connect_failed]
+#    connect: [connect]
+#    getok: [connect, get, response200, disconnect]
+#    postok: [connect, post, response200, disconnect]
+#    get2x: [connect, get, response404, get, response200, disconnect]
+#    get2x_nodisconnect: [connect, get, response404, get, response200] # disconnect missing but still valid
+#  fail:
+#    invalid1: [get]
+#    invalid2: [post]
+#    invalid3: [response200]
+#    invalid4: [response404]
+#    invalid5: [response500]
+#    invalid6: [disconnect]
+#    invalid7: [connect_failed]
+#    get2x_noresponse: [connect, get, get, response200, disconnect] # response200 missing
+#    empty: []

@@ -8,24 +8,43 @@ components:
     lp: LowPowerStrict
 operations:
     wakeup:
-        next: [sync, sync_err]
+        next: [connect_begin, connect_begin_err]
         micro: [m.locked, m.unlocked, lp.cancel] # cancels low power timer (even if it's not activated), this avoids having an extra operation for only the first time
     sleepTimeout:
-        next: [sync, sync_err]
+        next: [connect_begin, connect_begin_err]
         micro: [lp.wakeup]
-    sync: # exchange data with server
-        next: [runValves, sync, sync_err]
-        micro: [r.begin, r.send, r.send_ok, r.disconnected, r.stopped]
-    sync_err:
-        next: [sync, sync_err, sleep]
+    connect_begin:
+        next: [send, send_err, disconnect]
+        micro: [r.begin]
+    reconnect:
+        next: [send, send_err, disconnect]
+        micro: [r.connect]
+    connect_begin_err:
+        next: [connect_begin, connect_begin_err, runValves]
+        micro: [r.begin_err]
+    disconnect:
+        next: [connect_stop, reconnect, connect_timeout]
         micro:
-          seq:
-            - xor:
-              - seq: [r.begin, r.send, r.send_err_401, r.disconnected, r.stopped]
-              - seq: [r.begin, r.send, r.send_err_404, r.disconnected, r.stopped]
-              - seq: [r.begin, r.send, r.send_err_500, r.disconnected, r.stopped]
-              - seq: [r.begin, r.send, r.send_err_timeout, r.disconnected, r.stopped]
-              - r.begin_err
+          seq: [r.disconnect]
+    connect_timeout:
+        next: [connect_stop, reconnect, connect_timeout]
+        micro:
+          seq: [r.connection_timeout]
+    connect_stop:
+        next: [runValves, sleep, connect_begin, connect_begin_err]
+        micro:
+          seq: [r.stop]
+    send: # exchange data with server
+        next: [send, send_err, disconnect]
+        micro: [r.send, r.send_ok]
+    send_err:
+        next: [send, send_err, disconnect]
+        micro:
+          xor:
+            - seq: [r.send, r.send_err_401]
+            - seq: [r.send, r.send_err_404]
+            - seq: [r.send, r.send_err_500]
+            - seq: [r.send, r.send_err_timeout]
     runValves:
         next: [sleep]
         micro: [v.v1, v.v2, v.v3, v.v4]
@@ -35,28 +54,31 @@ operations:
 
 test_system:
   ok:
-    valid1: [wakeup, sync, runValves, sleep]
-    valid2: [wakeup, sync, runValves, sleep, sleepTimeout, sync, runValves, sleep]
-    sync2x: [wakeup, sync, sync, runValves, sleep]
-    sync3x: [wakeup, sync, sync_err, sync, runValves, sleep]
-    4evererror: [wakeup, sync_err, sync_err, sync_err, sync_err, sync_err, sleep]
+    valid1: [wakeup, connect_begin, send, disconnect, connect_stop, runValves, sleep]
+    valid2x: [wakeup, connect_begin, send, disconnect, connect_stop, runValves, sleep, sleepTimeout, connect_begin, send, disconnect, connect_stop, runValves, sleep]
+    reconnect: [wakeup, connect_begin, send, disconnect, reconnect, disconnect, connect_stop, runValves, sleep]
+    reconnect2: [wakeup, connect_begin, send, disconnect, reconnect, send, disconnect, connect_stop, runValves, sleep]
+    send2x: [wakeup, connect_begin, send, send, disconnect, connect_stop, runValves, sleep]
+    send3x: [wakeup, connect_begin, send, send_err, send, disconnect, connect_stop, runValves, sleep]
+    4evererror: [wakeup, connect_begin, send_err, send_err, send_err, send_err, send_err, disconnect, connect_stop, sleep]
   fail:
-    invalid_start: [sleepTimeout, sync, runValves, sleep] # sleepTimeout is not a start operation
-
+    valid1_err1: [wakeup, connect_begin_err, send, disconnect, connect_stop, runValves, sleep] # connect_begin_err instead of connect_begin
+    valid1_err2: [wakeup, connect_begin, send, disconnect, runValves, sleep] # missing connect_stop
+    reconnect: [wakeup, connect_begin, send, disconnect, reconnect, runValves, sleep]
 
 test_integration:
   ok:
-    valid1: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnected, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
-    valid2: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnected, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnected, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
+    valid1: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
+    valid2: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
   fail:
-    invalid1a: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.disconnected, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing r.send_ok on macro behavior sync
-    invalid1b: [m.locked, m.unlocked, r.begin, r.send, r.send_ok, r.disconnected, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'lp.cancel' on macro behavior 'wakeup'
-    invalid1c: [m.locked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnected, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'm.unlocked' on macro behavior 'wakeup'
-    invalid1d: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnected, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # wakeup is not final
-    invalid2a: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.disconnected, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.sleep, m.locked, m.unlocked, lp.cancel] # missing r.send_ok on macro behavior sync
-    invalid2b: [m.locked, m.unlocked, r.begin, r.send, r.send_ok, r.disconnected, r.stopped, v.v1, v.v2, v.v3, v.v4, lp.sleep, m.locked, m.unlocked, lp.cancel] # missing 'lp.cancel' on macro behavior 'wakeup'
+    invalid1a: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing r.send_ok on macro behavior send
+    invalid1b: [m.locked, m.unlocked, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'lp.cancel' on macro behavior 'wakeup'
+    invalid1c: [m.locked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'm.unlocked' on macro behavior 'wakeup'
+    invalid1d: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # wakeup is not final
+    invalid2a: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.sleep, m.locked, m.unlocked, lp.cancel] # missing r.send_ok on macro behavior send
+    invalid2b: [m.locked, m.unlocked, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.sleep, m.locked, m.unlocked, lp.cancel] # missing 'lp.cancel' on macro behavior 'wakeup'
     invalid3: [m.locked, m.unlocked]
-    invalid4: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnected, r.stopped, v.v1, v.v2, v.v3, v.v4]
+    invalid4: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4]
     invalid5: [m.locked, m.unlocked, lp.cancel]
     invalid7: false
     empty: []

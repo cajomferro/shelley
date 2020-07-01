@@ -2,13 +2,13 @@
 
 name: RadioClientV2
 start_with: [begin, begin_err]
-end_with: [begin_err, stopped]
+end_with: [begin_err, stop]
 components:
       hc: HTTPClient
       wc: WiFiClient
 operations:
     begin:
-        next: [send, disconnected]
+        next: [send, disconnect]
         micro:
           seq: [wc.ssid_joined, wc.connected]
     begin_err:
@@ -17,81 +17,81 @@ operations:
           xor:
             - seq: [wc.ssid_joined, wc.connection_timeout, wc.ssid_left]
             - wc.ssid_failed
-    stopped:
+    stop:
         next: [begin, begin_err]
         micro:
           seq: [wc.ssid_left]
-    connected:
-      next: [disconnected, send]
+    connect:
+      next: [disconnect, send]
       micro:
         seq: [wc.connected]
     connection_timeout:
-      next: [connection_timeout, stopped, connected]
+      next: [connection_timeout, stop, connect]
       micro:
         seq: [wc.connection_timeout]
-    disconnected:
-        next: [connection_timeout, stopped, connected]
+    disconnect:
+        next: [connection_timeout, stop, connect]
         micro:
           seq: [wc.disconnected]
     send:
-        next: [send_ok, send_err_401, send_err_404, send_err_500, send_err_timeout, disconnected]
+        next: [send_ok, send_err_401, send_err_404, send_err_500, send_err_timeout, disconnect]
         micro:
           xor:
             - hc.get
             - hc.post
     send_ok:
-        next: [disconnected, send]
+        next: [disconnect, send]
         micro:
           seq: [wc.print_data_ready, hc.response200]
     send_err_401:
-        next: [disconnected, send]
+        next: [disconnect, send]
         micro:
           seq: [wc.print_data_ready, hc.response401]
     send_err_404:
-        next: [disconnected, send]
+        next: [disconnect, send]
         micro:
           seq: [wc.print_data_ready, hc.response404]
     send_err_500:
-        next: [disconnected, send]
+        next: [disconnect, send]
         micro:
           seq: [wc.print_data_ready, hc.response500]
     send_err_timeout:
-        next: [disconnected, send]
+        next: [disconnect, send]
         micro: wc.print_timeout
 
 test_system:
   ok:
-    send_ok: [begin, send, send_ok, disconnected, stopped]
-    double_ok: [begin, send, send_ok, send, send_ok, disconnected, stopped]
+    send_ok: [begin, send, send_ok, disconnect, stop]
+    double_ok: [begin, send, send_ok, send, send_ok, disconnect, stop]
     # 401
-    send_err_401: [begin, send, send_err_401, disconnected, stopped]
-    send_err_401_resend: [begin, send, send_err_401, send, send_ok, disconnected, stopped]
-    send_ok_send_err_401: [begin, send, send_ok, send, send_err_401, disconnected, stopped]
-    double_err_401: [begin, send, send_err_401, send, send_err_401, disconnected, stopped]
+    send_err_401: [begin, send, send_err_401, disconnect, stop]
+    send_err_401_resend: [begin, send, send_err_401, send, send_ok, disconnect, stop]
+    send_ok_send_err_401: [begin, send, send_ok, send, send_err_401, disconnect, stop]
+    double_err_401: [begin, send, send_err_401, send, send_err_401, disconnect, stop]
     # 404
-    send_err_404: [begin, send, send_err_404, disconnected, stopped]
-    send_err_404_resend: [begin, send, send_err_404, send, send_ok, disconnected, stopped]
-    send_ok_send_err_404: [begin, send, send_ok, send, send_err_404, disconnected, stopped]
-    double_err_404: [begin, send, send_err_404, send, send_err_404, disconnected, stopped]
+    send_err_404: [begin, send, send_err_404, disconnect, stop]
+    send_err_404_resend: [begin, send, send_err_404, send, send_ok, disconnect, stop]
+    send_ok_send_err_404: [begin, send, send_ok, send, send_err_404, disconnect, stop]
+    double_err_404: [begin, send, send_err_404, send, send_err_404, disconnect, stop]
     # 500
-    send_err_500: [begin, send, send_err_500, disconnected, stopped]
-    send_err_500_resend: [begin, send, send_err_500, send, send_ok, disconnected, stopped]
-    send_ok_send_err_500: [begin, send, send_ok, send, send_err_500, disconnected, stopped]
-    double_err_500: [begin, send, send_err_500, send, send_err_500, disconnected, stopped]
+    send_err_500: [begin, send, send_err_500, disconnect, stop]
+    send_err_500_resend: [begin, send, send_err_500, send, send_ok, disconnect, stop]
+    send_ok_send_err_500: [begin, send, send_ok, send, send_err_500, disconnect, stop]
+    double_err_500: [begin, send, send_err_500, send, send_err_500, disconnect, stop]
     # send_timeout (no server response)
-    send_err_timeout: [begin, send, send_err_timeout, disconnected, stopped]
-    send_err_timeout_resend: [begin, send, send_err_timeout, send, send_ok, disconnected, stopped]
-    send_ok_send_err_timeout: [begin, send, send_ok, send, send_err_timeout, disconnected, stopped]
-    double_err_timeout: [begin, send, send_err_timeout, send, send_err_timeout, disconnected, stopped]
+    send_err_timeout: [begin, send, send_err_timeout, disconnect, stop]
+    send_err_timeout_resend: [begin, send, send_err_timeout, send, send_ok, disconnect, stop]
+    send_ok_send_err_timeout: [begin, send, send_ok, send, send_err_timeout, disconnect, stop]
+    double_err_timeout: [begin, send, send_err_timeout, send, send_err_timeout, disconnect, stop]
     # mix
-    err_mix: [begin, send, send_err_404, send, send_err_401, send, send_err_500, disconnected, stopped]
+    err_mix: [begin, send, send_err_404, send, send_err_401, send, send_err_500, disconnect, stop]
   fail:
-    useless_begin: [begin, stopped]
-    invalid_start: [send, send_ok, disconnected, stopped] # missing 'begin'
-    double_send: [begin, send, send, disconnected, stopped]
-    double_ok: [begin, send, send_ok, send_ok, disconnected, stopped]
-    double_err: [begin, send, send_err_401, send_err_401, disconnected, stopped]
-    send_after_disconnected: [begin, send, send_ok, disconnected, send, stopped]
+    useless_begin: [begin, stop]
+    invalid_start: [send, send_ok, disconnect, stop] # missing 'begin'
+    double_send: [begin, send, send, disconnect, stop]
+    double_ok: [begin, send, send_ok, send_ok, disconnect, stop]
+    double_err: [begin, send, send_err_401, send_err_401, disconnect, stop]
+    send_after_disconnect: [begin, send, send_ok, disconnect, send, stop]
 
 test_integration:
   ok: {}

@@ -14,10 +14,10 @@ operations:
         next: [connect_begin, connect_begin_err]
         micro: [lp.wakeup]
     connect_begin:
-        next: [send, send_err, disconnect]
+        next: [send_ok, send_err, disconnect]
         micro: [r.begin]
     reconnect:
-        next: [send, send_err, disconnect]
+        next: [send_ok, send_err, disconnect]
         micro: [r.connect]
     connect_begin_err:
         next: [connect_begin, connect_begin_err, runValves]
@@ -34,11 +34,11 @@ operations:
         next: [runValves, sleep, connect_begin, connect_begin_err]
         micro:
           seq: [r.stop]
-    send: # exchange data with server
-        next: [send, send_err, disconnect]
+    send_ok: # exchange data with server
+        next: [send_ok, send_err, disconnect]
         micro: [r.send, r.send_ok]
     send_err:
-        next: [send, send_err, disconnect]
+        next: [send_ok, send_err, disconnect]
         micro:
           xor:
             - seq: [r.send, r.send_err_401]
@@ -54,17 +54,17 @@ operations:
 
 test_system:
   ok:
-    valid1: [wakeup, connect_begin, send, disconnect, connect_stop, runValves, sleep]
-    valid2x: [wakeup, connect_begin, send, disconnect, connect_stop, runValves, sleep, sleepTimeout, connect_begin, send, disconnect, connect_stop, runValves, sleep]
-    reconnect: [wakeup, connect_begin, send, disconnect, reconnect, disconnect, connect_stop, runValves, sleep]
-    reconnect2: [wakeup, connect_begin, send, disconnect, reconnect, send, disconnect, connect_stop, runValves, sleep]
-    send2x: [wakeup, connect_begin, send, send, disconnect, connect_stop, runValves, sleep]
-    send3x: [wakeup, connect_begin, send, send_err, send, disconnect, connect_stop, runValves, sleep]
+    valid1: [wakeup, connect_begin, send_ok, disconnect, connect_stop, runValves, sleep]
+    valid2x: [wakeup, connect_begin, send_ok, disconnect, connect_stop, runValves, sleep, sleepTimeout, connect_begin, send_ok, disconnect, connect_stop, runValves, sleep]
+    reconnect: [wakeup, connect_begin, send_ok, disconnect, reconnect, disconnect, connect_stop, runValves, sleep]
+    reconnect2: [wakeup, connect_begin, send_ok, disconnect, reconnect, send_ok, disconnect, connect_stop, runValves, sleep]
+    send2x: [wakeup, connect_begin, send_ok, send_ok, disconnect, connect_stop, runValves, sleep]
+    send3x: [wakeup, connect_begin, send_ok, send_err, send_ok, disconnect, connect_stop, runValves, sleep]
     4evererror: [wakeup, connect_begin, send_err, send_err, send_err, send_err, send_err, disconnect, connect_stop, sleep]
   fail:
-    valid1_err1: [wakeup, connect_begin_err, send, disconnect, connect_stop, runValves, sleep] # connect_begin_err instead of connect_begin
-    valid1_err2: [wakeup, connect_begin, send, disconnect, runValves, sleep] # missing connect_stop
-    reconnect: [wakeup, connect_begin, send, disconnect, reconnect, runValves, sleep]
+    valid1_err1: [wakeup, connect_begin_err, send_ok, disconnect, connect_stop, runValves, sleep] # connect_begin_err instead of connect_begin
+    valid1_err2: [wakeup, connect_begin, send_ok, disconnect, runValves, sleep] # missing connect_stop
+    reconnect: [wakeup, connect_begin, send_ok, disconnect, reconnect, runValves, sleep]
 
 test_integration:
   ok:

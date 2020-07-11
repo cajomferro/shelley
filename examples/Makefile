@@ -31,12 +31,13 @@ all:
 	$(MAKE) -C aquamote_valve
 	$(MAKE) -C aquamote_valvehandler
 	$(MAKE) -C aquamote_valvehandlertimer
-	$(MAKE) -C aquamote_controller
+	#$(MAKE) -C aquamote_controller TODO currently broken
 	$(MAKE) -C valves_1valve_complex
 	$(MAKE) -C valves_1valve_seq
 	#$(MAKE) -C valves_4valves_xorvsseq --> TODO: FIX THIS
 	#$(MAKE) -C valves_several_valves --> TODO: this is not compiling because valves are declares but not being used
 	$(MAKE) -C valves_several_valves_integration
+	$(MAKE) -C blink
 clean:
 	rm base/*.scy
 	$(MAKE) -C bad_desklamp1 clean
@@ -77,3 +78,4 @@ clean:
 	$(MAKE) -C valves_4valves_xorvsseq clean
 	$(MAKE) -C valves_several_valves clean
 	$(MAKE) -C valves_several_valves_integration clean
+	$(MAKE) -C blink

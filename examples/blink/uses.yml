@@ -1,2 +1,2 @@
-Led: led.scy
-Timer : timer.scy
+Led: ../base/led.scy
+Timer : ../base/timer.scy

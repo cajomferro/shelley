@@ -7,7 +7,7 @@ pdf: led.pdf timer.pdf
 
 scy: blink.scy
 
-blink.scy: blink.yml timer.scy led.scy
+blink.scy: blink.yml ../base/timer.scy ../base/led.scy
 
 clean:
 	rm -f *.scy *.pdf *.png *.int

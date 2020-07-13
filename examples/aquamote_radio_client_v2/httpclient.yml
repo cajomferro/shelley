@@ -1,5 +1,5 @@
 # https://laravel.com/docs/7.x/http-client (kind of resembles)
-name: HTTPClient
+name: HTTPClientV2
 start_with: [get, post]
 end_with: $ANY
 operations:

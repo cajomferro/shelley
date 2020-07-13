@@ -1,3 +1,3 @@
 RadioClientV2: radioclient.scy
-WiFiClient: wificlient.scy
-HTTPClient: httpclient.scy
+WiFiClientV2: wificlient.scy
+HTTPClientV2: httpclient.scy

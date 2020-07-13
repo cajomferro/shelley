@@ -4,8 +4,8 @@ name: RadioClientV2
 start_with: [begin, begin_err]
 end_with: [begin_err, stop]
 components:
-      hc: HTTPClient
-      wc: WiFiClient
+      hc: HTTPClientV2
+      wc: WiFiClientV2
 operations:
     begin:
         next: [send, disconnect]

@@ -88,7 +88,7 @@ controller_radioclient_v2.scy: controller_radioclient_v2.yml \
 	../aquamote_valvehandlertimer/valvehandlertimer.scy \
 	../aquamote_magnetic/magnetic.scy \
 	../aquamote_radio_client_v2/httpclient.scy \
-	../aquamote_radio_client_v2/wificlient.scy \
+	../aquamote_radio_client_v2/gprsclient.scy \
 	../aquamote_radio_client_v2/radioclient.scy \
 	../aquamote_lowpower/lowpower-strict.scy \
 

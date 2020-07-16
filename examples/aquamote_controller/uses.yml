@@ -14,5 +14,5 @@ HTTPClient: ../aquamote_radio_client/httpclient.scy
 WiFiClient: ../aquamote_radio_client/wificlient.scy
 RadioClient: ../aquamote_radio_client/radioclient.scy
 HTTPClientV2: ../aquamote_radio_client_v2/httpclient.scy
-WiFiClientV2: ../aquamote_radio_client_v2/wificlient.scy
+GPRSClient: ../aquamote_radio_client_v2/gprsclient.scy
 RadioClientV2: ../aquamote_radio_client_v2/radioclient.scy

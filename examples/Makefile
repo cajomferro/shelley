@@ -7,7 +7,7 @@ all:
 	$(MAKE) -C good_desklamp_nobutton
 	$(MAKE) -C good_simple_desklamp
 	$(MAKE) -C good_simple_desklamp2
-	$(MAKE) -C smartled clean
+	$(MAKE) -C smartled
 	$(MAKE) -C bad_ambiguous
 	$(MAKE) -C bad_ambiguous2
 	$(MAKE) -C bad_missing_trigger

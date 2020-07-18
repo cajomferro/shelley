@@ -1,5 +1,5 @@
 name: TrafficLight
-start_with: [red, yellow]
+start_with: [red, yellow, green]
 end_with: $ANY
 operations:
   red:

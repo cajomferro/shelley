@@ -27,11 +27,12 @@ all:
 	$(MAKE) -C aquamote_lowpower
 	$(MAKE) -C aquamote_magnetic
 	$(MAKE) -C aquamote_radio_client
+	$(MAKE) -C aquamote_radio_client_v2
 	$(MAKE) -C aquamote_radio_simple
 	$(MAKE) -C aquamote_valve
 	$(MAKE) -C aquamote_valvehandler
 	$(MAKE) -C aquamote_valvehandlertimer
-	#$(MAKE) -C aquamote_controller TODO currently broken
+	$(MAKE) -C aquamote_controller
 	$(MAKE) -C valves_1valve_complex
 	$(MAKE) -C valves_1valve_seq
 	#$(MAKE) -C valves_4valves_xorvsseq --> TODO: FIX THIS
@@ -69,6 +70,7 @@ clean:
 	$(MAKE) -C aquamote_lowpower clean
 	$(MAKE) -C aquamote_magnetic clean
 	$(MAKE) -C aquamote_radio_client clean
+	$(MAKE) -C aquamote_radio_client_v2 clean
 	$(MAKE) -C aquamote_radio_simple clean
 	$(MAKE) -C aquamote_valve clean
 	$(MAKE) -C aquamote_valvehandler clean

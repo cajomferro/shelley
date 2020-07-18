@@ -1,6 +1,7 @@
 Button: button.scy
 Led: led.scy
 Timer : timer.scy
+simpleTimer: simple_timer.scy
 SimpleButton: simple_button.scy
 LedStrict: led_strict.scy
 PressedButton: pressed_button.scy

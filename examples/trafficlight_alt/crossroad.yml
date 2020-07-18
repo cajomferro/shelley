@@ -1,39 +1,69 @@
-device:
-    name: Controller
-    components:
-        r: TrafficController
-        g: TrafficController
-    events:
-    - init:
-        start: true
-        final: false
-        micro: [g.halt]
-    - step1:
-        start: false
-        final: true
-        micro:
-            xor:
-            - seq: [r.run, g.halt]
-            - seq: [g.halt, r.run]
-    - step2:
-        start: false
-        final: true
-        micro:
-            xor:
-            - seq: [r.halt, g.run]
-            - seq: [g.run, r.halt]
-    - police:
-        start: false
-        final: true
-        micro:
-            xor:
-            - seq: [r.police, g.police]
-            - seq: [g.police, r.police]
+name: Controller
+start_with: [init]
+end_with: [dir1go, dir2go, police]
+components:
+  dir1: TrafficController
+  dir2: TrafficController
+operations:
+  init:
+    next: [dir2go]
+    micro:
+      - dir2.halt
+  dir1go:
+    next: [dir2go]
+    micro:
+      - xor:
+        - [dir1.run, dir2.halt]
+        - [dir2.halt, dir1.run]
+  dir2go:
+    next: [dir1go, police]
+    micro:
+      - xor:
+        - [dir1.halt, dir2.run]
+        - [dir2.run, dir1.halt]
+  police:
+    next: [police, dir1go]
+    micro:
+      - xor:
+        - [dir1.police, dir2.police]
+        - [dir2.police, dir1.police]
 
-    behavior:
-    - [init, step2]
-    - [step1, step2]
-    - [step2, step1]
-    - [police, police]
-    - [police, step1]
-    - [step2, police]
+#device:
+#    name: Controller
+#    components:
+#        r: TrafficController
+#        g: TrafficController
+#    events:
+#    - init:
+#        start: true
+#        final: false
+#        micro: [g.halt]
+#    - step1:
+#        start: false
+#        final: true
+#        micro:
+#            xor:
+#            - seq: [r.run, g.halt]
+#            - seq: [g.halt, r.run]
+#    - step2:
+#        start: false
+#        final: true
+#        micro:
+#            xor:
+#            - seq: [r.halt, g.run]
+#            - seq: [g.run, r.halt]
+#    - police:
+#        start: false
+#        final: true
+#        micro:
+#            xor:
+#            - seq: [r.police, g.police]
+#            - seq: [g.police, r.police]
+#
+#    behavior:
+#    - [init, step2]
+#    - [step1, step2]
+#    - [step2, step1]
+#    - [police, police]
+#    - [police, step1]
+#    - [step2, police]

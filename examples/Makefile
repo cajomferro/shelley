@@ -38,8 +38,9 @@ all:
 	#$(MAKE) -C valves_several_valves --> TODO: this is not compiling because valves are declares but not being used
 	$(MAKE) -C valves_several_valves_integration
 	$(MAKE) -C blink
+	$(MAKE) -C trafficlight_alt
 clean:
-	rm base/*.scy
+	rm ./base/*.scy
 	$(MAKE) -C bad_desklamp1 clean
 	$(MAKE) -C bad_desklamp_ambiguity1 clean
 	$(MAKE) -C bad_desklamp_ambiguity2 clean
@@ -78,4 +79,5 @@ clean:
 	$(MAKE) -C valves_4valves_xorvsseq clean
 	$(MAKE) -C valves_several_valves clean
 	$(MAKE) -C valves_several_valves_integration clean
-	$(MAKE) -C blink
+	$(MAKE) -C blink clean
+	$(MAKE) -C trafficlight_alt clean

@@ -1,0 +1,45 @@
+name: TrafficLight
+start_with: [red, yellow]
+end_with: $ANY
+operations:
+  red:
+    next: [yellow, green]
+  green:
+    next: [yellow, none]
+  yellow:
+    next: [none, red, green]
+  none:
+    next: [yellow, red, green, none]
+  
+#device:
+#    name: TrafficLight
+#    events:
+#    - red:
+#        start: true
+#        final: true
+#    - green:
+#        start: false
+#        final: true
+#    - yellow:
+#        start: true
+#        final: true
+#    - none:
+#        start: false
+#        final: true
+#
+#    behavior:
+#    # Yellow
+#    - [yellow, none]
+#    - [yellow, red]
+#    - [yellow, green]
+#    # None
+#    - [none, yellow]
+#    - [none, red]
+#    - [none, green]
+#    - [none, none]
+#    # Red
+#    - [red, yellow]
+#    - [red, green]
+#    # Green
+#    - [green, yellow]
+#    - [green, none]

@@ -1,8 +1,0 @@
-name: SimpleTimer
-start_with: [start]
-end_with: [timeout]
-operations:
-    start:
-        next: [timeout]
-    timeout:
-        next: [start]

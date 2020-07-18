@@ -7,16 +7,14 @@ pdf: button.pdf \
 	led_strict.pdf \
 	pressed_button.pdf \
 	simple_button.pdf \
-	timer.pdf \
-	simple_timer.pdf
+	timer.pdf
 
 scy: button.scy \
 	led.scy \
 	led_strict.scy \
 	pressed_button.scy \
 	simple_button.scy \
-	timer.scy \
-	simple_timer.scy
+	timer.scy
 
 USES = -u uses.yml
 

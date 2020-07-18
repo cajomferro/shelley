@@ -1,0 +1,51 @@
+name: SmartLed2
+start_with: [active]
+end_with: [off]
+components:
+  lred: Led
+  lyellow: Led
+  lgreen: Led
+  t: Timer
+operations:
+  active:
+    next: [active_restart, standby]
+    micro:
+      - [lgreen.on, t.start]
+  standby:
+    next: [standby_restart, off]
+    micro:
+      - [t.timeout, lgreen.off, lyellow.on, t.start]
+  off:
+    next: [off_restart]
+    micro:
+      - [t.timeout, lyellow.off, lred.on]
+
+
+  active_restart:
+    next: [active]
+    micro:
+      - [t.cancel, lgreen.off]
+  standby_restart:
+    next: [active]
+    micro:
+      - [t.cancel, lyellow.off]
+  off_restart:
+    next: [active]
+    micro:
+      - [lred.off]
+
+test_system:
+  ok: 
+    valid1: [active, standby, off]
+    valid2: [active, active_restart, active, active_restart, active, standby, off]
+    valid3: [active, standby, standby_restart, active, standby, off]
+    valid4: [active, standby, off, off_restart, active, standby, off]
+    valid5: true
+
+  fail:
+    invalid1: [active]
+    invalid2: [standby]
+    invalid3: [off]
+    invalid4: [active, standby, off, off_restart]
+    invalid5: [active, standby, active_restart, active, standby, off]
+    invalid6: false

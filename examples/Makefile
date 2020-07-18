@@ -40,6 +40,7 @@ all:
 	$(MAKE) -C valves_several_valves_integration
 	$(MAKE) -C blink
 	$(MAKE) -C trafficlight_alt
+	$(MAKE) -C smartled2
 clean:
 	rm ./base/*.scy
 	$(MAKE) -C bad_desklamp1 clean
@@ -83,3 +84,4 @@ clean:
 	$(MAKE) -C valves_several_valves_integration clean
 	$(MAKE) -C blink clean
 	$(MAKE) -C trafficlight_alt clean
+	$(MAKE) -C smartled2 clean

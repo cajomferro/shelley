@@ -10,7 +10,9 @@ RadioFinalStates: ../aquamote_radio_simple/radio_finalstates.scy
 ValveHandler: ../aquamote_valvehandler/valvehandler.scy
 ValveHandlerTimer: ../aquamote_valvehandlertimer/valvehandlertimer.scy
 Timer: ../base/timer.scy
-RadioClient: ../aquamote_radio_client/radioclient.scy
-RadioClientV2: ../aquamote_radio_client_v2/radioclient.scy
-WiFiClient: ../aquamote_radio_client/wificlient.scy
 HTTPClient: ../aquamote_radio_client/httpclient.scy
+WiFiClient: ../aquamote_radio_client/wificlient.scy
+RadioClient: ../aquamote_radio_client/radioclient.scy
+HTTPClientV2: ../aquamote_radio_client_v2/httpclient.scy
+GPRSClient: ../aquamote_radio_client_v2/gprsclient.scy
+RadioClientV2: ../aquamote_radio_client_v2/radioclient.scy

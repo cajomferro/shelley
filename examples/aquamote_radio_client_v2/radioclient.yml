@@ -4,60 +4,62 @@ name: RadioClientV2
 start_with: [begin, begin_err]
 end_with: [begin_err, stop]
 components:
-      hc: HTTPClient
-      wc: WiFiClient
+      http: HTTPClientV2
+      gprs: GPRSClient
 operations:
     begin:
         next: [send, disconnect]
         micro:
-          seq: [wc.ssid_joined, wc.connected]
+          seq: [gprs.network_join, gprs.connect]
     begin_err:
         next: [begin_err, begin]
         micro:
           xor:
-            - seq: [wc.ssid_joined, wc.connection_timeout, wc.ssid_left]
-            - wc.ssid_failed
+            - seq: [gprs.network_join, gprs.connect_timeout, gprs.network_leave]
+            - gprs.network_error
     stop:
         next: [begin, begin_err]
         micro:
-          seq: [wc.ssid_left]
+          seq: [gprs.network_leave]
     connect:
       next: [disconnect, send]
       micro:
-        seq: [wc.connected]
+        seq: [gprs.connect]
     connection_timeout:
       next: [connection_timeout, stop, connect]
       micro:
-        seq: [wc.connection_timeout]
+        seq: [gprs.connect_timeout]
     disconnect:
         next: [connection_timeout, stop, connect]
         micro:
-          seq: [wc.disconnected]
+          seq: [gprs.disconnect]
     send:
         next: [send_ok, send_err_401, send_err_404, send_err_500, send_err_timeout, disconnect]
         micro:
-          xor:
-            - hc.get
-            - hc.post
+          seq:
+            - xor:
+              - http.get
+              - http.post
+            - gprs.write
     send_ok:
         next: [disconnect, send]
         micro:
-          seq: [wc.print_data_ready, hc.response200]
+          seq: [gprs.write_data_ready, http.response200]
     send_err_401:
         next: [disconnect, send]
         micro:
-          seq: [wc.print_data_ready, hc.response401]
+          seq: [gprs.write_data_ready, http.response401]
     send_err_404:
         next: [disconnect, send]
         micro:
-          seq: [wc.print_data_ready, hc.response404]
+          seq: [gprs.write_data_ready, http.response404]
     send_err_500:
         next: [disconnect, send]
         micro:
-          seq: [wc.print_data_ready, hc.response500]
+          seq: [gprs.write_data_ready, http.response500]
     send_err_timeout:
         next: [disconnect, send]
-        micro: wc.print_timeout
+        micro: gprs.write_timeout
 
 test_system:
   ok:
@@ -96,4 +98,4 @@ test_system:
 test_integration:
   ok: {}
   fail:
-    useless_begin: [wc.ssid_joined, wc.ssid_left]
+    useless_begin: [gprs.network_join, gprs.network_leave]

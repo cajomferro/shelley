@@ -41,6 +41,7 @@ all:
 	$(MAKE) -C blink
 	$(MAKE) -C trafficlight_alt
 	$(MAKE) -C smartled2
+	$(MAKE) -C 7segment
 clean:
 	rm ./base/*.scy
 	$(MAKE) -C bad_desklamp1 clean
@@ -85,3 +86,4 @@ clean:
 	$(MAKE) -C blink clean
 	$(MAKE) -C trafficlight_alt clean
 	$(MAKE) -C smartled2 clean
+	$(MAKE) -C 7segment clean

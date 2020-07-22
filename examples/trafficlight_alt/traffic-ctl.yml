@@ -1,29 +1,18 @@
-device:
-    name: TrafficCtrl
-    components:
-        l: TrafficLight
-    events:
-    - run:
-        start: false
-        final: true
-        micro:
-            seq: [l.green]
-    - halt:
-        start: true
-        final: true
-        micro:
-            seq: [l.yellow, l.red]
-    - police:
-        start: true
-        final: true
-        micro:
-            seq: [l.yellow, l.none]
-
-    behavior:
-    - [run, halt]
-    - [halt, run]
-    - [police, run]
-    - [police, halt]
-    - [run, police]
-    - [halt, police]
-    - [police, police]
+name: TrafficCtrl
+start_with: [halt, police]
+end_with: $ANY
+components:
+  l: TrafficLight
+operations:
+  run:
+    next: [halt, police]
+    micro:
+    - l.green
+  halt:
+    next: [run, police]
+    micro: 
+    - [l.yellow, l.red]
+  police:
+    next: [run, halt, police]
+    micro:
+    - [l.yellow, l.none]

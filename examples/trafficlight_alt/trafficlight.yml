@@ -1,0 +1,12 @@
+name: TrafficLight
+start_with: [red, yellow, green]
+end_with: $ANY
+operations:
+  red:
+    next: [yellow, green]
+  green:
+    next: [yellow, none]
+  yellow:
+    next: [none, red, green]
+  none:
+    next: [yellow, red, green, none]

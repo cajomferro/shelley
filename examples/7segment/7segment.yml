@@ -1,0 +1,56 @@
+name: 7segment
+start_with: [zero]
+end_with: [loop]
+components:
+  a: Led
+  b: Led
+  c: Led
+  d: Led
+  e: Led
+  f: Led
+  g: Led
+operations:
+  zero:
+    next: [one]
+    micro:
+      - [a.on, b.on, c.on, d.on, e.on, f.on]
+  one:
+    next: [two]
+    micro:
+      - [a.off, d.off, e.off, f.off]
+  two:
+    next: [three]
+    micro:
+      - [a.on, c.off, d.on, e.on, g.on]
+  three:
+    next: [four]
+    micro:
+      - [c.on, e.off]
+  four:
+    next: [five]
+    micro:
+      - [a.off, d.off, f.on]
+  five:
+    next: [six]
+    micro:
+      - [a.on, b.off, d.on]
+  six:
+    next: [seven]
+    micro:
+      - [e.on]
+  seven:
+    next: [eight]
+    micro:
+      - [b.on, d.off, e.off, f.off, g.off]
+  eight:
+    next: [nine]
+    micro:
+      - [d.on, e.on, f.on, g.on]
+  nine:
+    next: [loop]
+    micro:
+      - [e.off]
+  loop:
+    next: [zero]
+    micro:
+      - [a.off, b.off, c.off, d.off, f.off, g.off]

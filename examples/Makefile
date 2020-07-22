@@ -7,7 +7,7 @@ all:
 	$(MAKE) -C good_desklamp_nobutton
 	$(MAKE) -C good_simple_desklamp
 	$(MAKE) -C good_simple_desklamp2
-	$(MAKE) -C smartled clean
+	$(MAKE) -C smartled
 	$(MAKE) -C bad_ambiguous
 	$(MAKE) -C bad_ambiguous2
 	$(MAKE) -C bad_missing_trigger
@@ -39,8 +39,11 @@ all:
 	#$(MAKE) -C valves_several_valves --> TODO: this is not compiling because valves are declares but not being used
 	$(MAKE) -C valves_several_valves_integration
 	$(MAKE) -C blink
+	$(MAKE) -C trafficlight_alt
+	$(MAKE) -C smartled2
+	$(MAKE) -C 7segment
 clean:
-	rm base/*.scy
+	rm ./base/*.scy
 	$(MAKE) -C bad_desklamp1 clean
 	$(MAKE) -C bad_desklamp_ambiguity1 clean
 	$(MAKE) -C bad_desklamp_ambiguity2 clean
@@ -80,4 +83,7 @@ clean:
 	$(MAKE) -C valves_4valves_xorvsseq clean
 	$(MAKE) -C valves_several_valves clean
 	$(MAKE) -C valves_several_valves_integration clean
-	$(MAKE) -C blink
+	$(MAKE) -C blink clean
+	$(MAKE) -C trafficlight_alt clean
+	$(MAKE) -C smartled2 clean
+	$(MAKE) -C 7segment clean

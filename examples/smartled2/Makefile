@@ -1,41 +1,13 @@
-SHELLEYC = shelleyc
-SHELLEYV = shelleyv
+include ../common.mk
+.PHONY: all pdf scy clean all
 
 all: scy
 
-pdf: led.pdf timer.pdf
+pdf: ../base/led.pdf ../base/timer.pdf 
 
-scy: smartled.scy
+scy: smartled2.scy
 
-smartled.scy: smartled.yml timer.scy led.scy
+smartled2.scy: smartled2.yml ../base/timer.scy ../base/led.scy
 
-# Generate integration diagram (minimized)
-# Example:
-#   make smartled-i-d.pdf
-%-i-d.png: %.int
-	$(SHELLEYV) --dfa --minimize --no-sink --format png $< -o $@
-
-# Generate integration diagram (full)
-# Example:
-#   make smartled-i-n.pdf
-%-i-n.png: %.int
-	$(SHELLEYV) --no-sink --format png $< -o $@
-
-# Generate system diagram
-# Example:
-#   make smartled.pdf
-%.png: %.scy
-	$(SHELLEYV) --format png $< -o $@
-
-%.int:  %.yml
-	$(SHELLEYC) -d $< --no-output -i $@ -u uses.yml
-
-%.scy: %.yml
-	$(SHELLEYC) -u uses.yml -d $< -o $@
-
-clean:
-	rm -f *.scy *.pdf *.int
-
-.PHONY: all pdf scy
-
-.SUFFIXES: .yml .scy .int
+clean:	
+	rm -f *.scy *.pdf *.gv

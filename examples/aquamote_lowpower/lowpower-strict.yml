@@ -5,7 +5,7 @@ operations:
     setup:
         next: [sleep]
     cancel:
-        next: [setup]
+        next: [setup, cancel]
     sleep:
         next: [wakeup, cancel]
     wakeup:

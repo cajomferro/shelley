@@ -479,7 +479,7 @@ class ComponentUsage:
         start = timer()
 
         # TODO: this should be a failure class
-        # TODO: there is no info avout component name here
+        # TODO: there is no info about component name here
         if len(list(self.projected.end_states)) == 0:
             raise ValueError(f"Component is declared but no operation is invoked.")
 

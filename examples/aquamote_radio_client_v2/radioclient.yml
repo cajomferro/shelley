@@ -8,15 +8,12 @@ components:
       gprs: GPRSClient
 operations:
     begin:
-        next: [send, disconnect]
+        next: [connect, connect_err, stop]
         micro:
-          seq: [gprs.network_join, gprs.connect]
+          seq: [gprs.network_join]
     begin_err:
         next: [begin_err, begin]
-        micro:
-          xor:
-            - seq: [gprs.network_join, gprs.connect_timeout, gprs.network_leave]
-            - gprs.network_error
+        micro: [gprs.network_error]
     stop:
         next: [begin, begin_err]
         micro:
@@ -25,12 +22,12 @@ operations:
       next: [disconnect, send]
       micro:
         seq: [gprs.connect]
-    connection_timeout:
-      next: [connection_timeout, stop, connect]
+    connect_err:
+      next: [connect_err, stop, connect]
       micro:
         seq: [gprs.connect_timeout]
     disconnect:
-        next: [connection_timeout, stop, connect]
+        next: [connect_err, stop, connect]
         micro:
           seq: [gprs.disconnect]
     send:
@@ -63,39 +60,39 @@ operations:
 
 test_system:
   ok:
-    send_ok: [begin, send, send_ok, disconnect, stop]
-    double_ok: [begin, send, send_ok, send, send_ok, disconnect, stop]
+    send_ok: [begin, connect, send, send_ok, disconnect, stop]
+    double_ok: [begin, connect, send, send_ok, send, send_ok, disconnect, stop]
     # 401
-    send_err_401: [begin, send, send_err_401, disconnect, stop]
-    send_err_401_resend: [begin, send, send_err_401, send, send_ok, disconnect, stop]
-    send_ok_send_err_401: [begin, send, send_ok, send, send_err_401, disconnect, stop]
-    double_err_401: [begin, send, send_err_401, send, send_err_401, disconnect, stop]
+    send_err_401: [begin, connect, send, send_err_401, disconnect, stop]
+    send_err_401_resend: [begin, connect, send, send_err_401, send, send_ok, disconnect, stop]
+    send_ok_send_err_401: [begin, connect, send, send_ok, send, send_err_401, disconnect, stop]
+    double_err_401: [begin, connect, send, send_err_401, send, send_err_401, disconnect, stop]
     # 404
-    send_err_404: [begin, send, send_err_404, disconnect, stop]
-    send_err_404_resend: [begin, send, send_err_404, send, send_ok, disconnect, stop]
-    send_ok_send_err_404: [begin, send, send_ok, send, send_err_404, disconnect, stop]
-    double_err_404: [begin, send, send_err_404, send, send_err_404, disconnect, stop]
+    send_err_404: [begin, connect, send, send_err_404, disconnect, stop]
+    send_err_404_resend: [begin, connect, send, send_err_404, send, send_ok, disconnect, stop]
+    send_ok_send_err_404: [begin, connect, send, send_ok, send, send_err_404, disconnect, stop]
+    double_err_404: [begin, connect, send, send_err_404, send, send_err_404, disconnect, stop]
     # 500
-    send_err_500: [begin, send, send_err_500, disconnect, stop]
-    send_err_500_resend: [begin, send, send_err_500, send, send_ok, disconnect, stop]
-    send_ok_send_err_500: [begin, send, send_ok, send, send_err_500, disconnect, stop]
-    double_err_500: [begin, send, send_err_500, send, send_err_500, disconnect, stop]
+    send_err_500: [begin, connect, send, send_err_500, disconnect, stop]
+    send_err_500_resend: [begin, connect, send, send_err_500, send, send_ok, disconnect, stop]
+    send_ok_send_err_500: [begin, connect, send, send_ok, send, send_err_500, disconnect, stop]
+    double_err_500: [begin, connect, send, send_err_500, send, send_err_500, disconnect, stop]
     # send_timeout (no server response)
-    send_err_timeout: [begin, send, send_err_timeout, disconnect, stop]
-    send_err_timeout_resend: [begin, send, send_err_timeout, send, send_ok, disconnect, stop]
-    send_ok_send_err_timeout: [begin, send, send_ok, send, send_err_timeout, disconnect, stop]
-    double_err_timeout: [begin, send, send_err_timeout, send, send_err_timeout, disconnect, stop]
+    send_err_timeout: [begin, connect, send, send_err_timeout, disconnect, stop]
+    send_err_timeout_resend: [begin, connect, send, send_err_timeout, send, send_ok, disconnect, stop]
+    send_ok_send_err_timeout: [begin, connect, send, send_ok, send, send_err_timeout, disconnect, stop]
+    double_err_timeout: [begin, connect, send, send_err_timeout, send, send_err_timeout, disconnect, stop]
     # mix
-    err_mix: [begin, send, send_err_404, send, send_err_401, send, send_err_500, disconnect, stop]
+    err_mix: [begin, connect, send, send_err_404, send, send_err_401, send, send_err_500, disconnect, stop]
   fail:
-    useless_begin: [begin, stop]
+    # useless_begin: [begin, stop]
     invalid_start: [send, send_ok, disconnect, stop] # missing 'begin'
-    double_send: [begin, send, send, disconnect, stop]
-    double_ok: [begin, send, send_ok, send_ok, disconnect, stop]
-    double_err: [begin, send, send_err_401, send_err_401, disconnect, stop]
-    send_after_disconnect: [begin, send, send_ok, disconnect, send, stop]
+    double_send: [begin, connect, send, send, disconnect, stop]
+    double_ok: [begin, connect, send, send_ok, send_ok, disconnect, stop]
+    double_err: [begin, connect, send, send_err_401, send_err_401, disconnect, stop]
+    send_after_disconnect: [begin, connect, send, send_ok, disconnect, send, stop]
 
 test_integration:
   ok: {}
-  fail:
-    useless_begin: [gprs.network_join, gprs.network_leave]
+  fail: {}
+#    useless_begin: [gprs.network_join, gprs.network_leave]

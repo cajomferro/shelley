@@ -1,0 +1,71 @@
+name: AquamoteStatemachine
+start_with: [start_http]
+end_with: [sleep]
+components:
+    v: ValveHandlerTimer
+    m: Magnetic
+    r: RadioClientV2
+    lp: LowPowerStrict
+operations:
+    start_http:
+        next: [hello]
+        micro: [m.locked, m.unlocked, lp.cancel, r.begin]
+    hello:
+        next: [handle_request]
+        micro:
+          seq:
+            - r.connect
+            - r.send
+            - xor:
+              - r.send_ok
+    handle_request:
+        next:  [handle_request, stop_http]
+        micro:
+          seq:
+            - r.send
+            - xor:
+              - r.send_ok
+              - r.send_err_401
+              - r.send_err_404
+              - r.send_err_500
+              - r.send_err_timeout
+    stop_http:
+        next: [follow_plan, start_http]
+        micro: [r.disconnect, r.stop]
+    follow_plan:
+        next: [sleep]
+        micro: [v.v1, v.v2, v.v3, v.v4]
+    sleep:
+        next: [start_http]
+        micro: [lp.setup, lp.sleep]
+#
+#test_system:
+#  ok:
+#    valid1: [wakeup, start_http, send_ok, disconnect, connect_stop, runValves, sleep]
+#    valid2x: [wakeup, start_http, send_ok, disconnect, connect_stop, runValves, sleep, sleepTimeout, start_http, send_ok, disconnect, connect_stop, runValves, sleep]
+#    reconnect: [wakeup, start_http, send_ok, disconnect, reconnect, disconnect, connect_stop, runValves, sleep]
+#    reconnect2: [wakeup, start_http, send_ok, disconnect, reconnect, send_ok, disconnect, connect_stop, runValves, sleep]
+#    send2x: [wakeup, start_http, send_ok, send_ok, disconnect, connect_stop, runValves, sleep]
+#    send3x: [wakeup, start_http, send_ok, send_err, send_ok, disconnect, connect_stop, runValves, sleep]
+#    4evererror: [wakeup, start_http, send_err, send_err, send_err, send_err, send_err, disconnect, connect_stop, sleep]
+#  fail:
+#    valid1_err1: [wakeup, connect_begin_err, send_ok, disconnect, connect_stop, runValves, sleep] # connect_begin_err instead of start_http
+#    valid1_err2: [wakeup, start_http, send_ok, disconnect, runValves, sleep] # missing connect_stop
+#    reconnect: [wakeup, start_http, send_ok, disconnect, reconnect, runValves, sleep]
+#
+#test_integration:
+#  ok:
+#    valid1: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
+#    valid2: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep]
+#  fail:
+#    invalid1a: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing r.send_ok on macro behavior send
+#    invalid1b: [m.locked, m.unlocked, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'lp.cancel' on macro behavior 'wakeup'
+#    invalid1c: [m.locked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # missing 'm.unlocked' on macro behavior 'wakeup'
+#    invalid1d: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.setup, lp.sleep, lp.wakeup] # wakeup is not final
+#    invalid2a: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.sleep, m.locked, m.unlocked, lp.cancel] # missing r.send_ok on macro behavior send
+#    invalid2b: [m.locked, m.unlocked, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4, lp.sleep, m.locked, m.unlocked, lp.cancel] # missing 'lp.cancel' on macro behavior 'wakeup'
+#    invalid3: [m.locked, m.unlocked]
+#    invalid4: [m.locked, m.unlocked, lp.cancel, r.begin, r.send, r.send_ok, r.disconnect, r.stop, v.v1, v.v2, v.v3, v.v4]
+#    invalid5: [m.locked, m.unlocked, lp.cancel]
+#    invalid7: false
+#    empty: []

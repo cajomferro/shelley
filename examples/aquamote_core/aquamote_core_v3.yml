@@ -1,4 +1,4 @@
-name: AquamoteStatemachine
+name: AquamoteCore
 start_with: [wake_up_manual]
 end_with: [sleep]
 components:

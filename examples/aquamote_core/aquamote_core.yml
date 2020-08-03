@@ -1,39 +1,43 @@
-name: AquamoteStatemachineV2
-start_with: [wake_up_manual]
+name: AquamoteCore
+start_with: [start_http]
 end_with: [sleep]
 components:
-    c: Controller
+    v: ValveHandlerTimer
+    m: Magnetic
+    r: RadioClientV2
+    lp: LowPowerStrict
 operations:
-    wake_up_manual:
-      next: [start_http, start_http_err]
-      micro: c.wakeup
-    wake_up_timeout:
-      next: [start_http, start_http_err]
-      micro: c.sleep_timeout
     start_http:
         next: [hello]
-        micro: c.radio_init
-    start_http_err:
-        next: [start_http, start_http_err, follow_plan]
-        micro: c.radio_err
+        micro: [m.locked, m.unlocked, lp.cancel, r.begin]
     hello:
         next: [handle_request]
-        micro: [c.server_connect]
+        micro:
+          seq:
+            - r.connect
+            - r.send
+            - xor:
+              - r.send_ok
     handle_request:
         next:  [handle_request, stop_http]
         micro:
-          xor:
-            - c.send_ok
-            - c.send_err
+          seq:
+            - r.send
+            - xor:
+              - r.send_ok
+              - r.send_err_401
+              - r.send_err_404
+              - r.send_err_500
+              - r.send_err_timeout
     stop_http:
         next: [follow_plan, start_http]
-        micro: [c.server_disconnect, c.radio_stop]
+        micro: [r.disconnect, r.stop]
     follow_plan:
         next: [sleep]
-        micro: [c.run_valves]
+        micro: [v.v1, v.v2, v.v3, v.v4]
     sleep:
-        next: [wake_up_manual, wake_up_timeout]
-        micro: [c.sleep]
+        next: [start_http]
+        micro: [lp.setup, lp.sleep]
 #
 #test_system:
 #  ok:

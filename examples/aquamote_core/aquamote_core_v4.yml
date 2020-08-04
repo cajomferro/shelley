@@ -7,17 +7,17 @@ components:
     lp: LowPowerStrict
     r: RadioClientV2
 operations:
-    wake_up_manual: # --> different from Aquamote c++ implementation
-      next: [start_http, start_http_err]
+    wake_up_manual:
+      next: [start_http_ok, start_http_err, follow_plan]
       micro: [m.locked, m.unlocked, lp.cancel]
-    wake_up_timeout: # --> different from Aquamote c++ implementation
-      next: [start_http, start_http_err]
+    wake_up_timeout:
+      next: [start_http_ok, start_http_err, follow_plan]
       micro: [lp.wakeup]
-    start_http:
-        next: [hello] #, stop_http] --> different from Aquamote c++ implementation
+    start_http_ok:
+        next: [hello]
         micro: [r.begin]
-    start_http_err: # --> different from Aquamote c++ implementation
-        next: [start_http, start_http_err, follow_plan]
+    start_http_err:
+        next: [start_http_ok, start_http_err, follow_plan]
         micro: [r.begin_err]
     hello:
         next: [handle_request]
@@ -40,7 +40,8 @@ operations:
               - r.send_err_500
               - r.send_err_timeout
     stop_http:
-        next: [follow_plan, start_http]
+        #next: [start_http_ok, start_http_err, follow_plan]
+        next: [follow_plan]
         micro: [r.disconnect, r.stop]
     follow_plan:
         next: [sleep]
@@ -48,20 +49,26 @@ operations:
     sleep:
         next: [wake_up_manual, wake_up_timeout]
         micro: [lp.setup, lp.sleep]
+
+test_system:
+  ok:
+    # valid1: [wake_up_manual, start_http_ok, hello, handle_request, stop_http, start_http_err, follow_plan, sleep]
+    valid1: [wake_up_manual, start_http_ok, hello, handle_request, stop_http, follow_plan, sleep]
+  fail: {}
 #
 #test_system:
 #  ok:
-#    valid1: [wakeup, start_http, send_ok, disconnect, connect_stop, runValves, sleep]
-#    valid2x: [wakeup, start_http, send_ok, disconnect, connect_stop, runValves, sleep, sleepTimeout, start_http, send_ok, disconnect, connect_stop, runValves, sleep]
-#    reconnect: [wakeup, start_http, send_ok, disconnect, reconnect, disconnect, connect_stop, runValves, sleep]
-#    reconnect2: [wakeup, start_http, send_ok, disconnect, reconnect, send_ok, disconnect, connect_stop, runValves, sleep]
-#    send2x: [wakeup, start_http, send_ok, send_ok, disconnect, connect_stop, runValves, sleep]
-#    send3x: [wakeup, start_http, send_ok, send_err, send_ok, disconnect, connect_stop, runValves, sleep]
-#    4evererror: [wakeup, start_http, send_err, send_err, send_err, send_err, send_err, disconnect, connect_stop, sleep]
+#    valid1: [wakeup, start_http_ok, send_ok, disconnect, connect_stop, runValves, sleep]
+#    valid2x: [wakeup, start_http_ok, send_ok, disconnect, connect_stop, runValves, sleep, sleepTimeout, start_http_ok, send_ok, disconnect, connect_stop, runValves, sleep]
+#    reconnect: [wakeup, start_http_ok, send_ok, disconnect, reconnect, disconnect, connect_stop, runValves, sleep]
+#    reconnect2: [wakeup, start_http_ok, send_ok, disconnect, reconnect, send_ok, disconnect, connect_stop, runValves, sleep]
+#    send2x: [wakeup, start_http_ok, send_ok, send_ok, disconnect, connect_stop, runValves, sleep]
+#    send3x: [wakeup, start_http_ok, send_ok, send_err, send_ok, disconnect, connect_stop, runValves, sleep]
+#    4evererror: [wakeup, start_http_ok, send_err, send_err, send_err, send_err, send_err, disconnect, connect_stop, sleep]
 #  fail:
 #    valid1_err1: [wakeup, connect_begin_err, send_ok, disconnect, connect_stop, runValves, sleep] # connect_begin_err instead of start_http
-#    valid1_err2: [wakeup, start_http, send_ok, disconnect, runValves, sleep] # missing connect_stop
-#    reconnect: [wakeup, start_http, send_ok, disconnect, reconnect, runValves, sleep]
+#    valid1_err2: [wakeup, start_http_ok, send_ok, disconnect, runValves, sleep] # missing connect_stop
+#    reconnect: [wakeup, start_http_ok, send_ok, disconnect, reconnect, runValves, sleep]
 #
 #test_integration:
 #  ok:

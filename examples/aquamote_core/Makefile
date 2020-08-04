@@ -18,7 +18,15 @@ aquamote_core_v3.scy: aquamote_core_v3.yml \
 	../aquamote_magnetic/magnetic.scy \
 	../aquamote_radio_client_v2/httpclient.scy \
 	../aquamote_radio_client_v2/gprsclient.scy \
-	../aquamote_lowpower/lowpower-strict.scy \
+	../aquamote_lowpower/lowpower-strict.scy
+
+aquamote_core_v4.scy: aquamote_core_v4.yml \
+	../base/timer.scy \
+	../aquamote_valve/valve.scy \
+	../aquamote_valvehandlertimer/valvehandlertimer.scy \
+	../aquamote_magnetic/magnetic.scy \
+	../aquamote_radio_client_v2/radioclient.scy \
+	../aquamote_lowpower/lowpower-strict.scy
 
 clean:
 	rm -f *.scy *.pdf *.gv

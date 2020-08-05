@@ -1,12 +1,8 @@
-device:
-  name: PoliceInterrupt
-  events:
-    - on:
-        start: True
-        final: True
-    - off:
-        start: False
-        final: True
-  behavior:
-    - [on, off]
-    - [off, on]
+name: PoliceInterrupt
+start_with: [on]
+end_with: [on, off]
+operations:
+  on:
+    next: [off]
+  off:
+    next: [on]

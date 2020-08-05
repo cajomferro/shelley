@@ -2,9 +2,11 @@ include ../common.mk
 
 all: scy
 
-pdf: control.pdf timer.pdf policeinterrupt.pdf lightcommands.pdf trafficlightctrl.pdf
+pdf: control.pdf timer.pdf policeinterrupt.pdf lightcommands.pdf trafficlightctrl.pdf crossroad_controller.pdf
 
-scy: trafficlightctrl.scy
+scy: crossroad_controller.scy
+
+USES = -u uses.yml
 
 trafficlightctrl.scy: trafficlightctrl.yml timer.scy control.scy policeinterrupt.scy lightcommands.scy
 

@@ -1,7 +1,9 @@
-device:
-  name: Timer
-  behavior:
-    - [timeout, timeout]
+name: Timer
+start_with: [timeout]
+end_with: [timeout]
+operations:
+  timeout:
+    next: [timeout]
 
 #test_macro:
 #  ok:

@@ -1,8 +1,6 @@
-device:
-  name: Control
-  events:
-    - toggle:
-        start: True
-        final: True
-  behavior:
-    - [toggle, toggle]
+name: Control
+start_with: [toggle]
+end_with: [toggle]
+operations:
+  toggle:
+    next: [toggle]

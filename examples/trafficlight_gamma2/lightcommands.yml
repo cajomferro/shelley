@@ -1,13 +1,12 @@
-device:
-  name: LightCommands
-  behavior:
-    - [displayRed, displayGreen]
-    - [displayRed, displayYellow]
-    - [displayRed, displayNone]
-    - [displayGreen, displayYellow]
-    - [displayGreen, displayNone]
-    - [displayYellow, displayRed]
-    - [displayYellow, displayNone]
-    - [displayYellow, displayYellow]
-    - [displayNone, displayYellow]
-    - [displayNone, displayRed]
+name: LightCommands
+start_with: [displayRed]
+end_with: [displayRed, displayGreen, displayYellow, displayNone]
+operations:
+    displayRed:
+        next: [displayGreen, displayYellow, displayNone]
+    displayGreen:
+        next: [displayYellow, displayNone]
+    displayYellow:
+        next: [displayRed, displayNone, displayYellow]
+    displayNone:
+        next: [displayYellow, displayRed]

@@ -40,6 +40,7 @@ all:
 	$(MAKE) -C valves_several_valves_integration
 	$(MAKE) -C blink
 	$(MAKE) -C trafficlight_alt
+	$(MAKE) -C trafficlight_gamma2
 	$(MAKE) -C smartled2
 	$(MAKE) -C 7segment
 clean:
@@ -85,5 +86,6 @@ clean:
 	$(MAKE) -C valves_several_valves_integration clean
 	$(MAKE) -C blink clean
 	$(MAKE) -C trafficlight_alt clean
+	$(MAKE) -C trafficlight_gamma2 clean
 	$(MAKE) -C smartled2 clean
 	$(MAKE) -C 7segment clean

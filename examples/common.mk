@@ -32,11 +32,17 @@ USES = -u ../base/uses.yml
 %-i-n.png: %.int
 	$(SHELLEYV) $(NFA_OPTS) --format png $< -o $@
 
+# Generate system diagram (minimized DFA)
+# Example:
+#   make trafficlightctrl.pdf
+%-d.pdf: %.scy
+	$(SHELLEYV) $(DFA_OPTS) --format pdf $< -o $@
+
 # Generate system diagram
 # Example:
 #   make trafficlightctrl.pdf
 %.pdf: %.scy
-	$(SHELLEYV) $(DFA_OPTS) --format pdf $< -o $@
+	$(SHELLEYV) --format pdf $< -o $@
 
 # Generate system diagram
 # Example:

@@ -8,10 +8,10 @@ components:
     r: RadioClientV2
 operations:
     wake_up_manual:
-      next: [start_http_ok, start_http_err, follow_plan]
+      next: [start_http_ok, start_http_err]
       micro: [m.locked, m.unlocked, lp.cancel]
     wake_up_timeout:
-      next: [start_http_ok, start_http_err, follow_plan]
+      next: [start_http_ok, start_http_err]
       micro: [lp.wakeup]
     start_http_ok:
         next: [hello]

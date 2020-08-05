@@ -36,7 +36,7 @@ USES = -u ../base/uses.yml
 # Example:
 #   make trafficlightctrl.pdf
 %.pdf: %.scy
-	$(SHELLEYV) --format pdf $< -o $@
+	$(SHELLEYV) $(DFA_OPTS) --format pdf $< -o $@
 
 # Generate system diagram
 # Example:

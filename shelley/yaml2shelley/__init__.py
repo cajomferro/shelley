@@ -273,7 +273,7 @@ def _parse_events(
                 except BehaviorsListDuplicatedError:
                     raise OperationDeclError(
                         names=[event_name],
-                        reason=f"Repeated operation {event_name!r} in section 'next'",
+                        reason=f"Repeated operation {e2.name!r} in section 'next'",
                         hints=["Ensure that there are no repeated operations in list."],
                     )
         except ShelleyParserError as err:

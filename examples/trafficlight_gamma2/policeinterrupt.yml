@@ -1,8 +1,0 @@
-name: PoliceInterrupt
-start_with: [on]
-end_with: [on, off]
-operations:
-  on:
-    next: [off]
-  off:
-    next: [on]

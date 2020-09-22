@@ -1,6 +1,0 @@
-Timer: timer.scy
-Led: led.scy
-TrafficLight: trafficlight.scy
-Controller: controller.scy
-LightCommands: lightcommands.scy
-PoliceInterrupt: policeinterrupt.scy

@@ -1,6 +1,0 @@
-Timer: timer.scy
-TrafficLightCtrl: trafficlightctrl.scy
-CrossroadController: crossroad_controller.scy
-LightCommands: lightcommands.scy
-PoliceInterrupt: policeinterrupt.scy
-Control: control.scy

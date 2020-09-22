@@ -1,8 +1,0 @@
-name: Button
-start_with: [press]
-end_with: $ANY
-operations:
-    press:
-      next: [release]
-    release:
-      next: [press]

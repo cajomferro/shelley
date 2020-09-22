@@ -1,8 +1,0 @@
-device:
-  name: PoliceInterrupt
-  events:
-    - police:
-        start: True
-        final: True
-  behavior:
-    - [police, police]

@@ -1,8 +1,0 @@
-name: PressedButton
-start_with: [in]
-end_with: $ANY
-operations:
-    in:
-      next: [out]
-    out:
-      next: [in]

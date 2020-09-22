@@ -1,9 +1,0 @@
-name: SmartButton
-start_with: $ANY
-end_with: $ANY
-components:
-    b: PressedButton
-operations:
-    click:
-        next: $ANY
-        micro: [ b.in, b.out]

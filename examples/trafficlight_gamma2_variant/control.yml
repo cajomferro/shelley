@@ -1,8 +1,0 @@
-device:
-  name: Control
-  events:
-    - toggle:
-        start: True
-        final: True
-  behavior:
-    - [toggle, toggle]

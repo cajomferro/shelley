@@ -1,8 +1,0 @@
-name: SingleClickButton
-start_with: [pressed]
-end_with: $ANY
-operations:
-    pressed:
-      next: [released]
-    released:
-      next: [pressed]

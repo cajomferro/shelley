@@ -1,9 +1,0 @@
-name: ValveHandler
-start_with: $ANY
-end_with: $ANY
-components:
-    v1: Valve
-operations:
-    go:
-        next: [go]
-        micro: [v1.on, v1.off]

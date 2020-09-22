@@ -643,7 +643,9 @@ class UnusableOperationsFailure:
     def __str__(self):
         unusable_msg = f"Unusable operation error\n"
         if self.unusable_operations:
-            unusable_msg += f"Unreachable operations: {', '.join(self.unusable_operations)}\n"
+            unusable_msg += (
+                f"Unreachable operations: {', '.join(self.unusable_operations)}\n"
+            )
         if self.sink_operations:
             unusable_msg += f"These operations do not reach a yield point: {', '.join(self.sink_operations)}"
 

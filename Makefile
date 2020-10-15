@@ -1,5 +1,5 @@
 PO = poetry
-
+GIT = git
 RUN = $(PO) run
 
 PYTEST = $(RUN) pytest

@@ -10,6 +10,10 @@ BLACK = $(RUN) black
 
 all: check test format
 
+pull:
+	$(GIT) submodule update --init
+	$(GIT) pull --recurse-submodules
+
 deps:
 	$(PO) update
 

@@ -24,7 +24,7 @@ test: #check
 	$(PYTEST) $(PYTEST_FLAGS) tests
 
 examples:
-	$(MAKE) -C examples SHELLEYC="$(RUN) shelleyc" SHELLEYV="$(RUN) shelleyv"
+	$(MAKE) -C shelley-examples SHELLEYC="$(RUN) shelleyc" SHELLEYV="$(RUN) shelleyv"
 
 clean:
 	$(MAKE) -C examples clean

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "shelley"
-version = "0.1.7"
+version = "0.1.8"
 description = "Check system integration"
 authors = ["Carlos Mão de Ferro", "Tiago Cogumbreiro", "Francisco Martins"]
 license = "MIT"
@@ -26,3 +26,4 @@ build-backend = "poetry.masonry.api"
 [tool.poetry.scripts]
 shelleyc = "shelley.shelleyc.main:main"
 shelleyv = "shelley.shelleyv.main:main"
+shelleys = "shelley.shelleys.main:main"

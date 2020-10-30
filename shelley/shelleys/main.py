@@ -77,7 +77,7 @@ def main() -> None:
             handle_fsm(regular.NFA.from_dict(example_fsm), out_device, integration=True)
 
     with args.output.open("w") as fp:
-        json.dump(asdict(out_device), fp)
+        json.dump([asdict(out_device)], fp)
 
     # print("NFA:", out_device.nfa)
     # print("Integration NFA:", out_device.int_nfa)

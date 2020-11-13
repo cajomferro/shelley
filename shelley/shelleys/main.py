@@ -1,9 +1,7 @@
 import yaml
 import argparse
-import sys, os
-from typing import Union, Any, Dict
+from typing import Optional, Any, Dict
 from karakuri import regular
-from shelley.automata.view import fsm2dot, fsm2tex
 from pathlib import Path
 import json
 from dataclasses import dataclass, asdict
@@ -11,11 +9,11 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class OutDevice:
-    nfa: int = 0
-    int_nfa: int = 0
-    int_nfa_no_sink: int = 0
-    int_dfa: int = 0
-    int_dfa_min_no_sink: int = 0
+    nfa: Optional[int] = None
+    int_nfa: Optional[int] = None
+    int_nfa_no_sink: Optional[int] = None
+    int_dfa: Optional[int] = None
+    int_dfa_min_no_sink: Optional[int] = None
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -35,27 +33,41 @@ def create_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Path to the generated JSON file",
     )
+    parser.add_argument("--int-nfa", action="store_true", help="Calculate integration NFA")
+    parser.add_argument("--int-nfa-no-sink", action="store_true", help="Calculate integration NFA without sink states")
+    parser.add_argument("--int-dfa", action="store_false", help="Calculate integration DFA")
+    parser.add_argument("--int-dfa-min-no-sink", action="store_false",
+                        help="Calculate integration DFA minimized and without sink states")
+
     return parser
 
 
-def handle_fsm(n: regular.NFA[Any, str], out_device: OutDevice, integration: bool = False) -> None:
-    # Before minimizing, make sure we remove sink states, so that there
-    # is a unique sink state when we convert to DFA; this is a quick
-    # way of making the resulting DFA smaller
-
+def handle_fsm(n: regular.NFA[Any, str], out_device: OutDevice,
+               integration: bool = False,
+               int_nfa: bool = True,
+               int_nfa_no_sink: bool = True,
+               int_dfa: bool = False,
+               int_dfa_min_no_sink: bool = False) -> None:
     if not integration:
         out_device.nfa = len(n)
     else:
-        out_device.int_nfa = len(n)
+        if int_nfa:
+            out_device.int_nfa = len(n)
 
-        n = n.remove_sink_states()
-        out_device.int_nfa_no_sink = len(n)
+        # Before minimizing, make sure we remove sink states, so that there
+        # is a unique sink state when we convert to DFA; this is a quick
+        # way of making the resulting DFA smaller
+        if int_nfa_no_sink:
+            n = n.remove_sink_states()
+            out_device.int_nfa_no_sink = len(n)
 
-        d: regular.DFA[Any, str] = regular.nfa_to_dfa(n)
-        out_device.int_dfa = len(d)
+            if int_dfa:
+                d: regular.DFA[Any, str] = regular.nfa_to_dfa(n)
+                out_device.int_dfa = len(d)
 
-        d = d.minimize()
-        out_device.int_dfa_min_no_sink = len(d)
+                if int_dfa_min_no_sink:
+                    d = d.minimize()
+                    out_device.int_dfa_min_no_sink = len(d)
 
 
 def main() -> None:

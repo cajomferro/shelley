@@ -171,7 +171,7 @@ def test_compile_wifihttp_event_undeclared() -> None:
 
 def test_compile_wifihttp_event_declared_micro_empty1() -> None:
     """
-    If the device has components and event is declared, micro must have at least one trigger rule
+    If the device has components and an event is declared, micro must have at least one trigger rule
     :return:
     """
 
@@ -201,7 +201,7 @@ def test_compile_wifihttp_event_declared_micro_empty1() -> None:
 
 def test_compile_wifihttp_event_declared_micro_empty2() -> None:
     """
-    If the device has components and event is declared, micro must have at least one trigger rule
+    If the device has components and an event is declared, micro must have at least one trigger rule
     :return:
     """
 
@@ -231,7 +231,7 @@ def test_compile_wifihttp_event_declared_micro_empty2() -> None:
 
 def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
     """
-    If the device has components and event is declared, it must specify micro
+    If the device has components and an event is declared, it must specify micro
     :return:
     """
 
@@ -262,7 +262,7 @@ def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
 def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
     # TODO: Error in operation declaration 'started': unknown operations {'wc.joined'}
     """
-    If the device has components and event is declared, it must specify micro
+    If the device has components and an event is declared, it must specify micro
     :return:
     """
 

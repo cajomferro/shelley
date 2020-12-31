@@ -1,5 +1,4 @@
 import pytest
-import re
 from shelley.automata import (
     Device as AutomataDevice,
     AssembledDevice,
@@ -146,7 +145,8 @@ def test_start_missing_true() -> None:
 
 
 def test_start_not_bool() -> None:
-    wifihttp_yml_bad = replace_start_with(wifihttp_yml, expr="Txrxuxe")
+    bad_expr:str= "THIS_IS_WRONG"
+    wifihttp_yml_bad = replace_start_with(wifihttp_yml, expr=bad_expr)
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(
@@ -154,6 +154,6 @@ def test_start_not_bool() -> None:
         )
 
     assert (
-        "section 'start_with': expecting string '$ANY', or a list of operation names (strings), but got: 'Txrxuxe'\nHint: To list all operations write 'start_with: $ANY'"
+        f"section 'start_with': expecting string '$ANY', or a list of operation names (strings), but got: '{bad_expr}'\nHint: To list all operations write 'start_with: $ANY'"
         == str(exc_info.value)
     )

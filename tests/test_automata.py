@@ -21,7 +21,7 @@ from shelley.automata import (
     CheckedDevice,
     AssembledMicroBehavior2,
     project_nfa,
-    ComponentUsage,
+    ComponentUsageFailure,
     pad_trace,
     Component,
 )
@@ -918,7 +918,7 @@ def test_projection_class() -> None:
     button_nfa = create_button_b_nfa()
     button_dfa = nfa_to_dfa(button_nfa)
     # We build a projection directly
-    proj = ComponentUsage.make(micro_nfa, button_nfa)
+    proj = ComponentUsageFailure.make(micro_nfa, button_nfa)
     assert project_nfa(micro_nfa, button_nfa.alphabet) == micro_nfa
     assert proj.component == button_dfa, "component was set incorrectly"
     assert_equiv_dfa(proj.projected, micro_dfa, "projected was set incorrectly")

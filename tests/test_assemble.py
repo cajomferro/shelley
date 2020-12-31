@@ -1,5 +1,4 @@
 import pytest
-from pathlib import Path
 from shelley.automata import (
     Device as AutomataDevice,
     AssembledDevice,

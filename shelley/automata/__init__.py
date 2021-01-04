@@ -139,14 +139,14 @@ def build_external_behavior(
     :return: NFA representing the external behaviour
     """
     if len(start_events) == 0:
-        raise ValueError(f"{errors.DEVICE_ERROR_START_EVENT_REQUIRED}")
+        raise ValueError(f"{errors.SYSTEM_START_EVENT_REQUIRED}")
 
     if len(final_events) == 0:
-        raise ValueError(f"{errors.DEVICE_ERROR_FINAL_EVENT_REQUIRED}")
+        raise ValueError(f"{errors.SYSTEM_FINAL_EVENT_REQUIRED}")
 
     if start_state in events:
         raise ValueError(
-            f"{errors.DEVICE_ERROR_START_STATE_KEYWORD_RESERVED(start_state)}"
+            f"{errors.SYSTEM_START_STATE_KEYWORD_RESERVED(start_state)}"
         )
 
     # build NFA accepted states
@@ -379,7 +379,7 @@ class MicroBehavior:
             # trace. We therefore need to ensure the found macro-trace exists
             if rest in self.system:
                 return tuple(rest)
-        raise ValueError(f"{errors.TRIGGER_INTEGRATION_INVALID_MICRO2MACRO(seq)}")
+        raise ValueError(f"{errors.TRIGGER_INVALID_MICRO2MACRO(seq)}")
 
     def get_traces_from_component_trace(
             self, component_alpha: Collection[str], component_seq: MicroTrace
@@ -417,7 +417,7 @@ class MicroBehavior:
             rule_alpha = set(regular.get_alphabet(rule))
             rule_alpha = rule_alpha - alphabet
             if len(rule_alpha) > 0:
-                raise ValueError(f"{errors.INTEGRATION_UNDECLARED_OPERATION_IN_SUBSYSTEM(k, rule_alpha)}")
+                raise ValueError(f"{errors.UNDECLARED_OPERATION_IN_SUBSYSTEM(k, rule_alpha)}")
             det_triggers[k] = nfa_to_dfa(regex_to_nfa(rule, alphabet))
         # det_triggers and triggers are so close together, make sure we don't mistype
         del triggers
@@ -448,7 +448,7 @@ class MicroBehavior:
                     return frozenset([dst])
                 return frozenset()
             else:
-                raise ValueError(f"{errors.INTEGRATION_UNKNOWN_STATE}", src, char)
+                raise ValueError(f"{errors.UNKNOWN_STATE}", src, char)
 
         def is_final(st) -> bool:
             return isinstance(st, MacroState) and external_behavior.accepted_states(
@@ -576,7 +576,7 @@ class TriggerIntegrationFailure:
             lines.append(trace)
             lines.append(trace_hl)
         err = "\n".join(lines)
-        return f"{errors.TRIGGER_INTEGRATION_REPORT(macro, micro, micro_hl, err)}"
+        return f"{errors.TRIGGER_REPORT(macro, micro, micro_hl, err)}"
 
     @classmethod
     def make(
@@ -591,7 +591,7 @@ class TriggerIntegrationFailure:
         dec_seq: Optional[MicroTrace] = invalid.get_shortest_string()
         assert (
                 dec_seq is not None
-        ), f"{errors.TRIGGER_INTEGRATION_SMALLEST_ERROR}"
+        ), f"{errors.TRIGGER_NONE_SMALLEST_ERROR}"
         # There should be a unique macro trace
         macro_trace = micro.convert_micro_to_macro(dec_seq)
         # We demutex by device
@@ -603,7 +603,7 @@ class TriggerIntegrationFailure:
                 idx = invalid.get_divergence_index(seq)
                 assert (
                         idx is not None
-                ), f"{errors.TRIGGER_INTEGRATION_NONE_INDEX}"
+                ), f"{errors.TRIGGER_NONE_INDEX}"
                 errs[component] = (tuple(seq), idx)
 
         return cls(dec_seq, macro_trace, errs)
@@ -618,7 +618,7 @@ class TriggerIntegrationFailure:
             components: Dict[str, str],
     ) -> "TriggerIntegrationFailure":
         if usage.is_valid:
-            raise ValueError(f"{errors.TRIGGER_INTEGRATION_UNEXPECTED_VALID_INTEGRATION(usage)}")
+            raise ValueError(f"{errors.TRIGGER_UNEXPECTED_VALID_INTEGRATION(usage)}")
         # 1. Get an invalid usage
         component_seq = usage.get_smallest_error()
         # 2. Get the component's alphabet
@@ -648,7 +648,7 @@ class UnusableOperationsFailure:
                 f"{errors.UNUSABLE_OPERATIONS_UNREACHABLE(self.unusable_operations)}\n"
             )
         if self.sink_operations:
-            unusable_msg += f"{errors.UNUSABLE_OPERATIONS_YIELD_POINT(self.sink_operations)}\n"
+            unusable_msg += f"{errors.UNUSABLE_OPERATIONS_NO_YIELD_POINT(self.sink_operations)}\n"
 
         return unusable_msg
 

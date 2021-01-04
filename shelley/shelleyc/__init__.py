@@ -157,7 +157,7 @@ def compile_shelley(
     except ValueError as error:
         if settings.VERBOSE:
             logger.exception(error)
-        raise CompilationError("Parser error: {0}".format(str(error)))
+        raise CompilationError("Invalid device: {0}".format(str(error)))
 
     if dump_timings is not None:
         logger.debug("Dumping timings")

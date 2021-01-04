@@ -287,6 +287,10 @@ yaml_desklamp = """
 
 
 def test_assemble_smart_button() -> None:
+    """
+    I am expecting an 'unaccepted valid trace' exception to be raised when assembling the smartbutton device
+    and checking the integration traces section
+    """
     # Button
     shelley_device: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(yaml_button)
     automata: AutomataDevice = shelley2automata.shelley2automata(shelley_device)
@@ -323,6 +327,9 @@ def test_assemble_smart_button() -> None:
 
 
 def test_assemble_desklamp() -> None:
+    """
+    I am expecting a successful assembly of the desklamp device
+    """
     # LED
     shelley_device: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(yaml_led)
     automata: AutomataDevice = shelley2automata.shelley2automata(shelley_device)

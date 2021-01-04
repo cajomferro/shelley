@@ -9,7 +9,7 @@ from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley import yaml2shelley
 from shelley.shelleyc import DeviceMapping
-from shelley.automata.errors import INTEGRATION_UNDECLARED_OPERATION_IN_SUBSYSTEM
+from shelley.automata.errors import UNDECLARED_OPERATION_IN_SUBSYSTEM
 
 simple_yml: str = """
 name: Simple
@@ -86,7 +86,7 @@ def test_undeclared_operation_in_subsystem() -> None:
             composition_aut, known_devices.__getitem__
         )
 
-    assert INTEGRATION_UNDECLARED_OPERATION_IN_SUBSYSTEM('bad', {'s.badbad', 's.badbadbad'}) == str(exc_info.value)
+    assert UNDECLARED_OPERATION_IN_SUBSYSTEM('bad', {'s.badbad', 's.badbadbad'}) == str(exc_info.value)
 
 # def test_unknown_integration_operation_bad_tests() -> None:
 #     """

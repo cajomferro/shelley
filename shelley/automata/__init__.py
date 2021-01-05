@@ -562,10 +562,8 @@ class TriggerIntegrationFailure:
         for name, (macro_trace, idx) in self.component_errors.items():
             micro_idx.add(self.component_to_micro(name, macro_trace[0: idx + 1]))
         # result = "Error trace: "
-        macro = "* system: " + ", ".join(self.macro_trace)
-        micro, micro_hl = self._str_trace(
-            "* integration: ", self.micro_trace, micro_idx
-        )
+        macro = ", ".join(self.macro_trace)
+        micro, micro_hl = self._str_trace("", self.micro_trace, micro_idx)
         lines = []
         for name, (macro_trace, err_idx) in sorted(
                 self.component_errors.items(), key=lambda x: x[0]
@@ -576,7 +574,7 @@ class TriggerIntegrationFailure:
             lines.append(trace)
             lines.append(trace_hl)
         err = "\n".join(lines)
-        return f"{errors.TRIGGER_REPORT(macro, micro, micro_hl, err)}"
+        return f"{errors.INTEGRATION_ERROR_REPORT(macro, micro, micro_hl, err)}"
 
     @classmethod
     def make(

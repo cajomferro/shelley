@@ -40,6 +40,7 @@ led_assembled = _get_assembled_device(LED_PATH)
 simple_button_assembled = _get_assembled_device(SIMPLE_BUTTON_PATH)
 
 
+
 def test_bad_integration_v1() -> None:
     """
     Smartbutton uses Button improperly.
@@ -82,12 +83,14 @@ Instance errors:
 
     assert str(composition_assembled.failure) == err or str(composition_assembled.failure) == err2
 
+
 def test_bad_integration_v2() -> None:
     """
-    Smartbutton uses Button improperly.
+    Clickbutton uses Button improperly.
     """
 
     assert button_assembled.is_valid
+    assert timer_assembled.is_valid
 
     # parse yaml and assemble device
     known_devices = {"Button": button_assembled.external, "Timer": timer_assembled.external}
@@ -111,5 +114,37 @@ Instance errors:
               ^^^^^
 """
 
+    assert str(composition_assembled.failure) == err# or str(composition_assembled.failure) == err2
+
+
+def test_bad_integration_v3() -> None:
+    """
+    LedButton uses Led improperly.
+    """
+
+    assert simple_button_assembled.is_valid
+    assert led_assembled_assembled.is_valid
+
+    # parse yaml and assemble device
+    known_devices = {"Button": button_assembled.external, "Timer": timer_assembled.external}
+    composition_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(CLICKBUTTON_PATH)
+    composition_aut: AutomataDevice = shelley2automata.shelley2automata(composition_shy)
+
+    composition_assembled = AssembledDevice.make(composition_aut, known_devices.__getitem__)
+
+    assert not composition_assembled.is_valid
+
+    # we might get 2 possible errors depending on the system generated trace
+
+    err = """integration error
+
+* system: single
+* integration: B.press, T.start, B.release, T.start
+                                            ^^^^^^^
+Instance errors:
+
+  'T': start, start
+              ^^^^^
+"""
 
     assert str(composition_assembled.failure) == err# or str(composition_assembled.failure) == err2

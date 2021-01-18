@@ -893,18 +893,18 @@ class AssembledDevice:
         start = timer()
 
         # only includes states that are reachable (and remove start)
-        all_states = set(self.external.nfa.states)
-        all_states.remove(self.external.nfa.start_state)
+        reachable_states = set(self.external.nfa.states)
+        reachable_states.remove(self.external.nfa.start_state)
 
         # only includes states that are reachable and not sink (and remove start)
-        all_states_without_sink = set(self.external.nfa.remove_sink_states().states)
-        all_states_without_sink.remove(self.external.nfa.start_state)
+        reachable_states_without_sink = set(self.external.nfa.remove_sink_states().states)
+        reachable_states_without_sink.remove(self.external.nfa.start_state)
 
         # collect unreachable operations
-        self.unusable_operations = frozenset(set(self.operations) - all_states)
+        self.unusable_operations = frozenset(set(self.operations) - reachable_states)
 
         # collect sink operations (does not include unreachable states!)
-        self.sink_operations = frozenset(all_states - all_states_without_sink)
+        self.sink_operations = frozenset(reachable_states - reachable_states_without_sink)
 
         self.unusable_operations_time = get_elapsed_time(start)
 

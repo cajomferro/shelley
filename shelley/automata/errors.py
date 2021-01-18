@@ -21,6 +21,7 @@ UNUSABLE_OPERATIONS_TEXT = "Unusable operation error"
 # SUO1: unreachable operations
 UNUSABLE_OPERATIONS_UNREACHABLE = lambda x: f"Unreachable operations: {', '.join(x)}"
 # SUO2: operations that end in a sink state (point of no return). Is this equivalent to the concept of deadlock/progress?
+# Deadlock better applies to concurrent systems which is not the case here. Progress captures best this notion.
 UNUSABLE_OPERATIONS_NO_YIELD_POINT = lambda x: f"These operations do not reach a yield point: {', '.join(x)}"
 
 # Invalid integration

@@ -123,7 +123,7 @@ def test_bad_integration_v3() -> None:
     """
 
     assert simple_button_assembled.is_valid
-    assert led_assembled_assembled.is_valid
+    assert led_assembled.is_valid
 
     # parse yaml and assemble device
     known_devices = {"Button": button_assembled.external, "Timer": timer_assembled.external}

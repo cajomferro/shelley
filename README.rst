@@ -48,3 +48,10 @@ Useful poetry commands
     poetry run python -m shelleyc
     poetry run shelleyc
     shelleyc
+
+Get project stats
+######################
+
+.. code-block:: shell
+
+    radon raw shelley -s -O stats.txt

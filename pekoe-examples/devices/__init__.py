@@ -1,6 +1,9 @@
 from dispatchers import dispatcher
 from events import Event
-from typing import Dict, Callable  # https://docs.python.org/3/library/typing.html#callable
+from typing import (
+    Dict,
+    Callable,
+)  # https://docs.python.org/3/library/typing.html#callable
 
 
 class Device:
@@ -30,7 +33,9 @@ class Device:
         self.callbacks_map[event_id] = device_callback
 
     def raise_event(self, event_id: int):
-        if event_id in self.callbacks_map.keys():  # do not raise if no one has subscribed
+        if (
+            event_id in self.callbacks_map.keys()
+        ):  # do not raise if no one has subscribed
             event_instance = Event(lambda: self.event_callback(event_id))
             dispatcher.add_event(event_instance)
             # no need to unsubscribe here, do it when consuming the event

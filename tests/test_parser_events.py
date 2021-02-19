@@ -145,7 +145,7 @@ def test_start_missing_true() -> None:
 
 
 def test_start_not_bool() -> None:
-    bad_expr:str= "THIS_IS_WRONG"
+    bad_expr: str = "THIS_IS_WRONG"
     wifihttp_yml_bad = replace_start_with(wifihttp_yml, expr=bad_expr)
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:

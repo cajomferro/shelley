@@ -14,12 +14,12 @@ desklamp = None  # type: DeskLampDevice
 
 def register_drivers():
     timer_native = ArduinoTimer()
-    timer = TimerDevice('timer', timer_native)
+    timer = TimerDevice("timer", timer_native)
     dispatcher.register_driver(timer)
 
     button_pin_number = 3
     button_native = ArduinoAnalogInput(button_pin_number)
-    button = ButtonDevice('button', button_native)
+    button = ButtonDevice("button", button_native)
     dispatcher.register_driver(button)
 
     ledA_pin_number = 13
@@ -32,7 +32,7 @@ def register_drivers():
     ledB = LEDDevice(ledB_native)
     dispatcher.register_driver(ledB)
 
-    desklamp = DeskLampDevice('lamp', timer, button, ledA, ledB)
+    desklamp = DeskLampDevice("lamp", timer, button, ledA, ledB)
     dispatcher.register_driver(desklamp)
 
 

@@ -25,6 +25,3 @@ class ButtonDevice(Device):
     def button_released(self):
         self.button_native.attach_rise(self.button_pressed)
         self.raise_event(self.RELEASED)
-
-
-

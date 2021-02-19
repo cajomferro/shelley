@@ -82,9 +82,9 @@ TNFATransitions = Dict[Tuple[str, Optional[str]], Set[str]]
 
 
 def _build_nfa_transitions(
-        behavior: Iterable[Tuple[str, str]],
-        start_events: List[str],
-        start_state: str = "$START",
+    behavior: Iterable[Tuple[str, str]],
+    start_events: List[str],
+    start_state: str = "$START",
 ) -> TNFATransitions:
     """
     Build the NFA transition table given the device behavior and start events.
@@ -119,11 +119,11 @@ def _build_nfa_transitions(
 
 # XXX: make the start_state not be a string
 def build_external_behavior(
-        behavior: Iterable[Tuple[str, str]],
-        start_events: List[str],
-        final_events: List[str],
-        events: List[str],
-        start_state: str = "$START",
+    behavior: Iterable[Tuple[str, str]],
+    start_events: List[str],
+    final_events: List[str],
+    events: List[str],
+    start_state: str = "$START",
 ) -> NFA[Any, str]:
     """
     Build the external NFA that represents the device behavior (i.e., its macro event transitions)
@@ -145,9 +145,7 @@ def build_external_behavior(
         raise ValueError(f"{errors.SYSTEM_FINAL_EVENT_REQUIRED}")
 
     if start_state in events:
-        raise ValueError(
-            f"{errors.SYSTEM_START_STATE_KEYWORD_RESERVED(start_state)}"
-        )
+        raise ValueError(f"{errors.SYSTEM_START_STATE_KEYWORD_RESERVED(start_state)}")
 
     # build NFA accepted states
     accepted_states: Set[str] = set(final_events)
@@ -216,9 +214,9 @@ def shuffle(nfas: Iterable[NFA[Any, str]]) -> NFA[Any, str]:
 
 
 def encode_behavior(
-        behavior: NFA[Any, str],
-        triggers: Dict[str, Regex],
-        alphabet: Optional[Collection[str]] = None,
+    behavior: NFA[Any, str],
+    triggers: Dict[str, Regex],
+    alphabet: Optional[Collection[str]] = None,
 ) -> NFA[Any, str]:
     assert isinstance(behavior, NFA)
     # Replace tokens by REGEX in encoder
@@ -382,7 +380,7 @@ class MicroBehavior:
         raise ValueError(f"{errors.TRIGGER_INVALID_MICRO2MACRO(seq)}")
 
     def get_traces_from_component_trace(
-            self, component_alpha: Collection[str], component_seq: MicroTrace
+        self, component_alpha: Collection[str], component_seq: MicroTrace
     ) -> DFA[Any, str]:
         # 1. Compute the set of characters to pad
         pad_alpha = set(self.dfa.alphabet)
@@ -394,10 +392,10 @@ class MicroBehavior:
 
     @classmethod
     def make(
-            cls,
-            external_behavior: NFA[Any, str],
-            triggers: Dict[str, Regex[str]],
-            alphabet: Set[str],
+        cls,
+        external_behavior: NFA[Any, str],
+        triggers: Dict[str, Regex[str]],
+        alphabet: Set[str],
     ) -> "MicroBehavior":
         """
         Micro behavior
@@ -417,7 +415,9 @@ class MicroBehavior:
             rule_alpha = set(regular.get_alphabet(rule))
             rule_alpha = rule_alpha - alphabet
             if len(rule_alpha) > 0:
-                raise ValueError(f"{errors.UNDECLARED_OPERATION_IN_SUBSYSTEM(k, rule_alpha)}")
+                raise ValueError(
+                    f"{errors.UNDECLARED_OPERATION_IN_SUBSYSTEM(k, rule_alpha)}"
+                )
             det_triggers[k] = nfa_to_dfa(regex_to_nfa(rule, alphabet))
         # det_triggers and triggers are so close together, make sure we don't mistype
         del triggers
@@ -516,7 +516,7 @@ class ComponentUsageFailure:
 
     @classmethod
     def make(
-            cls, micro: NFA[Any, str], component: NFA[Any, str], optional: bool = True
+        cls, micro: NFA[Any, str], component: NFA[Any, str], optional: bool = True
     ) -> "ComponentUsageFailure":
         """
         Restrict the language of a micro behavior using a component's alphabet
@@ -526,7 +526,7 @@ class ComponentUsageFailure:
             nil = DFA[Any, str].make_nil(projected.alphabet)
             projected = projected.subtract(nil)
 
-        return cls(component=nfa_to_dfa(component), projected=projected, )
+        return cls(component=nfa_to_dfa(component), projected=projected,)
 
 
 @dataclass
@@ -560,16 +560,16 @@ class TriggerIntegrationFailure:
         base = repr(self)
         micro_idx = set()
         for name, (macro_trace, idx) in self.component_errors.items():
-            micro_idx.add(self.component_to_micro(name, macro_trace[0: idx + 1]))
+            micro_idx.add(self.component_to_micro(name, macro_trace[0 : idx + 1]))
         # result = "Error trace: "
         macro = ", ".join(self.macro_trace)
         micro, micro_hl = self._str_trace("", self.micro_trace, micro_idx)
         lines = []
         for name, (macro_trace, err_idx) in sorted(
-                self.component_errors.items(), key=lambda x: x[0]
+            self.component_errors.items(), key=lambda x: x[0]
         ):
             trace, trace_hl = self._str_trace(
-                lbl=f"  {name!r}: ", trace=macro_trace, errs={err_idx, },
+                lbl=f"  {name!r}: ", trace=macro_trace, errs={err_idx,},
             )
             lines.append(trace)
             lines.append(trace_hl)
@@ -578,18 +578,16 @@ class TriggerIntegrationFailure:
 
     @classmethod
     def make(
-            cls,
-            micro: MicroBehavior,
-            invalid: DFA[Any, str],
-            known_devices: TKnownDevices,
-            components: Dict[str, str],
+        cls,
+        micro: MicroBehavior,
+        invalid: DFA[Any, str],
+        known_devices: TKnownDevices,
+        components: Dict[str, str],
     ) -> "TriggerIntegrationFailure":
         # We could not assemble the device
         # We compute the smallest error
         dec_seq: Optional[MicroTrace] = invalid.get_shortest_string()
-        assert (
-                dec_seq is not None
-        ), f"{errors.TRIGGER_NONE_SMALLEST_ERROR}"
+        assert dec_seq is not None, f"{errors.TRIGGER_NONE_SMALLEST_ERROR}"
         # There should be a unique macro trace
         macro_trace = micro.convert_micro_to_macro(dec_seq)
         # We demutex by device
@@ -599,21 +597,19 @@ class TriggerIntegrationFailure:
             if not ch_dev.nfa.accepts(seq):
                 invalid = nfa_to_dfa(ch_dev.nfa).minimize()
                 idx = invalid.get_divergence_index(seq)
-                assert (
-                        idx is not None
-                ), f"{errors.TRIGGER_NONE_INDEX}"
+                assert idx is not None, f"{errors.TRIGGER_NONE_INDEX}"
                 errs[component] = (tuple(seq), idx)
 
         return cls(dec_seq, macro_trace, errs)
 
     @classmethod
     def from_component_usage(
-            cls,
-            component: str,
-            usage: ComponentUsageFailure,
-            micro: MicroBehavior,
-            known_devices: TKnownDevices,
-            components: Dict[str, str],
+        cls,
+        component: str,
+        usage: ComponentUsageFailure,
+        micro: MicroBehavior,
+        known_devices: TKnownDevices,
+        components: Dict[str, str],
     ) -> "TriggerIntegrationFailure":
         if usage.is_valid:
             raise ValueError(f"{errors.TRIGGER_UNEXPECTED_VALID_INTEGRATION(usage)}")
@@ -646,7 +642,9 @@ class UnusableOperationsFailure:
                 f"{errors.UNUSABLE_OPERATIONS_UNREACHABLE(self.unusable_operations)}\n"
             )
         if self.sink_operations:
-            unusable_msg += f"{errors.UNUSABLE_OPERATIONS_NO_YIELD_POINT(self.sink_operations)}\n"
+            unusable_msg += (
+                f"{errors.UNUSABLE_OPERATIONS_NO_YIELD_POINT(self.sink_operations)}\n"
+            )
 
         return unusable_msg
 
@@ -679,7 +677,7 @@ class AssembledMicroBehavior2:
         return self.micro.nfa
 
     def get_failure(
-            self, known_devices: TKnownDevices, components: Dict[str, str]
+        self, known_devices: TKnownDevices, components: Dict[str, str]
     ) -> Optional[TFailure]:
         # Fill in the failure field
         failure: Optional[TFailure] = self.micro.failure
@@ -697,15 +695,13 @@ class AssembledMicroBehavior2:
 
     @classmethod
     def make(
-            cls,
-            components: Dict[str, Component],
-            external_behavior: NFA[Any, str],
-            triggers: Dict[str, Regex[str]],
+        cls,
+        components: Dict[str, Component],
+        external_behavior: NFA[Any, str],
+        triggers: Dict[str, Regex[str]],
     ) -> "AssembledMicroBehavior2":
         if len(components) == 0:
-            raise ValueError(
-                f"{errors.INTEGRATION_ERROR_ZERO_COMPONENTS}"
-            )
+            raise ValueError(f"{errors.INTEGRATION_ERROR_ZERO_COMPONENTS}")
         alphabet: Set[str] = set()
         for c in components.values():
             alphabet.update(c.alphabet)
@@ -741,7 +737,7 @@ class AssembledMicroBehavior:
         return self.micro.nfa
 
     def get_failure(
-            self, known_devices: TKnownDevices, components: Dict[str, str]
+        self, known_devices: TKnownDevices, components: Dict[str, str]
     ) -> Optional[TFailure]:
         # Fill in the failure field
         failure: Optional[TFailure] = self.micro.failure
@@ -753,10 +749,10 @@ class AssembledMicroBehavior:
 
     @classmethod
     def make(
-            cls,
-            components: List[Component],
-            external_behavior: NFA[Any, str],
-            triggers: Dict[str, Regex[str]],
+        cls,
+        components: List[Component],
+        external_behavior: NFA[Any, str],
+        triggers: Dict[str, Regex[str]],
     ) -> "AssembledMicroBehavior":
         """
         Build internal behavior by using components, external behavior and triggers
@@ -769,9 +765,7 @@ class AssembledMicroBehavior:
             Example:
         """
         if len(components) == 0:
-            raise ValueError(
-                f"{errors.INTEGRATION_ERROR_ZERO_COMPONENTS}"
-            )
+            raise ValueError(f"{errors.INTEGRATION_ERROR_ZERO_COMPONENTS}")
 
         all_possible: DFA[Any, str] = nfa_to_dfa(
             shuffle(c.behavior for c in components)
@@ -793,15 +787,13 @@ def ensure_well_formed(dev: Device) -> None:
     start_evts = set(dev.start_events)
     if not (start_evts <= evts):
         raise ValueError(
-            f"{errors.WFORMED_UNDECLARED_START_EVENT}: ",
-            start_evts - evts,
+            f"{errors.WFORMED_UNDECLARED_START_EVENT}: ", start_evts - evts,
         )
     # Get keys
     trigs = set(dev.triggers)
     if not (trigs <= evts):
         raise ValueError(
-            f"{errors.WFORMED_UNDECLARED_TRIGGER_EVENT}: ",
-            trigs - evts,
+            f"{errors.WFORMED_UNDECLARED_TRIGGER_EVENT}: ", trigs - evts,
         )
     if trigs != evts:
         raise ValueError(f"{errors.WFORMED_UNDECLARED_TRIGGER_RULE}: ", evts - trigs)
@@ -828,25 +820,31 @@ def parse_formula(data: Any) -> FormulaOrTrace:
 
 
 def check_traces(
-        mc: Callable[[FormulaOrTrace], bool], tests: Mapping[str, Mapping[str, Any]]
+    mc: Callable[[FormulaOrTrace], bool], tests: Mapping[str, Mapping[str, Any]]
 ) -> None:
     for key, trace in tests.get("ok", dict()).items():
         formula = parse_formula(trace)
         if not mc(formula):
-            raise ValueError(f"{errors.CHECK_TRACES_UNACCEPTED_VALID_TRACE} '{key}': {trace}")
+            raise ValueError(
+                f"{errors.CHECK_TRACES_UNACCEPTED_VALID_TRACE} '{key}': {trace}"
+            )
 
     for key, trace in tests.get("fail", dict()).items():
         if mc(parse_formula(trace)):
-            raise ValueError(f"{errors.CHECK_TRACES_UNEXPECTED_INVALID_TRACE} '{key}': {trace}")
+            raise ValueError(
+                f"{errors.CHECK_TRACES_UNEXPECTED_INVALID_TRACE} '{key}': {trace}"
+            )
 
 
 def model_check(
-        nfa: NFA[Any, str], word_or_formula: Union[List[str], hml.Formula[str]]
+    nfa: NFA[Any, str], word_or_formula: Union[List[str], hml.Formula[str]]
 ) -> bool:
     if isinstance(word_or_formula, list):
         for string in word_or_formula:
             if string not in nfa.alphabet:
-                raise ValueError(f"{errors.MODEL_CHECK_UNDECLARED_EVENT_IN_TRACE}: '{string}'")
+                raise ValueError(
+                    f"{errors.MODEL_CHECK_UNDECLARED_EVENT_IN_TRACE}: '{string}'"
+                )
         return nfa.accepts(word_or_formula)
     else:
         prop = nfa_to_dfa(word_or_formula.interpret(nfa.alphabet))
@@ -897,14 +895,18 @@ class AssembledDevice:
         reachable_states.remove(self.external.nfa.start_state)
 
         # only includes states that are reachable and not sink (and remove start)
-        reachable_states_without_sink = set(self.external.nfa.remove_sink_states().states)
+        reachable_states_without_sink = set(
+            self.external.nfa.remove_sink_states().states
+        )
         reachable_states_without_sink.remove(self.external.nfa.start_state)
 
         # collect unreachable operations
         self.unusable_operations = frozenset(set(self.operations) - reachable_states)
 
         # collect sink operations (does not include unreachable states!)
-        self.sink_operations = frozenset(reachable_states - reachable_states_without_sink)
+        self.sink_operations = frozenset(
+            reachable_states - reachable_states_without_sink
+        )
 
         self.unusable_operations_time = get_elapsed_time(start)
 
@@ -928,12 +930,10 @@ class AssembledDevice:
         )
 
     def internal_model_check(
-            self, word_or_formula: Union[List[str], hml.Formula[str]]
+        self, word_or_formula: Union[List[str], hml.Formula[str]]
     ) -> bool:
         if self.internal is None:
-            raise ValueError(
-                f"{errors.MODEL_CHECK_NO_INTERNAL_BEHAVIOR}"
-            )
+            raise ValueError(f"{errors.MODEL_CHECK_NO_INTERNAL_BEHAVIOR}")
         return model_check(self.internal.nfa, word_or_formula)
 
     def external_model_check(self, word_or_formula: Union[List[str], hml.Formula[str]]):
@@ -941,7 +941,7 @@ class AssembledDevice:
 
     @classmethod
     def make(
-            cls, dev: Device, known_devices: TKnownDevices, fast_check: bool = False,
+        cls, dev: Device, known_devices: TKnownDevices, fast_check: bool = False,
     ) -> "AssembledDevice":
         """
         In order to assemble a device, the following steps are required:

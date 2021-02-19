@@ -86,7 +86,10 @@ def test_undeclared_operation_in_subsystem() -> None:
             composition_aut, known_devices.__getitem__
         )
 
-    assert UNDECLARED_OPERATION_IN_SUBSYSTEM('bad', {'s.badbad', 's.badbadbad'}) == str(exc_info.value)
+    assert UNDECLARED_OPERATION_IN_SUBSYSTEM("bad", {"s.badbad", "s.badbadbad"}) == str(
+        exc_info.value
+    )
+
 
 # def test_unknown_integration_operation_bad_tests() -> None:
 #     """

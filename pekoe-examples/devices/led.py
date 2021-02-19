@@ -24,7 +24,3 @@ class LEDDevice(Device):
     def turn_off(self):
         self.led_native.low()
         self.raise_event(LEDDevice.OFF)
-
-
-
-

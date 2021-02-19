@@ -1,5 +1,6 @@
 from native.generic.timer import Timer
 from unittest.mock import MagicMock
+
 # https://docs.python.org/3/library/typing.html#callable
 from typing import Callable
 

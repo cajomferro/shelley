@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 
 from shelley.yaml2shelley.util import MySafeLoader
 from shelley.ast.events import Event, Events
+from shelley.ast.actions import Actions, Action
 from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError
 from shelley.ast.devices import Device
 from shelley.ast.components import Components
@@ -428,6 +429,7 @@ KEY_TEST_SYS = "test_system"
 KEY_TEST_INT = "test_integration"
 KEY_TEST_OK = "ok"
 KEY_TEST_FAIL = "fail"
+KEY_ACTION_PREFIX = "?"
 
 
 def _create_device_from_yaml(yaml_code: Dict) -> Device:
@@ -481,6 +483,7 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
         raise SystemDeclError(f"Missing key '{KEY_TEST_FAIL}' for {KEY_TEST_INT}!")
 
     events: Events = Events()
+    actions: Actions = Actions()
     behaviors: Behaviors = Behaviors()
     components: Components = Components()
     triggers: Triggers = Triggers()
@@ -492,6 +495,7 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
         triggers=triggers,
         behaviors=behaviors,
     )
+
     starts_with = set(ev.name for ev in _parse_event_list(yaml_code, KEY_START, events))
     ends_with = set(ev.name for ev in _parse_event_list(yaml_code, KEY_END, events))
     for evt in events.list():
@@ -517,7 +521,13 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
     # at this point, this must be true
     assert len(events) == len(triggers)
 
-    device = Device(device_name, events, behaviors, triggers, components=components,)
+    for event in events:
+        if event.name.startswith(KEY_ACTION_PREFIX):
+            actions.add(Action(event.name))
+
+    device = Device(
+        device_name, events, behaviors, triggers, components=components, actions=actions
+    )
 
     device.test_macro = test_macro
     device.test_micro = test_micro

@@ -63,7 +63,7 @@ class PrettyPrintVisitor(Visitor):
         self.result += "{0} {1}, ".format(device_name, element.name)
 
     def visit_components(self, element: Components) -> None:
-        self.result += "  components:\n    "
+        self.result += "  subsystems:\n    "
         for component in element.list():
             component.accept(self)
         self.result = self.result[:-2]  # remove extra ", "

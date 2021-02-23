@@ -1,7 +1,7 @@
 name: 3Buttons
 start_with: $ANY
 end_with: $ANY
-components:
+subsystems:
     b1: SimpleButton
     b2: SimpleButton
     b3: SimpleButton
@@ -9,7 +9,7 @@ operations:
     button1AndOther:
         next: $ANY
         start: True
-        micro:
+        requires:
             - xor:
                 - seq:
                     - b1.pressed
@@ -24,7 +24,7 @@ operations:
     button3OrOthers:
         start: True
         next: $ANY
-        micro:
+        requires:
             - xor:
                 - seq:
                     - xor:
@@ -38,7 +38,7 @@ operations:
                     - b3.pressed
     button3OrOthersv2:
         start: false
-        micro:
+        requires:
             - xor:
                 - xor:
                     - seq:

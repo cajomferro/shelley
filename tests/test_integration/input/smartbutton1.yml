@@ -1,12 +1,12 @@
 name: SmartButton
 start_with: $ANY
 end_with: $ANY
-components:
+subsystems:
     b: Button
 operations:
     on:
         next: $ANY
-        micro: [ b.pressed, b.released]
+        requires: [ b.pressed, b.released]
 
 
 test_system:

@@ -63,16 +63,16 @@ wifihttp_yml = """
   name: WiFiHTTP
   start_with: [started, notconnected]
   end_with: $ANY
-  components:
+  subsystems:
       hc: HTTPClient
       wc: WiFiClient
   operations:
     started:
-        micro: [wc.ssid_joined, wc.connected, hc.connected]
+        requires: [wc.ssid_joined, wc.connected, hc.connected]
         next: [send]
     notconnected:
         next: [started]
-        micro:
+        requires:
           xor:
             - [wc.ssid_joined, wc.connected, hc.connect_failed]
             - xor:
@@ -80,16 +80,16 @@ wifihttp_yml = """
               - [wc.ssid_failed]
     send:
         next: [stopped, ok, error]
-        micro:
+        requires:
           xor:
             - hc.get
             - hc.post
     ok:
-        micro: [wc.print_data_ready, hc.response200]
+        requires: [wc.print_data_ready, hc.response200]
         next: [stopped, send]
     error:
         next: [stopped, send]
-        micro:
+        requires:
           xor:
             - [wc.print_data_ready, hc.response401]
             - xor:
@@ -100,7 +100,7 @@ wifihttp_yml = """
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
     stopped:
-        micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
+        requires: [wc.disconnected, hc.disconnected, wc.ssid_left]
         next: [started, notconnected]
 """
 
@@ -196,11 +196,11 @@ yaml_smartbutton = """
 name: SmartButton
 start_with: $ANY
 end_with: $ANY
-components:
+subsystems:
     b: Button
 operations:
     on:
-        micro: [ b.pressed, b.released]
+        requires: [ b.pressed, b.released]
         next: [on]
 
 
@@ -260,11 +260,11 @@ yaml_desklamp = """
     t: Timer
   events:
     level1:
-        micro: [b.pressed, b.released, ledA.on, t.started]
+        requires: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
         next: [standby2]
-        micro:
+        requires:
           - b.pressed
           - b.released
           - xor:
@@ -272,11 +272,11 @@ yaml_desklamp = """
               - [ledB.on, t.canceled]
           - t.started
     standby1:
-        micro: [t.timeout, ledA.off]
+        requires: [t.timeout, ledA.off]
         next: [level1]
     standby2:
         next: [level1]
-        micro:
+        requires:
           - xor:
               - [b.pressed, b.released, t.canceled]
               -  t.timeout

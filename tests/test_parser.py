@@ -85,7 +85,7 @@ def test_events_no_components_but_triggers() -> None:
         "end_with": "$ANY",
         "operations": {
             "pressed": {"next": ["released"],},
-            "released": {"micro": ["x.xxx"], "next": ["pressed"]},
+            "released": {"requires": ["x.xxx"], "next": ["pressed"]},
         },
     }
 
@@ -94,7 +94,7 @@ def test_events_no_components_but_triggers() -> None:
 
     assert (
         str(exc_info.value)
-        == "operation declaration error in ['released']: Invalid integration rule. Only declare an integration rule when there are components (system has 0 components).\nHint: remove integration rule or declare a component."
+        == "operation declaration error in ['released']: Invalid integration rule. Only declare an integration rule when there are subsystems (system has 0 subsystems).\nHint: remove integration rule or declare a component."
     )
 
 
@@ -103,10 +103,10 @@ def test_auto_create_declared_event_without_micro() -> None:
         "name": "SmartButton",
         "start_with": ["pressed"],
         "end_with": "$ANY",
-        "components": {"b": "Button"},
+        "subsystems": {"b": "Button"},
         "operations": {
             "pressed": {"next": ["released"]},
-            "released": {"micro": ["b.released"], "next": ["pressed"],},
+            "released": {"requires": ["b.released"], "next": ["pressed"],},
         },
     }
 
@@ -115,19 +115,19 @@ def test_auto_create_declared_event_without_micro() -> None:
 
     assert (
         str(exc_info.value)
-        == "operation declaration error in ['pressed']: Integration rule missing. Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
+        == "operation declaration error in ['pressed']: Integration rule missing. Only declare an integration rule when there are subsystems (system has 1 subsystems).\nHint: write integration rule or remove all subsystems."
     )
 
 
 def test_auto_create_undeclared_event_with_micro() -> None:
     yaml_as_dict = {
         "name": "SmartButton",
-        "components": {"b": "Button"},
+        "subsystems": {"b": "Button"},
         "start_with": ["pressed", "released"],
         "end_with": "$ANY",
         "operations": {
             "pressed": {"next": ["released"]},
-            "released": {"next": ["pressed"], "micro": ["b.released"],},
+            "released": {"next": ["pressed"], "requires": ["b.released"],},
         },
     }
 
@@ -136,23 +136,23 @@ def test_auto_create_undeclared_event_with_micro() -> None:
 
     assert (
         str(exc_info.value)
-        == "operation declaration error in ['pressed']: Integration rule missing. Only declare an integration rule when there are components (system has 1 components).\nHint: write integration rule or remove all components."
+        == "operation declaration error in ['pressed']: Integration rule missing. Only declare an integration rule when there are subsystems (system has 1 subsystems).\nHint: write integration rule or remove all subsystems."
     )
 
 
 def test_empty_integration() -> None:
     yaml_code = """
   name: WrongButton
-  components:
+  subsystems:
     b: SingleClickButton
   start_with: $ANY
   end_with: $ANY
   operations:
     on:
-        micro: [] # ERROR: empty integration
+        requires: [] # ERROR: empty integration
         next: [on]
     off:
-        micro: [ b.pressed, b.released]
+        requires: [ b.pressed, b.released]
     """
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
@@ -170,7 +170,7 @@ def test_seq_4_options() -> None:
     c.add(Component("B"))
     c.add(Component("T"))
     yaml_code = """
-micro:
+requires:
  - seq:
      - T.t
      - T.t
@@ -178,7 +178,7 @@ micro:
  - B.r
     """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["micro"]
+    triggers_src = yaml_as_dict["requires"]
 
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
@@ -195,7 +195,7 @@ def test_xor_3_options_nested() -> None:
     c.add(Component("B"))
     c.add(Component("T"))
     yaml_code = """
-micro:
+requires:
  xor:
   - [B.p, T.t, B.r]
   - xor:
@@ -203,7 +203,7 @@ micro:
     - T.t
     """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["micro"]
+    triggers_src = yaml_as_dict["requires"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -222,14 +222,14 @@ def test_xor_3_options() -> None:
     c.add(Component("B"))
     c.add(Component("T"))
     yaml_code = """
-micro:
+requires:
  - xor:
    - [B.p, T.t, B.r]
    - [B.p, T.e, B.r]
    - T.t
     """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["micro"]
+    triggers_src = yaml_as_dict["requires"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -248,13 +248,13 @@ def test_xor_2_options() -> None:
     c.add(Component("B"))
     c.add(Component("T"))
     yaml_code = """
-    micro:
+    requires:
      xor:
         - T.t
         - B.p
         """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["micro"]
+    triggers_src = yaml_as_dict["requires"]
 
     assert len(t) == 0
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
@@ -273,12 +273,12 @@ def test_xor_1_options() -> None:
     c.add(Component("B"))
     c.add(Component("T"))
     yaml_code = """
-    micro:
+    requires:
      xor:
         - T.t
         """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["micro"]
+    triggers_src = yaml_as_dict["requires"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -294,7 +294,7 @@ def test_xor_seq() -> None:
     c.add(Component("b2"))
     c.add(Component("b3"))
     yaml_code = """
-micro:
+requires:
     - xor:
         - xor:
             - seq:
@@ -306,7 +306,7 @@ micro:
         - b3.pressed
 """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["micro"]
+    triggers_src = yaml_as_dict["requires"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -325,7 +325,7 @@ def test_xor_seq_v2() -> None:
     c.add(Component("b2"))
     c.add(Component("b3"))
     yaml_code = """
-micro:
+requires:
     - xor:
         - seq:
             - b1.pressed
@@ -339,7 +339,7 @@ micro:
             - b1.pressed
 """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["micro"]
+    triggers_src = yaml_as_dict["requires"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -430,18 +430,18 @@ def test_desklamp() -> None:
 name: DeskLamp
 start_with: [level1]
 end_with: $ANY
-components:
+subsystems:
     ledA: Led
     ledB: Led
     b: Button
     t: Timer
 operations:
     level1:
-        micro: [b.pressed, b.released, ledA.on, t.started]
+        requires: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
         next: [standby2]
-        micro:
+        requires:
           - b.pressed
           - b.released
           - xor:
@@ -449,11 +449,11 @@ operations:
               - [ledB.on, t.canceled]
           - t.started
     standby1:
-        micro: [t.timeout, ledA.off]
+        requires: [t.timeout, ledA.off]
         next: [level1]
     standby2:
         next: [level1]
-        micro:
+        requires:
           - xor:
               - [b.pressed, b.released, t.canceled]
               -  t.timeout
@@ -481,7 +481,7 @@ operations:
     level2 -> standby2
     standby1 -> level1
     standby2 -> level1
-  components:
+  subsystems:
     Led ledA, Led ledB, Button b, Timer t
   triggers:
     level1: b.pressed ; b.released ; ledA.on ; t.started
@@ -497,7 +497,7 @@ def test_sendok() -> None:
 name: SendOK
 start_with: [send]
 end_with: $ANY
-components:
+subsystems:
     b1: Button
     b2: Button
     lgreen: Led
@@ -505,16 +505,16 @@ components:
 operations:
     send:
         next: [ok, off]
-        micro: [ b1.pressed, b1.released]
+        requires: [ b1.pressed, b1.released]
     ok:
         next: [send]
-        micro:
+        requires:
           - xor:
               - [ lred.on, lred.off ]
               - [ lgreen.on, lgreen.off ]
     off:
         next: [send]
-        micro: [ b2.pressed, b2.released]
+        requires: [ b2.pressed, b2.released]
         """
 
     shelley_device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
@@ -536,7 +536,7 @@ operations:
     send -> off
     ok -> send
     off -> send
-  components:
+  subsystems:
     Button b1, Button b2, Led lgreen, Led lred
   triggers:
     send: b1.pressed ; b1.released
@@ -551,12 +551,12 @@ def test_smartbutton() -> None:
 name: SmartButton
 start_with: $ANY
 end_with: $ANY
-components:
+subsystems:
     b: Button
 operations:
     on:
         next: [on]
-        micro: [ b.pressed, b.released]
+        requires: [ b.pressed, b.released]
 
 
 test_system:
@@ -595,7 +595,7 @@ test_integration:
     on
   behaviours:
     on -> on
-  components:
+  subsystems:
     Button b
   triggers:
     on: b.pressed ; b.released"""
@@ -636,14 +636,14 @@ def test_ambiguous_3buttons() -> None:
   name: 3Buttons
   start_with: $ANY
   end_with: $ANY
-  components:
+  subsystems:
     b1: Button
     b2: Button
     b3: Button
   operations:
     button1AndOther:
         next: $ANY
-        micro:
+        requires:
           - xor:
               - xor:
                   - [b1.pressed, b2.pressed]
@@ -653,7 +653,7 @@ def test_ambiguous_3buttons() -> None:
                   - [b3.pressed, b1.pressed]
     button3OrOthers:
           next: $ANY
-          micro:
+          requires:
             - xor:
                 - xor:
                     - seq:
@@ -681,7 +681,7 @@ def test_ambiguous_3buttons() -> None:
     button1AndOther -> button3OrOthers
     button3OrOthers -> button1AndOther
     button3OrOthers -> button3OrOthers
-  components:
+  subsystems:
     Button b1, Button b2, Button b3
   triggers:
     button1AndOther: ( ( b1.pressed ; b2.pressed xor b1.pressed ; b3.pressed ) xor ( b2.pressed ; b1.pressed xor b3.pressed ; b1.pressed ) )

@@ -26,17 +26,17 @@ bad_composition_yml_src: str = """
 name: Composition
 start_with: [go, bad]
 end_with: $ANY
-components:
+subsystems:
     s: Simple
 operations:
     go:
-        micro: [s.on]
+        requires: [s.on]
         next: [stop]
     stop:
-        micro: [s.off]
+        requires: [s.off]
         next: [go]
     bad:
-        micro: [s.badbad, s.badbadbad] # WRONG! UNDECLARED OPERATION IN THE SUBSYSTEM!
+        requires: [s.badbad, s.badbadbad] # WRONG! UNDECLARED OPERATION IN THE SUBSYSTEM!
         next: [bad]
 """
 
@@ -44,14 +44,14 @@ good_composition_yml_src: str = """
 name: Composition
 start_with: [go]
 end_with: $ANY
-components:
+subsystems:
     s: Simple
 operations:
     go:
-        micro: [s.on]
+        requires: [s.on]
         next: [stop]
     stop:
-        micro: [s.off]
+        requires: [s.off]
         next: [go]
 """
 

@@ -98,11 +98,11 @@ def test_smartbutton1() -> None:
   name: SmartButton
   start_with: $ANY
   end_with: $ANY
-  components:
+  subsystems:
     b: Button
   operations:
     on:
-        micro: [ b.pressed, b.released]
+        requires: [ b.pressed, b.released]
         next: [on]
     """
 
@@ -125,18 +125,18 @@ def test_desklamp() -> None:
   name: DeskLamp
   start_with: [level1]
   end_with: $ANY
-  components:
+  subsystems:
     ledA: Led
     ledB: Led
     b: Button
     t: Timer
   operations:
     level1:
-        micro: [b.pressed, b.released, ledA.on, t.started]
+        requires: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
         next: [standby2]
-        micro:
+        requires:
           - b.pressed
           - b.released
           - xor:
@@ -145,10 +145,10 @@ def test_desklamp() -> None:
           - t.started
     standby1:
         next: [level1]
-        micro: [t.timeout, ledA.off]
+        requires: [t.timeout, ledA.off]
     standby2:
         next: [level1]
-        micro:
+        requires:
           - xor:
               - [b.pressed, b.released, t.canceled]
               -  t.timeout
@@ -274,13 +274,13 @@ def test_clickbutton():
  name: ClickButtonVariation
  start_with: $ANY
  end_with: $ANY
- components:
+ subsystems:
   B: Button
   T: Timer
  operations:
     single:
        next: $ANY
-       micro:
+       requires:
          seq:
          - seq: [B.press, T.begin]
          - xor:
@@ -288,7 +288,7 @@ def test_clickbutton():
            - seq: [B.release, T.timeout] # user is fast
     double:
        next: $ANY
-       micro:
+       requires:
          seq:
          - seq: [B.press, T.begin, B.release]
          - xor:

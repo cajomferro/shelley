@@ -61,15 +61,15 @@ wifihttp_yml = """
   name: WiFiHTTP
   start_with: $ANY
   end_with: $ANY
-  components:
+  subsystems:
       hc: HTTPClient
       wc: WiFiClient
   operations:
     started:
-        micro: [wc.joined, wc.connected, hc.connected]
+        requires: [wc.joined, wc.connected, hc.connected]
         next: [send]
     notconnected:
-        micro:
+        requires:
           xor:
             - [wc.joined, wc.connected, hc.connect_failed]
             - xor:
@@ -77,17 +77,17 @@ wifihttp_yml = """
               - [wc.ssid_failed]
         next: [started]
     send:
-        micro:
+        requires:
           xor:
             - hc.get
             - hc.post
         next: [stopped, ok, error]
     ok:
         next: [send, stopped]
-        micro: [wc.print_data_ready, hc.response200]
+        requires: [wc.print_data_ready, hc.response200]
     error:
         next: [send, stopped]
-        micro:
+        requires:
           xor:
             - [wc.print_data_ready, hc.response401]
             - xor:
@@ -99,7 +99,7 @@ wifihttp_yml = """
                   - wc.print_timeout
     stopped:
         next: [started, notconnected]
-        micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
+        requires: [wc.disconnected, hc.disconnected, wc.ssid_left]
 """
 
 

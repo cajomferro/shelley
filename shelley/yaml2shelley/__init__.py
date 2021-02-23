@@ -299,7 +299,7 @@ def _parse_triggers(
     ):  # simple device with micro (not allowed!)
         raise OperationDeclError(
             names=[event.name],
-            reason="Invalid integration rule. Only declare an integration rule when there are components (system has 0 components).",
+            reason="Invalid integration rule. Only declare an integration rule when there are subsystems (system has 0 subsystems).",
             hints=["remove integration rule or declare a component."],
         )
     elif (
@@ -308,8 +308,8 @@ def _parse_triggers(
         count = len(components)
         raise OperationDeclError(
             names=[event.name],
-            reason=f"Integration rule missing. Only declare an integration rule when there are components (system has {count} components).",
-            hints=["write integration rule or remove all components."],
+            reason=f"Integration rule missing. Only declare an integration rule when there are subsystems (system has {count} subsystems).",
+            hints=["write integration rule or remove all subsystems."],
         )
     elif src is None and len(components) == 0:  # simple device without micro (ok!)
         trigger_rule = TriggerRuleFired()
@@ -521,9 +521,9 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
     # at this point, this must be true
     assert len(events) == len(triggers)
 
-    for event in events:
-        if event.name.startswith(KEY_ACTION_PREFIX):
-            actions.add(Action(event.name))
+    for event_name in events.list_str():
+        if event_name.startswith(KEY_ACTION_PREFIX):
+            actions.add(Action(event_name))
 
     device = Device(
         device_name, events, behaviors, triggers, components=components, actions=actions

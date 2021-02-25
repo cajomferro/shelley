@@ -9,7 +9,7 @@ operations:
     button1AndOther:
         next: $ANY
         start: True
-        requires:
+        integration:
             - xor:
                 - seq:
                     - b1.pressed
@@ -24,7 +24,7 @@ operations:
     button3OrOthers:
         start: True
         next: $ANY
-        requires:
+        integration:
             - xor:
                 - seq:
                     - xor:
@@ -38,7 +38,7 @@ operations:
                     - b3.pressed
     button3OrOthersv2:
         start: false
-        requires:
+        integration:
             - xor:
                 - xor:
                     - seq:

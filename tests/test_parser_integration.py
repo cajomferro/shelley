@@ -66,11 +66,11 @@ wifihttp_yml = """
       wc: WiFiClient
   operations:
     started:
-        requires: [wc.ssid_joined, wc.connected, hc.connected]
+        integration: [wc.ssid_joined, wc.connected, hc.connected]
         next: [send]
     notconnected:
         next: [started]
-        requires:
+        integration:
           xor:
             - [wc.ssid_joined, wc.connected, hc.connect_failed]
             - xor:
@@ -78,16 +78,16 @@ wifihttp_yml = """
               - [wc.ssid_failed]
     send:
         next: [stopped, ok, error]
-        requires:
+        integration:
           xor:
             - hc.get
             - hc.post
     ok:
-        requires: [wc.print_data_ready, hc.response200]
+        integration: [wc.print_data_ready, hc.response200]
         next: [stopped, send]
     error:
         next: [stopped, send]
-        requires:
+        integration:
           xor:
             - [wc.print_data_ready, hc.response401]
             - xor:
@@ -98,7 +98,7 @@ wifihttp_yml = """
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
     stopped:
-        requires: [wc.disconnected, hc.disconnected, wc.ssid_left]
+        integration: [wc.disconnected, hc.disconnected, wc.ssid_left]
         next: [started, notconnected]
 """
 
@@ -126,7 +126,7 @@ wificlient_assembled = _get_wifi_client_assembled()
 
 SEND_REGEX = r"""    send:
         next: [stopped, ok, error]
-        requires:
+        integration:
           xor:
             - hc.get
             - hc.post
@@ -177,7 +177,7 @@ def test_compile_wifihttp_event_declared_micro_empty1() -> None:
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
-        wifihttp_yml_bad = replace_send(wifihttp_yml, "requires: {}")
+        wifihttp_yml_bad = replace_send(wifihttp_yml, "integration: {}")
 
         # parse yaml and assemble device
         known_devices = {
@@ -207,7 +207,7 @@ def test_compile_wifihttp_event_declared_micro_empty2() -> None:
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
-        wifihttp_yml_bad = replace_send(wifihttp_yml, "requires: []")
+        wifihttp_yml_bad = replace_send(wifihttp_yml, "integration: []")
         print(wifihttp_yml_bad)
         # parse yaml and assemble device
         known_devices = {
@@ -269,7 +269,7 @@ def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
         wifihttp_yml_bad = replace_send(
-            wifihttp_yml, "requires:", "  xor:", "    - hc.post"
+            wifihttp_yml, "integration:", "  xor:", "    - hc.post"
         )
 
         # parse yaml and assemble device
@@ -288,7 +288,7 @@ def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
 
     assert (
         str(exc_info.value)
-        == "Invalid micro rule '{'xor': ['hc.post']}'. Branching (xor) requires 2 options!"
+        == "Invalid micro rule '{'xor': ['hc.post']}'. Branching (xor) integration 2 options!"
     )
 
 
@@ -303,7 +303,7 @@ def XXX_test_compile_wifihttp_invalid_xor_3_options() -> None:
         # introduce bad syntax on good yml
         wifihttp_yml_bad = replace_send(
             wifihttp_yml,
-            "requires:",
+            "integration:",
             "  xor:",
             "    - hc.get",
             "    - hc.get",

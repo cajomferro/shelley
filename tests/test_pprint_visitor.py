@@ -49,11 +49,11 @@ yaml_desklamp = """
   end_with: $ANY
   operations:
     level1:
-        requires: [b.pressed, b.released, ledA.on, t.started]
+        integration: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
         next: [standby2]
-        requires:
+        integration:
           - b.pressed
           - b.released
           - xor:
@@ -62,10 +62,10 @@ yaml_desklamp = """
           - t.started
     standby1:
         next: [level1]
-        requires: [t.timeout, ledA.off]
+        integration: [t.timeout, ledA.off]
     standby2:
         next: [level1]
-        requires:
+        integration:
           - xor:
               - [b.pressed, b.released, t.canceled]
               -  t.timeout

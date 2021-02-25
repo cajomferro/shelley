@@ -85,7 +85,7 @@ def test_events_no_components_but_triggers() -> None:
         "end_with": "$ANY",
         "operations": {
             "pressed": {"next": ["released"],},
-            "released": {"requires": ["x.xxx"], "next": ["pressed"]},
+            "released": {"integration": ["x.xxx"], "next": ["pressed"]},
         },
     }
 
@@ -106,7 +106,7 @@ def test_auto_create_declared_event_without_micro() -> None:
         "subsystems": {"b": "Button"},
         "operations": {
             "pressed": {"next": ["released"]},
-            "released": {"requires": ["b.released"], "next": ["pressed"],},
+            "released": {"integration": ["b.released"], "next": ["pressed"],},
         },
     }
 
@@ -127,7 +127,7 @@ def test_auto_create_undeclared_event_with_micro() -> None:
         "end_with": "$ANY",
         "operations": {
             "pressed": {"next": ["released"]},
-            "released": {"next": ["pressed"], "requires": ["b.released"],},
+            "released": {"next": ["pressed"], "integration": ["b.released"],},
         },
     }
 
@@ -149,10 +149,10 @@ def test_empty_integration() -> None:
   end_with: $ANY
   operations:
     on:
-        requires: [] # ERROR: empty integration
+        integration: [] # ERROR: empty integration
         next: [on]
     off:
-        requires: [ b.pressed, b.released]
+        integration: [ b.pressed, b.released]
     """
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
@@ -170,7 +170,7 @@ def test_seq_4_options() -> None:
     c.add(Component("B"))
     c.add(Component("T"))
     yaml_code = """
-requires:
+integration:
  - seq:
      - T.t
      - T.t
@@ -178,7 +178,7 @@ requires:
  - B.r
     """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["requires"]
+    triggers_src = yaml_as_dict["integration"]
 
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
@@ -195,7 +195,7 @@ def test_xor_3_options_nested() -> None:
     c.add(Component("B"))
     c.add(Component("T"))
     yaml_code = """
-requires:
+integration:
  xor:
   - [B.p, T.t, B.r]
   - xor:
@@ -203,7 +203,7 @@ requires:
     - T.t
     """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["requires"]
+    triggers_src = yaml_as_dict["integration"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -222,14 +222,14 @@ def test_xor_3_options() -> None:
     c.add(Component("B"))
     c.add(Component("T"))
     yaml_code = """
-requires:
+integration:
  - xor:
    - [B.p, T.t, B.r]
    - [B.p, T.e, B.r]
    - T.t
     """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["requires"]
+    triggers_src = yaml_as_dict["integration"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -248,13 +248,13 @@ def test_xor_2_options() -> None:
     c.add(Component("B"))
     c.add(Component("T"))
     yaml_code = """
-    requires:
+    integration:
      xor:
         - T.t
         - B.p
         """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["requires"]
+    triggers_src = yaml_as_dict["integration"]
 
     assert len(t) == 0
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
@@ -273,12 +273,12 @@ def test_xor_1_options() -> None:
     c.add(Component("B"))
     c.add(Component("T"))
     yaml_code = """
-    requires:
+    integration:
      xor:
         - T.t
         """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["requires"]
+    triggers_src = yaml_as_dict["integration"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -294,7 +294,7 @@ def test_xor_seq() -> None:
     c.add(Component("b2"))
     c.add(Component("b3"))
     yaml_code = """
-requires:
+integration:
     - xor:
         - xor:
             - seq:
@@ -306,7 +306,7 @@ requires:
         - b3.pressed
 """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["requires"]
+    triggers_src = yaml_as_dict["integration"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -325,7 +325,7 @@ def test_xor_seq_v2() -> None:
     c.add(Component("b2"))
     c.add(Component("b3"))
     yaml_code = """
-requires:
+integration:
     - xor:
         - seq:
             - b1.pressed
@@ -339,7 +339,7 @@ requires:
             - b1.pressed
 """
     yaml_as_dict = yaml.load(yaml_code, MySafeLoader)
-    triggers_src = yaml_as_dict["requires"]
+    triggers_src = yaml_as_dict["integration"]
     yaml2shelley._parse_triggers(triggers_src, e, c, t)
 
     visitor = PrettyPrintVisitor(components=c)
@@ -437,11 +437,11 @@ subsystems:
     t: Timer
 operations:
     level1:
-        requires: [b.pressed, b.released, ledA.on, t.started]
+        integration: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
         next: [standby2]
-        requires:
+        integration:
           - b.pressed
           - b.released
           - xor:
@@ -449,11 +449,11 @@ operations:
               - [ledB.on, t.canceled]
           - t.started
     standby1:
-        requires: [t.timeout, ledA.off]
+        integration: [t.timeout, ledA.off]
         next: [level1]
     standby2:
         next: [level1]
-        requires:
+        integration:
           - xor:
               - [b.pressed, b.released, t.canceled]
               -  t.timeout
@@ -505,16 +505,16 @@ subsystems:
 operations:
     send:
         next: [ok, off]
-        requires: [ b1.pressed, b1.released]
+        integration: [ b1.pressed, b1.released]
     ok:
         next: [send]
-        requires:
+        integration:
           - xor:
               - [ lred.on, lred.off ]
               - [ lgreen.on, lgreen.off ]
     off:
         next: [send]
-        requires: [ b2.pressed, b2.released]
+        integration: [ b2.pressed, b2.released]
         """
 
     shelley_device = yaml2shelley.get_shelley_from_yaml_str(yaml_code)
@@ -556,7 +556,7 @@ subsystems:
 operations:
     on:
         next: [on]
-        requires: [ b.pressed, b.released]
+        integration: [ b.pressed, b.released]
 
 
 test_system:
@@ -643,7 +643,7 @@ def test_ambiguous_3buttons() -> None:
   operations:
     button1AndOther:
         next: $ANY
-        requires:
+        integration:
           - xor:
               - xor:
                   - [b1.pressed, b2.pressed]
@@ -653,7 +653,7 @@ def test_ambiguous_3buttons() -> None:
                   - [b3.pressed, b1.pressed]
     button3OrOthers:
           next: $ANY
-          requires:
+          integration:
             - xor:
                 - xor:
                     - seq:

@@ -30,13 +30,13 @@ subsystems:
     s: Simple
 operations:
     go:
-        requires: [s.on]
+        integration: [s.on]
         next: [stop]
     stop:
-        requires: [s.off]
+        integration: [s.off]
         next: [go]
     bad:
-        requires: [s.badbad, s.badbadbad] # WRONG! UNDECLARED OPERATION IN THE SUBSYSTEM!
+        integration: [s.badbad, s.badbadbad] # WRONG! UNDECLARED OPERATION IN THE SUBSYSTEM!
         next: [bad]
 """
 
@@ -48,10 +48,10 @@ subsystems:
     s: Simple
 operations:
     go:
-        requires: [s.on]
+        integration: [s.on]
         next: [stop]
     stop:
-        requires: [s.off]
+        integration: [s.off]
         next: [go]
 """
 

@@ -68,11 +68,11 @@ wifihttp_yml = """
       wc: WiFiClient
   operations:
     started:
-        requires: [wc.ssid_joined, wc.connected, hc.connected]
+        integration: [wc.ssid_joined, wc.connected, hc.connected]
         next: [send]
     notconnected:
         next: [started]
-        requires:
+        integration:
           xor:
             - [wc.ssid_joined, wc.connected, hc.connect_failed]
             - xor:
@@ -80,16 +80,16 @@ wifihttp_yml = """
               - [wc.ssid_failed]
     send:
         next: [stopped, ok, error]
-        requires:
+        integration:
           xor:
             - hc.get
             - hc.post
     ok:
-        requires: [wc.print_data_ready, hc.response200]
+        integration: [wc.print_data_ready, hc.response200]
         next: [stopped, send]
     error:
         next: [stopped, send]
-        requires:
+        integration:
           xor:
             - [wc.print_data_ready, hc.response401]
             - xor:
@@ -100,7 +100,7 @@ wifihttp_yml = """
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
     stopped:
-        requires: [wc.disconnected, hc.disconnected, wc.ssid_left]
+        integration: [wc.disconnected, hc.disconnected, wc.ssid_left]
         next: [started, notconnected]
 """
 
@@ -200,7 +200,7 @@ subsystems:
     b: Button
 operations:
     on:
-        requires: [ b.pressed, b.released]
+        integration: [ b.pressed, b.released]
         next: [on]
 
 
@@ -260,11 +260,11 @@ yaml_desklamp = """
     t: Timer
   events:
     level1:
-        requires: [b.pressed, b.released, ledA.on, t.started]
+        integration: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
         next: [standby2]
-        requires:
+        integration:
           - b.pressed
           - b.released
           - xor:
@@ -272,11 +272,11 @@ yaml_desklamp = """
               - [ledB.on, t.canceled]
           - t.started
     standby1:
-        requires: [t.timeout, ledA.off]
+        integration: [t.timeout, ledA.off]
         next: [level1]
     standby2:
         next: [level1]
-        requires:
+        integration:
           - xor:
               - [b.pressed, b.released, t.canceled]
               -  t.timeout

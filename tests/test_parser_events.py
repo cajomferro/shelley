@@ -66,10 +66,10 @@ wifihttp_yml = """
       wc: WiFiClient
   operations:
     started:
-        requires: [wc.joined, wc.connected, hc.connected]
+        integration: [wc.joined, wc.connected, hc.connected]
         next: [send]
     notconnected:
-        requires:
+        integration:
           xor:
             - [wc.joined, wc.connected, hc.connect_failed]
             - xor:
@@ -77,17 +77,17 @@ wifihttp_yml = """
               - [wc.ssid_failed]
         next: [started]
     send:
-        requires:
+        integration:
           xor:
             - hc.get
             - hc.post
         next: [stopped, ok, error]
     ok:
         next: [send, stopped]
-        requires: [wc.print_data_ready, hc.response200]
+        integration: [wc.print_data_ready, hc.response200]
     error:
         next: [send, stopped]
-        requires:
+        integration:
           xor:
             - [wc.print_data_ready, hc.response401]
             - xor:
@@ -99,7 +99,7 @@ wifihttp_yml = """
                   - wc.print_timeout
     stopped:
         next: [started, notconnected]
-        requires: [wc.disconnected, hc.disconnected, wc.ssid_left]
+        integration: [wc.disconnected, hc.disconnected, wc.ssid_left]
 """
 
 

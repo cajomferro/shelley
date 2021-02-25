@@ -102,7 +102,7 @@ def test_smartbutton1() -> None:
     b: Button
   operations:
     on:
-        requires: [ b.pressed, b.released]
+        integration: [ b.pressed, b.released]
         next: [on]
     """
 
@@ -132,11 +132,11 @@ def test_desklamp() -> None:
     t: Timer
   operations:
     level1:
-        requires: [b.pressed, b.released, ledA.on, t.started]
+        integration: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
         next: [standby2]
-        requires:
+        integration:
           - b.pressed
           - b.released
           - xor:
@@ -145,10 +145,10 @@ def test_desklamp() -> None:
           - t.started
     standby1:
         next: [level1]
-        requires: [t.timeout, ledA.off]
+        integration: [t.timeout, ledA.off]
     standby2:
         next: [level1]
-        requires:
+        integration:
           - xor:
               - [b.pressed, b.released, t.canceled]
               -  t.timeout
@@ -280,7 +280,7 @@ def test_clickbutton():
  operations:
     single:
        next: $ANY
-       requires:
+       integration:
          seq:
          - seq: [B.press, T.begin]
          - xor:
@@ -288,7 +288,7 @@ def test_clickbutton():
            - seq: [B.release, T.timeout] # user is fast
     double:
        next: $ANY
-       requires:
+       integration:
          seq:
          - seq: [B.press, T.begin, B.release]
          - xor:

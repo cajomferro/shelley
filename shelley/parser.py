@@ -102,6 +102,7 @@ class ShelleyLanguage(Transformer):
 
     def initial(self, args):
         return INITIAL
+
     def final(self, args):
         return FINAL
 
@@ -134,12 +135,17 @@ class ShelleyLanguage(Transformer):
     def new_sys(self, args):
         # CNAME "(" key_vals ")" ops
         name, components, (evts, triggers, behaviors) = args
-        return Device(name=name,
+        device = Device(name=name,
             events=evts,
             behaviors=behaviors,
             triggers=triggers,
             components=components,
         )
+
+        device.test_macro = dict()
+        device.test_micro = dict()
+
+        return device
 
     def abs_sys(self, args):
         name, *sigs = args
@@ -150,12 +156,19 @@ class ShelleyLanguage(Transformer):
             for n in nxt:
                 behaviors.create(copy.copy(evt), Event(name=n, is_start=False, is_final=True))
             events.add(evt)
-        return Device(
+            triggers.create(evt, TriggerRuleFired())
+
+        device =  Device(
             name=name,
             events=events,
             behaviors=behaviors,
             triggers=triggers,
         )
+
+        device.test_macro = dict()
+        device.test_micro = dict()
+
+        return device
 
 
 def main():

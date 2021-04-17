@@ -34,7 +34,6 @@ choice: block "+" block
 
 loop: "loop" block
 
-modifier : initial | final
 initial : "initial"
 final : "final"
 modifiers:
@@ -45,7 +44,7 @@ modifiers:
 
 ident: CNAME
 
-next: ("->" ident)* -> next_evts
+next: "->" (ident)* -> next_evts
 
 sig:  [modifiers] ident next
 
@@ -58,7 +57,7 @@ key_vals: [key_val ("," key_val)* [","]]
 
 sys:
 | ident "(" key_vals ")" ops -> new_sys
-| "abstract"  ident "{" sig+ "}" -> abs_sys
+| "abstract"  ident "{" (sig ";")+ "}" -> abs_sys
 
 %import common.CNAME
 %import common.WS
@@ -158,7 +157,7 @@ class ShelleyLanguage(Transformer):
             events.add(evt)
             triggers.create(evt, TriggerRuleFired())
 
-        device =  Device(
+        device = Device(
             name=name,
             events=events,
             behaviors=behaviors,

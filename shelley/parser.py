@@ -44,7 +44,7 @@ modifiers:
 
 ident: CNAME
 
-next: "->" (ident)* -> next_evts
+next: "->" [ident ("," ident)* [","]] -> next_evts
 
 sig:  [modifiers] ident next
 
@@ -52,12 +52,12 @@ op : sig block
 
 ops : "{" op+ "}"
 
-key_val: ident ":" ident
-key_vals: [key_val ("," key_val)* [","]]
+name_type: ident ":" ident
+uses: [name_type ("," name_type)* [","]]
 
 sys:
-| ident "(" key_vals ")" ops -> new_sys
-| "abstract"  ident "{" (sig ";")+ "}" -> abs_sys
+| ident "(" uses ")" ops -> new_sys
+| "base"  ident "{" (sig ";")+ "}" -> base_sys
 
 %import common.CNAME
 %import common.WS
@@ -84,14 +84,14 @@ class ShelleyLanguage(Transformer):
             return None
         return args[0]
 
-    def key_val(self, args):
+    def name_type(self, args):
         return args
 
-    def key_vals(self, kv):
+    def uses(self, name_type):
 
         self.components = Components()
-        for (k, v) in kv:
-            self.components.create(k, v)
+        for (name, type) in name_type:
+            self.components.create(name, type)
         return self.components
 
     def sig(self, args):
@@ -135,7 +135,6 @@ class ShelleyLanguage(Transformer):
         return name.value
 
     def new_sys(self, args):
-        # CNAME "(" key_vals ")" ops
         name, components, (evts, triggers, behaviors) = args
 
         device = Device(name=name,
@@ -150,7 +149,7 @@ class ShelleyLanguage(Transformer):
 
         return device
 
-    def abs_sys(self, args):
+    def base_sys(self, args):
         name, *sigs = args
         events = Events()
         triggers = Triggers()
@@ -177,7 +176,7 @@ class ShelleyLanguage(Transformer):
 def main():
 
     LED = """
-    abstract Led {
+    base Led {
     initial final on -> off
 
     initial final off -> on

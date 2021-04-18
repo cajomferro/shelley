@@ -70,7 +70,9 @@ class ShelleyLanguage(Transformer):
         return TriggerRuleSequence(*args)
 
     def call(self, args):
-        return TriggerRuleEvent(*args)
+        c_name, e_name = args
+        component = self.components[c_name]
+        return TriggerRuleEvent(component, e_name)
 
     def choice(self, args):
         choice = TriggerRuleChoice()
@@ -86,10 +88,11 @@ class ShelleyLanguage(Transformer):
         return args
 
     def key_vals(self, kv):
-        result = Components()
+
+        self.components = Components()
         for (k, v) in kv:
-            result.create(k, v)
-        return result
+            self.components.create(k, v)
+        return self.components
 
     def sig(self, args):
         modifiers, name, nxt = args
@@ -134,6 +137,7 @@ class ShelleyLanguage(Transformer):
     def new_sys(self, args):
         # CNAME "(" key_vals ")" ops
         name, components, (evts, triggers, behaviors) = args
+
         device = Device(name=name,
             events=evts,
             behaviors=behaviors,

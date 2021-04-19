@@ -30,7 +30,7 @@ call: ident "." ident ";"
 
 seq: expr expr
 
-choice: block "+" block
+choice: block "+" choice | block
 
 loop: "loop" block
 

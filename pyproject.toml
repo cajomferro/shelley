@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "shelley"
-version = "0.1.11"
+version = "0.1.12"
 description = "Check system integration"
 authors = ["Carlos Mão de Ferro", "Tiago Cogumbreiro", "Francisco Martins"]
 license = "MIT"
@@ -23,6 +23,7 @@ lark="^0.11.1"
 
 [tool.poetry.scripts]
 parser = "shelley.parser:main"
+yaml2shelley = "shelley.yaml2shelley.yaml2lark:main"
 shelleyc = "shelley.shelleyc.main:main"
 shelleyv = "shelley.shelleyv.main:main"
 shelleys = "shelley.shelleys.main:main"

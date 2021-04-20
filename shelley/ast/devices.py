@@ -71,7 +71,7 @@ class Device(Node):
         component it works with.
         """
 
-        visitor.visit_device(self)
+        return visitor.visit_device(self)
 
     def check_is_duplicated(self, devices: List[Device]) -> None:
         if self in devices:

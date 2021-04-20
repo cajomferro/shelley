@@ -75,9 +75,13 @@ class ShelleyLanguage(Transformer):
         return TriggerRuleEvent(component, e_name)
 
     def choice(self, args):
-        choice = TriggerRuleChoice()
-        choice.choices.extend(args)
-        return choice
+        if len(args) != 1:
+            choice = TriggerRuleChoice()
+            choice.choices.extend(args)
+            return choice
+        else:
+            return args[0]
+
 
     def expr(self, args):
         if len(args) != 1:

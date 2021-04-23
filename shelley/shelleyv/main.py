@@ -7,6 +7,33 @@ from shelley.automata.view import fsm2dot, fsm2tex
 from pathlib import Path
 import json
 
+def fsm_dump(state_diagram, fp):
+    start = state_diagram["start_state"]
+    state_to_int = {start: 1}
+    int_to_state = [start]
+    curr_state = 1
+    # Build bijection between states and integers
+    for edge in state_diagram["edges"]:
+        for st in (edge["src"], edge["dst"]):
+            st_idx = state_to_int.get(st, None)
+            if st_idx is None:
+                st_idx = curr_state
+                curr_state += 1
+                state_to_int[st] = st_idx
+                int_to_state.append(st)
+    assert len(state_to_int) == len(int_to_state)
+    cardinal = len(state_to_int)
+    states = " ".join('"{}"'.format(x) for x in range(cardinal))
+    print(f"q({cardinal})", "State", states, file=fp)
+    print("---", file=fp)
+    for st in range(cardinal):
+        print(st, file=fp)
+    print("---", file=fp)
+    for edge in state_diagram["edges"]:
+        src = state_to_int[edge["src"]]
+        dst = state_to_int[edge["dst"]]
+        char = '"' + edge["char"] + '"'
+        print(src, dst, char, file=fp)
 
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -90,14 +117,19 @@ def main() -> None:
         parser.error("The '--minimize' option requires '--dfa'")
     d = yaml.load(args.input, Loader=yaml.FullLoader)
     n: regular.NFA[Any, str] = handle_fsm(regular.NFA.from_dict(d), args)
+    fp = sys.stdout if args.output is None else open(args.output, "w")
     if args.format == "json":
-        fp = sys.stdout if args.output is None else open(args.output, "w")
         json.dump(n.as_dict(flatten=True), fp)
         return
     if args.format == "yaml":
-        fp = sys.stdout if args.output is None else open(args.output, "w")
         yaml.dump(n.as_dict(flatten=True), fp)
         return
+    if args.format == "fsm":
+        if not args.no_epsilon and not args.dfa:
+            parser.error("Option '--output fsm' requires either '--dfa' or '--no-epsilon'")
+        fsm_dump(n.as_dict(flatten=True), fp)
+        return
+
 
     if args.format == "tex":
         dot = fsm2tex(n)

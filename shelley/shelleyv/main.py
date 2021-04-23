@@ -7,6 +7,35 @@ from shelley.automata.view import fsm2dot, fsm2tex
 from pathlib import Path
 import json
 
+def mclr2_dump(state_diagram, fp):
+    to_state = lambda x: "Q_" + str(x)
+    to_act = lambda x: x if x is None else x.replace(".", "_")
+    to_edge = lambda act, dst: act + "." + dst if act is not None else dst
+    acts = list(set(to_act(edge["char"]) for edge in state_diagram["edges"] if edge["char"] is not None))
+    acts.sort()
+    if len(acts) > 0:
+        print("act",  ", ".join(acts), ";", file=fp)
+    # Build src -> list [(char, dst)]
+    procs = dict()
+    for edge in state_diagram["edges"]:
+        src = to_state(edge["src"])
+        dst = to_state(edge["dst"])
+        char = to_act(edge["char"])
+        some = procs.get(src, None)
+        if some is None:
+            procs[src] = some = (edge["src"] in state_diagram["accepted_states"], [])
+        _, target = some
+        target.append((char, dst))
+    # Build the procs:
+    if len(procs) > 0:
+        print("proc", file=fp)
+        for (src, (accepted, targets)) in procs.items():
+            targets = [ to_edge(act, dst) for (act, dst) in targets ]
+            if accepted:
+                targets.append("delta")
+            print("\t", src, "=", " + ".join(targets), file=fp)
+    print("init", to_state(state_diagram["start_state"]), ";", file=fp)
+
 def fsm_dump(state_diagram, fp):
     start = state_diagram["start_state"]
     state_to_int = {start: 1}
@@ -128,6 +157,9 @@ def main() -> None:
         if not args.no_epsilon and not args.dfa:
             parser.error("Option '--output fsm' requires either '--dfa' or '--no-epsilon'")
         fsm_dump(n.as_dict(flatten=True), fp)
+        return
+    if args.format == "mclr2":
+        mclr2_dump(n.as_dict(flatten=True), fp)
         return
 
 

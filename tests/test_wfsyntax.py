@@ -42,18 +42,18 @@ yaml_desklamp = """
   name: DeskLamp
   start_with: [level1]
   end_with: $ANY
-  components:
+  subsystems:
     ledA: Led
     ledB: Led
     b: Button
     t: Timer
   operations:
     level1:
-        micro: [b.pressed, b.released, ledA.on, t.started]
+        integration: [b.pressed, b.released, ledA.on, t.started]
         next: [standby1, level2]
     level2:
         next: [standby2]
-        micro:
+        integration:
           - b.pressed
           - b.released
           - xor:
@@ -62,10 +62,10 @@ yaml_desklamp = """
           - t.started
     standby1:
         next: [level1]
-        micro: [t.timeout, ledA.off]
+        integration: [t.timeout, ledA.off]
     standby2:
         next: [level1]
-        micro:
+        integration:
           - xor:
               - [b.pressed, b.released, t.canceled]
               -  t.timeout

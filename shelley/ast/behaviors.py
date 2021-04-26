@@ -115,4 +115,4 @@ class Behaviors(Node):
         return re
 
     def accept(self, visitor: Visitor) -> None:
-        visitor.visit_behaviors(self)
+        return visitor.visit_behaviors(self)

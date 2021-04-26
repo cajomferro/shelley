@@ -61,16 +61,16 @@ wifihttp_yml = """
   name: WiFiHTTP
   start_with: [started, notconnected]
   end_with: $ANY
-  components:
+  subsystems:
       hc: HTTPClient
       wc: WiFiClient
   operations:
     started:
-        micro: [wc.ssid_joined, wc.connected, hc.connected]
+        integration: [wc.ssid_joined, wc.connected, hc.connected]
         next: [send]
     notconnected:
         next: [started]
-        micro:
+        integration:
           xor:
             - [wc.ssid_joined, wc.connected, hc.connect_failed]
             - xor:
@@ -78,16 +78,16 @@ wifihttp_yml = """
               - [wc.ssid_failed]
     send:
         next: [stopped, ok, error]
-        micro:
+        integration:
           xor:
             - hc.get
             - hc.post
     ok:
-        micro: [wc.print_data_ready, hc.response200]
+        integration: [wc.print_data_ready, hc.response200]
         next: [stopped, send]
     error:
         next: [stopped, send]
-        micro:
+        integration:
           xor:
             - [wc.print_data_ready, hc.response401]
             - xor:
@@ -98,7 +98,7 @@ wifihttp_yml = """
                   - [wc.print_data_ready, hc.response500]
                   - wc.print_timeout
     stopped:
-        micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
+        integration: [wc.disconnected, hc.disconnected, wc.ssid_left]
         next: [started, notconnected]
 """
 
@@ -126,7 +126,7 @@ wificlient_assembled = _get_wifi_client_assembled()
 
 SEND_REGEX = r"""    send:
         next: [stopped, ok, error]
-        micro:
+        integration:
           xor:
             - hc.get
             - hc.post
@@ -142,7 +142,7 @@ def replace_send(yml: str, *lines: str) -> str:
 
 def test_compile_wifihttp_event_undeclared() -> None:
     """
-    If the device has components and event is undeclared, it means it doesn't have micro hence is invalid
+    If the device has subsystems and event is undeclared, it means it doesn't have micro hence is invalid
     :return:
     """
 
@@ -164,20 +164,20 @@ def test_compile_wifihttp_event_undeclared() -> None:
             wifihttp_aut, known_devices.__getitem__
         )
     assert (
-        "operation declaration error in ['send']: Integration rule missing. Only declare an integration rule when there are components (system has 2 components).\nHint: write integration rule or remove all components."
+        "operation declaration error in ['send']: Integration rule missing. Only declare an integration rule when there are subsystems (system has 2 subsystems).\nHint: write integration rule or remove all subsystems."
         == str(exc_info.value)
     )
 
 
 def test_compile_wifihttp_event_declared_micro_empty1() -> None:
     """
-    If the device has components and an event is declared, micro must have at least one trigger rule
+    If the device has subsystems and an event is declared, micro must have at least one trigger rule
     :return:
     """
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
-        wifihttp_yml_bad = replace_send(wifihttp_yml, "micro: {}")
+        wifihttp_yml_bad = replace_send(wifihttp_yml, "integration: {}")
 
         # parse yaml and assemble device
         known_devices = {
@@ -201,13 +201,13 @@ def test_compile_wifihttp_event_declared_micro_empty1() -> None:
 
 def test_compile_wifihttp_event_declared_micro_empty2() -> None:
     """
-    If the device has components and an event is declared, micro must have at least one trigger rule
+    If the device has subsystems and an event is declared, micro must have at least one trigger rule
     :return:
     """
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
-        wifihttp_yml_bad = replace_send(wifihttp_yml, "micro: []")
+        wifihttp_yml_bad = replace_send(wifihttp_yml, "integration: []")
         print(wifihttp_yml_bad)
         # parse yaml and assemble device
         known_devices = {
@@ -231,7 +231,7 @@ def test_compile_wifihttp_event_declared_micro_empty2() -> None:
 
 def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
     """
-    If the device has components and an event is declared, it must specify micro
+    If the device has subsystems and an event is declared, it must specify micro
     :return:
     """
 
@@ -255,21 +255,21 @@ def test_compile_wifihttp_event_declared_micro_undeclared() -> None:
 
     assert (
         str(exc_info.value)
-        == "operation declaration error in ['send']: Integration rule missing. Only declare an integration rule when there are components (system has 2 components).\nHint: write integration rule or remove all components."
+        == "operation declaration error in ['send']: Integration rule missing. Only declare an integration rule when there are subsystems (system has 2 subsystems).\nHint: write integration rule or remove all subsystems."
     )
 
 
 def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
     # TODO: Error in operation declaration 'started': unknown operations {'wc.joined'}
     """
-    If the device has components and an event is declared, it must specify micro
+    If the device has subsystems and an event is declared, it must specify micro
     :return:
     """
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:
         # introduce bad syntax on good yml
         wifihttp_yml_bad = replace_send(
-            wifihttp_yml, "micro:", "  xor:", "    - hc.post"
+            wifihttp_yml, "integration:", "  xor:", "    - hc.post"
         )
 
         # parse yaml and assemble device
@@ -288,14 +288,14 @@ def XXX_test_compile_wifihttp_invalid_xor_1_option() -> None:
 
     assert (
         str(exc_info.value)
-        == "Invalid micro rule '{'xor': ['hc.post']}'. Branching (xor) requires 2 options!"
+        == "Invalid micro rule '{'xor': ['hc.post']}'. Branching (xor) integration 2 options!"
     )
 
 
 def XXX_test_compile_wifihttp_invalid_xor_3_options() -> None:
     # There is an error in WiFiClient: unknown operation wc.joined
     """
-    If the device has components and event is declared, it must specify micro
+    If the device has subsystems and event is declared, it must specify micro
     :return:
     """
 
@@ -303,7 +303,7 @@ def XXX_test_compile_wifihttp_invalid_xor_3_options() -> None:
         # introduce bad syntax on good yml
         wifihttp_yml_bad = replace_send(
             wifihttp_yml,
-            "micro:",
+            "integration:",
             "  xor:",
             "    - hc.get",
             "    - hc.get",

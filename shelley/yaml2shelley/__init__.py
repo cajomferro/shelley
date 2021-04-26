@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 
 from shelley.yaml2shelley.util import MySafeLoader
 from shelley.ast.events import Event, Events
+from shelley.ast.actions import Actions, Action
 from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError
 from shelley.ast.devices import Device
 from shelley.ast.components import Components
@@ -34,15 +35,15 @@ from shelley.ast.rules import (
 
 class ShelleyParserError(Exception):
     def __init__(
-        self,
-        *,
-        title: str,
-        reason: Optional[str] = None,
-        hints: Collection[str] = (),
-        parent: Optional["ShelleyParserError"] = None,
+            self,
+            *,
+            title: str,
+            reason: Optional[str] = None,
+            hints: Collection[str] = (),
+            parent: Optional["ShelleyParserError"] = None,
     ) -> None:
         assert (reason is None and parent is not None) or (
-            reason is not None and parent is None
+                reason is not None and parent is None
         )
         self.title = title
         self.reason = reason
@@ -80,11 +81,11 @@ def BehaviorError(reason: Optional[str] = None, hints=(), parent=None):
 
 class OperationDeclError(ShelleyParserError):
     def __init__(
-        self,
-        names=Optional[Iterable[str]],
-        reason: Optional[str] = None,
-        hints: Collection[str] = (),
-        parent: Optional[ShelleyParserError] = None,
+            self,
+            names=Optional[Iterable[str]],
+            reason: Optional[str] = None,
+            hints: Collection[str] = (),
+            parent: Optional[ShelleyParserError] = None,
     ) -> None:
         if names is None:
             title = "operation declaration error"
@@ -127,7 +128,7 @@ def _parse_components(src: Mapping[str, str], components: Components) -> None:
 
 
 def parse_bool_field(
-    field_name: str, default_value: bool, event_name: str, event_data: Any
+        field_name: str, default_value: bool, event_name: str, event_data: Any
 ) -> bool:
     try:
         result = event_data[field_name]
@@ -149,7 +150,7 @@ def parse_bool_field(
             return default_value
 
 
-def _parse_event_list(data: dict, key: str, events: Events,) -> List[Event]:
+def _parse_event_list(data: dict, key: str, events: Events, ) -> List[Event]:
     ANY = "$ANY"
     TITLE = f"section {key!r}"
     HINTS = [
@@ -187,14 +188,14 @@ def _parse_event_list(data: dict, key: str, events: Events,) -> List[Event]:
 
 
 def _parse_event(
-    event_name: str,
-    event_data: dict,
-    events: Events,
-    components: Components,
-    triggers: Triggers,
+        event_name: str,
+        event_data: dict,
+        events: Events,
+        components: Components,
+        triggers: Triggers,
 ) -> Event:
     event: Optional[Event] = None
-    unknown_keys = set(event_data.keys()) - {"micro", "next"}
+    unknown_keys = set(event_data.keys()) - {KEY_MICRO, KEY_NEXT}
     if len(unknown_keys) > 0:
         raise OperationDeclError(
             names=[event_name], reason=f"remove unexpected keys: {unknown_keys!r}"
@@ -202,7 +203,7 @@ def _parse_event(
 
     micro: Optional[Dict] = None
     try:
-        micro = event_data["micro"]
+        micro = event_data[KEY_MICRO]
     except KeyError:
         pass
 
@@ -225,11 +226,11 @@ def _parse_event(
 
 
 def _parse_events(
-    src: Mapping,
-    events: Events,
-    components: Components,
-    triggers: Triggers,
-    behaviors: Behaviors,
+        src: Mapping,
+        events: Events,
+        components: Components,
+        triggers: Triggers,
+        behaviors: Behaviors,
 ) -> None:
     """
 
@@ -267,13 +268,13 @@ def _parse_events(
     for event_name, event_data in src_events.items():
         try:
             e1: Event = events[event_name]
-            for e2 in _parse_event_list(event_data, "next", events):
+            for e2 in _parse_event_list(event_data, KEY_NEXT, events):
                 try:
                     behaviors.create(e1, e2)
                 except BehaviorsListDuplicatedError:
                     raise OperationDeclError(
                         names=[event_name],
-                        reason=f"Repeated operation {e2.name!r} in section 'next'",
+                        reason=f"Repeated operation {e2.name!r} in section '{KEY_NEXT}'",
                         hints=["Ensure that there are no repeated operations in list."],
                     )
         except ShelleyParserError as err:
@@ -281,7 +282,7 @@ def _parse_events(
 
 
 def _parse_triggers(
-    src: Optional[Dict], event: Event, components: Components, triggers: Triggers
+        src: Optional[Dict], event: Event, components: Components, triggers: Triggers
 ) -> None:
     """
 
@@ -294,26 +295,26 @@ def _parse_triggers(
     trigger_rule: Optional[TriggerRule] = None
 
     if (
-        src is not None and len(components) == 0
+            src is not None and len(components) == 0
     ):  # simple device with micro (not allowed!)
         raise OperationDeclError(
             names=[event.name],
-            reason="Invalid integration rule. Only declare an integration rule when there are components (system has 0 components).",
+            reason="Invalid integration rule. Only declare an integration rule when there are subsystems (system has 0 subsystems).",
             hints=["remove integration rule or declare a component."],
         )
     elif (
-        src is None and len(components) > 0
+            src is None and len(components) > 0
     ):  # composition device not declaring micro for this event (not allowed!)
         count = len(components)
         raise OperationDeclError(
             names=[event.name],
-            reason=f"Integration rule missing. Only declare an integration rule when there are components (system has {count} components).",
-            hints=["write integration rule or remove all components."],
+            reason=f"Integration rule missing. Only declare an integration rule when there are subsystems (system has {count} subsystems).",
+            hints=["write integration rule or remove all subsystems."],
         )
     elif src is None and len(components) == 0:  # simple device without micro (ok!)
         trigger_rule = TriggerRuleFired()
     elif (
-        src is not None and len(components) > 0
+            src is not None and len(components) > 0
     ):  # composition device declaring trigger for this event (ok!)
         trigger_rule = _parse_trigger_rule(src, components)
     else:
@@ -328,14 +329,15 @@ def _parse_triggers(
 
 def _parse_trigger_rule(src, components: Components) -> TriggerRule:
     if src is None:
-        raise IntegrationRuleError(reason=f"Micro must not be empty!")
+        raise IntegrationRuleError(reason=f"Section {KEY_MICRO} must not be empty!")
 
     if isinstance(src, str):
         try:
             c_name, e_name = src.split(".")
         except ValueError as err:
             raise IntegrationRuleError(
-                reason=f"Invalid micro rule {src!r}", hints=["Missing component?"]
+                reason=f"Invalid '{KEY_MICRO}' rule {src!r}",
+                hints=["Missing component?"],
             )
         component = components[c_name]
         assert component is not None
@@ -416,15 +418,30 @@ class Parser:
             self._wrap_error(title=f"section {key!r} error", error=err)
 
 
+KEY_NAME = "name"
+KEY_START = "start_with"
+KEY_END = "end_with"
+KEY_SUBSYSTEMS = "subsystems"
+KEY_OPS = "operations"
+KEY_MICRO = "integration"
+KEY_NEXT = "next"
+KEY_TEST_SYS = "test_system"
+KEY_TEST_INT = "test_integration"
+KEY_TEST_OK = "ok"
+KEY_TEST_FAIL = "fail"
+KEY_ACTIONS = "outputs"
+
+
 def _create_device_from_yaml(yaml_code: Dict) -> Device:
     EXPECTED_KEYS = {
-        "start_with",
-        "end_with",
-        "components",
-        "test_system",
-        "test_integration",
-        "operations",
-        "name",
+        KEY_START,
+        KEY_END,
+        KEY_SUBSYSTEMS,
+        KEY_TEST_SYS,
+        KEY_TEST_INT,
+        KEY_OPS,
+        KEY_NAME,
+        KEY_ACTIONS,
     }
     unexpected_keys = set(yaml_code.keys()) - EXPECTED_KEYS
     if len(unexpected_keys) > 0:
@@ -433,36 +450,47 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
             reason=f"Expected: {EXPECTED_KEYS}",
         )
     p = Parser()
-    device_name = p.dict_get_str(yaml_code, "name")
+    device_name = p.dict_get_str(yaml_code, KEY_NAME)
 
-    device_components = yaml_code.get("components", dict())
-    device_events = yaml_code.get("operations", dict())
-
-    test_macro = yaml_code.get("test_system", {"ok": dict(), "fail": dict()})
+    device_components = yaml_code.get(KEY_SUBSYSTEMS, dict())
+    device_events = yaml_code.get(KEY_OPS, dict())
 
     try:
-        test_macro["ok"]
+        device_actions = yaml_code.get(KEY_ACTIONS, dict())
     except KeyError:
-        raise SystemDeclError("Missing key 'ok' for test macro!")
+        device_actions = dict()
+        pass  # actions are optional for now
+
+    test_macro = yaml_code.get(
+        KEY_TEST_SYS, {KEY_TEST_OK: dict(), KEY_TEST_FAIL: dict()}
+    )
 
     try:
-        test_macro["fail"]
+        test_macro[KEY_TEST_OK]
     except KeyError:
-        raise SystemDeclError("Missing key 'fail' for test macro!")
-
-    test_micro = yaml_code.get("test_integration", {"ok": dict(), "fail": dict()})
+        raise SystemDeclError(f"Missing key '{KEY_TEST_OK}' for {KEY_TEST_SYS}!")
 
     try:
-        test_micro["ok"]
+        test_macro[KEY_TEST_FAIL]
     except KeyError:
-        raise SystemDeclError("Missing key 'ok' for test micro!")
+        raise SystemDeclError(f"Missing key '{KEY_TEST_FAIL}' for {KEY_TEST_SYS}!")
+
+    test_micro = yaml_code.get(
+        KEY_TEST_INT, {KEY_TEST_OK: dict(), KEY_TEST_FAIL: dict()}
+    )
 
     try:
-        test_micro["fail"]
+        test_micro[KEY_TEST_OK]
     except KeyError:
-        raise SystemDeclError("Missing key 'fail' for test micro!")
+        raise SystemDeclError(f"Missing key '{KEY_TEST_OK}' for {KEY_TEST_INT}!")
+
+    try:
+        test_micro[KEY_TEST_FAIL]
+    except KeyError:
+        raise SystemDeclError(f"Missing key '{KEY_TEST_FAIL}' for {KEY_TEST_INT}!")
 
     events: Events = Events()
+    actions: Actions = Actions()
     behaviors: Behaviors = Behaviors()
     components: Components = Components()
     triggers: Triggers = Triggers()
@@ -474,10 +502,9 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
         triggers=triggers,
         behaviors=behaviors,
     )
-    starts_with = set(
-        ev.name for ev in _parse_event_list(yaml_code, "start_with", events)
-    )
-    ends_with = set(ev.name for ev in _parse_event_list(yaml_code, "end_with", events))
+
+    starts_with = set(ev.name for ev in _parse_event_list(yaml_code, KEY_START, events))
+    ends_with = set(ev.name for ev in _parse_event_list(yaml_code, KEY_END, events))
     for evt in events.list():
         evt.is_start = evt.name in starts_with
         evt.is_final = evt.name in ends_with
@@ -501,7 +528,14 @@ def _create_device_from_yaml(yaml_code: Dict) -> Device:
     # at this point, this must be true
     assert len(events) == len(triggers)
 
-    device = Device(device_name, events, behaviors, triggers, components=components,)
+    for action_name in device_actions:
+        if action_name not in events.list_str():
+            raise SystemDeclError(f"Undeclared output event '{action_name}'!")
+        actions.add(Action(action_name))
+
+    device = Device(
+        device_name, events, behaviors, triggers, components=components, actions=actions
+    )
 
     device.test_macro = test_macro
     device.test_micro = test_micro

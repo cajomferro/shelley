@@ -1,5 +1,6 @@
 from decorators import *
 from native.generic import Native
+
 # https://docs.python.org/3/library/typing.html#callable
 from typing import Callable
 

@@ -20,17 +20,18 @@ from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 from shelley import yaml2shelley
 
+from shelley.parser import parser as lark_parser, ShelleyLanguage
 
 logger = logging.getLogger("shelleyc")
 
 
 class DeviceMapping:
     def __init__(
-        self,
-        *,
-        files: Optional[Dict[str, Path]] = None,
-        binary: bool = False,
-        base_dir: Path = Path.cwd(),
+            self,
+            *,
+            files: Optional[Dict[str, Path]] = None,
+            binary: bool = False,
+            base_dir: Path = Path.cwd(),
     ):
         self.files = dict() if files is None else files
         self.binary = binary
@@ -54,7 +55,7 @@ class DeviceMapping:
 
 
 def get_dest_path(
-    args_binary: bool, args_output_dir: str, args_src_filepath: str, device_name: str
+        args_binary: bool, args_output_dir: str, args_src_filepath: str, device_name: str
 ) -> str:
     if args_output_dir is None:
         output_dir = os.path.dirname(args_src_filepath)
@@ -80,7 +81,7 @@ def get_dest_path(
 
 
 def _get_known_devices(
-    device: ShelleyDevice, uses: Dict[str, str], binary: bool = False
+        device: ShelleyDevice, uses: Dict[str, str], binary: bool = False
 ) -> Dict[str, CheckedDevice]:
     known_devices: Dict[str, CheckedDevice] = {}
 
@@ -108,18 +109,18 @@ def _get_ext(binary: bool = False) -> str:
 
 
 def compile_shelley(
-    *,
-    src_path: Path,
-    uses_base_dir: Path,
-    uses: Dict[str, str],
-    dst_path: Optional[Path] = None,
-    binary: bool = False,
-    integration: Optional[Path] = None,
-    dump_timings: Optional[IO[str]] = None,
-    save_output: bool = False,
-    slow_check: bool = False,
-    skip_testing: bool = False,
-    skip_checks: bool = False,
+        *,
+        src_path: Path,
+        uses_base_dir: Path,
+        uses: Dict[str, str],
+        dst_path: Optional[Path] = None,
+        binary: bool = False,
+        integration: Optional[Path] = None,
+        dump_timings: Optional[IO[str]] = None,
+        save_output: bool = False,
+        slow_check: bool = False,
+        skip_testing: bool = False,
+        skip_checks: bool = False,
 ) -> Path:
     """
 
@@ -130,12 +131,27 @@ def compile_shelley(
     :return:
     """
 
-    try:
-        shelley_device: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(src_path)
-    except yaml2shelley.ShelleyParserError as error:
-        if settings.VERBOSE:
-            logger.exception(error)
-        raise CompilationError(f"Parsing error: {error}")
+    src_ext = src_path.suffix.split(".")[1]
+    if  src_ext in settings.EXT_SHELLEY_SOURCE_YAML:
+        try:
+            shelley_device: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(src_path)
+        except yaml2shelley.ShelleyParserError as error:
+            if settings.VERBOSE:
+                logger.exception(error)
+            raise CompilationError(f"YAML Parsing error: {error}")
+
+    elif src_ext in settings.EXT_SHELLEY_SOURCE_LARK:
+        try:
+            with src_path.open() as f:
+                tree = lark_parser.parse(f.read())
+            shelley_device: ShelleyDevice = ShelleyLanguage().transform(tree)
+        except Exception as error:
+            if settings.VERBOSE:
+                logger.exception(error)
+            raise CompilationError(f"Lark Parsing error: {error}")
+
+    else:
+        raise CompilationError(f"Unknown source type: {src_ext}")
 
     if dst_path is None:
         dst_path = src_path.parent / (src_path.stem + "." + _get_ext(binary))
@@ -164,7 +180,7 @@ def compile_shelley(
         save_timings(dump_timings, dev)
 
     if (
-        integration is not None and dev.internal is not None
+            integration is not None and dev.internal is not None
     ):  # do this only for compound devices
         logger.debug("Generating integration diagram...")
 

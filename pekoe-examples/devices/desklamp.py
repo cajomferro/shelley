@@ -16,17 +16,23 @@ class DeskLampDevice(Device):  # implements device SmartButton
     timer = None  # type: Timer
     button = None  # type: Button
 
-    def __init__(self, driver_id: str, timer: Timer, button: Button, ledA: Led, ledB: Led):
+    def __init__(
+        self, driver_id: str, timer: Timer, button: Button, ledA: Led, ledB: Led
+    ):
         Device.__init__(self, driver_id)
         self.ledA = ledA
         self.ledB = ledB
         self.timer = timer
         self.button = button
-        self.button.subscribe(event_id=Button.PRESSED, device_callback=self.on_button_pressed1)
+        self.button.subscribe(
+            event_id=Button.PRESSED, device_callback=self.on_button_pressed1
+        )
 
     @callback(Button.PRESSED)
     def on_button_pressed1(self):
-        self.button.subscribe(event_id=Button.RELEASED, device_callback=self.on_button_released1)
+        self.button.subscribe(
+            event_id=Button.RELEASED, device_callback=self.on_button_released1
+        )
 
     @callback(Button.RELEASED)
     def on_button_released1(self):
@@ -35,14 +41,20 @@ class DeskLampDevice(Device):  # implements device SmartButton
 
     @callback(Led.ON)
     def on_ledA_on(self):
-        self.timer.subscribe(event_id=Timer.STARTED, device_callback=self.on_timer_started1)
+        self.timer.subscribe(
+            event_id=Timer.STARTED, device_callback=self.on_timer_started1
+        )
         self.timer.start(5)
 
     @callback(Timer.STARTED)
     @raise_event(LEVEL1)
     def on_timer_started1(self):
-        self.timer.subscribe(event_id=Timer.TIMEOUT, device_callback=self.on_timer_timeout)
-        self.button.subscribe(event_id=Button.PRESSED, device_callback=self.on_button_pressed2)
+        self.timer.subscribe(
+            event_id=Timer.TIMEOUT, device_callback=self.on_timer_timeout
+        )
+        self.button.subscribe(
+            event_id=Button.PRESSED, device_callback=self.on_button_pressed2
+        )
         self.raise_event(self.LEVEL1)
 
     @callback(Timer.TIMEOUT)
@@ -51,16 +63,22 @@ class DeskLampDevice(Device):  # implements device SmartButton
         self.button.unsubscribe()  # TODO: is there an alternative for this??
         self.ledA.turn_off()
         self.ledB.turn_off()
-        self.button.subscribe(event_id=Button.PRESSED, device_callback=self.on_button_pressed1)
+        self.button.subscribe(
+            event_id=Button.PRESSED, device_callback=self.on_button_pressed1
+        )
         self.raise_event(self.STANDBY)
 
     @callback(Button.PRESSED)
     def on_button_pressed2(self):
-        self.button.subscribe(event_id=Button.RELEASED, device_callback=self.on_button_released2)
+        self.button.subscribe(
+            event_id=Button.RELEASED, device_callback=self.on_button_released2
+        )
 
-    @ callback(Button.RELEASED)
+    @callback(Button.RELEASED)
     def on_button_released2(self):
-        self.timer.subscribe(event_id=Timer.CANCELED, device_callback=self.on_timer_canceled)
+        self.timer.subscribe(
+            event_id=Timer.CANCELED, device_callback=self.on_timer_canceled
+        )
         self.timer.cancel()
 
     # FIRST ALTERNATIVE [CORRECT ACCORDING TO SPEC] --> PREPARING TO MATCH LEVEL2

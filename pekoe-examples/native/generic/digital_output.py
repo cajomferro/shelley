@@ -3,7 +3,6 @@ from native.generic import Native
 
 
 class DigitalOutput(Native):
-
     def __init__(self):
         super()
 

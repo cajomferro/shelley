@@ -30,5 +30,3 @@ class TimerDevice(Device):
     @raise_event(TIMEOUT)
     def timeout(self):
         self.raise_event(self.TIMEOUT)
-
-

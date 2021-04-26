@@ -23,7 +23,7 @@ class Trigger(Node):
         current class name. This way we let the visitor know the class of the
         component it works with.
         """
-        visitor.visit_trigger(self)
+        return visitor.visit_trigger(self)
 
 
 class TriggersListEmptyError(Exception):
@@ -88,4 +88,4 @@ class Triggers(Node):
         return repr(self._data)
 
     def accept(self, visitor: Visitor) -> None:
-        visitor.visit_triggers(self)
+        return visitor.visit_triggers(self)

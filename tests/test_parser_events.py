@@ -61,15 +61,15 @@ wifihttp_yml = """
   name: WiFiHTTP
   start_with: $ANY
   end_with: $ANY
-  components:
+  subsystems:
       hc: HTTPClient
       wc: WiFiClient
   operations:
     started:
-        micro: [wc.joined, wc.connected, hc.connected]
+        integration: [wc.joined, wc.connected, hc.connected]
         next: [send]
     notconnected:
-        micro:
+        integration:
           xor:
             - [wc.joined, wc.connected, hc.connect_failed]
             - xor:
@@ -77,17 +77,17 @@ wifihttp_yml = """
               - [wc.ssid_failed]
         next: [started]
     send:
-        micro:
+        integration:
           xor:
             - hc.get
             - hc.post
         next: [stopped, ok, error]
     ok:
         next: [send, stopped]
-        micro: [wc.print_data_ready, hc.response200]
+        integration: [wc.print_data_ready, hc.response200]
     error:
         next: [send, stopped]
-        micro:
+        integration:
           xor:
             - [wc.print_data_ready, hc.response401]
             - xor:
@@ -99,7 +99,7 @@ wifihttp_yml = """
                   - wc.print_timeout
     stopped:
         next: [started, notconnected]
-        micro: [wc.disconnected, hc.disconnected, wc.ssid_left]
+        integration: [wc.disconnected, hc.disconnected, wc.ssid_left]
 """
 
 
@@ -145,7 +145,7 @@ def test_start_missing_true() -> None:
 
 
 def test_start_not_bool() -> None:
-    bad_expr:str= "THIS_IS_WRONG"
+    bad_expr: str = "THIS_IS_WRONG"
     wifihttp_yml_bad = replace_start_with(wifihttp_yml, expr=bad_expr)
 
     with pytest.raises(yaml2shelley.ShelleyParserError) as exc_info:

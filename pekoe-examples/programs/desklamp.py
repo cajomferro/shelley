@@ -7,7 +7,6 @@ from vm_loadings.desklamp import desklamp
 
 
 class DeskLampExample:
-
     def __init__(self):
         desklamp.subscribe(event_id=desklamp.LEVEL1, device_callback=self.on_level1)
         print("Hello! Press the button to turn on")

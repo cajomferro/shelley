@@ -26,17 +26,17 @@ bad_composition_yml_src: str = """
 name: Composition
 start_with: [go, bad]
 end_with: $ANY
-components:
+subsystems:
     s: Simple
 operations:
     go:
-        micro: [s.on]
+        integration: [s.on]
         next: [stop]
     stop:
-        micro: [s.off]
+        integration: [s.off]
         next: [go]
     bad:
-        micro: [s.badbad, s.badbadbad] # WRONG! UNDECLARED OPERATION IN THE SUBSYSTEM!
+        integration: [s.badbad, s.badbadbad] # WRONG! UNDECLARED OPERATION IN THE SUBSYSTEM!
         next: [bad]
 """
 
@@ -44,14 +44,14 @@ good_composition_yml_src: str = """
 name: Composition
 start_with: [go]
 end_with: $ANY
-components:
+subsystems:
     s: Simple
 operations:
     go:
-        micro: [s.on]
+        integration: [s.on]
         next: [stop]
     stop:
-        micro: [s.off]
+        integration: [s.off]
         next: [go]
 """
 
@@ -86,7 +86,10 @@ def test_undeclared_operation_in_subsystem() -> None:
             composition_aut, known_devices.__getitem__
         )
 
-    assert UNDECLARED_OPERATION_IN_SUBSYSTEM('bad', {'s.badbad', 's.badbadbad'}) == str(exc_info.value)
+    assert UNDECLARED_OPERATION_IN_SUBSYSTEM("bad", {"s.badbad", "s.badbadbad"}) == str(
+        exc_info.value
+    )
+
 
 # def test_unknown_integration_operation_bad_tests() -> None:
 #     """

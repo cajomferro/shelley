@@ -25,7 +25,7 @@ class TriggerRuleFired(TriggerRule):
         component it works with.
         """
 
-        visitor.visit_trigger_rule_fired(self)
+        return visitor.visit_trigger_rule_fired(self)
 
 
 @dataclass(order=True)
@@ -40,7 +40,7 @@ class TriggerRuleEvent(TriggerRule):
         component it works with.
         """
 
-        visitor.visit_trigger_rule_event(self)
+        return visitor.visit_trigger_rule_event(self)
 
     def check_wf_syntax(
         self, devices: Dict[str, Device], components: Components
@@ -91,7 +91,7 @@ class TriggerRuleSequence(TriggerRule):
         component it works with.
         """
 
-        visitor.visit_trigger_rule_sequence(self)
+        return visitor.visit_trigger_rule_sequence(self)
 
 
 @dataclass(order=True)
@@ -108,7 +108,7 @@ class TriggerRuleChoice(TriggerRule):
         component it works with.
         """
 
-        visitor.visit_trigger_rule_choice(self)
+        return visitor.visit_trigger_rule_choice(self)
 
 
 class TriggerRuleDeviceNotDeclaredError(Exception):

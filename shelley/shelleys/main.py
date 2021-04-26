@@ -33,21 +33,35 @@ def create_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Path to the generated JSON file",
     )
-    parser.add_argument("--int-nfa", action="store_true", help="Calculate integration NFA")
-    parser.add_argument("--int-nfa-no-sink", action="store_true", help="Calculate integration NFA without sink states")
-    parser.add_argument("--int-dfa", action="store_false", help="Calculate integration DFA")
-    parser.add_argument("--int-dfa-min-no-sink", action="store_false",
-                        help="Calculate integration DFA minimized and without sink states")
+    parser.add_argument(
+        "--int-nfa", action="store_true", help="Calculate integration NFA"
+    )
+    parser.add_argument(
+        "--int-nfa-no-sink",
+        action="store_true",
+        help="Calculate integration NFA without sink states",
+    )
+    parser.add_argument(
+        "--int-dfa", action="store_false", help="Calculate integration DFA"
+    )
+    parser.add_argument(
+        "--int-dfa-min-no-sink",
+        action="store_false",
+        help="Calculate integration DFA minimized and without sink states",
+    )
 
     return parser
 
 
-def handle_fsm(n: regular.NFA[Any, str], out_device: OutDevice,
-               integration: bool = False,
-               int_nfa: bool = True,
-               int_nfa_no_sink: bool = True,
-               int_dfa: bool = False,
-               int_dfa_min_no_sink: bool = False) -> None:
+def handle_fsm(
+    n: regular.NFA[Any, str],
+    out_device: OutDevice,
+    integration: bool = False,
+    int_nfa: bool = True,
+    int_nfa_no_sink: bool = True,
+    int_dfa: bool = False,
+    int_dfa_min_no_sink: bool = False,
+) -> None:
     if not integration:
         out_device.nfa = len(n)
     else:

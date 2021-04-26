@@ -30,11 +30,10 @@ call: ident "." ident ";"
 
 seq: expr expr
 
-choice: block "+" block
+choice: block "+" choice | block
 
 loop: "loop" block
 
-modifier : initial | final
 initial : "initial"
 final : "final"
 modifiers:
@@ -45,7 +44,7 @@ modifiers:
 
 ident: CNAME
 
-next: ("->" ident)* -> next_evts
+next: "->" [ident ("," ident)* [","]] -> next_evts
 
 sig:  [modifiers] ident next
 
@@ -53,12 +52,12 @@ op : sig block
 
 ops : "{" op+ "}"
 
-key_val: ident ":" ident
-key_vals: [key_val ("," key_val)* [","]]
+name_type: ident ":" ident
+uses: [name_type ("," name_type)* [","]]
 
 sys:
-| ident "(" key_vals ")" ops -> new_sys
-| "abstract"  ident "{" sig+ "}" -> abs_sys
+| ident "(" uses ")" ops -> new_sys
+| "base"  ident "{" (sig ";")+ "}" -> base_sys
 
 %import common.CNAME
 %import common.WS
@@ -71,26 +70,33 @@ class ShelleyLanguage(Transformer):
         return TriggerRuleSequence(*args)
 
     def call(self, args):
-        return TriggerRuleEvent(*args)
+        c_name, e_name = args
+        component = self.components[c_name]
+        return TriggerRuleEvent(component, e_name)
 
     def choice(self, args):
-        choice = TriggerRuleChoice()
-        choice.choices.extend(args)
-        return choice
+        if len(args) != 1:
+            choice = TriggerRuleChoice()
+            choice.choices.extend(args)
+            return choice
+        else:
+            return args[0]
+
 
     def expr(self, args):
         if len(args) != 1:
             return None
         return args[0]
 
-    def key_val(self, args):
+    def name_type(self, args):
         return args
 
-    def key_vals(self, kv):
-        result = Components()
-        for (k, v) in kv:
-            result.create(k, v)
-        return result
+    def uses(self, name_type):
+
+        self.components = Components()
+        for (name, type) in name_type:
+            self.components.create(name, type)
+        return self.components
 
     def sig(self, args):
         modifiers, name, nxt = args
@@ -102,6 +108,7 @@ class ShelleyLanguage(Transformer):
 
     def initial(self, args):
         return INITIAL
+
     def final(self, args):
         return FINAL
 
@@ -132,16 +139,21 @@ class ShelleyLanguage(Transformer):
         return name.value
 
     def new_sys(self, args):
-        # CNAME "(" key_vals ")" ops
         name, components, (evts, triggers, behaviors) = args
-        return Device(name=name,
+
+        device = Device(name=name,
             events=evts,
             behaviors=behaviors,
             triggers=triggers,
             components=components,
         )
 
-    def abs_sys(self, args):
+        device.test_macro = dict()
+        device.test_micro = dict()
+
+        return device
+
+    def base_sys(self, args):
         name, *sigs = args
         events = Events()
         triggers = Triggers()
@@ -150,18 +162,25 @@ class ShelleyLanguage(Transformer):
             for n in nxt:
                 behaviors.create(copy.copy(evt), Event(name=n, is_start=False, is_final=True))
             events.add(evt)
-        return Device(
+            triggers.create(evt, TriggerRuleFired())
+
+        device = Device(
             name=name,
             events=events,
             behaviors=behaviors,
             triggers=triggers,
         )
 
+        device.test_macro = dict()
+        device.test_micro = dict()
+
+        return device
+
 
 def main():
 
     LED = """
-    abstract Led {
+    base Led {
     initial final on -> off
 
     initial final off -> on

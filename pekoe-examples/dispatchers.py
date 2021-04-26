@@ -13,7 +13,9 @@ class NativeDispatcher:
     def next(self):
         event = None  # type: NativeEvent
         try:
-            event = self.events_queue.popleft()  # we could also order it by timestamp if we want :)
+            event = (
+                self.events_queue.popleft()
+            )  # we could also order it by timestamp if we want :)
             event.callback()
         except IndexError:
             pass
@@ -33,7 +35,9 @@ class Dispatcher:
     def next(self):
         event = None  # type: Event
         try:
-            event = self.events_queue.popleft()  # we could also order it by timestamp if we want :)
+            event = (
+                self.events_queue.popleft()
+            )  # we could also order it by timestamp if we want :)
             event.callback()
         except IndexError:
             pass

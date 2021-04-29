@@ -22,7 +22,7 @@ snakeviz="^2.1.0"
 lark="^0.11.1"
 
 [tool.poetry.scripts]
-parser = "shelley.parser:main"
+ltl = "shelley.ltlf:main"
 yaml2shelley = "shelley.yaml2shelley.yaml2lark:main"
 shelleyc = "shelley.shelleyc.main:main"
 shelleyv = "shelley.shelleyv.main:main"
@@ -30,4 +30,3 @@ shelleys = "shelley.shelleys.main:main"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
-

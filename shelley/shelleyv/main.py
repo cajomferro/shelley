@@ -18,16 +18,8 @@ def svm_dump(state_diagram, fp):
         else:
             values_str = "{" +  ", ".join(str(x) for x in values) + "}"
         print(f"{INDENT}{name}: {values_str};", file=fp)
-    def add_edge2(src, char, dst):
-        print(" " * 10, "state", "=", src, end='', file=fp)
-        if char is not None:
-            print(" &", "action =", to_act(edge["char"]), end="", file=fp)
-        print(" :", dst, ";", file=fp)
-    def add_edge2(src, char, dst):
-        act = f" & action={char}" if char is not None else ""
-        done = "yes" if dst in state_diagram["accepted_states"] else "no"
-        print(f"( (state={src}{act}) -> (state={dst}) & action=action & end={done})", file=fp)
     def add_edge(src, char, dst):
+        char = to_act(char)
         act = f" & action={char}" if char is not None else ""
         print(f"state={src}{act}: {dst};", file=fp)
     def init_var(name, value):
@@ -44,29 +36,41 @@ def svm_dump(state_diagram, fp):
         set( x["src"] for x in state_diagram["edges"] ))
     )
     states.sort()
-    states.append("eof")
     decl_var("state", states)
     print("ASSIGN", file=fp)
-    init_var("action", "{" + ", ".join(acts) + "}")
+    ALL_ACTS = "{" + ", ".join(acts) + "}"
+    init_var("action", ALL_ACTS)
     init_var("state", state_diagram["start_state"])
-    init_var("end", "TRUE" if state_diagram["start_state"] in state_diagram["accepted_states"] else "FALSE")
+    init_var("end", "{TRUE, FALSE}" if state_diagram["start_state"] in state_diagram["accepted_states"] else "FALSE")
     print(f"{INDENT}next(state) := case", file=fp)
+    print(f"{INDENT}{INDENT}end: state; -- finished, no change in state", file=fp)
     for edge in state_diagram["edges"]:
         print(f"{INDENT}{INDENT}", end="", file=fp)
         src, char, dst = edge["src"], edge["char"], edge["dst"]
         add_edge(src, char, dst)
-    print(f"{INDENT}{INDENT}TRUE: eof;", file=fp)
+    #print(f"{INDENT}{INDENT}TRUE: eof;  -- (for NFAs only)", file=fp)
     print(f"{INDENT}esac;", file=fp)
+    print(f"{INDENT}next(action) := case", file=fp)
+    print(f"{INDENT}{INDENT}end : action;", file=fp)
+    print(f"{INDENT}{INDENT}TRUE : {ALL_ACTS};", file=fp)
+    print(f"{INDENT}esac;", file=fp)
+
     print(f"{INDENT}next(end) := case", file=fp)
+    print(f"{INDENT}{INDENT}end: end; -- finished, nothing to do", file=fp)
     for edge in state_diagram["edges"]:
         src, char, dst = edge["src"], edge["char"], edge["dst"]
         if dst in state_diagram["accepted_states"]:
+            char = to_act(char)
             act = f" & action={char}" if char is not None else ""
             accepted = state_diagram["accepted_states"]
-            print(f"{INDENT}{INDENT}state={src}{act}: TRUE; -- dst={dst} in {accepted}", file=fp)
-    print(f"{INDENT}{INDENT}TRUE : FALSE;", file=fp)
+            print(f"{INDENT}{INDENT}state={src}{act}: {{TRUE,FALSE}}; -- dst={dst} in {accepted}", file=fp)
+    print(f"{INDENT}{INDENT}TRUE: FALSE;", file=fp)
     print(f"{INDENT}esac;", file=fp)
-    print("LTLSPEC action = level1 -> X(action = standby1 -> X (end = TRUE));", file=fp)
+    print("FAIRNESS end;", file=fp)
+    print("LTLSPEC F(end); -- sanity check", file=fp)
+    print("LTLSPEC  G(end -> G(end) & X(end)); -- sanity check", file=fp)
+
+    #print("LTLSPEC action = level1 -> X(action = standby1 -> X (end = TRUE));", file=fp)
 
 
 def mclr2_dump(state_diagram, fp):

@@ -1,3 +1,5 @@
+
+from shelley.parser import parse
 from lark import Lark, Transformer
 
 from dataclasses import dataclass
@@ -20,11 +22,26 @@ def paren(elem):
 class Formula:
     pass
 
+def fold(op, zero, args):
+    result = None
+    for arg in args:
+        if result is None:
+            result =  arg
+        else:
+            result = op(result, arg)
+    if result is None:
+        return zero
+    else:
+        return result
+
 @dataclass
 class And(Formula):
     left: Formula
     right: Formula
     __str__ = binop("&")
+    @classmethod
+    def make(cls, args):
+        return fold(cls, Bool(True), args)
 
 @dataclass
 class Equal(Formula):
@@ -37,6 +54,9 @@ class Or(Formula):
     left: Formula
     right: Formula
     __str__ = binop("|")
+    @classmethod
+    def make(cls, args):
+        return fold(cls, Bool(True), args)
 
 @dataclass
 class Not(Formula):
@@ -228,9 +248,61 @@ class LTLParser(Transformer):
     def atom(self, args):
         return args[0]
 
+@dataclass
+class Op:
+    targets: list
+    is_final: bool
+    @classmethod
+    def make(cls, is_final=False):
+        return cls([], is_final)
+    def add(self, name):
+        self.targets.append(name)
+
+def generate_spec(filename, prefix):
+    targets = dict()
+    dev = parse(open(filename))
+    for (src, dst) in dev.behaviors.as_list_tuples():
+        dsts = targets.get(src, None)
+        if dsts is None:
+            evt = dev.events.find_by_name(src)
+            targets[src] = dsts = Op.make(evt.is_final)
+        dsts.add(dst)
+    forms = []
+    def mk_act(name):
+        return And(
+            Equal(Action("action"), Action(prefix + "_" + name)),
+            Not(Action("end"))
+        )
+    def tau():
+        return And(
+            And.make(
+                Not(Equal(Action("action"), Action(prefix + "_" + elem)))
+                for elem in targets
+            ),
+            Not(Action("end"))
+        )
+
+    for (src, op) in targets.items():
+        args = list(map(mk_act, op.targets))
+        if op.is_final:
+            args.append(Action("end"))
+        will_happen = Or.make(args)
+        f = Always(
+            Implies(mk_act(src), Next(Until(tau(), will_happen)))
+        )
+        forms.append(f)
+    for f in forms:
+        print("LTLSPEC", f, ";")
+    # EXAMPLE2 = "G( ledA.on -> (F ledA.off) )"
+    # tree = parser.parse(EXAMPLE2)
+    # print(repr(LTLParser().transform(tree)))
+    # print(ltlf_to_ltl(LTLParser().transform(tree), Action("end")))
+
 def main():
-    EXAMPLE1 = "(foo | ! (X (foo.bar & true))) U what -> true <-> false"
-    EXAMPLE2 = "G( ledA.on -> (F ledA.off) )"
-    tree = parser.parse(EXAMPLE2)
-    print(repr(LTLParser().transform(tree)))
-    print(ltlf_to_ltl(LTLParser().transform(tree), Action("end")))
+    import sys
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument("--input", "-i")
+    parser.add_argument("--prefix", "-p")
+    args = parser.parse_args()
+    generate_spec(filename=args.input, prefix=args.prefix)

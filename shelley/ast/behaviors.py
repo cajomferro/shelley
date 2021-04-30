@@ -107,6 +107,9 @@ class Behaviors(Node):
             pass
         return re
 
+    def __iter__(self):
+        return iter(self._data)
+
     def as_list_tuples(self,) -> List[Tuple[str, str]]:
         return [(str(elem.e1), str(elem.e2)) for elem in self.list()]
 

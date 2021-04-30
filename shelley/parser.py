@@ -176,6 +176,9 @@ class ShelleyLanguage(Transformer):
 
         return device
 
+def parse(fp):
+    tree = parser.parse(fp.read())
+    return ShelleyLanguage().transform(tree)
 
 def main():
 

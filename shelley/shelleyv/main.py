@@ -6,6 +6,11 @@ from karakuri import regular
 from shelley.automata.view import fsm2dot, fsm2tex
 from pathlib import Path
 import json
+
+def ltl_dump(state_diagram, fp, prefix):
+    print(f"LTLSPEC TRUE; -- {prefix}", file=fp)
+
+
 # LTLSPEC (action=level1) -> (action=standby1 | action=level1);
 def svm_dump(state_diagram, fp):
     to_state = lambda x: "Q_" + str(x)
@@ -154,6 +159,12 @@ def create_parser() -> argparse.ArgumentParser:
         default="dot",
         help="Specify the output format (defaults to dot) pick 'tex' or any from https://www.graphviz.org/doc/info/output.html",
     )
+    parser.add_argument(
+        "--prefix",
+        "-p",
+        default=None,
+        help="Specify the prefix of the system to use (requires -f ltl)."
+    )
     parser.add_argument("--no-sink", action="store_true", help="Remove sink states")
     parser.add_argument("--minimize", action="store_true", help="Minimize the DFA")
     parser.add_argument(
@@ -228,9 +239,14 @@ def main() -> None:
         mclr2_dump(n.as_dict(flatten=True), fp)
         return
     if args.format == "svm":
-        # if not args.no_epsilon and not args.dfa:
-        #     parser.error("Option '--output svm' requires either '--dfa' or '--no-epsilon'")
+        if not args.dfa:
+            parser.error("Option '--output svm' requires '--dfa'")
         svm_dump(n.as_dict(flatten=True), fp)
+        return
+    if args.format == "ltl":
+        if args.prefix is None:
+            parser.error("Option '--output ltl' requires '--prefix'")
+        ltl_dump(n, fp, prefix=args.prefix)
         return
 
 

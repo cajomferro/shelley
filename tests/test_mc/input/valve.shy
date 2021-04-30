@@ -1,0 +1,6 @@
+base Valve {
+
+  initial final on -> off;
+
+  final off -> on;
+}

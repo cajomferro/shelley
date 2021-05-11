@@ -137,33 +137,35 @@ def WeakUntil(left, right):
     "Left must hold until right; right may never happen."
 
 
-def ltlf_to_ltl(formula, end):
-    if isinstance(formula, Bool):
-        return formula
-    if isinstance(formula, Action):
-        return And(Equal(Action("action"), formula), Not(end))
-    elif isinstance(formula, Not):
-        return Not(ltlf_to_ltl(formula.formula, end))
-    elif isinstance(formula, Or):
-        return Or(ltlf_to_ltl(formula.left, end), ltlf_to_ltl(formula.right, end))
-    elif isinstance(formula, Equal):
-        return Equal(ltlf_to_ltl(formula.left, end), ltlf_to_ltl(formula.right, end))
-    elif isinstance(formula, And):
-        return And(ltlf_to_ltl(formula.left, end), ltlf_to_ltl(formula.right, end))
-    elif isinstance(formula, Implies):
-        return Implies(ltlf_to_ltl(formula.left, end), ltlf_to_ltl(formula.right, end))
-    elif isinstance(formula, Next):
-        return Next(And(ltlf_to_ltl(formula.formula, end), Not(end)))
-    elif isinstance(formula, Eventually):
-        return Eventually(And(ltlf_to_ltl(formula.formula, end), Not(end)))
-    elif isinstance(formula, Always):
-        return Always(Or(ltlf_to_ltl(formula.formula, end), end))
-    elif isinstance(formula, Until):
-        return Until(
-            left=ltlf_to_ltl(formula.left, end),
-            right=And(ltlf_to_ltl(formula.right, end), Not(end))
-        )
-    raise TypeError(formula)
+def ltlf_to_ltl(formula, eos_var, action_var):
+    def rec(formula):
+        if isinstance(formula, Bool):
+            return formula
+        if isinstance(formula, Action):
+            return And(Equal(action_var, formula), Not(eos_var))
+        elif isinstance(formula, Not):
+            return Not(rec(formula.formula))
+        elif isinstance(formula, Or):
+            return Or(rec(formula.left), rec(formula.right))
+        elif isinstance(formula, Equal):
+            return Equal(rec(formula.left), rec(formula.right))
+        elif isinstance(formula, And):
+            return And(rec(formula.left), rec(formula.right))
+        elif isinstance(formula, Implies):
+            return Implies(rec(formula.left), rec(formula.right))
+        elif isinstance(formula, Next):
+            return Next(And(rec(formula.formula), Not(eos_var)))
+        elif isinstance(formula, Eventually):
+            return Eventually(And(rec(formula.formula), Not(eos_var)))
+        elif isinstance(formula, Always):
+            return Always(Or(rec(formula.formula), eos_var))
+        elif isinstance(formula, Until):
+            return Until(
+                left=rec(formula.left),
+                right=And(rec(formula.right), Not(eos_var))
+            )
+        raise TypeError(formula)
+    return rec(formula)
 
 parser = Lark(r"""
 formula:
@@ -258,7 +260,7 @@ class Op:
     def add(self, name):
         self.targets.append(name)
 
-def generate_spec(filename, prefix):
+def generate_spec(filename, prefix, eos):
     targets = dict()
     dev = parse(open(filename))
     for (src, dst) in dev.behaviors.as_list_tuples():
@@ -271,7 +273,7 @@ def generate_spec(filename, prefix):
     def mk_act(name):
         return And(
             Equal(Action("action"), Action(prefix + "_" + name)),
-            Not(Action("end"))
+            Not(eos)
         )
     def tau():
         return And(
@@ -279,13 +281,13 @@ def generate_spec(filename, prefix):
                 Not(Equal(Action("action"), Action(prefix + "_" + elem)))
                 for elem in targets
             ),
-            Not(Action("end"))
+            Not(eos)
         )
 
     for (src, op) in targets.items():
         args = list(map(mk_act, op.targets))
         if op.is_final:
-            args.append(Action("end"))
+            args.append(eos)
         will_happen = Or.make(args)
         f = Always(
             Implies(mk_act(src), Next(Until(tau(), will_happen)))
@@ -293,16 +295,28 @@ def generate_spec(filename, prefix):
         forms.append(f)
     for f in forms:
         print("LTLSPEC", f, ";")
-    # EXAMPLE2 = "G( ledA.on -> (F ledA.off) )"
-    # tree = parser.parse(EXAMPLE2)
-    # print(repr(LTLParser().transform(tree)))
-    # print(ltlf_to_ltl(LTLParser().transform(tree), Action("end")))
+def generate_formula(formulas, eos_var, action_var):
+    for formula in formulas:
+        tree = parser.parse(formula)
+        #print(repr(LTLParser().transform(tree)))
+        print(ltlf_to_ltl(LTLParser().transform(tree), eos_var=eos_var, action_var=action_var))
 
 def main():
-    import sys
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument("--input", "-i")
-    parser.add_argument("--prefix", "-p")
+    parser.add_argument("input", help="-i")
+    parser.add_argument("--var-action", default="ACTION", help="NuSMV variable used to represent the current FSM state.")
+    parser.add_argument("--var-end-of-sequence", default="END", help="NuSMV variable used to represent the end of a sequence.")
+    subparsers = parser.add_subparsers(dest="command", help="Each command performs some functionality regarding LTL")
+    subparsers.required = True
+    i_parser = subparsers.add_parser("integrate", aliases=["i"], help="Generate integration LTLs")
+    i_parser.add_argument("prefix", help="Prefix name")
+    # Formula mode
+    f_parser = subparsers.add_parser("formula", aliases=["f"], help="Convert LTLf to NuSMV LTL")
+    f_parser.add_argument("formulas", nargs="+", help="LTLf formula")
+
     args = parser.parse_args()
-    generate_spec(filename=args.input, prefix=args.prefix)
+    if args.command in ["i", "integrate"]:
+        generate_spec(filename=args.input, prefix=args.prefix, eos=Action(args.var_end_of_sequence))
+    elif args.command in ["f", "formula"]:
+        generate_formula(args.formulas, eos_var=Action(args.var_end_of_sequence), action_var=Action(args.var_action))

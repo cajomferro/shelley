@@ -8,12 +8,8 @@ from shelley.automata.view import fsm2dot, fsm2tex
 from pathlib import Path
 import json
 
-def ltl_dump(state_diagram, fp, prefix):
-    print(f"LTLSPEC TRUE; -- {prefix}", file=fp)
-
-
 # LTLSPEC (action=level1) -> (action=standby1 | action=level1);
-def smv_dump(state_diagram, prefix, fp):
+def smv_dump(state_diagram, fp):
     to_state = lambda x: "Q_" + str(x)
     to_act = lambda x: x if x is None else x.replace(".", "_")
     to_edge = lambda act, dst: act + "." + dst if act is not None else dst
@@ -247,18 +243,11 @@ def main() -> None:
     if args.format == "smv":
         if not args.dfa:
             parser.error("Option '--output smv' requires '--dfa'")
-        svm_dump(
+        smv_dump(
             state_diagram=n.as_dict(flatten=True),
             fp=fp,
-            prefix=args.prefix,
         )
         return
-    if args.format == "ltl":
-        if args.prefix is None:
-            parser.error("Option '--output ltl' requires '--prefix'")
-        ltl_dump(n, fp, prefix=args.prefix)
-        return
-
 
     if args.format == "tex":
         dot = fsm2tex(n)

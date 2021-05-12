@@ -79,6 +79,9 @@ class Components(Node):
     def list(self) -> List[Component]:
         return self._data
 
+    def __iter__(self):
+        return iter(self.components_to_devices.items())
+
     def list_str(self) -> List[str]:
         return [str(elem) for elem in self._data]
 

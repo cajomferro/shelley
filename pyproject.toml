@@ -23,6 +23,7 @@ lark="^0.11.1"
 
 [tool.poetry.scripts]
 ltl = "shelley.ltlf:main"
+shelleymc = "shelley.modelcheck:main"
 yaml2shelley = "shelley.yaml2shelley.yaml2lark:main"
 shelleyc = "shelley.shelleyc.main:main"
 shelleyv = "shelley.shelleyv.main:main"

@@ -262,7 +262,7 @@ class Op:
     def add(self, name):
         self.targets.append(name)
 
-def generate_spec(filename, prefix, eos):
+def generate_spec(filename, prefix, eos, var_action):
     targets = dict()
     dev = parse(open(filename))
     for (src, dst) in dev.behaviors.as_list_tuples():
@@ -274,13 +274,13 @@ def generate_spec(filename, prefix, eos):
     forms = []
     def mk_act(name):
         return And(
-            Equal(Action("action"), Action(prefix + "_" + name)),
+            Equal(var_action, Action(prefix + "_" + name)),
             Not(eos)
         )
     def tau():
         return And(
             And.make(
-                Not(Equal(Action("action"), Action(prefix + "_" + elem)))
+                Not(Equal(var_action, Action(prefix + "_" + elem)))
                 for elem in targets
             ),
             Not(eos)
@@ -327,7 +327,11 @@ def main():
 
     args = parser.parse_args()
     if args.command in ["i", "instance"]:
-        generate_spec(filename=args.spec, prefix=args.name, eos=Action(args.var_end_of_sequence))
+        generate_spec(
+            filename=args.spec,
+            prefix=args.name,
+            eos=Action(args.var_end_of_sequence),
+            var_action=Action(args.var_action))
     elif args.command in ["f", "formula"]:
         generate_formula(
             args.formulas,

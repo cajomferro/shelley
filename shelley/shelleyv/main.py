@@ -1,6 +1,7 @@
 import yaml
 import argparse
 import sys
+import re
 from typing import Union, Any
 from karakuri import regular
 from shelley.automata.view import fsm2dot, fsm2tex
@@ -12,7 +13,7 @@ def ltl_dump(state_diagram, fp, prefix):
 
 
 # LTLSPEC (action=level1) -> (action=standby1 | action=level1);
-def svm_dump(state_diagram, fp):
+def smv_dump(state_diagram, prefix, fp):
     to_state = lambda x: "Q_" + str(x)
     to_act = lambda x: x if x is None else x.replace(".", "_")
     to_edge = lambda act, dst: act + "." + dst if act is not None else dst
@@ -23,6 +24,7 @@ def svm_dump(state_diagram, fp):
         else:
             values_str = "{" +  ", ".join(str(x) for x in values) + "}"
         print(f"{INDENT}{name}: {values_str};", file=fp)
+
     def add_edge(src, char, dst):
         char = to_act(char)
         act = f" & action={char}" if char is not None else ""
@@ -160,10 +162,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Specify the output format (defaults to dot) pick 'tex' or any from https://www.graphviz.org/doc/info/output.html",
     )
     parser.add_argument(
-        "--prefix",
-        "-p",
+        "--filter",
         default=None,
-        help="Specify the prefix of the system to use (requires -f ltl)."
+        help="Keep only the (operations/calls) that match the given regex, hide (epsilon) the remaining ones."
     )
     parser.add_argument("--no-sink", action="store_true", help="Remove sink states")
     parser.add_argument("--minimize", action="store_true", help="Minimize the DFA")
@@ -181,6 +182,11 @@ def create_parser() -> argparse.ArgumentParser:
 def handle_fsm(
     n: regular.NFA[Any, str], args: argparse.Namespace
 ) -> regular.NFA[Any, str]:
+    if args.filter is not None:
+        pattern = re.compile(args.filter)
+        def on_elem(x):
+            return x if x is None else pattern.match(x)
+        n = n.filter_char(on_elem)
     if args.dfa:
         print("Input:", len(n), file=sys.stderr)
         # Convert the DFA back into an NFA to possibly remove sink states
@@ -238,10 +244,14 @@ def main() -> None:
     if args.format == "mclr2":
         mclr2_dump(n.as_dict(flatten=True), fp)
         return
-    if args.format == "svm":
+    if args.format == "smv":
         if not args.dfa:
-            parser.error("Option '--output svm' requires '--dfa'")
-        svm_dump(n.as_dict(flatten=True), fp)
+            parser.error("Option '--output smv' requires '--dfa'")
+        svm_dump(
+            state_diagram=n.as_dict(flatten=True),
+            fp=fp,
+            prefix=args.prefix,
+        )
         return
     if args.format == "ltl":
         if args.prefix is None:

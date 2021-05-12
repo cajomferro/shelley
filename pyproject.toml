@@ -11,7 +11,7 @@ python = "^3.7"
 pyyaml = "^5.3.1"
 graphviz = "^0.14"
 radon = "^4.3.2"
-karukuri = {git = "https://gitlab.com/umb-svl/karukuri", rev = "e56d7ff84f37fb206914a0db0f3e418da0146f57"}
+karukuri = {git = "https://gitlab.com/umb-svl/karukuri", rev = "47725611d1135a8a567bf55ab2e5a0aa3ecfcf10"}
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.770"

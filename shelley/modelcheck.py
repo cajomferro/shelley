@@ -18,12 +18,14 @@ def main():
     parser.add_argument("--uses", "-u", help="The uses YAML file.")
     parser.add_argument("--formula", "-f", nargs="*", help="Give a correctness claim", default=[])
     parser.add_argument("--integration-check", action="store_true")
+    parser.add_argument("--skip-mc", action="store_true")
     parser.add_argument("--split-usage", action="store_true", help="Check the usage of each subsystem separately.")
     parser.add_argument("--skip-integration-model", action="store_true")
     args = parser.parse_args()
     subsystems = dict(get_instances(args.spec, args.uses))
     spec = Path(args.spec)
     integration = spec.parent / (spec.stem + "-i.scy")
+    print(f"Creating integration model: {integration}")
     subprocess.check_call([
         "shelleyc",
         "-u",
@@ -37,6 +39,7 @@ def main():
     assert integration.exists()
     if (args.integration_check and not args.split_usage) or not args.skip_integration_model:
         integration_model = spec.parent / f"{spec.stem}.smv"
+        print(f"Creating NuSMV model: {integration_model}")
         subprocess.check_call([
             "shelleyv",
             str(integration),
@@ -45,8 +48,9 @@ def main():
             "smv",
             "-o",
             str(integration_model)
-        ])
+        ], stderr=subprocess.DEVNULL, stdout= subprocess.DEVNULL)
         if len(args.formula) > 0:
+            print("Appending LTL formula:", " & ".join(args.formula))
             checks = subprocess.check_output([
                 "ltl",
                 "formula",
@@ -90,22 +94,24 @@ def main():
                 except subprocess.CalledProcessError:
                     sys.exit(255)
         else:
-            for (instance_name, instance_spec) in subsystems.items():
-                checks = subprocess.check_output([
-                    "ltl",
-                    "instance",
-                    "--spec",
-                    str(instance_spec),
-                    "--name",
-                    instance_name
-                ])
-                with integration_model.open("a+") as fp:
+            with integration_model.open("a+") as fp:
+                for (instance_name, instance_spec) in subsystems.items():
+                    print("Append LTL usage of ", instance_name)
+                    checks = subprocess.check_output([
+                        "ltl",
+                        "instance",
+                        "--spec",
+                        str(instance_spec),
+                        "--name",
+                        instance_name
+                    ])
                     fp.write(checks.decode("utf-8"))
-            print("Model checking integration...")
-            try:
-                subprocess.check_call([
-                    "NuSMV",
-                    str(integration_model),
-                ])
-            except subprocess.CalledProcessError:
-                sys.exit(255)
+    if not args.skip_mc:
+        print("Model checking integration...")
+        try:
+            subprocess.check_call([
+                "NuSMV",
+                str(integration_model),
+            ])
+        except subprocess.CalledProcessError:
+            sys.exit(255)

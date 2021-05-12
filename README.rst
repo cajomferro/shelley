@@ -10,9 +10,18 @@ Installation
 
 .. warning:: You will need to install `poetry <https://python-poetry.org/docs/#installation>`_ and graphviz dot tool (for visualizing examples). Make sure you install poetry with the appropriate Python version (>=3.7). For more info on how to install poetry with pyenv `follow this link <https://python-poetry.org/docs/managing-environments/>`_.
 
+.. warning:: If you intend to use the LTL model checking capabilities of Shelley, you will need to instal NuSMV first.
+
 .. code-block:: shell
 
+   # To install the shelley-checker
    poetry install
+
+.. code-block:: shell
+
+   # To install NuSMV on macOS
+   brew install nu-smv
+
 
 Run tools
 #########
@@ -32,7 +41,20 @@ Run tools
    shelleyv -o examples/desklamp/desklamp.gv examples/desklamp/desklamp.scy
    dot -Tpdf -o examples/desklamp/desklamp.pdf examples/desklamp/desklamp.gv
 
+   # Verify integration using the NuSMV model checker
+   shelleymc -s examples/desklamp/desklamp.shy -u examples/desklamp/uses.yml --integration-check --skip-integration-mode
+
+	# Generate the integration model examples/desklamp/desklamp/controller.smv and adding an LTLf formula on the end
+   shelleymc -s examples/desklamp/desklamp.shy -u examples/desklamp/uses.yml --formula "X begin"
+
 .. warning:: To compile composite devices, please compile all dependency components first.
+
+Get project stats
+######################
+
+.. code-block:: shell
+
+    radon raw shelley -s -O stats.txt
 
 Useful poetry commands
 ######################
@@ -49,16 +71,11 @@ Useful poetry commands
     poetry run shelleyc
     shelleyc
 
-Get project stats
-######################
+Helpful tips and commands
+#########################
 
-.. code-block:: shell
-
-    radon raw shelley -s -O stats.txt
-
-# Helpful tips and commands
-
-### Renaming words in several files
+Renaming words in several files
+-------------------------------
 
 * https://www.cyberciti.biz/faq/how-to-use-sed-to-find-and-replace-text-in-files-in-linux-unix-shell/
 * https://serverfault.com/questions/172806/use-sed-recursively-in-linux

@@ -42,10 +42,10 @@ Run tools
    dot -Tpdf -o examples/desklamp/desklamp.pdf examples/desklamp/desklamp.gv
 
    # Verify integration using the NuSMV model checker
-   shelleymc -s examples/desklamp/desklamp.shy -u examples/desklamp/uses.yml --integration-check --skip-integration-mode
+   shelleymc -s examples/desklamp/desklamp.shy -u examples/desklamp/uses.yml --integration-check
 
    # Generate the integration model examples/desklamp/desklamp/controller.smv and adding an LTLf formula on the end
-   shelleymc -s examples/desklamp/desklamp.shy -u examples/desklamp/uses.yml --formula "X begin"
+   shelleymc -s examples/desklamp/desklamp.shy -u examples/desklamp/uses.yml --formula a.on "X t.begin"
 
 .. warning:: To compile composite devices, please compile all dependency components first.
 
@@ -110,4 +110,3 @@ In this example, we replace the word "micro" by "integration".
     export LC_CTYPE=C
     export LANG=C
     find . -type f -print0 | xargs -0 sed -i '' -e "s/micro:/integration:/g"
-

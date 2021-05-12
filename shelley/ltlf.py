@@ -300,8 +300,7 @@ def generate_spec(filename, prefix, eos, var_action):
 def generate_formula(formulas, name, eos_var, action_var):
     for formula in formulas:
         tree = parser.parse(formula)
-        #print(repr(LTLParser().transform(tree)))
-        print(
+        print("LTLSPEC",
             ltlf_to_ltl(
                 LTLParser().transform(tree),
                 name=name,

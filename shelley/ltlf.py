@@ -322,8 +322,8 @@ def main():
     f_parser = subparsers.add_parser("formula", aliases=["f"], help="Convert LTLf to NuSMV LTL")
     f_parser.add_argument("formulas", nargs="+", help="LTLf formula")
     f_parser.add_argument("--name", "-n", help="Set an instance name")
-    parser.add_argument("--var-action", default="ACTION", help="NuSMV variable used to represent the current FSM state. Default: %(default)s")
-    parser.add_argument("--var-end-of-sequence", default="END", help="NuSMV variable used to represent the end of a sequence. Default: %(default)s")
+    parser.add_argument("--var-action", default="_action", help="NuSMV variable used to represent the current FSM state. Default: %(default)s")
+    parser.add_argument("--var-end-of-sequence", default="_eos", help="NuSMV variable used to represent the end of a sequence. Default: %(default)s")
 
     args = parser.parse_args()
     if args.command in ["i", "instance"]:

@@ -61,12 +61,12 @@ def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state=
         src, char, dst = edge["src"], edge["char"], edge["dst"]
         if dst in state_diagram["accepted_states"]:
             char = to_act(char)
-            act = f" & action={char}" if char is not None else ""
+            act = f" & {var_action}={char}" if char is not None else ""
             accepted = state_diagram["accepted_states"]
             print(f"{INDENT}{INDENT}{var_state}={src}{act}: {{TRUE,FALSE}}; -- dst={dst} in {accepted}", file=fp)
     print(f"{INDENT}{INDENT}TRUE: FALSE;", file=fp)
     print(f"{INDENT}esac;", file=fp)
-    print("FAIRNESS end;", file=fp)
+    print(f"FAIRNESS {var_eos};", file=fp)
     print(f"LTLSPEC F({var_eos}); -- sanity check", file=fp)
     print(f"LTLSPEC  G({var_eos} -> G({var_eos}) & X({var_eos})); -- sanity check", file=fp)
 

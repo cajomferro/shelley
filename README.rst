@@ -55,3 +55,21 @@ Get project stats
 .. code-block:: shell
 
     radon raw shelley -s -O stats.txt
+
+# Helpful tips and commands
+
+### Renaming words in several files
+
+* https://www.cyberciti.biz/faq/how-to-use-sed-to-find-and-replace-text-in-files-in-linux-unix-shell/
+* https://serverfault.com/questions/172806/use-sed-recursively-in-linux
+* https://stackoverflow.com/questions/19456518/invalid-command-code-despite-escaping-periods-using-sed
+* https://stackoverflow.com/questions/19242275/re-error-illegal-byte-sequence-on-mac-os-x
+
+In this example, we replace the word "micro" by "integration".
+
+.. code-block:: shell
+
+    export LC_CTYPE=C
+    export LANG=C
+    find . -type f -print0 | xargs -0 sed -i '' -e "s/micro:/integration:/g"
+

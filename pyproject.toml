@@ -12,6 +12,7 @@ pyyaml = "^5.3.1"
 graphviz = "^0.14"
 radon = "^4.3.2"
 karukuri = {git = "https://gitlab.com/umb-svl/karukuri", rev = "47725611d1135a8a567bf55ab2e5a0aa3ecfcf10"}
+lark="^0.11.1"
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.770"
@@ -19,7 +20,6 @@ pytest = "^5.4.1"
 black = "^19.10b0"
 Pygments = "^2.6.1"
 snakeviz="^2.1.0"
-lark="^0.11.1"
 
 [tool.poetry.scripts]
 ltl = "shelley.ltlf:main"

@@ -1,21 +1,16 @@
 import yaml
 import argparse
 import sys
+import re
 from typing import Union, Any
 from karakuri import regular
 from shelley.automata.view import fsm2dot, fsm2tex
 from pathlib import Path
 import json
 
-def ltl_dump(state_diagram, fp, prefix):
-    print(f"LTLSPEC TRUE; -- {prefix}", file=fp)
-
-
 # LTLSPEC (action=level1) -> (action=standby1 | action=level1);
-def svm_dump(state_diagram, fp):
-    to_state = lambda x: "Q_" + str(x)
+def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state="_state"):
     to_act = lambda x: x if x is None else x.replace(".", "_")
-    to_edge = lambda act, dst: act + "." + dst if act is not None else dst
     INDENT = "    "
     def decl_var(name, values):
         if isinstance(values, str):
@@ -23,59 +18,57 @@ def svm_dump(state_diagram, fp):
         else:
             values_str = "{" +  ", ".join(str(x) for x in values) + "}"
         print(f"{INDENT}{name}: {values_str};", file=fp)
+
     def add_edge(src, char, dst):
         char = to_act(char)
-        act = f" & action={char}" if char is not None else ""
-        print(f"state={src}{act}: {dst};", file=fp)
+        act = f" & {var_action}={char}" if char is not None else ""
+        print(f"{var_state}={src}{act}: {dst};", file=fp)
     def init_var(name, value):
         print(f"{INDENT}init({name}) := {value};", file=fp)
     acts = list(set(to_act(edge["char"]) for edge in state_diagram["edges"] if edge["char"] is not None))
     acts.sort()
     print("MODULE main", file=fp)
     print("VAR", file=fp)
-    decl_var("end", "boolean")
-    decl_var("action", acts)
+    decl_var(f"{var_eos}", "boolean")
+    decl_var(f"{var_action}", acts)
 
     states = list(
         set( x["src"] for x in state_diagram["edges"] ).union(
         set( x["src"] for x in state_diagram["edges"] ))
     )
     states.sort()
-    decl_var("state", states)
+    decl_var(f"{var_state}", states)
     print("ASSIGN", file=fp)
     ALL_ACTS = "{" + ", ".join(acts) + "}"
-    init_var("action", ALL_ACTS)
-    init_var("state", state_diagram["start_state"])
-    init_var("end", "{TRUE, FALSE}" if state_diagram["start_state"] in state_diagram["accepted_states"] else "FALSE")
-    print(f"{INDENT}next(state) := case", file=fp)
-    print(f"{INDENT}{INDENT}end: state; -- finished, no change in state", file=fp)
+    init_var(f"{var_action}", ALL_ACTS)
+    init_var(f"{var_state}", state_diagram["start_state"])
+    init_var(f"{var_eos}", "{TRUE, FALSE}" if state_diagram["start_state"] in state_diagram["accepted_states"] else "FALSE")
+    print(f"{INDENT}next({var_state}) := case", file=fp)
+    print(f"{INDENT}{INDENT}{var_eos}: {var_state}; -- finished, no change in state", file=fp)
     for edge in state_diagram["edges"]:
         print(f"{INDENT}{INDENT}", end="", file=fp)
         src, char, dst = edge["src"], edge["char"], edge["dst"]
         add_edge(src, char, dst)
-    #print(f"{INDENT}{INDENT}TRUE: eof;  -- (for NFAs only)", file=fp)
     print(f"{INDENT}esac;", file=fp)
-    print(f"{INDENT}next(action) := case", file=fp)
-    print(f"{INDENT}{INDENT}end : action;", file=fp)
+    print(f"{INDENT}next({var_action}) := case", file=fp)
+    print(f"{INDENT}{INDENT}{var_eos} : {var_action};", file=fp)
     print(f"{INDENT}{INDENT}TRUE : {ALL_ACTS};", file=fp)
     print(f"{INDENT}esac;", file=fp)
 
-    print(f"{INDENT}next(end) := case", file=fp)
-    print(f"{INDENT}{INDENT}end: end; -- finished, nothing to do", file=fp)
+    print(f"{INDENT}next({var_eos}) := case", file=fp)
+    print(f"{INDENT}{INDENT}{var_eos}: {var_eos}; -- finished, nothing to do", file=fp)
     for edge in state_diagram["edges"]:
         src, char, dst = edge["src"], edge["char"], edge["dst"]
         if dst in state_diagram["accepted_states"]:
             char = to_act(char)
             act = f" & action={char}" if char is not None else ""
             accepted = state_diagram["accepted_states"]
-            print(f"{INDENT}{INDENT}state={src}{act}: {{TRUE,FALSE}}; -- dst={dst} in {accepted}", file=fp)
+            print(f"{INDENT}{INDENT}{var_state}={src}{act}: {{TRUE,FALSE}}; -- dst={dst} in {accepted}", file=fp)
     print(f"{INDENT}{INDENT}TRUE: FALSE;", file=fp)
     print(f"{INDENT}esac;", file=fp)
     print("FAIRNESS end;", file=fp)
-    print("LTLSPEC F(end); -- sanity check", file=fp)
-    print("LTLSPEC  G(end -> G(end) & X(end)); -- sanity check", file=fp)
-
-    #print("LTLSPEC action = level1 -> X(action = standby1 -> X (end = TRUE));", file=fp)
+    print(f"LTLSPEC F({var_eos}); -- sanity check", file=fp)
+    print(f"LTLSPEC  G({var_eos} -> G({var_eos}) & X({var_eos})); -- sanity check", file=fp)
 
 
 def mclr2_dump(state_diagram, fp):
@@ -160,10 +153,9 @@ def create_parser() -> argparse.ArgumentParser:
         help="Specify the output format (defaults to dot) pick 'tex' or any from https://www.graphviz.org/doc/info/output.html",
     )
     parser.add_argument(
-        "--prefix",
-        "-p",
+        "--filter",
         default=None,
-        help="Specify the prefix of the system to use (requires -f ltl)."
+        help="Keep only the (operations/calls) that match the given regex, hide (epsilon) the remaining ones."
     )
     parser.add_argument("--no-sink", action="store_true", help="Remove sink states")
     parser.add_argument("--minimize", action="store_true", help="Minimize the DFA")
@@ -181,6 +173,11 @@ def create_parser() -> argparse.ArgumentParser:
 def handle_fsm(
     n: regular.NFA[Any, str], args: argparse.Namespace
 ) -> regular.NFA[Any, str]:
+    if args.filter is not None:
+        pattern = re.compile(args.filter)
+        def on_elem(x):
+            return x if x is None else pattern.match(x)
+        n = n.filter_char(on_elem)
     if args.dfa:
         print("Input:", len(n), file=sys.stderr)
         # Convert the DFA back into an NFA to possibly remove sink states
@@ -238,17 +235,14 @@ def main() -> None:
     if args.format == "mclr2":
         mclr2_dump(n.as_dict(flatten=True), fp)
         return
-    if args.format == "svm":
+    if args.format == "smv":
         if not args.dfa:
-            parser.error("Option '--output svm' requires '--dfa'")
-        svm_dump(n.as_dict(flatten=True), fp)
+            parser.error("Option '--output smv' requires '--dfa'")
+        smv_dump(
+            state_diagram=n.as_dict(flatten=True),
+            fp=fp,
+        )
         return
-    if args.format == "ltl":
-        if args.prefix is None:
-            parser.error("Option '--output ltl' requires '--prefix'")
-        ltl_dump(n, fp, prefix=args.prefix)
-        return
-
 
     if args.format == "tex":
         dot = fsm2tex(n)

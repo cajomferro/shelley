@@ -137,11 +137,13 @@ def WeakUntil(left, right):
     "Left must hold until right; right may never happen."
 
 
-def ltlf_to_ltl(formula, eos_var, action_var):
+def ltlf_to_ltl(formula, name, eos_var, action_var):
     def rec(formula):
         if isinstance(formula, Bool):
             return formula
         if isinstance(formula, Action):
+            if name is not None:
+                formula = Action(name=name + "_" + formula.name)
             return And(Equal(action_var, formula), Not(eos_var))
         elif isinstance(formula, Not):
             return Not(rec(formula.formula))
@@ -295,28 +297,41 @@ def generate_spec(filename, prefix, eos):
         forms.append(f)
     for f in forms:
         print("LTLSPEC", f, ";")
-def generate_formula(formulas, eos_var, action_var):
+def generate_formula(formulas, name, eos_var, action_var):
     for formula in formulas:
         tree = parser.parse(formula)
         #print(repr(LTLParser().transform(tree)))
-        print(ltlf_to_ltl(LTLParser().transform(tree), eos_var=eos_var, action_var=action_var))
+        print(
+            ltlf_to_ltl(
+                LTLParser().transform(tree),
+                name=name,
+                eos_var=eos_var,
+                action_var=action_var
+            )
+        )
 
 def main():
     from argparse import ArgumentParser
     parser = ArgumentParser()
-    parser.add_argument("input", help="-i")
-    parser.add_argument("--var-action", default="ACTION", help="NuSMV variable used to represent the current FSM state.")
-    parser.add_argument("--var-end-of-sequence", default="END", help="NuSMV variable used to represent the end of a sequence.")
     subparsers = parser.add_subparsers(dest="command", help="Each command performs some functionality regarding LTL")
     subparsers.required = True
-    i_parser = subparsers.add_parser("integrate", aliases=["i"], help="Generate integration LTLs")
-    i_parser.add_argument("prefix", help="Prefix name")
+    i_parser = subparsers.add_parser("instance", aliases=["i"], help="Generate the integration checks for a given instance.")
+    i_parser.add_argument("--spec", "-s", help="A Shelley specification", required=True)
+    i_parser.add_argument("--name", "-n", help="The instance name", required=True)
     # Formula mode
     f_parser = subparsers.add_parser("formula", aliases=["f"], help="Convert LTLf to NuSMV LTL")
     f_parser.add_argument("formulas", nargs="+", help="LTLf formula")
+    f_parser.add_argument("--name", "-n", help="Set an instance name")
+    parser.add_argument("--var-action", default="ACTION", help="NuSMV variable used to represent the current FSM state. Default: %(default)s")
+    parser.add_argument("--var-end-of-sequence", default="END", help="NuSMV variable used to represent the end of a sequence. Default: %(default)s")
 
     args = parser.parse_args()
-    if args.command in ["i", "integrate"]:
-        generate_spec(filename=args.input, prefix=args.prefix, eos=Action(args.var_end_of_sequence))
+    if args.command in ["i", "instance"]:
+        generate_spec(filename=args.spec, prefix=args.name, eos=Action(args.var_end_of_sequence))
     elif args.command in ["f", "formula"]:
-        generate_formula(args.formulas, eos_var=Action(args.var_end_of_sequence), action_var=Action(args.var_action))
+        generate_formula(
+            args.formulas,
+            name=args.name,
+            eos_var=Action(args.var_end_of_sequence),
+            action_var=Action(args.var_action)
+        )

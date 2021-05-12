@@ -9,10 +9,8 @@ from pathlib import Path
 import json
 
 # LTLSPEC (action=level1) -> (action=standby1 | action=level1);
-def smv_dump(state_diagram, fp):
-    to_state = lambda x: "Q_" + str(x)
+def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state="_state"):
     to_act = lambda x: x if x is None else x.replace(".", "_")
-    to_edge = lambda act, dst: act + "." + dst if act is not None else dst
     INDENT = "    "
     def decl_var(name, values):
         if isinstance(values, str):
@@ -23,57 +21,54 @@ def smv_dump(state_diagram, fp):
 
     def add_edge(src, char, dst):
         char = to_act(char)
-        act = f" & action={char}" if char is not None else ""
-        print(f"state={src}{act}: {dst};", file=fp)
+        act = f" & {var_action}={char}" if char is not None else ""
+        print(f"{var_state}={src}{act}: {dst};", file=fp)
     def init_var(name, value):
         print(f"{INDENT}init({name}) := {value};", file=fp)
     acts = list(set(to_act(edge["char"]) for edge in state_diagram["edges"] if edge["char"] is not None))
     acts.sort()
     print("MODULE main", file=fp)
     print("VAR", file=fp)
-    decl_var("end", "boolean")
-    decl_var("action", acts)
+    decl_var(f"{var_eos}", "boolean")
+    decl_var(f"{var_action}", acts)
 
     states = list(
         set( x["src"] for x in state_diagram["edges"] ).union(
         set( x["src"] for x in state_diagram["edges"] ))
     )
     states.sort()
-    decl_var("state", states)
+    decl_var(f"{var_state}", states)
     print("ASSIGN", file=fp)
     ALL_ACTS = "{" + ", ".join(acts) + "}"
-    init_var("action", ALL_ACTS)
-    init_var("state", state_diagram["start_state"])
-    init_var("end", "{TRUE, FALSE}" if state_diagram["start_state"] in state_diagram["accepted_states"] else "FALSE")
-    print(f"{INDENT}next(state) := case", file=fp)
-    print(f"{INDENT}{INDENT}end: state; -- finished, no change in state", file=fp)
+    init_var(f"{var_action}", ALL_ACTS)
+    init_var(f"{var_state}", state_diagram["start_state"])
+    init_var(f"{var_eos}", "{TRUE, FALSE}" if state_diagram["start_state"] in state_diagram["accepted_states"] else "FALSE")
+    print(f"{INDENT}next({var_state}) := case", file=fp)
+    print(f"{INDENT}{INDENT}{var_eos}: {var_state}; -- finished, no change in state", file=fp)
     for edge in state_diagram["edges"]:
         print(f"{INDENT}{INDENT}", end="", file=fp)
         src, char, dst = edge["src"], edge["char"], edge["dst"]
         add_edge(src, char, dst)
-    #print(f"{INDENT}{INDENT}TRUE: eof;  -- (for NFAs only)", file=fp)
     print(f"{INDENT}esac;", file=fp)
-    print(f"{INDENT}next(action) := case", file=fp)
-    print(f"{INDENT}{INDENT}end : action;", file=fp)
+    print(f"{INDENT}next({var_action}) := case", file=fp)
+    print(f"{INDENT}{INDENT}{var_eos} : {var_action};", file=fp)
     print(f"{INDENT}{INDENT}TRUE : {ALL_ACTS};", file=fp)
     print(f"{INDENT}esac;", file=fp)
 
-    print(f"{INDENT}next(end) := case", file=fp)
-    print(f"{INDENT}{INDENT}end: end; -- finished, nothing to do", file=fp)
+    print(f"{INDENT}next({var_eos}) := case", file=fp)
+    print(f"{INDENT}{INDENT}{var_eos}: {var_eos}; -- finished, nothing to do", file=fp)
     for edge in state_diagram["edges"]:
         src, char, dst = edge["src"], edge["char"], edge["dst"]
         if dst in state_diagram["accepted_states"]:
             char = to_act(char)
             act = f" & action={char}" if char is not None else ""
             accepted = state_diagram["accepted_states"]
-            print(f"{INDENT}{INDENT}state={src}{act}: {{TRUE,FALSE}}; -- dst={dst} in {accepted}", file=fp)
+            print(f"{INDENT}{INDENT}{var_state}={src}{act}: {{TRUE,FALSE}}; -- dst={dst} in {accepted}", file=fp)
     print(f"{INDENT}{INDENT}TRUE: FALSE;", file=fp)
     print(f"{INDENT}esac;", file=fp)
     print("FAIRNESS end;", file=fp)
-    print("LTLSPEC F(end); -- sanity check", file=fp)
-    print("LTLSPEC  G(end -> G(end) & X(end)); -- sanity check", file=fp)
-
-    #print("LTLSPEC action = level1 -> X(action = standby1 -> X (end = TRUE));", file=fp)
+    print(f"LTLSPEC F({var_eos}); -- sanity check", file=fp)
+    print(f"LTLSPEC  G({var_eos} -> G({var_eos}) & X({var_eos})); -- sanity check", file=fp)
 
 
 def mclr2_dump(state_diagram, fp):

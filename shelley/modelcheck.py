@@ -18,6 +18,7 @@ def main():
     parser.add_argument("--uses", "-u", help="The uses YAML file.")
     parser.add_argument("--formula", "-f", nargs="*", help="Give a correctness claim", default=[])
     parser.add_argument("--integration-check", action="store_true")
+    parser.add_argument("--skip-integration-model", action="store_true")
     args = parser.parse_args()
     subsystems = dict(get_instances(args.spec, args.uses))
     spec = Path(args.spec)
@@ -34,23 +35,24 @@ def main():
             str(integration)
         ])
     assert integration.exists()
-    integration_model = spec.parent / f"{spec.stem}.smv"
-    subprocess.check_call([
-        "shelleyv",
-        str(integration),
-        "--dfa",
-        "-f",
-        "smv",
-        "-o",
-        str(integration_model)
-    ])
-    if len(args.formula) > 0:
-        checks = subprocess.check_output([
-            "ltl",
-            "formula",
-        ] + args.formula)
-        with integration_model.open("a+") as fp:
-            fp.write(checks.decode("utf-8"))
+    if not args.skip_integration_model:
+        integration_model = spec.parent / f"{spec.stem}.smv"
+        subprocess.check_call([
+            "shelleyv",
+            str(integration),
+            "--dfa",
+            "-f",
+            "smv",
+            "-o",
+            str(integration_model)
+        ])
+        if len(args.formula) > 0:
+            checks = subprocess.check_output([
+                "ltl",
+                "formula",
+            ] + args.formula)
+            with integration_model.open("a+") as fp:
+                fp.write(checks.decode("utf-8"))
 
     if args.integration_check:
         for (instance_name, instance_spec) in subsystems.items():

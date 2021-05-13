@@ -30,9 +30,6 @@ def main():
     parser.add_argument(
         "-v", "--verbosity", help="increase output verbosity", action="store_true"
     )
-    parser.add_argument(
-        "--silent", help="hide NuSMV output (useful for benchmarking)", action="store_false"
-    )
     args = parser.parse_args()
 
     if args.verbosity:
@@ -128,8 +125,6 @@ def main():
             subprocess.check_call([
                 "NuSMV",
                 str(integration_model),
-            ],
-                stdout=None if args.silent else subprocess.DEVNULL)
+            ])
         except subprocess.CalledProcessError:
-            logger.error(exc_info=True)
             sys.exit(255)

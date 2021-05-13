@@ -17,8 +17,6 @@ def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state=
             return elem
         if len(elem) == 0:
             raise ValueError()
-        if len(elem) == 1:
-            return str(elem[0])
         return "{" + ", ".join(map(str, elem)) + "}"
 
     def decl_var(name, values):

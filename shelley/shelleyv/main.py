@@ -12,19 +12,32 @@ import json
 def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state="_state"):
     to_act = lambda x: x if x is None else x.replace(".", "_")
     INDENT = "    "
+    def render_values(elem):
+        if isinstance(elem, str):
+            return elem
+        if len(elem) == 0:
+            raise ValueError()
+        if len(elem) == 1:
+            return str(elem[0])
+        return "{" + ", ".join(map(str, elem)) + "}"
+
     def decl_var(name, values):
-        if isinstance(values, str):
-            values_str = values
-        else:
-            values_str = "{" +  ", ".join(str(x) for x in values) + "}"
-        print(f"{INDENT}{name}: {values_str};", file=fp)
+        print(f"{INDENT}{name}: {render_values(values)};", file=fp)
 
     def add_edge(src, char, dst):
         char = to_act(char)
         act = f" & {var_action}={char}" if char is not None else ""
         print(f"{var_state}={src}{act}: {dst};", file=fp)
-    def init_var(name, value):
-        print(f"{INDENT}init({name}) := {value};", file=fp)
+    def init_var(name, values):
+        print(f"{INDENT}init({name}) := {render_values(values)};", file=fp)
+    def next_var_case(variable, elems):
+        print(f"{INDENT}next({variable}) := case", file=fp)
+        for (cond, res) in elems:
+            res = render_values(res)
+            print(f"{INDENT}{INDENT}{cond} : {res};", file=fp)
+        print(f"{INDENT}esac;", file=fp)
+
+
     acts = list(set(to_act(edge["char"]) for edge in state_diagram["edges"] if edge["char"] is not None))
     acts.sort()
     print("MODULE main", file=fp)
@@ -39,10 +52,9 @@ def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state=
     states.sort()
     decl_var(f"{var_state}", states)
     print("ASSIGN", file=fp)
-    ALL_ACTS = "{" + ", ".join(acts) + "}"
-    init_var(f"{var_action}", ALL_ACTS)
-    init_var(f"{var_state}", state_diagram["start_state"])
-    init_var(f"{var_eos}", "{TRUE, FALSE}" if state_diagram["start_state"] in state_diagram["accepted_states"] else "FALSE")
+
+    # State
+    init_var(f"{var_state}", [state_diagram["start_state"]])
     print(f"{INDENT}next({var_state}) := case", file=fp)
     print(f"{INDENT}{INDENT}{var_eos}: {var_state}; -- finished, no change in state", file=fp)
     for edge in state_diagram["edges"]:
@@ -50,23 +62,30 @@ def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state=
         src, char, dst = edge["src"], edge["char"], edge["dst"]
         add_edge(src, char, dst)
     print(f"{INDENT}esac;", file=fp)
-    print(f"{INDENT}next({var_action}) := case", file=fp)
-    print(f"{INDENT}{INDENT}{var_eos} : {var_action};", file=fp)
-    print(f"{INDENT}{INDENT}TRUE : {ALL_ACTS};", file=fp)
-    print(f"{INDENT}esac;", file=fp)
+    # Action
+    if len(acts) > 1:
+        init_var(f"{var_action}", acts)
+        next_var_case(var_action, [
+            (var_eos, var_action),
+            ("TRUE", acts)
+        ])
 
-    print(f"{INDENT}next({var_eos}) := case", file=fp)
-    print(f"{INDENT}{INDENT}{var_eos}: {var_eos}; -- finished, nothing to do", file=fp)
+    # EOS
+    init_var(var_eos, ["TRUE", "FALSE"] if state_diagram["start_state"] in state_diagram["accepted_states"] else ["FALSE"])
+    lines = [
+        (var_eos, "TRUE"),
+    ]
     for edge in state_diagram["edges"]:
         src, char, dst = edge["src"], edge["char"], edge["dst"]
         if dst in state_diagram["accepted_states"]:
             char = to_act(char)
             act = f" & {var_action}={char}" if char is not None else ""
-            accepted = state_diagram["accepted_states"]
-            print(f"{INDENT}{INDENT}{var_state}={src}{act}: {{TRUE,FALSE}}; -- dst={dst} in {accepted}", file=fp)
-    print(f"{INDENT}{INDENT}TRUE: FALSE;", file=fp)
-    print(f"{INDENT}esac;", file=fp)
+            lines.append((f"{var_state}={src}{act}", ["TRUE","FALSE"]))
+    lines.append(("TRUE", "FALSE"))
+    next_var_case(var_eos, lines)
     print(f"FAIRNESS {var_eos};", file=fp)
+
+
     print(f"LTLSPEC F({var_eos}); -- sanity check", file=fp)
     print(f"LTLSPEC  G({var_eos} -> G({var_eos}) & X({var_eos})); -- sanity check", file=fp)
 

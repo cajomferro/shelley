@@ -482,7 +482,7 @@ class ComponentUsageFailure:
 
         # TODO: there is no info about component name here
         if len(list(self.projected.end_states)) == 0:
-            raise ValueError(f"{errors.UNUSABLE_COMPONENT_TEXT}")
+            raise ValueError(errors.UNUSABLE_COMPONENT_TEXT)
 
         self.is_valid = self.component.contains(self.projected)
 
@@ -509,19 +509,18 @@ class ComponentUsageFailure:
         """
         if self.is_valid:
             raise ValueError("Can only be called if projection is invalid.")
-        # 2. Get the shortest string therein
         component_seq: Optional[MicroTrace] = self.invalid.get_shortest_string()
         assert component_seq is not None
         return component_seq
 
     @classmethod
     def make(
-        cls, micro: NFA[Any, str], component: NFA[Any, str], optional: bool = True
+        cls, integration: NFA[Any, str], component: NFA[Any, str], optional: bool = True
     ) -> "ComponentUsageFailure":
         """
         Restrict the language of a micro behavior using a component's alphabet
         """
-        projected: DFA[Any, str] = nfa_to_dfa(project_nfa(micro, component.alphabet))
+        projected: DFA[Any, str] = nfa_to_dfa(project_nfa(integration, component.alphabet))
         if optional:
             nil = DFA[Any, str].make_nil(projected.alphabet)
             projected = projected.subtract(nil)
@@ -701,7 +700,7 @@ class AssembledMicroBehavior2:
         triggers: Dict[str, Regex[str]],
     ) -> "AssembledMicroBehavior2":
         if len(components) == 0:
-            raise ValueError(f"{errors.INTEGRATION_ERROR_ZERO_COMPONENTS}")
+            raise ValueError(errors.INTEGRATION_ERROR_ZERO_COMPONENTS)
         alphabet: Set[str] = set()
         for c in components.values():
             alphabet.update(c.alphabet)

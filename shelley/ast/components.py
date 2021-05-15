@@ -30,13 +30,13 @@ class Component(Node):
     def check_device_in_uses(self, uses: List[str], device_name: str):
         if device_name not in uses:
             raise ComponentsDeviceNotUsedError(
-                "Device type '{0}' must be in uses list!".format(device_name)
+                f"Device type '{device_name}' must be in uses list!"
             )
 
     def check_type_is_declared(self, devices: Dict[str, Device], device_name: str):
         if device_name not in devices:
             raise ComponentsDeviceNotUsedError(
-                "Device type '{0}' must be in uses list!".format(device_name)
+                f"Device type '{device_name}' must be in uses list!"
             )
 
     def __str__(self):

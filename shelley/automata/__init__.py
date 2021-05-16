@@ -515,12 +515,12 @@ class ComponentUsageFailure:
 
     @classmethod
     def make(
-        cls, integration: NFA[Any, str], component: NFA[Any, str], optional: bool = True
+        cls, micro: NFA[Any, str], component: NFA[Any, str], optional: bool = True
     ) -> "ComponentUsageFailure":
         """
         Restrict the language of a micro behavior using a component's alphabet
         """
-        projected: DFA[Any, str] = nfa_to_dfa(project_nfa(integration, component.alphabet))
+        projected: DFA[Any, str] = nfa_to_dfa(project_nfa(micro, component.alphabet))
         if optional:
             nil = DFA[Any, str].make_nil(projected.alphabet)
             projected = projected.subtract(nil)

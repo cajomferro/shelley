@@ -2,7 +2,6 @@ import logging
 import os
 from typing import List, Dict, Optional, Any, cast, IO
 from pathlib import Path
-from dataclasses import dataclass
 
 from shelley.shelleyc import settings
 from shelley.shelleyc.exceptions import CompilationError
@@ -18,9 +17,9 @@ from shelley.automata import (
 )
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
-from shelley import yaml2shelley
 
-from shelley.parser import parser as lark_parser, ShelleyLanguage
+import shelley.parsers.lark2shelley as lark_parser
+import shelley.parsers.yaml.yaml2shelley as yaml_parser
 
 logger = logging.getLogger("shelleyc")
 
@@ -132,10 +131,10 @@ def compile_shelley(
     """
 
     src_ext = src_path.suffix.split(".")[1]
-    if  src_ext in settings.EXT_SHELLEY_SOURCE_YAML:
+    if src_ext in settings.EXT_SHELLEY_SOURCE_YAML:
         try:
-            shelley_device: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(src_path)
-        except yaml2shelley.ShelleyParserError as error:
+            shelley_device: ShelleyDevice = yaml_parser.get_shelley_from_yaml(src_path)
+        except yaml_parser.ShelleyParserError as error:
             if settings.VERBOSE:
                 logger.exception(error)
             raise CompilationError(f"YAML Parsing error: {error}")
@@ -143,8 +142,7 @@ def compile_shelley(
     elif src_ext in settings.EXT_SHELLEY_SOURCE_LARK:
         try:
             with src_path.open() as f:
-                tree = lark_parser.parse(f.read())
-            shelley_device: ShelleyDevice = ShelleyLanguage().transform(tree)
+                shelley_device: ShelleyDevice = lark_parser.parse(f)
         except Exception as error:
             if settings.VERBOSE:
                 logger.exception(error)

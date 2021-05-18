@@ -6,8 +6,8 @@ from shelley.ast.devices import Device
 from shelley.ast.components import Components, Component
 from shelley.ast.triggers import Triggers
 from shelley.ast.events import Event
-from shelley import yaml2shelley
-from shelley.yaml2shelley.util import MySafeLoader
+from shelley.parsers.yaml import yaml2shelley
+from shelley.parsers.yaml.util import MySafeLoader
 
 
 def test_events_invalid_event_syntax() -> None:

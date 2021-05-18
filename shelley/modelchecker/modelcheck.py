@@ -1,5 +1,5 @@
 import logging
-from shelley.parser import parse
+from shelley.parsers.lark2shelley import parse
 import sys
 import yaml
 import argparse
@@ -39,16 +39,19 @@ def main():
     spec = Path(args.spec)
     integration = spec.parent / (spec.stem + "-i.scy")
     logger.debug(f"Creating integration model: {integration}")
-    subprocess.check_call([
-        "shelleyc",
-        "-u",
-        args.uses,
-        "-d",
-        args.spec,
-        "--skip-checks",
-        "--integration",
-        str(integration)
-    ])
+    try:
+        subprocess.check_call([
+            "shelleyc",
+            "-u",
+            args.uses,
+            "-d",
+            args.spec,
+            "--skip-checks",
+            "--integration",
+            str(integration)
+        ])
+    except subprocess.CalledProcessError:
+        sys.exit(255)
     assert integration.exists()
     if (args.integration_check and not args.split_usage) or not args.skip_integration_model:
         integration_model = spec.parent / f"{spec.stem}.smv"

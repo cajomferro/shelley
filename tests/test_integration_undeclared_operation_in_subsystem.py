@@ -2,12 +2,10 @@ import pytest
 from shelley.automata import (
     Device as AutomataDevice,
     AssembledDevice,
-    CheckedDevice,
-    check_traces,
 )
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
-from shelley import yaml2shelley
+from shelley.parsers.yaml import yaml2shelley
 from shelley.shelleyc import DeviceMapping
 from shelley.automata.errors import UNDECLARED_OPERATION_IN_SUBSYSTEM
 

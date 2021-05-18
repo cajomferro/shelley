@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "shelley"
-version = "0.1.12"
+version = "0.1.13"
 description = "Check system integration"
 authors = ["Carlos Mão de Ferro", "Tiago Cogumbreiro", "Francisco Martins"]
 license = "MIT"
@@ -22,9 +22,9 @@ Pygments = "^2.6.1"
 snakeviz="^2.1.0"
 
 [tool.poetry.scripts]
-ltl = "shelley.ltlf:main"
-shelleymc = "shelley.modelcheck:main"
-yaml2shelley = "shelley.yaml2shelley.yaml2lark:main"
+ltl = "shelley.modelchecker.ltlf:main"
+shelleymc = "shelley.modelchecker.modelcheck:main"
+yaml2lark = "shelley.parsers.yaml.yaml2lark:main"
 shelleyc = "shelley.shelleyc.main:main"
 shelleyv = "shelley.shelleyv.main:main"
 shelleys = "shelley.shelleys.main:main"

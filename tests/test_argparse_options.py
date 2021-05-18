@@ -1,7 +1,7 @@
 import yaml
 from pathlib import Path
 import argparse
-from shelley.shelleyc import parser as shelleyc_parser
+from shelley.shelleyc import main
 from typing import Optional
 
 EXAMPLES_PATH = Path()
@@ -15,7 +15,7 @@ def get_path(p: Path) -> str:
 
 def make_args(src_path: Path, uses_path: Optional[Path] = None) -> argparse.Namespace:
 
-    parser = shelleyc_parser.create_parser()
+    parser = main.create_parser()
     args: argparse.Namespace
 
     if uses_path is not None:
@@ -45,7 +45,7 @@ def test_single_device() -> None:
 def test_no_output() -> None:
     devicepath: Path = EXAMPLES_PATH / "button.yml"
     outpath: Path = EXAMPLES_PATH / "button.scy"
-    parser = shelleyc_parser.create_parser()
+    parser = main.create_parser()
     args: argparse.Namespace = parser.parse_args(
         ["-d", str(devicepath), "-o", str(outpath), "--no-output"]
     )
@@ -57,7 +57,7 @@ def test_no_output() -> None:
 
 def test_single_device_binary() -> None:
     device = EXAMPLES_PATH / "button.yml"
-    parser = shelleyc_parser.create_parser()
+    parser = main.create_parser()
     args = parser.parse_args(["-b", "-d", str(device)])
     assert args.device == device
     assert args.output is None
@@ -94,6 +94,6 @@ def test_composite_device() -> None:
     with args.uses.open(mode="w") as f:
         yaml.dump(uses_yaml, f)
 
-    assert shelleyc_parser.parse_uses(args.uses) == uses_yaml
+    assert main.parse_uses(args.uses) == uses_yaml
 
     uses.unlink()

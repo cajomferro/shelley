@@ -1,5 +1,5 @@
 from pathlib import Path
-from shelley.dfa2spec import parse_input, generate_specs
+from shelley.modelchecker.dfa2spec import parse_input, generate_specs
 
 EXAMPLES_PATH = Path() / "tests" / "test_mc" / "input"
 
@@ -12,5 +12,5 @@ def test1() -> None:
     # print(parent_system)
     # print(subsystems)
 
-    generate_specs(subsystems)
+    print(generate_specs(subsystems))
 

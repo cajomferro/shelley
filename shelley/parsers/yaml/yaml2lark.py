@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import yaml
 from pathlib import Path
-from shelley import yaml2shelley
+from shelley import parsers
 
 from typing import Optional, Tuple, Dict, Any
 
@@ -137,7 +137,7 @@ class Yaml2Lark(Visitor):
 
 
 def translate(yaml_source: Path, lark_source: Path):
-    shelley_device = yaml2shelley.get_shelley_from_yaml(yaml_source)
+    shelley_device = parsers.get_shelley_from_yaml(yaml_source)
     visitor = Yaml2Lark(components=shelley_device.components)
     shelley_device.accept(visitor)
 
@@ -149,6 +149,10 @@ def translate(yaml_source: Path, lark_source: Path):
 
 def main():
     import sys
+
+    if len(sys.argv) < 2:
+        print("Please provide a valid source path! Usage: yaml2lark PATH")
+        sys.exit(255)
 
     yaml_path = Path(sys.argv[1])
     lark_path = Path(sys.argv[1][:-4] + ".shy")

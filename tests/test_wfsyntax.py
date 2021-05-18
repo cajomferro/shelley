@@ -1,5 +1,5 @@
 from typing import Dict
-from shelley import yaml2shelley
+from shelley.parsers.yaml import yaml2shelley
 from shelley.ast.devices import Device
 from shelley.ast.visitors.wfsyntax import CheckWFSyntaxVisitor
 

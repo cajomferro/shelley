@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
-from shelley.parser import parser as lark_parser, ShelleyLanguage
+from shelley.parsers.lark2shelley import parser as lark_parser, ShelleyLanguage
 from shelley.ast.devices import Device
 from shelley.ast.components import Components, Component
 from shelley.ast.triggers import Triggers

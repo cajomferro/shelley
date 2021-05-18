@@ -4,7 +4,7 @@ from karakuri.regular import Char, Concat, Union, NIL
 
 from shelley.automata import Device as AutomataDevice
 from shelley.shelley2automata import shelley2automata
-from shelley import yaml2shelley
+from shelley.parsers.yaml import yaml2shelley
 
 
 def test_button() -> None:

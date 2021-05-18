@@ -2,15 +2,12 @@ import pytest
 from shelley.automata import (
     Device as AutomataDevice,
     AssembledDevice,
-    CheckedDevice,
-    check_traces,
 )
 from pathlib import Path
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
-from shelley import yaml2shelley
+from shelley.parsers.yaml import yaml2shelley
 from shelley.shelleyc import DeviceMapping
-from shelley.automata.errors import INTEGRATION_ERROR_REPORT
 
 EXAMPLES_PATH = Path() / "shelley-examples"
 

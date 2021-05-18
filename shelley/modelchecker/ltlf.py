@@ -1,5 +1,5 @@
 
-from shelley.parser import parse
+from shelley.parsers.lark2shelley import parse
 from lark import Lark, Transformer
 
 from dataclasses import dataclass

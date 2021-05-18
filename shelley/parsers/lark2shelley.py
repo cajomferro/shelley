@@ -236,5 +236,11 @@ def main():
             { lp.wakeup; }
     """
     import sys
+    if len(sys.argv) < 2:
+        print("Please provide a valid source path! Usage: lark2shelley PATH")
+        sys.exit(255)
     tree = parser.parse(open(sys.argv[1]).read())
     print(ShelleyLanguage().transform(tree))
+
+if __name__ == "__main__":
+    main()

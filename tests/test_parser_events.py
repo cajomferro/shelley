@@ -5,7 +5,7 @@ from shelley.automata import (
 )
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
-from shelley import yaml2shelley
+from shelley.parsers.yaml import yaml2shelley
 from shelley.shelleyc import DeviceMapping
 
 

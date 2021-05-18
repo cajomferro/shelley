@@ -17,7 +17,7 @@ import copy
 import pathlib
 from dataclasses import dataclass, field
 
-from shelley.yaml2shelley.util import MySafeLoader
+from shelley.parsers.yaml.util import MySafeLoader
 from shelley.ast.events import Event, Events
 from shelley.ast.actions import Actions, Action
 from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError

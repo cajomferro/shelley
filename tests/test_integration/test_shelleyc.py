@@ -6,8 +6,8 @@ import argparse
 
 from shelley.automata import CheckedDevice
 from shelley.ast.devices import Device as ShelleyDevice
-from shelley import yaml2shelley, shelleyc
-from shelley.shelleyc import parser as shelleyc_parser
+from shelley import parsers, shelleyc
+from shelley.shelleyc import main
 
 EXAMPLES_PATH = Path() / "tests" / "test_integration" / "input"
 COMPILED_PATH = EXAMPLES_PATH / "compiled"
@@ -20,7 +20,7 @@ def empty_devices(name: str) -> CheckedDevice:
 def call_shelleyc(args: argparse.Namespace, **kwargs: Any) -> Path:
     data = dict(
         src_path=args.device,
-        uses=shelleyc_parser.parse_uses(args.uses),
+        uses=main.parse_uses(args.uses),
         uses_base_dir=Path.cwd(),
         dst_path=args.output,
         binary=args.binary,
@@ -46,13 +46,13 @@ def _remove_compiled_files(outdir: Path) -> None:
 
 def _get_shelley_device(name: str) -> ShelleyDevice:
     path = (
-        Path.cwd()
-        / EXAMPLES_PATH
-        / "{name}.{ext}".format(
-            name=name, ext=shelleyc.settings.EXT_SHELLEY_SOURCE_YAML[0]
-        )
+            Path.cwd()
+            / EXAMPLES_PATH
+            / "{name}.{ext}".format(
+        name=name, ext=shelleyc.settings.EXT_SHELLEY_SOURCE_YAML[0]
     )
-    return yaml2shelley.get_shelley_from_yaml(path)
+    )
+    return parsers.get_shelley_from_yaml(path)
 
 
 def _get_compiled_path(name: str, binary: bool = False) -> Path:
@@ -81,7 +81,7 @@ def mk_use(**kwargs: Path) -> str:
 def make_args(src_path: Path, uses_path: Optional[Path] = None) -> argparse.Namespace:
     assert isinstance(src_path, Path) and src_path.exists()
 
-    parser = shelleyc_parser.create_parser()
+    parser = main.create_parser()
     args: argparse.Namespace
 
     if uses_path is not None:
@@ -111,7 +111,7 @@ def _compile_simple_device(device_name: str) -> Path:
 
 def test_not_found_device() -> None:
     src_path = os.path.join(EXAMPLES_PATH, "XbuttonX.yml")
-    parser = shelleyc_parser.create_parser()
+    parser = main.create_parser()
     args = parser.parse_args(["-d", src_path])
 
     with pytest.raises(FileNotFoundError) as exc_info:
@@ -123,7 +123,7 @@ def test_compile_buton_no_output() -> None:
     outpath: Path = COMPILED_PATH / "button.scy"
 
     assert not outpath.exists()
-    parser = shelleyc_parser.create_parser()
+    parser = main.create_parser()
     args: argparse.Namespace = parser.parse_args(
         ["-d", str(src_path), "-o", str(outpath), "--no-output"]
     )
@@ -145,8 +145,8 @@ def test_smartbutton_file_invalid_dict_uses_file() -> None:
         call_shelleyc(args)
 
     assert (
-        str(exc_info.value)
-        == "Shelley parser error: uses file must be a valid dictionary"
+            str(exc_info.value)
+            == "Shelley parser error: uses file must be a valid dictionary"
     )
 
     _remove_compiled_dir()
@@ -163,7 +163,7 @@ def test_smartbutton_file_not_found_uses_file() -> None:
         call_shelleyc(args)
     path = Path.cwd() / "buttonBAD.scy"
     assert (
-        str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
+            str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
     )
 
     _remove_compiled_dir()
@@ -231,7 +231,7 @@ def test_compile_desklamp_dependency_not_found_2() -> None:
     path = Path.cwd() / "tests/test_integration/input/compiled/led.scy"
 
     assert (
-        str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
+            str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
     )
 
     _remove_compiled_dir()

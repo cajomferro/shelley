@@ -141,8 +141,7 @@ def compile_shelley(
 
     elif src_ext in settings.EXT_SHELLEY_SOURCE_LARK:
         try:
-            with src_path.open() as f:
-                shelley_device: ShelleyDevice = lark_parser.parse(f)
+            shelley_device: ShelleyDevice = lark_parser.parse(src_path)
         except Exception as error:
             if settings.VERBOSE:
                 logger.exception(error)

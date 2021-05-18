@@ -7,6 +7,7 @@ from shelley.ast.rules import (
     TriggerRuleSequence,
     TriggerRuleFired,
 )
+from pathlib import Path
 from shelley.ast.triggers import Trigger, Triggers, TriggersListDuplicatedError
 from shelley.ast.components import Components
 from shelley.ast.events import Event, Events
@@ -65,6 +66,7 @@ sys:
 
     """, start='sys')
 
+
 class ShelleyLanguage(Transformer):
     def seq(self, args):
         return TriggerRuleSequence(*args)
@@ -81,7 +83,6 @@ class ShelleyLanguage(Transformer):
             return choice
         else:
             return args[0]
-
 
     def expr(self, args):
         if len(args) != 1:
@@ -119,7 +120,7 @@ class ShelleyLanguage(Transformer):
         return args
 
     def op(self, args):
-        (evt,nxt), code = args
+        (evt, nxt), code = args
         return (evt, nxt, Trigger(copy.copy(evt), code))
 
     def ops(self, args):
@@ -142,11 +143,11 @@ class ShelleyLanguage(Transformer):
         name, components, (evts, triggers, behaviors) = args
 
         device = Device(name=name,
-            events=evts,
-            behaviors=behaviors,
-            triggers=triggers,
-            components=components,
-        )
+                        events=evts,
+                        behaviors=behaviors,
+                        triggers=triggers,
+                        components=components,
+                        )
 
         device.test_macro = dict()
         device.test_micro = dict()
@@ -176,71 +177,20 @@ class ShelleyLanguage(Transformer):
 
         return device
 
-def parse(fp):
-    tree = parser.parse(fp.read())
+
+def parse(source: Path):
+    with Path.open(source) as fp:
+        tree = parser.parse(fp.read())
     return ShelleyLanguage().transform(tree)
 
+
 def main():
-
-    LED = """
-    base Led {
-    initial final on -> off
-
-    initial final off -> on
-    }
-    """
-
-    COMPLICATED = """
-    Controller(v1:Valve,
-        v2: Valve,
-        v3: Valve,
-        v4: Valve,
-        m: Magnetic,
-        r: RadioV1,
-        lp: LowPower) {
-
-        initial final start -> activateAllValves {
-            { m.locked; m.unlocked;}
-            +
-            { lp.wakeup; }
-        }
-
-        final update -> deactivateAllValves {
-            r.start;
-            r.HTTPsetup;
-            r.HTTPconnect;
-            r.HTTPsend;
-            r.HTTPreceive;
-            r.HTTPdisconnect;
-            r.HTTPdisable;
-        }
-
-        final activateAllValves -> update {
-            v1.on; v2.on; v3.on; v4.on;
-        }
-
-        final deactivateAllValves -> sleep {
-            v1.off; v2.off; v3.off; v4.off;
-        }
-
-        final sleep -> start {
-            { lp.setup;lp.sleep;} + {lp.sleep;}
-        }
-    }
-
-    """
-
-    CODE = """
-            { m.locked; m.unlocked;}
-            +
-            { lp.wakeup; }
-    """
     import sys
     if len(sys.argv) < 2:
         print("Please provide a valid source path! Usage: lark2shelley PATH")
         sys.exit(255)
-    tree = parser.parse(open(sys.argv[1]).read())
-    print(ShelleyLanguage().transform(tree))
+    print(parse(Path(sys.argv[1])))
+
 
 if __name__ == "__main__":
     main()

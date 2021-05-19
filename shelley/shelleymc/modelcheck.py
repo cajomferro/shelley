@@ -21,7 +21,7 @@ def get_instances(dev_path: Path, uses_path: Path):
         yield (k, filename.parent / f"{filename.stem}.shy")
 
 
-def main():
+def parse_command():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--spec", "-s", type=Path, help="Shelley specification.", required=True
@@ -41,7 +41,12 @@ def main():
     parser.add_argument(
         "-v", "--verbosity", help="increase output verbosity", action="store_true"
     )
-    args = parser.parse_args()
+
+    return parser.parse_args()
+
+
+def main():
+    args = parse_command()
 
     if args.verbosity:
         logger.setLevel(logging.DEBUG)
@@ -49,7 +54,7 @@ def main():
     subsystems = dict(get_instances(args.spec, args.uses))
     spec = Path(args.spec)
     integration = spec.parent / (spec.stem + "-i.scy")
-    logger.debug(f"Creating integration model: {integration}")
+    logger.info(f"Creating integration model: {integration}")
     try:
         subprocess.check_call(
             [
@@ -70,22 +75,22 @@ def main():
         args.integration_check and not args.split_usage
     ) or not args.skip_integration_model:
         integration_model = spec.parent / f"{spec.stem}.smv"
-        logger.debug(f"Creating NuSMV model: {integration_model}")
+        logger.info(f"Creating NuSMV model: {integration_model}")
+        shelleyv_call = [
+            "shelleyv",
+            str(integration),
+            "--dfa",
+            "-f",
+            "smv",
+            "-o",
+            str(integration_model),
+        ]
+        logger.debug(" ".join(shelleyv_call))
         subprocess.check_call(
-            [
-                "shelleyv",
-                str(integration),
-                "--dfa",
-                "-f",
-                "smv",
-                "-o",
-                str(integration_model),
-            ],
-            stderr=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
+            shelleyv_call, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
         )
         if len(args.formula) > 0:
-            logger.debug("Appending LTL formula:", " & ".join(args.formula))
+            logger.info("Appending LTL formula:", " & ".join(args.formula))
             checks = subprocess.check_output(["ltl", "formula",] + args.formula)
             with integration_model.open("a+") as fp:
                 fp.write(checks.decode("utf-8"))
@@ -95,30 +100,33 @@ def main():
             for (instance_name, instance_spec) in subsystems.items():
                 # Create the integration SMV file
                 usage_model = spec.parent / f"{spec.stem}-{instance_name}.smv"
+
                 logger.debug("creating", usage_model)
-                subprocess.check_call(
-                    [
-                        "shelleyv",
-                        str(integration),
-                        "--dfa",
-                        "-f",
-                        "smv",
-                        "--filter",
-                        instance_name + ".*",
-                        "-o",
-                        str(usage_model),
-                    ]
-                )
-                checks = subprocess.check_output(
-                    [
-                        "ltl",
-                        "instance",
-                        "--spec",
-                        str(instance_spec),
-                        "--name",
-                        instance_name,
-                    ]
-                )
+                shelleyv_call = [
+                    "shelleyv",
+                    str(integration),
+                    "--dfa",
+                    "-f",
+                    "smv",
+                    "--filter",
+                    instance_name + ".*",
+                    "-o",
+                    str(usage_model),
+                ]
+                logger.debug(" ".join(shelleyv_call))
+                subprocess.check_call(shelleyv_call)
+
+                ltl_call = [
+                    "ltl",
+                    "instance",
+                    "--spec",
+                    str(instance_spec),
+                    "--name",
+                    instance_name,
+                ]
+                checks = subprocess.check_output(ltl_call)
+                logger.debug(" ".join(ltl_call))
+
                 logger.debug("Model checking usage of", instance_name)
                 with usage_model.open("a+") as fp:
                     fp.write(checks.decode("utf-8"))
@@ -131,23 +139,26 @@ def main():
         else:
             with integration_model.open("a+") as fp:
                 for (instance_name, instance_spec) in subsystems.items():
-                    logger.debug(f"Append LTL usage of {instance_name}")
-                    checks = subprocess.check_output(
-                        [
-                            "ltl",
-                            "instance",
-                            "--spec",
-                            str(instance_spec),
-                            "--name",
-                            instance_name,
-                        ]
-                    )
+                    logger.info(f"Append LTL usage of {instance_name}")
+                    ltl_call = [
+                        "ltl",
+                        "instance",
+                        "--spec",
+                        str(instance_spec),
+                        "--name",
+                        instance_name,
+                    ]
+                    logger.debug(" ".join(ltl_call))
+                    checks = subprocess.check_output(ltl_call)
                     fp.write(checks.decode("utf-8"))
     if not args.skip_mc:
-        logger.debug("Model checking integration...")
+        logger.info("Model checking integration...")
         try:
-            subprocess.check_call(
-                ["NuSMV", str(integration_model),]
-            )
+            nusmv_call = [
+                "NuSMV",
+                str(integration_model),
+            ]
+            logger.debug(" ".join(nusmv_call))
+            subprocess.check_call(nusmv_call)
         except subprocess.CalledProcessError:
             sys.exit(255)

@@ -59,10 +59,12 @@ uses: [name_type ("," name_type)* [","]]
 sys:
 | ident "(" uses ")" ops -> new_sys
 | "base"  ident "{" (sig ";")+ "}" -> base_sys
+COMMENT: /#[^\n]*/
 
 %import common.CNAME
 %import common.WS
 %ignore WS
+%ignore COMMENT
 
     """, start='sys')
 

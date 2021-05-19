@@ -46,11 +46,11 @@ def _remove_compiled_files(outdir: Path) -> None:
 
 def _get_shelley_device(name: str) -> ShelleyDevice:
     path = (
-            Path.cwd()
-            / EXAMPLES_PATH
-            / "{name}.{ext}".format(
-        name=name, ext=shelleyc.settings.EXT_SHELLEY_SOURCE_YAML[0]
-    )
+        Path.cwd()
+        / EXAMPLES_PATH
+        / "{name}.{ext}".format(
+            name=name, ext=shelleyc.settings.EXT_SHELLEY_SOURCE_YAML[0]
+        )
     )
     return parsers.get_shelley_from_yaml(path)
 
@@ -145,8 +145,8 @@ def test_smartbutton_file_invalid_dict_uses_file() -> None:
         call_shelleyc(args)
 
     assert (
-            str(exc_info.value)
-            == "Shelley parser error: uses file must be a valid dictionary"
+        str(exc_info.value)
+        == "Shelley parser error: uses file must be a valid dictionary"
     )
 
     _remove_compiled_dir()
@@ -163,7 +163,7 @@ def test_smartbutton_file_not_found_uses_file() -> None:
         call_shelleyc(args)
     path = Path.cwd() / "buttonBAD.scy"
     assert (
-            str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
+        str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
     )
 
     _remove_compiled_dir()
@@ -231,7 +231,7 @@ def test_compile_desklamp_dependency_not_found_2() -> None:
     path = Path.cwd() / "tests/test_integration/input/compiled/led.scy"
 
     assert (
-            str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
+        str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
     )
 
     _remove_compiled_dir()

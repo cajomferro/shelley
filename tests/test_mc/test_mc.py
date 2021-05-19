@@ -1,5 +1,5 @@
 from pathlib import Path
-from shelley.modelchecker.dfa2spec import parse_input, generate_specs
+from shelley.shelleymc.dfa2spec import parse_input, generate_specs
 
 EXAMPLES_PATH = Path() / "tests" / "test_mc" / "input"
 
@@ -11,6 +11,10 @@ def test1() -> None:
 
     # print(parent_system)
     # print(subsystems)
-
-    print(generate_specs(subsystems))
-
+    specs = generate_specs(subsystems)
+    expected_specs = [
+        "shelleyv timer.scy -f ltl --dfa -o t.out output --prefix t",
+        "shelleyv valve.scy -f ltl --dfa -o a.out output --prefix a",
+        "shelleyv valve.scy -f ltl --dfa -o b.out output --prefix b",
+    ]
+    assert specs == expected_specs

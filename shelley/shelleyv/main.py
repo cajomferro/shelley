@@ -9,9 +9,12 @@ from pathlib import Path
 import json
 
 # LTLSPEC (action=level1) -> (action=standby1 | action=level1);
-def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state="_state"):
+def smv_dump(
+    state_diagram, fp, var_action="_action", var_eos="_eos", var_state="_state"
+):
     to_act = lambda x: x if x is None else x.replace(".", "_")
     INDENT = "    "
+
     def render_values(elem):
         if isinstance(elem, str):
             return elem
@@ -26,8 +29,10 @@ def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state=
         char = to_act(char)
         act = f" & {var_action}={char}" if char is not None else ""
         print(f"{var_state}={src}{act}: {dst};", file=fp)
+
     def init_var(name, values):
         print(f"{INDENT}init({name}) := {render_values(values)};", file=fp)
+
     def next_var_case(variable, elems):
         print(f"{INDENT}next({variable}) := case", file=fp)
         for (cond, res) in elems:
@@ -35,8 +40,13 @@ def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state=
             print(f"{INDENT}{INDENT}{cond} : {res};", file=fp)
         print(f"{INDENT}esac;", file=fp)
 
-
-    acts = list(set(to_act(edge["char"]) for edge in state_diagram["edges"] if edge["char"] is not None))
+    acts = list(
+        set(
+            to_act(edge["char"])
+            for edge in state_diagram["edges"]
+            if edge["char"] is not None
+        )
+    )
     acts.sort()
     print("MODULE main", file=fp)
     print("VAR", file=fp)
@@ -44,8 +54,9 @@ def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state=
     decl_var(f"{var_action}", acts)
 
     states = list(
-        set( x["src"] for x in state_diagram["edges"] ).union(
-        set( x["src"] for x in state_diagram["edges"] ))
+        set(x["src"] for x in state_diagram["edges"]).union(
+            set(x["src"] for x in state_diagram["edges"])
+        )
     )
     states.sort()
     decl_var(f"{var_state}", states)
@@ -54,7 +65,10 @@ def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state=
     # State
     init_var(f"{var_state}", [state_diagram["start_state"]])
     print(f"{INDENT}next({var_state}) := case", file=fp)
-    print(f"{INDENT}{INDENT}{var_eos}: {var_state}; -- finished, no change in state", file=fp)
+    print(
+        f"{INDENT}{INDENT}{var_eos}: {var_state}; -- finished, no change in state",
+        file=fp,
+    )
     for edge in state_diagram["edges"]:
         print(f"{INDENT}{INDENT}", end="", file=fp)
         src, char, dst = edge["src"], edge["char"], edge["dst"]
@@ -63,13 +77,15 @@ def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state=
     # Action
     if len(acts) > 1:
         init_var(f"{var_action}", acts)
-        next_var_case(var_action, [
-            (var_eos, var_action),
-            ("TRUE", acts)
-        ])
+        next_var_case(var_action, [(var_eos, var_action), ("TRUE", acts)])
 
     # EOS
-    init_var(var_eos, ["TRUE", "FALSE"] if state_diagram["start_state"] in state_diagram["accepted_states"] else ["FALSE"])
+    init_var(
+        var_eos,
+        ["TRUE", "FALSE"]
+        if state_diagram["start_state"] in state_diagram["accepted_states"]
+        else ["FALSE"],
+    )
     lines = [
         (var_eos, "TRUE"),
     ]
@@ -78,24 +94,32 @@ def smv_dump(state_diagram, fp, var_action="_action", var_eos="_eos", var_state=
         if dst in state_diagram["accepted_states"]:
             char = to_act(char)
             act = f" & {var_action}={char}" if char is not None else ""
-            lines.append((f"{var_state}={src}{act}", ["TRUE","FALSE"]))
+            lines.append((f"{var_state}={src}{act}", ["TRUE", "FALSE"]))
     lines.append(("TRUE", "FALSE"))
     next_var_case(var_eos, lines)
     print(f"FAIRNESS {var_eos};", file=fp)
 
-
     print(f"LTLSPEC F({var_eos}); -- sanity check", file=fp)
-    print(f"LTLSPEC  G({var_eos} -> G({var_eos}) & X({var_eos})); -- sanity check", file=fp)
+    print(
+        f"LTLSPEC  G({var_eos} -> G({var_eos}) & X({var_eos})); -- sanity check",
+        file=fp,
+    )
 
 
 def mclr2_dump(state_diagram, fp):
     to_state = lambda x: "Q_" + str(x)
     to_act = lambda x: x if x is None else x.replace(".", "_")
     to_edge = lambda act, dst: act + "." + dst if act is not None else dst
-    acts = list(set(to_act(edge["char"]) for edge in state_diagram["edges"] if edge["char"] is not None))
+    acts = list(
+        set(
+            to_act(edge["char"])
+            for edge in state_diagram["edges"]
+            if edge["char"] is not None
+        )
+    )
     acts.sort()
     if len(acts) > 0:
-        print("act",  ", ".join(acts), ";", file=fp)
+        print("act", ", ".join(acts), ";", file=fp)
     # Build src -> list [(char, dst)]
     procs = dict()
     for edge in state_diagram["edges"]:
@@ -111,11 +135,12 @@ def mclr2_dump(state_diagram, fp):
     if len(procs) > 0:
         print("proc", file=fp)
         for (src, (accepted, targets)) in procs.items():
-            targets = [ to_edge(act, dst) for (act, dst) in targets ]
+            targets = [to_edge(act, dst) for (act, dst) in targets]
             if accepted:
                 targets.append("delta")
             print("\t", src, "=", " + ".join(targets), file=fp)
     print("init", to_state(state_diagram["start_state"]), ";", file=fp)
+
 
 def fsm_dump(state_diagram, fp):
     start = state_diagram["start_state"]
@@ -145,6 +170,7 @@ def fsm_dump(state_diagram, fp):
         char = '"' + edge["char"] + '"'
         print(src, dst, char, file=fp)
 
+
 def create_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Visualize compiled files as state diagrams"
@@ -172,7 +198,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--filter",
         default=None,
-        help="Keep only the (operations/calls) that match the given regex, hide (epsilon) the remaining ones."
+        help="Keep only the (operations/calls) that match the given regex, hide (epsilon) the remaining ones.",
     )
     parser.add_argument("--no-sink", action="store_true", help="Remove sink states")
     parser.add_argument("--minimize", action="store_true", help="Minimize the DFA")
@@ -192,8 +218,10 @@ def handle_fsm(
 ) -> regular.NFA[Any, str]:
     if args.filter is not None:
         pattern = re.compile(args.filter)
+
         def on_elem(x):
             return x if x is None else pattern.match(x)
+
         n = n.filter_char(on_elem)
     if args.dfa:
         print("Input:", len(n), file=sys.stderr)
@@ -246,7 +274,9 @@ def main() -> None:
         return
     if args.format == "fsm":
         if not args.no_epsilon and not args.dfa:
-            parser.error("Option '--output fsm' requires either '--dfa' or '--no-epsilon'")
+            parser.error(
+                "Option '--output fsm' requires either '--dfa' or '--no-epsilon'"
+            )
         fsm_dump(n.as_dict(flatten=True), fp)
         return
     if args.format == "mclr2":
@@ -256,8 +286,7 @@ def main() -> None:
         if not args.dfa:
             parser.error("Option '--output smv' requires '--dfa'")
         smv_dump(
-            state_diagram=n.as_dict(flatten=True),
-            fp=fp,
+            state_diagram=n.as_dict(flatten=True), fp=fp,
         )
         return
 

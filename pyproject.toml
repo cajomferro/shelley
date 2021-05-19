@@ -22,8 +22,8 @@ Pygments = "^2.6.1"
 snakeviz="^2.1.0"
 
 [tool.poetry.scripts]
-ltl = "shelley.modelchecker.ltlf:main"
-shelleymc = "shelley.modelchecker.modelcheck:main"
+ltl = "shelley.shelleymc.ltlf:main"
+shelleymc = "shelley.shelleymc.modelcheck:main"
 yaml2lark = "shelley.parsers.yaml.yaml2lark:main"
 shelleyc = "shelley.shelleyc.main:main"
 shelleyv = "shelley.shelleyv.main:main"

@@ -126,9 +126,18 @@ class Yaml2Lark(Visitor):
         for operation in operations:
             initial = " initial" if operations[operation]["is_initial"] else ""
             final = " final" if operations[operation]["is_final"] else ""
-            body = ";" if len(triggers[operation]) == 0 else f"{{\n  {triggers[operation]}\n }}"
-            self.result += "{0}{1} {2} -> {3} {4}\n".format(initial, final, operation,
-                                                           ", ".join(operations[operation]["next"]), body)
+            body = (
+                ";"
+                if len(triggers[operation]) == 0
+                else f"{{\n  {triggers[operation]}\n }}"
+            )
+            self.result += "{0}{1} {2} -> {3} {4}\n".format(
+                initial,
+                final,
+                operation,
+                ", ".join(operations[operation]["next"]),
+                body,
+            )
 
         self.result += f"\n}}"
 
@@ -142,10 +151,11 @@ def translate(yaml_source: Path, lark_source: Path):
     shelley_device.accept(visitor)
 
     lark_code = visitor.result.strip()
-    #print(lark_code)
+    # print(lark_code)
 
     with lark_source.open("w") as f:
         f.write(lark_code)
+
 
 def main():
     import sys

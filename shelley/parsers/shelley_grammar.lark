@@ -1,0 +1,52 @@
+expr:
+  | call
+  | choice
+  | loop
+  | seq  
+
+block: "{" expr "}" -> expr
+
+call: ident "." ident ";"
+
+seq: expr expr
+
+choice: block "+" choice | block
+
+loop: "loop" block
+
+initial : "initial"
+final : "final"
+modifiers:
+  | initial
+  | final
+  | initial final
+  | final initial
+
+ident: CNAME
+
+next: "->" [ident ("," ident)* [","]] -> next_evts
+
+sig:  [modifiers] ident next
+
+sigs: (sig ";")+ 
+
+enforce: ["enforce" formula ";"]
+
+op : sig block
+
+ops : "{" op+ "}"
+
+name_type: ident ":" ident
+uses: [name_type ("," name_type)* [","]]
+
+sys:
+| ident "(" uses ")" ops [enforce] -> new_sys
+| "base"  ident "{" sigs [enforce] "}" -> base_sys
+
+COMMENT: /#[^\n]*/
+
+%import .ltlf_grammar.formula
+%import common.CNAME
+%import common.WS
+%ignore WS
+%ignore COMMENT

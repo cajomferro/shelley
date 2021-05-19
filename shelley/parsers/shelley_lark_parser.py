@@ -13,98 +13,15 @@ from shelley.ast.components import Components
 from shelley.ast.events import Event, Events
 from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError
 from shelley.ast.devices import Device
+from shelley.parsers.ltlf_lark_parser import LTLParser
 
 INITIAL = 1
 FINAL = 2
 
-# | next
-# | until
-
-parser = Lark(r"""
-
-temporal:
-  | hold_next
-  | until
-  | always
-  | eventually
-
-logical:
-  | neg
-  | conj
-  | implies
-
-neg: "~" ident
-
-conj: ident "<->" ident
-
-implies: temporal "=>" temporal
-
-hold_next: "X" "(" logical ")"
-
-until: temporal "U" temporal
-
-always: "G" "(" logical ")"
-
-eventually: "F" "(" logical ")"
-
-expr:
-  | call
-  | choice
-  | loop
-  | seq  
-
-block: "{" expr "}" -> expr
-
-call: ident "." ident ";"
-
-seq: expr expr
-
-choice: block "+" choice | block
-
-loop: "loop" block
-
-initial : "initial"
-final : "final"
-modifiers:
-  | initial
-  | final
-  | initial final
-  | final initial
-
-ident: CNAME
-
-next: "->" [ident ("," ident)* [","]] -> next_evts
-
-sig:  [modifiers] ident next
-
-sigs: (sig ";")+ 
-
-clause: "enforce" temporal
-
-clauses: (clause ";")*
-
-op : sig block
-
-ops : "{" op+ "}"
-
-name_type: ident ":" ident
-uses: [name_type ("," name_type)* [","]]
-
-sys:
-| ident "(" uses ")" ops clauses -> new_sys
-| "base"  ident "{" sigs clauses "}" -> base_sys
-
-COMMENT: /#[^\n]*/
-
-%import common.CNAME
-%import common.WS
-%ignore WS
-%ignore COMMENT
-
-    """, start='sys')
+parser = Lark.open("shelley_grammar.lark", rel_to=__file__, start="sys")
 
 
-class ShelleyLanguage(Transformer):
+class ShelleyLanguage(LTLParser):
     def seq(self, args):
         return TriggerRuleSequence(*args)
 
@@ -138,20 +55,18 @@ class ShelleyLanguage(Transformer):
 
     def sig(self, args):
         modifiers, name, nxt = args
-        return Event(
-            name=name,
-            is_start=INITIAL in modifiers,
-            is_final=FINAL in modifiers,
-        ), nxt
+        return (
+            Event(
+                name=name, is_start=INITIAL in modifiers, is_final=FINAL in modifiers,
+            ),
+            nxt,
+        )
 
     def sigs(self, args):
-        return (args)
-
-    def clause(self, args):
         return args
 
-    def clauses(self, args):
-        return (args)
+    def enforce(self, args):
+        return args
 
     def initial(self, args):
         return INITIAL
@@ -176,26 +91,27 @@ class ShelleyLanguage(Transformer):
         for evt, nxt, code in args:
             triggers.add(code)
             for n in nxt:
-                behaviors.create(copy.copy(evt), Event(name=n, is_start=False, is_final=True))
+                behaviors.create(
+                    copy.copy(evt), Event(name=n, is_start=False, is_final=True)
+                )
             evts.add(evt)
 
         return evts, triggers, behaviors
 
     def ident(self, args):
-        name, = args
+        (name,) = args
         return name.value
 
     def new_sys(self, args):
-        name, components, (evts, triggers, behaviors), clauses = args
+        name, components, (evts, triggers, behaviors), enforce = args
 
-        print(clauses)
-
-        device = Device(name=name,
-                        events=evts,
-                        behaviors=behaviors,
-                        triggers=triggers,
-                        components=components,
-                        )
+        device = Device(
+            name=name,
+            events=evts,
+            behaviors=behaviors,
+            triggers=triggers,
+            components=components,
+        )
 
         device.test_macro = dict()
         device.test_micro = dict()
@@ -203,24 +119,20 @@ class ShelleyLanguage(Transformer):
         return device
 
     def base_sys(self, args):
-        name, sigs, clauses = args
+        name, sigs, enforce = args
         events = Events()
         triggers = Triggers()
         behaviors = Behaviors()
         for (evt, nxt) in sigs:
             for n in nxt:
-                behaviors.create(copy.copy(evt), Event(name=n, is_start=False, is_final=True))
+                behaviors.create(
+                    copy.copy(evt), Event(name=n, is_start=False, is_final=True)
+                )
             events.add(evt)
             triggers.create(evt, TriggerRuleFired())
 
-        for clause in clauses:
-            print(clause)
-
         device = Device(
-            name=name,
-            events=events,
-            behaviors=behaviors,
-            triggers=triggers,
+            name=name, events=events, behaviors=behaviors, triggers=triggers,
         )
 
         device.test_macro = dict()
@@ -237,6 +149,7 @@ def parse(source: Path):
 
 def main():
     import sys
+
     if len(sys.argv) < 2:
         print("Please provide a valid source path! Usage: lark2shelley PATH")
         sys.exit(255)

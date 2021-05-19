@@ -15,12 +15,18 @@ def parse_input(input_path: Path) -> Tuple[str, Dict[str, str]]:
 
 
 def dfa2spec(prefix, input_path, output_path):
-    print(f"shelleyv {input_path} -f ltl --dfa -o {output_path} output --prefix {prefix}")
+    output = (
+        f"shelleyv {input_path} -f ltl --dfa -o {output_path} output --prefix {prefix}"
+    )
+    print(output)
+    return output
 
 
 def generate_specs(subsystems):
+    specs = []
     for prefix, path in subsystems.items():
-        dfa2spec(prefix, path, f"{prefix}.out")
+        specs.append(dfa2spec(prefix, path, f"{prefix}.out"))
+    return specs
 
 
 def main():

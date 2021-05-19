@@ -18,7 +18,7 @@ from shelley.automata import (
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
 
-import shelley.parsers.lark2shelley as lark_parser
+import shelley.parsers.shelley_lark_parser as lark_parser
 import shelley.parsers.yaml.yaml2shelley as yaml_parser
 
 logger = logging.getLogger("shelleyc")
@@ -26,11 +26,11 @@ logger = logging.getLogger("shelleyc")
 
 class DeviceMapping:
     def __init__(
-            self,
-            *,
-            files: Optional[Dict[str, Path]] = None,
-            binary: bool = False,
-            base_dir: Path = Path.cwd(),
+        self,
+        *,
+        files: Optional[Dict[str, Path]] = None,
+        binary: bool = False,
+        base_dir: Path = Path.cwd(),
     ):
         self.files = dict() if files is None else files
         self.binary = binary
@@ -54,7 +54,7 @@ class DeviceMapping:
 
 
 def get_dest_path(
-        args_binary: bool, args_output_dir: str, args_src_filepath: str, device_name: str
+    args_binary: bool, args_output_dir: str, args_src_filepath: str, device_name: str
 ) -> str:
     if args_output_dir is None:
         output_dir = os.path.dirname(args_src_filepath)
@@ -80,7 +80,7 @@ def get_dest_path(
 
 
 def _get_known_devices(
-        device: ShelleyDevice, uses: Dict[str, str], binary: bool = False
+    device: ShelleyDevice, uses: Dict[str, str], binary: bool = False
 ) -> Dict[str, CheckedDevice]:
     known_devices: Dict[str, CheckedDevice] = {}
 
@@ -108,18 +108,18 @@ def _get_ext(binary: bool = False) -> str:
 
 
 def compile_shelley(
-        *,
-        src_path: Path,
-        uses_base_dir: Path,
-        uses: Dict[str, str],
-        dst_path: Optional[Path] = None,
-        binary: bool = False,
-        integration: Optional[Path] = None,
-        dump_timings: Optional[IO[str]] = None,
-        save_output: bool = False,
-        slow_check: bool = False,
-        skip_testing: bool = False,
-        skip_checks: bool = False,
+    *,
+    src_path: Path,
+    uses_base_dir: Path,
+    uses: Dict[str, str],
+    dst_path: Optional[Path] = None,
+    binary: bool = False,
+    integration: Optional[Path] = None,
+    dump_timings: Optional[IO[str]] = None,
+    save_output: bool = False,
+    slow_check: bool = False,
+    skip_testing: bool = False,
+    skip_checks: bool = False,
 ) -> Path:
     """
 
@@ -177,7 +177,7 @@ def compile_shelley(
         save_timings(dump_timings, dev)
 
     if (
-            integration is not None and dev.internal is not None
+        integration is not None and dev.internal is not None
     ):  # do this only for compound devices
         logger.debug("Generating integration diagram...")
 

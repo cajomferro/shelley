@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
-from shelley.parsers.lark2shelley import parser as lark_parser, ShelleyLanguage
+from shelley.parsers.shelley_lark_parser import parser as lark_parser, ShelleyLanguage
 from shelley.ast.devices import Device
 from shelley.ast.components import Components, Component
 from shelley.ast.triggers import Triggers
@@ -367,8 +367,8 @@ base Led {
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert (
-            visitor.result.strip()
-            == """Device Led:
+        visitor.result.strip()
+        == """Device Led:
   events:
     on, off
   start events:
@@ -402,8 +402,8 @@ def test_timer() -> None:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
     assert (
-            visitor.result.strip()
-            == """Device Timer:
+        visitor.result.strip()
+        == """Device Timer:
   events:
     started, canceled, timeout
   start events:
@@ -423,8 +423,7 @@ def test_timer() -> None:
 
 
 def test_desklamp() -> None:
-    src_code = \
-        """
+    src_code = """
         DeskLamp(
             ledA: Led,
             ledB: Led,
@@ -458,8 +457,6 @@ def test_desklamp() -> None:
         }
         """
 
-
-
     tree = lark_parser.parse(src_code)
     shelley_device = ShelleyLanguage().transform(tree)
 
@@ -467,8 +464,8 @@ def test_desklamp() -> None:
     shelley_device.accept(visitor)
 
     assert (
-            visitor.result.strip()
-            == """Device DeskLamp uses Led, Button, Timer:
+        visitor.result.strip()
+        == """Device DeskLamp uses Led, Button, Timer:
   events:
     level1, level2, standby1, standby2
   start events:

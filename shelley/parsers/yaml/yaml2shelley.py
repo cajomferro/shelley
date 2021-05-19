@@ -35,15 +35,15 @@ from shelley.ast.rules import (
 
 class ShelleyParserError(Exception):
     def __init__(
-            self,
-            *,
-            title: str,
-            reason: Optional[str] = None,
-            hints: Collection[str] = (),
-            parent: Optional["ShelleyParserError"] = None,
+        self,
+        *,
+        title: str,
+        reason: Optional[str] = None,
+        hints: Collection[str] = (),
+        parent: Optional["ShelleyParserError"] = None,
     ) -> None:
         assert (reason is None and parent is not None) or (
-                reason is not None and parent is None
+            reason is not None and parent is None
         )
         self.title = title
         self.reason = reason
@@ -81,11 +81,11 @@ def BehaviorError(reason: Optional[str] = None, hints=(), parent=None):
 
 class OperationDeclError(ShelleyParserError):
     def __init__(
-            self,
-            names=Optional[Iterable[str]],
-            reason: Optional[str] = None,
-            hints: Collection[str] = (),
-            parent: Optional[ShelleyParserError] = None,
+        self,
+        names=Optional[Iterable[str]],
+        reason: Optional[str] = None,
+        hints: Collection[str] = (),
+        parent: Optional[ShelleyParserError] = None,
     ) -> None:
         if names is None:
             title = "operation declaration error"
@@ -128,7 +128,7 @@ def _parse_components(src: Mapping[str, str], components: Components) -> None:
 
 
 def parse_bool_field(
-        field_name: str, default_value: bool, event_name: str, event_data: Any
+    field_name: str, default_value: bool, event_name: str, event_data: Any
 ) -> bool:
     try:
         result = event_data[field_name]
@@ -150,7 +150,7 @@ def parse_bool_field(
             return default_value
 
 
-def _parse_event_list(data: dict, key: str, events: Events, ) -> List[Event]:
+def _parse_event_list(data: dict, key: str, events: Events,) -> List[Event]:
     ANY = "$ANY"
     TITLE = f"section {key!r}"
     HINTS = [
@@ -188,11 +188,11 @@ def _parse_event_list(data: dict, key: str, events: Events, ) -> List[Event]:
 
 
 def _parse_event(
-        event_name: str,
-        event_data: dict,
-        events: Events,
-        components: Components,
-        triggers: Triggers,
+    event_name: str,
+    event_data: dict,
+    events: Events,
+    components: Components,
+    triggers: Triggers,
 ) -> Event:
     event: Optional[Event] = None
     unknown_keys = set(event_data.keys()) - {KEY_MICRO, KEY_NEXT}
@@ -226,11 +226,11 @@ def _parse_event(
 
 
 def _parse_events(
-        src: Mapping,
-        events: Events,
-        components: Components,
-        triggers: Triggers,
-        behaviors: Behaviors,
+    src: Mapping,
+    events: Events,
+    components: Components,
+    triggers: Triggers,
+    behaviors: Behaviors,
 ) -> None:
     """
 
@@ -282,7 +282,7 @@ def _parse_events(
 
 
 def _parse_triggers(
-        src: Optional[Dict], event: Event, components: Components, triggers: Triggers
+    src: Optional[Dict], event: Event, components: Components, triggers: Triggers
 ) -> None:
     """
 
@@ -295,7 +295,7 @@ def _parse_triggers(
     trigger_rule: Optional[TriggerRule] = None
 
     if (
-            src is not None and len(components) == 0
+        src is not None and len(components) == 0
     ):  # simple device with micro (not allowed!)
         raise OperationDeclError(
             names=[event.name],
@@ -303,7 +303,7 @@ def _parse_triggers(
             hints=["remove integration rule or declare a component."],
         )
     elif (
-            src is None and len(components) > 0
+        src is None and len(components) > 0
     ):  # composition device not declaring micro for this event (not allowed!)
         count = len(components)
         raise OperationDeclError(
@@ -314,7 +314,7 @@ def _parse_triggers(
     elif src is None and len(components) == 0:  # simple device without micro (ok!)
         trigger_rule = TriggerRuleFired()
     elif (
-            src is not None and len(components) > 0
+        src is not None and len(components) > 0
     ):  # composition device declaring trigger for this event (ok!)
         trigger_rule = _parse_trigger_rule(src, components)
     else:

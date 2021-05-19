@@ -1,0 +1,40 @@
+formula:
+    | last
+    | atom
+    | paren
+    | land
+    | lor
+    | lnot
+    | implies
+    | equiv
+    | next
+    | next
+    | until
+    | globally
+    | eventually
+    | eq
+atom:
+    | bool
+    | act
+ident: CNAME
+act: (ident ".")? ident
+
+true: "true"
+false: "false"
+bool: true | false
+
+paren: "(" formula ")"
+land: formula "&" formula
+lor: formula "|" formula
+lnot: "!" formula
+next: "X" formula
+until: formula "U" formula
+implies: formula "->" formula
+equiv: formula "<->" formula
+globally: "G" formula
+eventually: "F" formula
+last: "L"
+eq: atom "=" atom
+%import common.CNAME
+%import common.WS
+%ignore WS

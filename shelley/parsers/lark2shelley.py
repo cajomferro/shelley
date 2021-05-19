@@ -17,13 +17,41 @@ from shelley.ast.devices import Device
 INITIAL = 1
 FINAL = 2
 
+# | next
+# | until
+
 parser = Lark(r"""
+
+temporal:
+  | hold_next
+  | until
+  | always
+  | eventually
+
+logical:
+  | neg
+  | conj
+  | implies
+
+neg: "~" ident
+
+conj: ident "<->" ident
+
+implies: temporal "=>" temporal
+
+hold_next: "X" "(" logical ")"
+
+until: temporal "U" temporal
+
+always: "G" "(" logical ")"
+
+eventually: "F" "(" logical ")"
 
 expr:
   | call
   | choice
   | loop
-  | seq
+  | seq  
 
 block: "{" expr "}" -> expr
 
@@ -51,7 +79,7 @@ sig:  [modifiers] ident next
 
 sigs: (sig ";")+ 
 
-clause: "enforce" ident
+clause: "enforce" temporal
 
 clauses: (clause ";")*
 

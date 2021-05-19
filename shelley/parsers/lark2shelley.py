@@ -49,6 +49,12 @@ next: "->" [ident ("," ident)* [","]] -> next_evts
 
 sig:  [modifiers] ident next
 
+sigs: (sig ";")+ 
+
+clause: "enforce" ident
+
+clauses: (clause ";")*
+
 op : sig block
 
 ops : "{" op+ "}"
@@ -57,8 +63,9 @@ name_type: ident ":" ident
 uses: [name_type ("," name_type)* [","]]
 
 sys:
-| ident "(" uses ")" ops -> new_sys
-| "base"  ident "{" (sig ";")+ "}" -> base_sys
+| ident "(" uses ")" ops clauses -> new_sys
+| "base"  ident "{" sigs clauses "}" -> base_sys
+
 COMMENT: /#[^\n]*/
 
 %import common.CNAME
@@ -109,6 +116,15 @@ class ShelleyLanguage(Transformer):
             is_final=FINAL in modifiers,
         ), nxt
 
+    def sigs(self, args):
+        return (args)
+
+    def clause(self, args):
+        return args
+
+    def clauses(self, args):
+        return (args)
+
     def initial(self, args):
         return INITIAL
 
@@ -142,7 +158,9 @@ class ShelleyLanguage(Transformer):
         return name.value
 
     def new_sys(self, args):
-        name, components, (evts, triggers, behaviors) = args
+        name, components, (evts, triggers, behaviors), clauses = args
+
+        print(clauses)
 
         device = Device(name=name,
                         events=evts,
@@ -157,7 +175,7 @@ class ShelleyLanguage(Transformer):
         return device
 
     def base_sys(self, args):
-        name, *sigs = args
+        name, sigs, clauses = args
         events = Events()
         triggers = Triggers()
         behaviors = Behaviors()
@@ -166,6 +184,9 @@ class ShelleyLanguage(Transformer):
                 behaviors.create(copy.copy(evt), Event(name=n, is_start=False, is_final=True))
             events.add(evt)
             triggers.create(evt, TriggerRuleFired())
+
+        for clause in clauses:
+            print(clause)
 
         device = Device(
             name=name,

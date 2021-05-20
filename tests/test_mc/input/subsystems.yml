@@ -1,5 +1,0 @@
-parent: controler-int.scy
-subsystems:
-  t: timer.scy
-  a: valve.scy
-  b: valve.scy

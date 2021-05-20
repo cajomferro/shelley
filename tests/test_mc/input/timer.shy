@@ -1,8 +1,0 @@
-base Timer {
-
-  initial begin -> end, out;
-
-  final end -> begin;
-
-  final out -> begin;
-}

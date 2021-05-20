@@ -16,6 +16,7 @@ _local
 *.png
 *.svg
 *.int
+*.smv
 shelley.egg-info
 dist
 *.int

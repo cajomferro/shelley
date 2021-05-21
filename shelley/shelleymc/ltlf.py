@@ -19,8 +19,11 @@ from shelley.parsers.ltlf_lark_parser import (
 from shelley.parsers.ltlf_lark_parser import parser as ltlf_parser
 import io
 
+
 # LTLSPEC (action=level1) -> (action=standby1 | action=level1);
-def smv_dump(state_diagram, var_action="_action", var_eos="_eos", var_state="_state"):
+def generate_smv(
+    state_diagram, var_action="_action", var_eos="_eos", var_state="_state"
+) -> io.StringIO:
     dump = io.StringIO()
 
     to_act = lambda x: x if x is None else x.replace(".", "_")

@@ -23,7 +23,7 @@ def create_smv_from_integration_model(
         regular.NFA.from_dict(fsm_dict), dfa=True, filter=filter
     )
 
-    smv_model: StringIO = ltlf.smv_dump(state_diagram=n.as_dict(flatten=True))
+    smv_model: StringIO = ltlf.generate_smv(state_diagram=n.as_dict(flatten=True))
 
     return smv_model
 

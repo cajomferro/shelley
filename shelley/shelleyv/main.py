@@ -5,9 +5,11 @@ from typing import Any
 from karakuri import regular
 from pathlib import Path
 import json
+from io import StringIO
 
 from shelley.automata.view import fsm2dot, fsm2tex
 from shelley.shelleyv import shelleyv
+from shelley.shelleymc import ltlf
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -99,9 +101,8 @@ def main() -> None:
     if args.format == "smv":
         if not args.dfa:
             parser.error("Option '--output smv' requires '--dfa'")
-        shelleyv.smv_dump(
-            state_diagram=n.as_dict(flatten=True), fp=fp,
-        )
+        smv_model: StringIO = ltlf.generate_smv(state_diagram=n.as_dict(flatten=True))
+        print(smv_model.getvalue(), file=fp)
         return
 
     if args.format == "tex":

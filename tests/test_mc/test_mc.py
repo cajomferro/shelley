@@ -2,7 +2,7 @@ from pathlib import Path
 import yaml
 from typing import Any
 import argparse
-import shelley.shelleyv.main as shelleyv
+from shelley.shelleyv import shelleyv
 from karakuri import regular
 import io
 
@@ -85,35 +85,10 @@ LTLSPEC  G(_eos -> G(_eos) & X(_eos)); -- sanity check
 """
 
 
-def get_args():
-    """
-    This simulates a command line call with the --dfa command only
-    (other parser arguments are required by the handle_fsm method but not included)
-    @return:
-    """
-    parser = argparse.ArgumentParser()
-
-    # 1. add required arguments to parser
-    parser.add_argument("--dfa", action="store_true", help="Convert to a DFA first")
-    parser.add_argument(
-        "--no-epsilon", action="store_true", help="Remove epsilon transitions"
-    )
-    parser.add_argument(
-        "--filter",
-        default=None,
-        help="Keep only the (operations/calls) that match the given regex, hide (epsilon) the remaining ones.",
-    )
-    parser.add_argument("--no-sink", action="store_true", help="Remove sink states")
-    parser.add_argument("--minimize", action="store_true", help="Minimize the DFA")
-
-    # 2. simulate a command with the --dfa option activated (the others are ignored)
-    return parser.parse_args(["--dfa"])
-
-
 def test_create_nusmv_model():
     fsm_dict = yaml.load(CONTROLLER_INTEGRATION_MODEL, Loader=yaml.FullLoader)
     n: regular.NFA[Any, str] = shelleyv.handle_fsm(
-        regular.NFA.from_dict(fsm_dict), get_args()
+        regular.NFA.from_dict(fsm_dict), dfa=True
     )
 
     file = io.StringIO()

@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import List, Mapping
 from shelley import shelleyc
+from shelley.shelleyv import shelleyv
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleymc")
@@ -80,22 +81,9 @@ def create_nusmv_model(integration: Path, output: Path, formula: List[str]) -> N
     @param formula: optional
     """
 
-    logger.info(
-        f"Creating NuSMV model: {output} | split usage: disabled | formula: {formula}"
-    )
-    shelleyv_call = [
-        "shelleyv",
-        str(integration),
-        "--dfa",
-        "-f",
-        "smv",
-        "-o",
-        str(output),
-    ]
-    logger.debug(" ".join(shelleyv_call))
-    subprocess.check_call(
-        shelleyv_call, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-    )
+    logger.info(f"Creating NuSMV model: {output} | formula: {formula}")
+
+    shelleyv.create_smv_from_integration_model(integration, output)
 
     if len(formula) > 0:
         logger.info("Appending LTL formula:", " & ".join(formula))
@@ -208,6 +196,7 @@ def main():
     if (
         args.integration_check and not args.split_usage
     ) or not args.skip_integration_model:
+        logger.debug("Split usage is disabled")
         create_nusmv_model(integration, nusmv_integration_model, args.formula)
 
     if args.integration_check:

@@ -6,9 +6,11 @@ import argparse
 import subprocess
 from pathlib import Path
 from typing import List, Mapping
+from shelley import shelleyc
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleymc")
+VERBOSE: bool = False
 
 
 def get_instances(dev_path: Path, uses_path: Path):
@@ -52,22 +54,21 @@ def create_integration_model(spec: Path, uses: Path, integration: Path) -> None:
     input: system spec + uses
     output: integration (FSM) (*-i.scy)
     """
+
     logger.info(f"Creating integration model: {integration}")
-    shelleyc_call = [
-        "shelleyc",
-        "-u",
-        str(uses),
-        "-d",
-        str(spec),
-        "--skip-checks",
-        "--integration",
-        str(integration),
-    ]
-    logger.debug(" ".join(shelleyc_call))
     try:
-        subprocess.check_call(shelleyc_call)
-    except subprocess.CalledProcessError:
+        shelleyc.compile_shelley(
+            src_path=spec, uses_path=uses, integration=integration, skip_checks=True,
+        )
+        logger.debug("OK!")
+    except shelleyc.CompilationError as error:
+        if VERBOSE:
+            logger.error(str(error), exc_info=VERBOSE)
+        else:
+            print(str(error), file=sys.stderr)
+        logger.debug("ERROR!")
         sys.exit(255)
+
     assert integration.exists()
 
 
@@ -191,6 +192,7 @@ def main():
     args = parse_command()
 
     if args.verbosity:
+        VERBOSE = True
         logger.setLevel(logging.DEBUG)
 
     logger.debug(f"Current path: {Path.cwd()}")

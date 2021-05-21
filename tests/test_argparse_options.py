@@ -1,6 +1,7 @@
 import yaml
 from pathlib import Path
 import argparse
+from shelley import shelleyc
 from shelley.shelleyc import main
 from typing import Optional
 
@@ -94,6 +95,6 @@ def test_composite_device() -> None:
     with args.uses.open(mode="w") as f:
         yaml.dump(uses_yaml, f)
 
-    assert main.parse_uses(args.uses) == uses_yaml
+    assert shelleyc._parse_uses(args.uses) == uses_yaml
 
     uses.unlink()

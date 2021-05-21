@@ -111,7 +111,7 @@ def get_args():
 
 
 def test_create_nusmv_model():
-    fsm_dict = yaml.load(CONTROLLER_INTEGRATION_MODEL)
+    fsm_dict = yaml.load(CONTROLLER_INTEGRATION_MODEL, Loader=yaml.FullLoader)
     n: regular.NFA[Any, str] = shelleyv.handle_fsm(
         regular.NFA.from_dict(fsm_dict), get_args()
     )

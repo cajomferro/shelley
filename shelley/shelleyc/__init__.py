@@ -2,6 +2,7 @@ import logging
 import os
 from typing import List, Dict, Optional, Any, cast, IO
 from pathlib import Path
+import yaml
 
 from shelley.shelleyc import settings
 from shelley.shelleyc.exceptions import CompilationError
@@ -99,6 +100,24 @@ def _get_known_devices(
     return known_devices
 
 
+def _parse_uses(uses_path: Optional[Path]) -> Dict[str, str]:
+    if uses_path is None:
+        return {}
+
+    uses: Dict[str, str]
+    with uses_path.open(mode="r") as f:
+        uses = yaml.safe_load(f)
+
+    if uses is None:
+        return {}  # empty or commented yaml
+    elif isinstance(uses, dict):
+        return uses
+    else:
+        raise CompilationError(
+            "Shelley parser error: uses file must be a valid dictionary"
+        )
+
+
 def _get_ext(binary: bool = False) -> str:
     return (
         settings.EXT_SHELLEY_COMPILED_BIN
@@ -110,8 +129,7 @@ def _get_ext(binary: bool = False) -> str:
 def compile_shelley(
     *,
     src_path: Path,
-    uses_base_dir: Path,
-    uses: Dict[str, str],
+    uses_path: Path,
     dst_path: Optional[Path] = None,
     binary: bool = False,
     integration: Optional[Path] = None,
@@ -153,6 +171,8 @@ def compile_shelley(
     if dst_path is None:
         dst_path = src_path.parent / (src_path.stem + "." + _get_ext(binary))
 
+    uses_base_dir = uses_path.parent if uses_path is not None else Path.cwd()
+    uses = _parse_uses(uses_path)
     known_devices = DeviceMapping(
         files=dict((k, Path(v)) for (k, v) in uses.items()),
         binary=binary,

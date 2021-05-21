@@ -9,7 +9,7 @@ from shelley.ast.devices import Device as ShelleyDevice
 from shelley import parsers, shelleyc
 from shelley.shelleyc import main
 
-EXAMPLES_PATH = Path() / "tests" / "test_integration" / "input"
+EXAMPLES_PATH = Path() / Path(__file__).parent / "input"
 COMPILED_PATH = EXAMPLES_PATH / "compiled"
 
 
@@ -20,8 +20,7 @@ def empty_devices(name: str) -> CheckedDevice:
 def call_shelleyc(args: argparse.Namespace, **kwargs: Any) -> Path:
     data = dict(
         src_path=args.device,
-        uses=main.parse_uses(args.uses),
-        uses_base_dir=Path.cwd(),
+        uses_path=args.uses,
         dst_path=args.output,
         binary=args.binary,
         skip_checks=args.skip_checks,
@@ -46,11 +45,11 @@ def _remove_compiled_files(outdir: Path) -> None:
 
 def _get_shelley_device(name: str) -> ShelleyDevice:
     path = (
-        Path.cwd()
-        / EXAMPLES_PATH
-        / "{name}.{ext}".format(
-            name=name, ext=shelleyc.settings.EXT_SHELLEY_SOURCE_YAML[0]
-        )
+            Path.cwd()
+            / EXAMPLES_PATH
+            / "{name}.{ext}".format(
+        name=name, ext=shelleyc.settings.EXT_SHELLEY_SOURCE_YAML[0]
+    )
     )
     return parsers.get_shelley_from_yaml(path)
 
@@ -145,8 +144,8 @@ def test_smartbutton_file_invalid_dict_uses_file() -> None:
         call_shelleyc(args)
 
     assert (
-        str(exc_info.value)
-        == "Shelley parser error: uses file must be a valid dictionary"
+            str(exc_info.value)
+            == "Shelley parser error: uses file must be a valid dictionary"
     )
 
     _remove_compiled_dir()
@@ -161,9 +160,9 @@ def test_smartbutton_file_not_found_uses_file() -> None:
 
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
-    path = Path.cwd() / "buttonBAD.scy"
+    path = EXAMPLES_PATH / "buttonBAD.scy"
     assert (
-        str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
+            str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
     )
 
     _remove_compiled_dir()
@@ -224,14 +223,12 @@ def test_compile_desklamp_dependency_not_found_2() -> None:
     src_path = EXAMPLES_PATH / "desklamp.yml"
     uses_path = EXAMPLES_PATH / "uses.yml"
     args = make_args(src_path, uses_path)
-
     with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
 
-    path = Path.cwd() / "tests/test_integration/input/compiled/led.scy"
-
+    path = COMPILED_PATH / "led.scy"
     assert (
-        str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
+            str(exc_info.value) == f"Use device not found: {path}. Please compile it first!"
     )
 
     _remove_compiled_dir()
@@ -250,4 +247,9 @@ def test_compile_ambiguous() -> None:
 
     assert "Invalid device: AmbiguityFailure" in str(exc_info.value)
 
+    _remove_compiled_dir()
+
+
+@pytest.fixture(scope='session', autouse=True)
+def cleanup():
     _remove_compiled_dir()

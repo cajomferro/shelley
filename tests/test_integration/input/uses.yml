@@ -1,4 +1,4 @@
-Button: tests/test_integration/input/compiled/button.scy
-SimpleButton: tests/test_integration/input/compiled/simple_button.scy
-Led: tests/test_integration/input/compiled/led.scy
-Timer: tests/test_integration/input/compiled/timer.scy
+Button: compiled/button.scy
+SimpleButton: compiled/simple_button.scy
+Led: compiled/led.scy
+Timer: compiled/timer.scy

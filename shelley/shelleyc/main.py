@@ -62,24 +62,6 @@ def get_args() -> argparse.Namespace:
     return create_parser().parse_args()
 
 
-def parse_uses(uses_path: Optional[Path]) -> Dict[str, str]:
-    if uses_path is None:
-        return {}
-
-    uses: Dict[str, str]
-    with uses_path.open(mode="r") as f:
-        uses = yaml.safe_load(f)
-
-    if uses is None:
-        return {}  # empty or commented yaml
-    elif isinstance(uses, dict):
-        return uses
-    else:
-        raise CompilationError(
-            "Shelley parser error: uses file must be a valid dictionary"
-        )
-
-
 def parse() -> None:
     args: argparse.Namespace = get_args()
 
@@ -92,8 +74,7 @@ def parse() -> None:
     try:
         compile_shelley(
             src_path=args.device,
-            uses_base_dir=args.uses.parent if args.uses is not None else Path.cwd(),
-            uses=parse_uses(args.uses),
+            uses_path=args.uses,
             dst_path=args.output,
             binary=args.binary,
             integration=args.integration,

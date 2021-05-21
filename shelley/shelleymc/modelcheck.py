@@ -6,8 +6,10 @@ import argparse
 import subprocess
 from pathlib import Path
 from typing import List, Mapping
+from io import StringIO
 from shelley import shelleyc
 from shelley.shelleyv import shelleyv
+from shelley.shelleymc import ltlf
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleymc")
@@ -83,10 +85,13 @@ def create_nusmv_model(integration: Path, output: Path, formula: List[str]) -> N
 
     logger.info(f"Creating NuSMV model: {output} | formula: {formula}")
 
-    shelleyv.create_smv_from_integration_model(integration, output)
+    model: StringIO = shelleyv.create_smv_from_integration_model(integration)
+    with output.open("w") as fp:
+        fp.write(model.getvalue())
 
     if len(formula) > 0:
         logger.info("Appending LTL formula:", " & ".join(formula))
+
         ltl_call = [
             "ltl",
             "formula",
@@ -103,23 +108,16 @@ def create_split_usage_model(
 ) -> None:
     for (instance_name, instance_spec) in subsystems.items():
         # Create the integration SMV file
-        usage_model = system_spec.parent / f"{system_spec.stem}-{instance_name}.smv"
+        usage_model_path = (
+            system_spec.parent / f"{system_spec.stem}-{instance_name}.smv"
+        )
 
-        logger.debug("Creating", usage_model)
-        logger.debug("Creating", usage_model)
-        shelleyv_call = [
-            "shelleyv",
-            str(integration),
-            "--dfa",
-            "-f",
-            "smv",
-            "--filter",
-            instance_name + ".*",
-            "-o",
-            str(usage_model),
-        ]
-        logger.debug(" ".join(shelleyv_call))
-        subprocess.check_call(shelleyv_call)
+        logger.debug("Creating", usage_model_path)
+        model: StringIO = shelleyv.create_smv_from_integration_model(
+            integration=integration, filter=instance_name + ".*"
+        )
+        with usage_model_path.open("w") as fp:
+            fp.write(model.getvalue())
 
         ltl_call = [
             "ltl",
@@ -133,11 +131,11 @@ def create_split_usage_model(
         logger.debug(" ".join(ltl_call))
 
         logger.debug("Model checking usage of", instance_name)
-        with usage_model.open("a+") as fp:
+        with usage_model_path.open("a+") as fp:
             fp.write(checks.decode("utf-8"))
         try:
             subprocess.check_call(
-                ["NuSMV", str(usage_model),]
+                ["NuSMV", str(usage_model_path),]
             )
         except subprocess.CalledProcessError:
             sys.exit(255)
@@ -149,18 +147,11 @@ def generate_subsystems_integration_checks(
     with nusmv_integration_model.open("a+") as fp:
         for (instance_name, instance_spec) in subsystems.items():
             logger.info(f"Append LTL usage of {instance_name}")
-            ltl_call = [
-                "ltl",
-                "instance",
-                "--spec",
-                str(instance_spec),
-                "--name",
-                instance_name,
-            ]
-            logger.debug(" ".join(ltl_call))
-            checks = subprocess.check_output(ltl_call).decode("utf-8")
-            logger.debug(checks)
-            fp.write(checks)
+            specs = ltlf.generate_spec(instance_spec, instance_name)
+
+            for spec in specs:
+                logger.debug(spec)
+                fp.write(f"{str(spec)}\n")
 
 
 def model_check_integration(nusmv_integration_model: Path) -> None:

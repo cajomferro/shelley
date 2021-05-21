@@ -5,6 +5,8 @@ from karakuri import regular
 from pathlib import Path
 import yaml
 from typing import Dict
+from shelley.shelleymc import ltlf
+from io import StringIO
 
 
 def load_integration(integration_path: Path) -> Dict:
@@ -12,111 +14,18 @@ def load_integration(integration_path: Path) -> Dict:
         return yaml.load(fp, Loader=yaml.FullLoader)
 
 
-def create_smv_from_integration_model(integration: Path, output: Path):
+def create_smv_from_integration_model(
+    integration: Path, filter: str = None
+) -> StringIO:
     fsm_dict = load_integration(integration)
 
-    n: regular.NFA[Any, str] = handle_fsm(regular.NFA.from_dict(fsm_dict), dfa=True)
-
-    with output.open(mode="w") as fp:
-        smv_dump(state_diagram=n.as_dict(flatten=True), fp=fp)
-
-
-# LTLSPEC (action=level1) -> (action=standby1 | action=level1);
-def smv_dump(
-    state_diagram, fp, var_action="_action", var_eos="_eos", var_state="_state"
-):
-    to_act = lambda x: x if x is None else x.replace(".", "_")
-    INDENT = "    "
-
-    def render_values(elem):
-        if isinstance(elem, str):
-            return elem
-        if len(elem) == 0:
-            raise ValueError()
-        return "{" + ", ".join(map(str, elem)) + "}"
-
-    def decl_var(name, values):
-        print(f"{INDENT}{name}: {render_values(values)};", file=fp)
-
-    def add_edge(src, char, dst):
-        char = to_act(char)
-        act = f" & {var_action}={char}" if char is not None else ""
-        print(f"{var_state}={src}{act}: {dst};", file=fp)
-
-    def init_var(name, values):
-        print(f"{INDENT}init({name}) := {render_values(values)};", file=fp)
-
-    def next_var_case(variable, elems):
-        print(f"{INDENT}next({variable}) := case", file=fp)
-        for (cond, res) in elems:
-            res = render_values(res)
-            print(f"{INDENT}{INDENT}{cond} : {res};", file=fp)
-        print(f"{INDENT}esac;", file=fp)
-
-    acts = list(
-        set(
-            to_act(edge["char"])
-            for edge in state_diagram["edges"]
-            if edge["char"] is not None
-        )
+    n: regular.NFA[Any, str] = handle_fsm(
+        regular.NFA.from_dict(fsm_dict), dfa=True, filter=filter
     )
-    acts.sort()
-    print("MODULE main", file=fp)
-    print("VAR", file=fp)
-    decl_var(f"{var_eos}", "boolean")
-    decl_var(f"{var_action}", acts)
 
-    states = list(
-        set(x["src"] for x in state_diagram["edges"]).union(
-            set(x["src"] for x in state_diagram["edges"])
-        )
-    )
-    states.sort()
-    decl_var(f"{var_state}", states)
-    print("ASSIGN", file=fp)
+    smv_model: StringIO = ltlf.smv_dump(state_diagram=n.as_dict(flatten=True))
 
-    # State
-    init_var(f"{var_state}", [state_diagram["start_state"]])
-    print(f"{INDENT}next({var_state}) := case", file=fp)
-    print(
-        f"{INDENT}{INDENT}{var_eos}: {var_state}; -- finished, no change in state",
-        file=fp,
-    )
-    for edge in state_diagram["edges"]:
-        print(f"{INDENT}{INDENT}", end="", file=fp)
-        src, char, dst = edge["src"], edge["char"], edge["dst"]
-        add_edge(src, char, dst)
-    print(f"{INDENT}esac;", file=fp)
-    # Action
-    if len(acts) > 1:
-        init_var(f"{var_action}", acts)
-        next_var_case(var_action, [(var_eos, var_action), ("TRUE", acts)])
-
-    # EOS
-    init_var(
-        var_eos,
-        ["TRUE", "FALSE"]
-        if state_diagram["start_state"] in state_diagram["accepted_states"]
-        else ["FALSE"],
-    )
-    lines = [
-        (var_eos, "TRUE"),
-    ]
-    for edge in state_diagram["edges"]:
-        src, char, dst = edge["src"], edge["char"], edge["dst"]
-        if dst in state_diagram["accepted_states"]:
-            char = to_act(char)
-            act = f" & {var_action}={char}" if char is not None else ""
-            lines.append((f"{var_state}={src}{act}", ["TRUE", "FALSE"]))
-    lines.append(("TRUE", "FALSE"))
-    next_var_case(var_eos, lines)
-    print(f"FAIRNESS {var_eos};", file=fp)
-
-    print(f"LTLSPEC F({var_eos}); -- sanity check", file=fp)
-    print(
-        f"LTLSPEC  G({var_eos} -> G({var_eos}) & X({var_eos})); -- sanity check",
-        file=fp,
-    )
+    return smv_model
 
 
 def mclr2_dump(state_diagram, fp):

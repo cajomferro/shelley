@@ -6,33 +6,8 @@ from shelley.shelleyv import shelleyv
 from karakuri import regular
 import io
 
-EXAMPLES_PATH = Path() / Path(__file__).parent / "input"
+INPUT_PATH = Path() / Path(__file__).parent / "input"
 
-CONTROLLER_INTEGRATION_MODEL = """
-accepted_states:
-- 3
-- 4
-edges:
-- char: level1
-  dst: 1
-  src: 0
-- char: level2
-  dst: 2
-  src: 1
-- char: standby1
-  dst: 3
-  src: 1
-- char: level1
-  dst: 1
-  src: 3
-- char: standby2
-  dst: 4
-  src: 2
-- char: level1
-  dst: 1
-  src: 4
-start_state: 0
-"""
 EXPECTED_NUSMV_MODEL = """MODULE main
 VAR
     _eos: boolean;
@@ -42,30 +17,30 @@ ASSIGN
     init(_state) := {0};
     next(_state) := case
         _eos: _state; -- finished, no change in state
-        _state=0 & _action=standby2: 1;
-        _state=0 & _action=level2: 1;
-        _state=0 & _action=standby1: 1;
-        _state=0 & _action=level1: 2;
-        _state=2 & _action=standby2: 1;
-        _state=2 & _action=level1: 1;
-        _state=2 & _action=level2: 3;
-        _state=2 & _action=standby1: 4;
-        _state=1 & _action=standby2: 1;
-        _state=1 & _action=level2: 1;
-        _state=1 & _action=standby1: 1;
-        _state=1 & _action=level1: 1;
-        _state=4 & _action=standby2: 1;
-        _state=4 & _action=level2: 1;
-        _state=4 & _action=standby1: 1;
+        _state=0 & _action=level1: 1;
+        _state=0 & _action=standby2: 2;
+        _state=0 & _action=standby1: 2;
+        _state=0 & _action=level2: 2;
+        _state=2 & _action=level1: 2;
+        _state=2 & _action=standby2: 2;
+        _state=2 & _action=standby1: 2;
+        _state=2 & _action=level2: 2;
+        _state=1 & _action=level1: 2;
+        _state=1 & _action=standby2: 2;
+        _state=1 & _action=standby1: 3;
+        _state=1 & _action=level2: 4;
         _state=4 & _action=level1: 2;
-        _state=3 & _action=standby2: 5;
-        _state=3 & _action=level2: 1;
-        _state=3 & _action=standby1: 1;
+        _state=4 & _action=standby1: 2;
+        _state=4 & _action=level2: 2;
+        _state=4 & _action=standby2: 5;
+        _state=5 & _action=level1: 1;
+        _state=5 & _action=standby2: 2;
+        _state=5 & _action=standby1: 2;
+        _state=5 & _action=level2: 2;
         _state=3 & _action=level1: 1;
-        _state=5 & _action=standby2: 1;
-        _state=5 & _action=level2: 1;
-        _state=5 & _action=standby1: 1;
-        _state=5 & _action=level1: 2;
+        _state=3 & _action=standby2: 2;
+        _state=3 & _action=standby1: 2;
+        _state=3 & _action=level2: 2;
     esac;
     init(_action) := {level1, level2, standby1, standby2};
     next(_action) := case
@@ -75,32 +50,25 @@ ASSIGN
     init(_eos) := {FALSE};
     next(_eos) := case
         _eos : TRUE;
-        _state=2 & _action=standby1 : {TRUE, FALSE};
-        _state=3 & _action=standby2 : {TRUE, FALSE};
+        _state=1 & _action=standby1 : {TRUE, FALSE};
+        _state=4 & _action=standby2 : {TRUE, FALSE};
         TRUE : FALSE;
     esac;
 FAIRNESS _eos;
-LTLSPEC F(_eos); -- sanity check
-LTLSPEC  G(_eos -> G(_eos) & X(_eos)); -- sanity check
+LTLSPEC F (_eos); -- sanity check
+LTLSPEC G (_eos -> G(_eos) & X(_eos)); -- sanity check
 """
 
 
 def test_create_nusmv_model():
-    fsm_dict = yaml.load(CONTROLLER_INTEGRATION_MODEL, Loader=yaml.FullLoader)
-    n: regular.NFA[Any, str] = shelleyv.handle_fsm(
-        regular.NFA.from_dict(fsm_dict), dfa=True
+    integration_model_path = INPUT_PATH / "controller.scy"
+    smv: io.StringIO = shelleyv.create_smv_from_integration_model(
+        integration_model_path
     )
-
-    file = io.StringIO()
-    shelleyv.smv_dump(
-        state_diagram=n.as_dict(flatten=True), fp=file,
-    )
-
-    smv = file.getvalue()
-    # print(f"NuSMV model: {smv}")
+    # print(f"NuSMV model: {smv.getvalue()}")
 
     # TODO: how to guarantee that both strings are equal?
-    assert (len(smv) - len(EXPECTED_NUSMV_MODEL)) == 0
+    assert (len(smv.getvalue()) - len(EXPECTED_NUSMV_MODEL)) == 0
 
 
 #

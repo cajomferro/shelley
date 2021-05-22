@@ -6,7 +6,6 @@ import argparse
 import subprocess
 from pathlib import Path
 from typing import List, Mapping
-from io import StringIO
 from shelley import shelleyc
 from shelley.shelleyv import shelleyv
 from shelley.shelleymc import ltlf
@@ -59,48 +58,41 @@ def create_integration_model(spec: Path, uses: Path, integration: Path) -> None:
     """
 
     logger.info(f"Creating integration model: {integration}")
-    try:
-        shelleyc.compile_shelley(
-            src_path=spec, uses_path=uses, integration=integration, skip_checks=True,
-        )
-        logger.debug("OK!")
-    except shelleyc.CompilationError as error:
-        if VERBOSE:
-            logger.error(str(error), exc_info=VERBOSE)
-        else:
-            print(str(error), file=sys.stderr)
-        logger.debug("ERROR!")
-        sys.exit(255)
+
+    shelleyc.compile_shelley(
+        src_path=spec, uses_path=uses, integration=integration, skip_checks=True,
+    )
 
     assert integration.exists()
 
 
-def create_nusmv_model(
-    integration_path: Path, smv_path: Path, formula: List[str]
-) -> None:
+def create_nusmv_model(integration: Path, smv: Path, ltlf_formulae: List[str]) -> None:
     """
     Create NuSMV model file from integration file
-    @param integration_path: path to integration file (FSM)
-    @param output: path to NuSMV model (*.smv)
-    @param formula: optional
+    @param integration: path to integration file (FSM)
+    @param smv: path to NuSMV model (*.smv)
+    @param ltlf_formulae: optional
     """
 
-    logger.info(f"Creating NuSMV model: {smv_path} | formula: {formula}")
+    logger.info(f"Creating NuSMV model: {smv} | formula: {ltlf_formulae}")
+    shelleyv.create_smv_from_integration_model(integration, smv)
 
-    shelleyv.create_smv_from_integration_model(integration_path, smv_path)
+    if len(ltlf_formulae) > 0:
+        logger.info("Appending LTL formulae:", " & ".join(ltlf_formulae))
+        ltl_formulae: List[str] = ltlf.convert_ltlf_formulae(ltlf_formulae)
+        for ltl in ltl_formulae:
+            logger.debug(f"LTL output: {ltl}")
+            with smv.open("a+") as fp:
+                fp.write(f"{ltl}\n")
 
-    if len(formula) > 0:
-        logger.info("Appending LTL formula:", " & ".join(formula))
 
-        ltl_call = [
-            "ltl",
-            "formula",
-        ]
-        checks = subprocess.check_output(ltl_call + formula)
-        logger.debug(" ".join(ltl_call))
-        logger.debug("LTL output: ", checks)
+def apend_ltl_usage(instance_spec: Path, instance_name: str, smv_path: Path):
+    logger.info(f"Append LTL usage of {instance_name}")
+    specs = ltlf.generate_spec(instance_spec, instance_name)
+    for spec in specs:
+        logger.debug(spec)
         with smv_path.open("a+") as fp:
-            fp.write(checks.decode("utf-8"))
+            fp.write(f"{spec}\n")
 
 
 def create_split_usage_model(
@@ -108,58 +100,25 @@ def create_split_usage_model(
 ) -> None:
     for (instance_name, instance_spec) in subsystems.items():
         # Create the integration SMV file
-        usage_model_path = (
-            system_spec.parent / f"{system_spec.stem}-{instance_name}.smv"
+        smv_path = system_spec.parent / f"{system_spec.stem}-{instance_name}.smv"
+
+        logger.debug("Creating", smv_path)
+        shelleyv.create_smv_from_integration_model(
+            integration=integration, smv_path=smv_path, filter=instance_name + ".*"
         )
 
-        logger.debug("Creating", usage_model_path)
-        model: StringIO = shelleyv.create_smv_from_integration_model(
-            integration=integration, filter=instance_name + ".*"
-        )
-        with usage_model_path.open("w") as fp:
-            fp.write(model.getvalue())
-
-        ltl_call = [
-            "ltl",
-            "instance",
-            "--spec",
-            str(instance_spec),
-            "--name",
-            instance_name,
-        ]
-        checks = subprocess.check_output(ltl_call)
-        logger.debug(" ".join(ltl_call))
+        apend_ltl_usage(instance_spec, instance_name, smv_path)
 
         logger.debug("Model checking usage of", instance_name)
-        with usage_model_path.open("a+") as fp:
-            fp.write(checks.decode("utf-8"))
-        try:
-            subprocess.check_call(
-                ["NuSMV", str(usage_model_path),]
-            )
-        except subprocess.CalledProcessError:
-            sys.exit(255)
+        model_check_integration(smv_path)
 
 
-def generate_subsystems_integration_checks(
-    nusmv_integration_model: Path, subsystems: Mapping[str, Path]
-) -> None:
-    with nusmv_integration_model.open("a+") as fp:
-        for (instance_name, instance_spec) in subsystems.items():
-            logger.info(f"Append LTL usage of {instance_name}")
-            specs = ltlf.generate_spec(instance_spec, instance_name)
-
-            for spec in specs:
-                logger.debug(spec)
-                fp.write(f"{str(spec)}\n")
-
-
-def model_check_integration(nusmv_integration_model: Path) -> None:
+def model_check_integration(smv_path: Path) -> None:
     logger.info("Model checking integration...")
     try:
         nusmv_call = [
             "NuSMV",
-            str(nusmv_integration_model),
+            str(smv_path),
         ]
         logger.debug(" ".join(nusmv_call))
         subprocess.check_call(nusmv_call)
@@ -168,6 +127,7 @@ def model_check_integration(nusmv_integration_model: Path) -> None:
 
 
 def main():
+    global VERBOSE
     args = parse_command()
 
     if args.verbosity:
@@ -177,24 +137,25 @@ def main():
     logger.debug(f"Current path: {Path.cwd()}")
 
     subsystems: Mapping[str, Path] = dict(get_instances(args.spec, args.uses))
-    spec: Path = args.spec
-    integration: Path = spec.parent / (spec.stem + "-i.scy")
-    nusmv_integration_model: Path = spec.parent / f"{spec.stem}.smv"
-    uses: Path = args.uses
+    spec_path: Path = args.spec
+    integration_path: Path = spec_path.parent / (spec_path.stem + "-i.scy")
+    smv_path: Path = spec_path.parent / f"{spec_path.stem}.smv"
+    uses_path: Path = args.uses
 
-    create_integration_model(spec, uses, integration)
+    create_integration_model(spec_path, uses_path, integration_path)
 
     if (
         args.integration_check and not args.split_usage
     ) or not args.skip_integration_model:
         logger.debug("Split usage is disabled")
-        create_nusmv_model(integration, nusmv_integration_model, args.formula)
+        create_nusmv_model(integration_path, smv_path, args.formula)
 
     if args.integration_check:
         if args.split_usage:
-            create_split_usage_model(spec, integration, subsystems)
+            create_split_usage_model(spec_path, integration_path, subsystems)
         else:
-            generate_subsystems_integration_checks(nusmv_integration_model, subsystems)
+            for (instance_name, instance_spec) in subsystems.items():
+                apend_ltl_usage(instance_spec, instance_name, smv_path)
 
     if not args.skip_mc:
-        model_check_integration(nusmv_integration_model)
+        model_check_integration(smv_path)

@@ -19,53 +19,6 @@ from shelley.parsers.ltlf_lark_parser import (
 from shelley.parsers.ltlf_lark_parser import parser as ltlf_parser
 
 
-def ltlf2ltl(formula, name, eos_var, action_var):
-    """
-    Converts an LTLf formula in an LTL formula
-    """
-
-    def rec(formula):
-        if isinstance(formula, Bool):
-            return formula
-        if isinstance(formula, Action):
-            if name is not None:
-                formula = Action(name=name + "_" + formula.name)
-            return And(Equal(action_var, formula), Not(eos_var))
-        elif isinstance(formula, Not):
-            return Not(rec(formula.formula))
-        elif isinstance(formula, Or):
-            return Or(rec(formula.left), rec(formula.right))
-        elif isinstance(formula, Equal):
-            return Equal(rec(formula.left), rec(formula.right))
-        elif isinstance(formula, And):
-            return And(rec(formula.left), rec(formula.right))
-        elif isinstance(formula, Implies):
-            return Implies(rec(formula.left), rec(formula.right))
-        elif isinstance(formula, Next):
-            return Next(And(rec(formula.formula), Not(eos_var)))
-        elif isinstance(formula, Eventually):
-            return Eventually(And(rec(formula.formula), Not(eos_var)))
-        elif isinstance(formula, Always):
-            return Always(Or(rec(formula.formula), eos_var))
-        elif isinstance(formula, Until):
-            return Until(
-                left=rec(formula.left), right=And(rec(formula.right), Not(eos_var))
-            )
-        raise TypeError(formula)
-
-    return rec(formula)
-
-
-def generate_formula(formulas, name, eos_var, action_var):
-    for formula in formulas:
-        tree = ltlf_parser.parse(formula)
-        ltlf = ltlf_parser.LTLParser().transform(tree)
-        print(
-            "LTLSPEC",
-            ltlf2ltl(ltlf, name=name, eos_var=eos_var, action_var=action_var,),
-        )
-
-
 @dataclass
 class Op:
     targets: list
@@ -79,12 +32,70 @@ class Op:
         self.targets.append(name)
 
 
-@dataclass
-class LTLSpec:
-    f: Formula
+def convert_ltlf_formulae(
+    ltlf_formulas: List[str], name: str, eos: Action = None, var_action: Action = None
+):
+    """
+    Convert LTLf to NuSMV LTL
 
-    def __str__(self):
-        return f"LTLSPEC {self.f} ;"
+    @param ltlf_formulas:
+    @param name:
+    @param eos:
+    @param var_action:
+    @return:
+    """
+    if eos is None:
+        eos = Action("_eos")
+
+    if var_action is None:
+        var_action = Action("_action")
+
+    ltl_formulae: List[str] = []
+
+    def ltlf2ltl(formula, name, eos_var, action_var):
+        """
+        Converts an LTLf formula in an LTL formula
+        """
+
+        def rec(formula):
+            if isinstance(formula, Bool):
+                return formula
+            if isinstance(formula, Action):
+                if name is not None:
+                    formula = Action(name=name + "_" + formula.name)
+                return And(Equal(action_var, formula), Not(eos_var))
+            elif isinstance(formula, Not):
+                return Not(rec(formula.formula))
+            elif isinstance(formula, Or):
+                return Or(rec(formula.left), rec(formula.right))
+            elif isinstance(formula, Equal):
+                return Equal(rec(formula.left), rec(formula.right))
+            elif isinstance(formula, And):
+                return And(rec(formula.left), rec(formula.right))
+            elif isinstance(formula, Implies):
+                return Implies(rec(formula.left), rec(formula.right))
+            elif isinstance(formula, Next):
+                return Next(And(rec(formula.formula), Not(eos_var)))
+            elif isinstance(formula, Eventually):
+                return Eventually(And(rec(formula.formula), Not(eos_var)))
+            elif isinstance(formula, Always):
+                return Always(Or(rec(formula.formula), eos_var))
+            elif isinstance(formula, Until):
+                return Until(
+                    left=rec(formula.left), right=And(rec(formula.right), Not(eos_var))
+                )
+            raise TypeError(formula)
+
+        return rec(formula)
+
+    for formula in ltlf_formulas:
+        tree = ltlf_parser.parse(formula)
+        ltlf = ltlf_parser.LTLParser().transform(tree)
+        ltl_formulae.append(
+            f"LTLSPEC {ltlf2ltl(ltlf, name=name, eos_var=eos, action_var=var_action)}"
+        )
+
+    return ltl_formulae
 
 
 def generate_spec(
@@ -104,7 +115,7 @@ def generate_spec(
     if var_action is None:
         var_action = Action("_action")
 
-    ltl_specs: List[LTLSpec] = []
+    ltl_specs: List[str] = []
 
     targets = dict()
     dev = parse(spec_path)
@@ -135,12 +146,12 @@ def generate_spec(
         f = Always(Implies(mk_act(src), Next(Until(tau(), will_happen))))
         forms.append(f)
     for f in forms:
-        ltl_specs.append(LTLSpec(f))
+        ltl_specs.append(f"LTLSPEC {f} ;")
 
     return ltl_specs
 
 
-def main():
+def parse_command():
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
@@ -174,9 +185,14 @@ def main():
         help="NuSMV variable used to represent the end of a sequence. Default: %(default)s",
     )
 
-    args = parser.parse_args()
+    return parser.parse_args()
+
+
+def main():
+
+    args = parse_command()
     if args.command in ["i", "instance"]:
-        ltl_specs: List[LTLSpec] = generate_spec(
+        ltl_specs: List[str] = generate_spec(
             spec_path=args.spec,
             prefix=args.name,
             eos=Action(args.var_end_of_sequence),
@@ -185,9 +201,11 @@ def main():
         for spec in ltl_specs:
             print(spec)
     elif args.command in ["f", "formula"]:
-        generate_formula(
+        ltl_formulae: List[str] = convert_ltlf_formulae(
             args.formulas,
             name=args.name,
-            eos_var=Action(args.var_end_of_sequence),
-            action_var=Action(args.var_action),
+            eos=Action(args.var_end_of_sequence),
+            var_action=Action(args.var_action),
         )
+        for formula in ltl_formulae:
+            print(formula)

@@ -58,9 +58,7 @@ LTLSPEC G (_eos -> G(_eos) & X(_eos)); -- sanity check
 def test_create_nusmv_model():
     integration_model_path = WORKDIR_PATH / "controller.scy"
     smv_path = WORKDIR_PATH / "controller.smv"
-    shelleyv.create_smv_from_integration_model(
-        integration_model_path, smv_path
-    )
+    shelleyv.create_smv_from_integration_model(integration_model_path, smv_path)
     # print(f"NuSMV model: {smv.getvalue()}")
 
     # TODO: how to guarantee that both strings are equal?
@@ -68,6 +66,7 @@ def test_create_nusmv_model():
         assert (len(fp.read()) - len(EXPECTED_NUSMV_MODEL)) == 0
 
     smv_path.unlink()
+
 
 #
 # def test_dfa2spec() -> None:

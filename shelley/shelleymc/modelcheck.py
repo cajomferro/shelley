@@ -75,19 +75,19 @@ def create_integration_model(spec: Path, uses: Path, integration: Path) -> None:
     assert integration.exists()
 
 
-def create_nusmv_model(integration: Path, output: Path, formula: List[str]) -> None:
+def create_nusmv_model(
+    integration_path: Path, smv_path: Path, formula: List[str]
+) -> None:
     """
     Create NuSMV model file from integration file
-    @param integration: path to integration file (FSM)
+    @param integration_path: path to integration file (FSM)
     @param output: path to NuSMV model (*.smv)
     @param formula: optional
     """
 
-    logger.info(f"Creating NuSMV model: {output} | formula: {formula}")
+    logger.info(f"Creating NuSMV model: {smv_path} | formula: {formula}")
 
-    model: StringIO = shelleyv.create_smv_from_integration_model(integration)
-    with output.open("w") as fp:
-        fp.write(model.getvalue())
+    shelleyv.create_smv_from_integration_model(integration_path, smv_path)
 
     if len(formula) > 0:
         logger.info("Appending LTL formula:", " & ".join(formula))
@@ -99,7 +99,7 @@ def create_nusmv_model(integration: Path, output: Path, formula: List[str]) -> N
         checks = subprocess.check_output(ltl_call + formula)
         logger.debug(" ".join(ltl_call))
         logger.debug("LTL output: ", checks)
-        with output.open("a+") as fp:
+        with smv_path.open("a+") as fp:
             fp.write(checks.decode("utf-8"))
 
 

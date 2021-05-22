@@ -1,12 +1,7 @@
 from pathlib import Path
-import yaml
-from typing import Any
-import argparse
 from shelley.shelleyv import shelleyv
-from karakuri import regular
-import io
 
-INPUT_PATH = Path() / Path(__file__).parent / "input"
+WORKDIR_PATH = Path() / Path(__file__).parent / "workdir"
 
 EXPECTED_NUSMV_MODEL = """MODULE main
 VAR
@@ -61,15 +56,18 @@ LTLSPEC G (_eos -> G(_eos) & X(_eos)); -- sanity check
 
 
 def test_create_nusmv_model():
-    integration_model_path = INPUT_PATH / "controller.scy"
-    smv: io.StringIO = shelleyv.create_smv_from_integration_model(
-        integration_model_path
+    integration_model_path = WORKDIR_PATH / "controller.scy"
+    smv_path = WORKDIR_PATH / "controller.smv"
+    shelleyv.create_smv_from_integration_model(
+        integration_model_path, smv_path
     )
     # print(f"NuSMV model: {smv.getvalue()}")
 
     # TODO: how to guarantee that both strings are equal?
-    assert (len(smv.getvalue()) - len(EXPECTED_NUSMV_MODEL)) == 0
+    with smv_path.open() as fp:
+        assert (len(fp.read()) - len(EXPECTED_NUSMV_MODEL)) == 0
 
+    smv_path.unlink()
 
 #
 # def test_dfa2spec() -> None:

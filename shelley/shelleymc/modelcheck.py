@@ -59,9 +59,15 @@ def create_integration_model(spec: Path, uses: Path, integration: Path) -> None:
 
     logger.info(f"Creating integration model: {integration}")
 
-    shelleyc.compile_shelley(
-        src_path=spec, uses_path=uses, integration=integration, skip_checks=True,
-    )
+    try:
+        shelleyc.compile_shelley(
+            src_path=spec, uses_path=uses, integration=integration, skip_checks=True,
+        )
+    except shelleyc.CompilationError as err:
+        if VERBOSE:
+            logger.exception(err, exc_info=True)
+        logger.error(err)
+        sys.exit(255)
 
     assert integration.exists()
 
@@ -87,7 +93,8 @@ def create_nusmv_model(integration: Path, smv: Path, ltlf_formulae: List[str]) -
 
 
 def append_ltl_usage(instance_spec: Path, instance_name: str, smv_path: Path):
-    logger.info(f"Append LTL usage of {instance_name}")
+    logger.info(f"Append LTL usage of {instance_name} ({instance_spec})")
+
     specs = ltlf.generate_spec(instance_spec, instance_name)
     for spec in specs:
         logger.debug(spec)

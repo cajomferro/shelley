@@ -1,7 +1,8 @@
 from typing import List
-from shelley.parsers.shelley_lark_parser import parse
+from shelley.parsers import shelley_lark_parser
 from pathlib import Path
 from dataclasses import dataclass
+from shelley.ast.devices import Device as ShelleyDevice
 from shelley.parsers.ltlf_lark_parser import (
     And,
     Equal,
@@ -118,7 +119,7 @@ def generate_spec(
     ltl_specs: List[str] = []
 
     targets = dict()
-    dev = parse(spec_path)
+    dev : ShelleyDevice = shelley_lark_parser.parse(spec_path)
     for (src, dst) in dev.behaviors.as_list_tuples():
         dsts = targets.get(src, None)
         if dsts is None:

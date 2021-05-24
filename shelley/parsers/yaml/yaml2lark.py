@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import yaml
 from pathlib import Path
 from shelley import parsers
+from shelley.parsers.yaml import yaml2shelley
 
 from typing import Optional, Tuple, Dict, Any
 
@@ -146,7 +146,7 @@ class Yaml2Lark(Visitor):
 
 
 def translate(yaml_source: Path, lark_source: Path):
-    shelley_device = parsers.get_shelley_from_yaml(yaml_source)
+    shelley_device = yaml2shelley.get_shelley_from_yaml(yaml_source)
     visitor = Yaml2Lark(components=shelley_device.components)
     shelley_device.accept(visitor)
 

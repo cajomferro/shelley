@@ -86,7 +86,7 @@ def create_nusmv_model(integration: Path, smv: Path, ltlf_formulae: List[str]) -
                 fp.write(f"{ltl}\n")
 
 
-def apend_ltl_usage(instance_spec: Path, instance_name: str, smv_path: Path):
+def append_ltl_usage(instance_spec: Path, instance_name: str, smv_path: Path):
     logger.info(f"Append LTL usage of {instance_name}")
     specs = ltlf.generate_spec(instance_spec, instance_name)
     for spec in specs:
@@ -107,7 +107,7 @@ def create_split_usage_model(
             integration=integration, smv_path=smv_path, filter=instance_name + ".*"
         )
 
-        apend_ltl_usage(instance_spec, instance_name, smv_path)
+        append_ltl_usage(instance_spec, instance_name, smv_path)
 
         logger.debug("Model checking usage of", instance_name)
         model_check_integration(smv_path)
@@ -155,7 +155,7 @@ def main():
             create_split_usage_model(spec_path, integration_path, subsystems)
         else:
             for (instance_name, instance_spec) in subsystems.items():
-                apend_ltl_usage(instance_spec, instance_name, smv_path)
+                append_ltl_usage(instance_spec, instance_name, smv_path)
 
     if not args.skip_mc:
         model_check_integration(smv_path)

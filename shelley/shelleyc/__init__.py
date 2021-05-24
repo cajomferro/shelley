@@ -134,7 +134,7 @@ def compile_shelley(
     binary: bool = False,
     integration: Optional[Path] = None,
     dump_timings: Optional[IO[str]] = None,
-    save_output: bool = False,
+    save_output: bool = True,
     slow_check: bool = False,
     skip_testing: bool = False,
     skip_checks: bool = False,

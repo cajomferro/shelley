@@ -1,29 +1,29 @@
 import sys
 import re
-from typing import Any
+from typing import Any, Optional
 from karakuri import regular
 from pathlib import Path
 import yaml
-from typing import Dict
-from shelley.shelleymc import ltlf
-from io import StringIO
 
 
-def load_integration(integration_path: Path) -> Dict:
-    with integration_path.open() as fp:
-        return yaml.load(fp, Loader=yaml.FullLoader)
-
-
-def create_smv_from_integration_model(
-    integration: Path, smv_path: Path, filter: str = None
+def fsm2smv(
+    fsm_model: Path, smv_model: Path, filter_instance: Optional[str] = None
 ) -> None:
-    fsm_dict = load_integration(integration)
+    """
+    Convert an FSM model (.scy) to an SMV model (.smv).
+    @param fsm_model: path to the input .scy file
+    @param smv_model: path to the output .smv file
+    @param filter_instance:
+    """
+
+    with fsm_model.open("r") as fp:
+        fsm_dict = yaml.load(fp, Loader=yaml.FullLoader)
 
     n: regular.NFA[Any, str] = handle_fsm(
-        regular.NFA.from_dict(fsm_dict), dfa=True, filter=filter
+        regular.NFA.from_dict(fsm_dict), dfa=True, filter=filter_instance
     )
 
-    with smv_path.open("w") as fp:
+    with smv_model.open("w") as fp:
         smv_dump(state_diagram=n.as_dict(flatten=True), fp=fp)
 
 

@@ -68,7 +68,8 @@ def main() -> None:
     if args.minimize and not args.dfa:
         parser.error("The '--minimize' option requires '--dfa'")
 
-    d = shelleyv.load_integration(args.input)
+    with args.input.open() as fp:
+        d = yaml.load(fp, Loader=yaml.FullLoader)
 
     n: regular.NFA[Any, str] = shelleyv.handle_fsm(
         regular.NFA.from_dict(d),

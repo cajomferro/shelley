@@ -121,9 +121,10 @@ def generate_system_spec(spec: Path, eos: Action = None, var_action: Action = No
     def and_ops(operations):
         print(operations)
         if len(operations) == 1:
-            return Eventually(Equal(var_action, Action(operations[0])))
+            return Eventually(And(Equal(var_action, Action(operations[0])), Not(eos)))
+
         else:
-            return And(Eventually(Equal(var_action, Action(operations[0]))), and_ops(operations[1:]))
+            return And(Eventually(And(Equal(var_action, Action(operations[0])), Not(eos))), and_ops(operations[1:]))
 
     operations: List[str] = dev.events.list_str()
     ltl_spec: str = f"LTLSPEC {and_ops(operations)} ;"

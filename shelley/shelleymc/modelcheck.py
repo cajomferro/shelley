@@ -156,9 +156,9 @@ def main():
 
     fsm_system: Path = create_fsm_models(spec, uses, fsm_integration)
     create_nusmv_model(fsm_system, smv_system)
-    # ltl_system_spec: str = ltlf.generate_system_spec(spec)
-    # with smv_system.open("a+") as fp:
-    #     fp.write(f"{ltl_system_spec}\n")
+    ltl_system_spec: str = ltlf.generate_system_spec(spec)
+    with smv_system.open("a+") as fp:
+        fp.write(f"{ltl_system_spec}\n")
 
     if not args.skip_mc:
         logger.info("Model checking system...")

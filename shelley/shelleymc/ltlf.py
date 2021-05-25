@@ -99,7 +99,8 @@ def convert_ltlf_formulae(
     return ltl_formulae
 
 
-def generate_system_spec(spec: Path):
+def generate_system_spec(spec: Path, eos: Action = None, var_action: Action = None
+                         ):
     """
 
     @param spec:
@@ -109,22 +110,23 @@ def generate_system_spec(spec: Path):
     @return:
     """
 
-    ltl_spec: str = "LTLSPEC "
+    if eos is None:
+        eos = Action("_eos")
+
+    if var_action is None:
+        var_action = Action("_action")
 
     dev: ShelleyDevice = shelley_lark_parser.parse(spec)
 
     def and_ops(operations):
         print(operations)
         if len(operations) == 1:
-            return operations[0]
+            return Eventually(Equal(var_action, Action(operations[0])))
         else:
-            return And(Eventually(operations[0]), and_ops(operations[1:]))
+            return And(Eventually(Equal(var_action, Action(operations[0]))), and_ops(operations[1:]))
 
     operations: List[str] = dev.events.list_str()
-    f = and_ops(operations)
-    ltl_spec += f"{f} "
-
-    ltl_spec += ";"
+    ltl_spec: str = f"LTLSPEC {and_ops(operations)} ;"
 
     return ltl_spec
 

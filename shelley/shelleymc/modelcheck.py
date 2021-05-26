@@ -50,7 +50,7 @@ def parse_command():
     return parser.parse_args()
 
 
-def create_fsm_models(spec: Path, uses: Path, fsm_integration: Path) -> None:
+def create_fsm_models(spec: Path, uses: Path, fsm_integration: Path) -> Path:
     """
     Create integration model by running shelleyc tool
     input: system spec + uses
@@ -125,6 +125,19 @@ def create_split_usage_model(
         model_check(smv_path)
 
 
+def check_nusmv_output(raw_output: str):
+    lines_output: List[str] = raw_output.splitlines()
+    # print(lines_output)
+
+    # filter_output = [line for line in lines_output if line.startswith("-- specification")]
+    for line in lines_output:
+            print(line)
+
+    for line in lines_output:
+        if line.startswith("-- specification") and "is false" in line:
+            sys.exit(255)
+
+
 def model_check(smv_path: Path) -> None:
     try:
         nusmv_call = [
@@ -132,8 +145,10 @@ def model_check(smv_path: Path) -> None:
             str(smv_path),
         ]
         logger.debug(" ".join(nusmv_call))
-        subprocess.check_call(nusmv_call)
+        cp: subprocess.CompletedProcess = subprocess.run(nusmv_call, capture_output=True, check=True)
+        check_nusmv_output(cp.stdout.decode())
     except subprocess.CalledProcessError:
+        logger.exception("NuSMV error!")
         sys.exit(255)
 
 
@@ -157,8 +172,8 @@ def main():
     fsm_system: Path = create_fsm_models(spec, uses, fsm_integration)
     create_nusmv_model(fsm_system, smv_system)
     ltl_system_spec: str = ltlf.generate_system_spec(spec)
-    with smv_system.open("a+") as fp:
-        fp.write(f"{ltl_system_spec}\n")
+    # with smv_system.open("a+") as fp:
+    #     fp.write(f"{ltl_system_spec}\n")
 
     if not args.skip_mc:
         logger.info("Model checking system...")

@@ -61,7 +61,10 @@ def create_fsm_models(spec: Path, uses: Path, fsm_integration: Path) -> Path:
 
     try:
         fsm_system: Path = shelleyc.compile_shelley(
-            src_path=spec, uses_path=uses, integration=fsm_integration, skip_checks=True,
+            src_path=spec,
+            uses_path=uses,
+            integration=fsm_integration,
+            skip_checks=True,
         )
     except shelleyc.CompilationError as err:
         if VERBOSE:
@@ -75,7 +78,9 @@ def create_fsm_models(spec: Path, uses: Path, fsm_integration: Path) -> Path:
     return fsm_system
 
 
-def create_nusmv_model(integration: Path, smv: Path, ltlf_formulae: Optional[List[str]] = None) -> None:
+def create_nusmv_model(
+    integration: Path, smv: Path, ltlf_formulae: Optional[List[str]] = None
+) -> None:
     """
     Create NuSMV model file from integration file
     @param integration: path to integration file (FSM)
@@ -106,7 +111,7 @@ def append_ltl_usage(instance_spec: Path, instance_name: str, smv_path: Path):
 
 
 def create_split_usage_model(
-        system_spec: Path, integration: Path, subsystems: Mapping[str, Path]
+    system_spec: Path, integration: Path, subsystems: Mapping[str, Path]
 ) -> None:
     for (instance_name, instance_spec) in subsystems.items():
         # Create the integration SMV file
@@ -131,7 +136,7 @@ def check_nusmv_output(raw_output: str):
 
     # filter_output = [line for line in lines_output if line.startswith("-- specification")]
     for line in lines_output:
-            print(line)
+        print(line)
 
     for line in lines_output:
         if line.startswith("-- specification") and "is false" in line:
@@ -145,7 +150,9 @@ def model_check(smv_path: Path) -> None:
             str(smv_path),
         ]
         logger.debug(" ".join(nusmv_call))
-        cp: subprocess.CompletedProcess = subprocess.run(nusmv_call, capture_output=True, check=True)
+        cp: subprocess.CompletedProcess = subprocess.run(
+            nusmv_call, capture_output=True, check=True
+        )
         check_nusmv_output(cp.stdout.decode())
     except subprocess.CalledProcessError:
         logger.exception("NuSMV error!")
@@ -180,7 +187,7 @@ def main():
         model_check(smv_system)
 
     if (
-            args.integration_check and not args.split_usage
+        args.integration_check and not args.split_usage
     ) or not args.skip_integration_model:
         logger.debug("Split usage is disabled")
         create_nusmv_model(fsm_integration, smv_integration, args.formula)

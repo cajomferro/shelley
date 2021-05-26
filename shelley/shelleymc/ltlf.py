@@ -34,7 +34,7 @@ class Op:
 
 
 def convert_ltlf_formulae(
-        ltlf_formulas: List[str], name: str, eos: Action = None, var_action: Action = None
+    ltlf_formulas: List[str], name: str, eos: Action = None, var_action: Action = None
 ):
     """
     Convert LTLf to NuSMV LTL
@@ -99,8 +99,9 @@ def convert_ltlf_formulae(
     return ltl_formulae
 
 
-def generate_system_spec(spec: Path, eos: Action = None, var_action: Action = None
-                         ):
+def generate_system_spec(
+    spec: Path, eos: Action = None, var_action: Action = None
+) -> str:
     """
 
     @param spec:
@@ -118,22 +119,18 @@ def generate_system_spec(spec: Path, eos: Action = None, var_action: Action = No
 
     dev: ShelleyDevice = shelley_lark_parser.parse(spec)
 
-    def and_ops(operations):
-        return Eventually(And(
-            And.make(
-                Equal(var_action, Action(op)) for op in operations
-            ),
+    formula: Formula = Eventually(
+        And(
+            And.make(Equal(var_action, Action(op)) for op in dev.events.list_str()),
             Not(eos),
-        ))
+        )
+    )
 
-    operations: List[str] = dev.events.list_str()
-    ltl_spec: str = f"LTLSPEC {and_ops(operations)} ;"
-
-    return ltl_spec
+    return f"LTLSPEC {formula} ;"
 
 
 def generate_instance_spec(
-        spec_path: Path, prefix: str, eos: Action = None, var_action: Action = None
+    spec_path: Path, prefix: str, eos: Action = None, var_action: Action = None
 ):
     """
 

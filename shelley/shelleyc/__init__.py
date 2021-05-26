@@ -14,7 +14,6 @@ from shelley.automata import (
     AssembledDevice,
     check_traces,
     AssembledMicroBehavior,
-    AssembledMicroBehavior2,
 )
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelley2automata import shelley2automata
@@ -135,7 +134,6 @@ def compile_shelley(
     integration: Optional[Path] = None,
     dump_timings: Optional[IO[str]] = None,
     save_output: bool = True,
-    slow_check: bool = False,
     skip_testing: bool = False,
     skip_checks: bool = False,
 ) -> Path:
@@ -180,13 +178,8 @@ def compile_shelley(
     )
     automata_device = shelley2automata(shelley_device)
 
-    if slow_check:
-        logger.debug("Performing slow check")
-
     try:
-        dev = AssembledDevice.make(
-            automata_device, known_devices.__getitem__, fast_check=not slow_check
-        )
+        dev = AssembledDevice.make(automata_device, known_devices.__getitem__,)
     except ValueError as error:
         if settings.VERBOSE:
             logger.exception(error)
@@ -201,9 +194,7 @@ def compile_shelley(
     ):  # do this only for compound devices
         logger.debug("Generating integration diagram...")
 
-        assert isinstance(dev.internal, AssembledMicroBehavior) or isinstance(
-            dev.internal, AssembledMicroBehavior2
-        )
+        assert isinstance(dev.internal, AssembledMicroBehavior)
         serialize(integration, dev.internal.nfa.as_dict(), binary)
 
     if (skip_checks or dev.is_valid) and save_output:

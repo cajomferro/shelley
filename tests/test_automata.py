@@ -19,7 +19,7 @@ from shelley.automata import (
     Device,
     AssembledDevice,
     CheckedDevice,
-    AssembledMicroBehavior2,
+    AssembledMicroBehavior,
     project_nfa,
     ComponentUsageFailure,
     pad_trace,
@@ -297,12 +297,13 @@ def test_hello_world() -> None:
             And(Char(LB_OFF), Char(LA_OFF)),
         ),
     }
-    components = [
-        create_button_b(),
-        create_led_a(),
-        create_led_b(),
-        create_timer_t(),
-    ]
+    components = {
+        "b": create_button_b(),
+        "ledA": create_led_a(),
+        "ledB": create_led_b(),
+        "t": create_timer_t(),
+    }
+
     behavior = create_hello_world_nfa()
     be = automata.AssembledMicroBehavior.make(
         components, behavior, HELLO_WORLD_TRIGGERS
@@ -354,9 +355,8 @@ def test_ambiguity_1() -> None:
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_P),
     }
-    res = automata.AssembledMicroBehavior.make(
-        [create_button_b()], n_behavior, triggers
-    )
+    components = {"b": create_button_b()}
+    res = automata.AssembledMicroBehavior.make(components, n_behavior, triggers)
     assert not res.micro.is_valid
     fail = res.micro.failure
     assert fail is not None
@@ -364,7 +364,7 @@ def test_ambiguity_1() -> None:
     assert sorted(fail.macro_traces) == sorted([(LEVEL2,), (LEVEL1,)])
 
 
-def test_ok_1() -> None:
+def test_subsystem_not_used() -> None:
     behavior = Union(
         Char(LEVEL1),
         Concat(
@@ -376,9 +376,12 @@ def test_ok_1() -> None:
         LEVEL1: Char(B_P),
         LEVEL2: Char(B_R),
     }
-    assert automata.AssembledMicroBehavior.make(
-        [create_button_b()], n_behavior, triggers
-    ).is_valid
+    components = {"b": create_button_b()}
+
+    with pytest.raises(ValueError) as exc_info:
+        automata.AssembledMicroBehavior.make(components, n_behavior, triggers)
+
+    assert str(exc_info.value) == "Subsystem is declared but no operation is invoked."
 
 
 def test_fail_hello_world() -> None:
@@ -394,16 +397,14 @@ def test_fail_hello_world() -> None:
             And(Char(LB_OFF), Char(LA_OFF)),
         ),
     }
-    components = [
-        create_button_b(),
-        create_led_a(),
-        create_led_b(),
-        create_timer_t(),
-    ]
-    be = automata.encode_behavior(hello, triggers)
+    components = {
+        "b": create_button_b(),
+        "ledA": create_led_a(),
+        "ledB": create_led_b(),
+        "t": create_timer_t(),
+    }
     res = automata.AssembledMicroBehavior.make(components, hello, triggers)
     assert not res.is_valid
-    assert not res.impossible.accepts(cast(List[str], []))
 
 
 def test_smallest_error() -> None:
@@ -426,22 +427,26 @@ def test_smallest_error() -> None:
             And(Char(LB_OFF), Char(LA_OFF)),
         ),
     }
-    components = [
-        create_button_b(),
-        create_led_a(),
-        create_led_b(),
-        create_timer_t(),
-    ]
-    res = automata.AssembledMicroBehavior.make(components, hello, triggers)
+    components = {
+        "b": create_button_b(),
+        "ledA": create_led_a(),
+        "ledB": create_led_b(),
+        "t": create_timer_t(),
+    }
+    res: AssembledMicroBehavior = automata.AssembledMicroBehavior.make(
+        components, hello, triggers
+    )
     assert not res.is_valid
     assert res.micro.is_valid
-    fail = res.impossible
-    err = fail.get_shortest_string()
-    assert err is not None
-    assert fail.accepts(err)
-    assert err is not None
-    assert err == (B_P, B_P, LA_ON, T_S)
-    assert automata.demultiplex(err) == {
+    assert not res.usages["b"].is_valid
+
+    fail = res.get_failure(
+        get_basic_known_devices(),
+        {"b": "Button", "ledA": "Led", "ledB": "Led", "t": "Timer",},
+    )
+    assert fail.micro_trace == (B_P, B_P, LA_ON, T_S)
+
+    assert automata.demultiplex(fail.micro_trace) == {
         "b": ["pressed", "pressed"],
         "ledA": ["on"],
         "t": ["started"],
@@ -814,11 +819,9 @@ def test_invalid_behavior_2() -> None:
     assert given.failure.component_errors == {
         "b": (("released", "pressed", "released"), 0),
     }
-    fast_check = AssembledDevice.make(
-        device, get_basic_known_devices(), fast_check=True
-    )
-    assert isinstance(fast_check.internal, AssembledMicroBehavior2)
-    assert not fast_check.is_valid
+    check = AssembledDevice.make(device, get_basic_known_devices())
+    assert isinstance(check.internal, AssembledMicroBehavior)
+    assert not check.is_valid
 
 
 def test_get_traces_from_components() -> None:
@@ -990,18 +993,16 @@ def test_invalid_behavior_4() -> None:
     assert given.internal.dfa.is_equivalent_to(micro_dfa)
     ################################################
     # Now that we checked our assumptions let us setup the fast algorithm:
-    fast_check = AssembledDevice.make(
-        device, get_basic_known_devices(), fast_check=True
-    )
-    assert isinstance(fast_check.internal, AssembledMicroBehavior2)
+    check = AssembledDevice.make(device, get_basic_known_devices())
+    assert isinstance(check.internal, AssembledMicroBehavior)
     ################################################
     # 1. The internal behaviour should remain the same
-    assert fast_check.internal.dfa.is_equivalent_to(
+    assert check.internal.dfa.is_equivalent_to(
         micro_dfa
     ), "micro behaviour with fast-check should remain the same"
     ################################################
     # 2. We now test the projected button
-    proj_btn = fast_check.internal.usages["b"]
+    proj_btn = check.internal.usages["b"]
     ################################################
     # 2.1 We test if componet for button was correctly initialized
     # The NFA below should represent the Button instantiated with 'b':
@@ -1028,7 +1029,7 @@ def test_invalid_behavior_4() -> None:
     ), "projection should not alter the behaviour"
     ################################################
     # Finally the result should not be valid
-    assert not fast_check.is_valid
+    assert not check.is_valid
 
 
 def test_invalid_behavior_3() -> None:
@@ -1055,11 +1056,9 @@ def test_invalid_behavior_3() -> None:
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert not given.is_valid
-    fast_check = AssembledDevice.make(
-        device, get_basic_known_devices(), fast_check=True
-    )
-    assert isinstance(fast_check.internal, AssembledMicroBehavior2)
-    assert not fast_check.is_valid
+    check = AssembledDevice.make(device, get_basic_known_devices())
+    assert isinstance(check.internal, AssembledMicroBehavior)
+    assert not check.is_valid
 
 
 def test_valid_behavior_3() -> None:
@@ -1078,11 +1077,9 @@ def test_valid_behavior_3() -> None:
     )
     given = AssembledDevice.make(device, get_basic_known_devices())
     assert given.is_valid
-    fast_check = AssembledDevice.make(
-        device, get_basic_known_devices(), fast_check=True
-    )
-    assert isinstance(fast_check.internal, AssembledMicroBehavior2)
-    assert fast_check.is_valid
+    check = AssembledDevice.make(device, get_basic_known_devices())
+    assert isinstance(check.internal, AssembledMicroBehavior)
+    assert check.is_valid
 
 
 def test_projection() -> None:

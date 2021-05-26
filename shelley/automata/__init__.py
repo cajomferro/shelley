@@ -652,7 +652,7 @@ TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure, UnusableOperations
 
 
 @dataclass
-class AssembledMicroBehavior2:
+class AssembledMicroBehavior:
     usages: Dict[str, ComponentUsageFailure]
     micro: MicroBehavior
     is_valid: bool = field(init=False)
@@ -698,7 +698,7 @@ class AssembledMicroBehavior2:
         components: Dict[str, Component],
         external_behavior: NFA[Any, str],
         triggers: Dict[str, Regex[str]],
-    ) -> "AssembledMicroBehavior2":
+    ) -> "AssembledMicroBehavior":
         if len(components) == 0:
             raise ValueError(errors.INTEGRATION_ERROR_ZERO_COMPONENTS)
         alphabet: Set[str] = set()
@@ -712,73 +712,6 @@ class AssembledMicroBehavior2:
             )
         )
         return cls(usages=usages, micro=micro)
-
-
-@dataclass
-class AssembledMicroBehavior:
-    possible: DFA[Any, str]
-    impossible: DFA[Any, str]
-    micro: MicroBehavior
-    is_valid: bool = field(init=False)
-    validation_time: timedelta = field(init=False)
-
-    def __post_init__(self) -> None:
-        start = timer()
-        self.is_valid = self.micro.is_valid and self.impossible.is_empty()
-        self.validation_time = get_elapsed_time(start)
-
-    @property
-    def dfa(self) -> DFA[Any, str]:
-        return self.micro.dfa
-
-    @property
-    def nfa(self) -> NFA[DecodedState, str]:
-        return self.micro.nfa
-
-    def get_failure(
-        self, known_devices: TKnownDevices, components: Dict[str, str]
-    ) -> Optional[TFailure]:
-        # Fill in the failure field
-        failure: Optional[TFailure] = self.micro.failure
-        if failure is None and not self.is_valid:
-            failure = TriggerIntegrationFailure.make(
-                self.micro, self.impossible, known_devices, components
-            )
-        return failure
-
-    @classmethod
-    def make(
-        cls,
-        components: List[Component],
-        external_behavior: NFA[Any, str],
-        triggers: Dict[str, Regex[str]],
-    ) -> "AssembledMicroBehavior":
-        """
-        Build internal behavior by using components, external behavior and triggers
-        How:
-            - Shuffle all components into a minimized DFA (minimized because ... ??? )
-            -
-        :param components: list of components as NFAs
-        :param external_behavior: device external behavior as NFA
-        :param triggers: device triggers as REGEX
-            Example:
-        """
-        if len(components) == 0:
-            raise ValueError(f"{errors.INTEGRATION_ERROR_ZERO_COMPONENTS}")
-
-        all_possible: DFA[Any, str] = nfa_to_dfa(
-            shuffle(c.behavior for c in components)
-        )
-
-        internal_behavior = MicroBehavior.make(
-            external_behavior, triggers, set(all_possible.alphabet)
-        )
-        # Ensure that the all possible behaviors in dev contain the encoded behavior
-        invalid_behavior = internal_behavior.dfa.subtract(all_possible)
-        # Ready to create the object
-        return cls(
-            possible=all_possible, impossible=invalid_behavior, micro=internal_behavior,
-        )
 
 
 def ensure_well_formed(dev: Device) -> None:
@@ -877,7 +810,7 @@ class Timings:
 @dataclass
 class AssembledDevice:
     external: CheckedDevice
-    internal: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]]
+    internal: Optional[AssembledMicroBehavior]
     failure: Optional[TFailure]
     operations: FrozenSet[str]
     is_valid: bool = field(init=False)
@@ -939,9 +872,7 @@ class AssembledDevice:
         return model_check(self.external.nfa, word_or_formula)
 
     @classmethod
-    def make(
-        cls, dev: Device, known_devices: TKnownDevices, fast_check: bool = False,
-    ) -> "AssembledDevice":
+    def make(cls, dev: Device, known_devices: TKnownDevices) -> "AssembledDevice":
         """
         In order to assemble a device, the following steps are required:
         * ensure well formedness (start_evts <= evts, trigs <= evts, and trigs == evts)
@@ -958,7 +889,7 @@ class AssembledDevice:
             dev.behavior, dev.start_events, dev.final_events, dev.events
         )
         ext = CheckedDevice(external_behavior)
-        micro: Optional[Union[AssembledMicroBehavior, AssembledMicroBehavior2]] = None
+        micro: Optional[AssembledMicroBehavior] = None
         fail = None
         if len(dev.components) > 0:
             # Load the map of components
@@ -966,18 +897,12 @@ class AssembledDevice:
                 (name, Component(name, known_devices(ty)))
                 for (name, ty) in dev.components.items()
             )
-            if fast_check:
-                micro = AssembledMicroBehavior2.make(
-                    components=components,
-                    external_behavior=external_behavior,
-                    triggers=dev.triggers,
-                )
-            else:
-                micro = AssembledMicroBehavior.make(
-                    components=list(components.values()),
-                    external_behavior=external_behavior,
-                    triggers=dev.triggers,
-                )
+            micro = AssembledMicroBehavior.make(
+                components=components,
+                external_behavior=external_behavior,
+                triggers=dev.triggers,
+            )
+
             fail = micro.get_failure(known_devices, dev.components)
 
         return cls(

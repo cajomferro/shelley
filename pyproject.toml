@@ -20,6 +20,9 @@ pytest = "^5.4.1"
 black = "^19.10b0"
 Pygments = "^2.6.1"
 snakeviz="^2.1.0"
+aiohttp = "^3.7.4" # required for blackd
+aiohttp_cors = "^0.7.0" # required for blackd
+
 
 [tool.poetry.scripts]
 ltl = "shelley.shelleymc.ltlf:main"

@@ -203,16 +203,6 @@ class Component:
         self.behavior = instantiate(self.system.nfa, self.name + ".")
 
 
-def shuffle(nfas: Iterable[NFA[Any, str]]) -> NFA[Any, str]:
-    # Get the first component
-    result, *rst = nfas
-
-    # Shuffle all devices:
-    for d in rst:
-        result = result.shuffle(d)
-    return result
-
-
 def encode_behavior(
     behavior: NFA[Any, str],
     triggers: Dict[str, Regex],
@@ -659,17 +649,20 @@ TFailure = Union[TriggerIntegrationFailure, AmbiguityFailure, UnusableOperations
 class AssembledMicroBehavior:
     usages: Dict[str, ComponentUsageFailure]
     micro: MicroBehavior
+    skip_checks: bool
     is_valid: bool = field(init=False)
     validation_time: timedelta = field(init=False)
 
     def __post_init__(self) -> None:
-        invalid_count = 0
         self.validation_time = timedelta()
-        for x in self.usages.values():
-            if not x.is_valid:
-                invalid_count += 1
-            self.validation_time += x.validation_time
-        self.is_valid = invalid_count == 0
+        if not self.skip_checks:
+            invalid_count = 0
+            self.validation_time = timedelta()
+            for x in self.usages.values():
+                if not x.is_valid:
+                    invalid_count += 1
+                self.validation_time += x.validation_time
+            self.is_valid = invalid_count == 0
 
     @property
     def dfa(self) -> DFA[Any, str]:
@@ -723,7 +716,7 @@ class AssembledMicroBehavior:
                     for k, c in components.items()
                 )
             )
-        return cls(usages=usages, micro=micro)
+        return cls(usages=usages, micro=micro, skip_checks=skip_checks)
 
 
 def ensure_well_formed(dev: Device) -> None:

@@ -37,7 +37,7 @@ def parse_command():
     )
     parser.add_argument("--integration-check", action="store_true")
     parser.add_argument("--skip-mc", action="store_true")
-    parser.add_argument("--skip-direct-checks", action="store_true")
+    parser.add_argument("--direct-checks", action="store_true")
     parser.add_argument(
         "--split-usage",
         action="store_true",
@@ -181,7 +181,7 @@ def main():
     uses: Path = args.uses
 
     fsm_system: Path = create_fsm_models(
-        spec, uses, fsm_integration, args.skip_direct_checks
+        spec, uses, fsm_integration, not args.direct_checks
     )
     create_nusmv_model(fsm_system, smv_system)
     ltl_system_spec: str = ltlf.generate_system_spec(spec)

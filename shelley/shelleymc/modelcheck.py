@@ -37,6 +37,7 @@ def parse_command():
     )
     parser.add_argument("--integration-check", action="store_true")
     parser.add_argument("--skip-mc", action="store_true")
+    parser.add_argument("--skip-direct-checks", action="store_true")
     parser.add_argument(
         "--split-usage",
         action="store_true",
@@ -50,7 +51,9 @@ def parse_command():
     return parser.parse_args()
 
 
-def create_fsm_models(spec: Path, uses: Path, fsm_integration: Path) -> Path:
+def create_fsm_models(
+    spec: Path, uses: Path, fsm_integration: Path, skip_direct_checks: bool = False
+) -> Path:
     """
     Create integration model by running shelleyc tool
     input: system spec + uses
@@ -65,7 +68,7 @@ def create_fsm_models(spec: Path, uses: Path, fsm_integration: Path) -> Path:
             uses_path=uses,
             integration=fsm_integration,
             dump_timings=sys.stdout,
-            skip_checks=True,
+            skip_checks=skip_direct_checks,
         )
     except shelleyc.CompilationError as err:
         if VERBOSE:
@@ -177,7 +180,9 @@ def main():
     smv_integration: Path = spec.parent / f"{spec.stem}-i.smv"
     uses: Path = args.uses
 
-    fsm_system: Path = create_fsm_models(spec, uses, fsm_integration)
+    fsm_system: Path = create_fsm_models(
+        spec, uses, fsm_integration, args.skip_direct_checks
+    )
     create_nusmv_model(fsm_system, smv_system)
     ltl_system_spec: str = ltlf.generate_system_spec(spec)
     # with smv_system.open("a+") as fp:

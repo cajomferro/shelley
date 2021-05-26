@@ -47,9 +47,6 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_false",
     )
     parser.add_argument(
-        "--slow-check", help="perform a slow check", action="store_true",
-    )
-    parser.add_argument(
         "--skip-testing", help="do not check traces", action="store_true",
     )
     parser.add_argument(
@@ -80,7 +77,6 @@ def parse() -> None:
             integration=args.integration,
             dump_timings=args.dump_timings,
             save_output=args.save_output,
-            slow_check=args.slow_check,
             skip_testing=args.skip_testing,
             skip_checks=args.skip_checks,
         )

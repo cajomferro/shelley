@@ -350,22 +350,25 @@ def pad_trace(trace: Tuple[A, ...], alphabet: Collection[A]) -> NFA[Any, A]:
 class MicroBehavior:
     nfa: NFA[DecodedState, str]
     system: NFA[Any, str]
+    skip_checks: bool
     dfa: DFA[Any, str] = field(init=False)
     failure: Optional[AmbiguityFailure] = field(init=False)
     is_valid: bool = field(init=False)
     validation_time: timedelta = field(init=False)
 
     def __post_init__(self) -> None:
-        start = timer()
-        self.dfa = nfa_to_dfa(self.nfa)
-        err_trace = self.dfa.find_shortest_path(is_macro_ambiguous)
-        self.is_valid = err_trace is None
-        self.failure = (
-            None
-            if err_trace is None  # is valid
-            else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
-        )
-        self.validation_time = get_elapsed_time(start)
+        self.validation_time = timedelta()
+        if not self.skip_checks:
+            start = timer()
+            self.dfa = nfa_to_dfa(self.nfa)
+            err_trace = self.dfa.find_shortest_path(is_macro_ambiguous)
+            self.is_valid = err_trace is None
+            self.failure = (
+                None
+                if err_trace is None  # is valid
+                else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
+            )
+            self.validation_time = get_elapsed_time(start)
 
     def convert_micro_to_macro(self, seq: Sequence[str]) -> MacroTrace:
         for der in self.nfa.get_derivations(seq):
@@ -396,6 +399,7 @@ class MicroBehavior:
         external_behavior: NFA[Any, str],
         triggers: Dict[str, Regex[str]],
         alphabet: Set[str],
+        skip_checks: bool = False,
     ) -> "MicroBehavior":
         """
         Micro behavior
@@ -467,7 +471,7 @@ class MicroBehavior:
             start_state=MacroState(external_behavior.start_state),
             accepted_states=is_final,
         )
-        return cls(nfa, external_behavior)
+        return cls(nfa, external_behavior, skip_checks)
 
 
 @dataclass
@@ -698,19 +702,27 @@ class AssembledMicroBehavior:
         components: Dict[str, Component],
         external_behavior: NFA[Any, str],
         triggers: Dict[str, Regex[str]],
+        skip_checks: bool = False,
     ) -> "AssembledMicroBehavior":
         if len(components) == 0:
             raise ValueError(errors.INTEGRATION_ERROR_ZERO_COMPONENTS)
         alphabet: Set[str] = set()
         for c in components.values():
             alphabet.update(c.alphabet)
-        micro = MicroBehavior.make(external_behavior, triggers, alphabet)
-        usages = dict(
-            (
-                (k, ComponentUsageFailure.make(micro=micro.nfa, component=c.behavior))
-                for k, c in components.items()
+        micro = MicroBehavior.make(external_behavior, triggers, alphabet, skip_checks)
+        usages = dict()
+        if not skip_checks:
+            usages = dict(
+                (
+                    (
+                        k,
+                        ComponentUsageFailure.make(
+                            micro=micro.nfa, component=c.behavior
+                        ),
+                    )
+                    for k, c in components.items()
+                )
             )
-        )
         return cls(usages=usages, micro=micro)
 
 
@@ -813,42 +825,47 @@ class AssembledDevice:
     internal: Optional[AssembledMicroBehavior]
     failure: Optional[TFailure]
     operations: FrozenSet[str]
+    skip_checks: bool
     is_valid: bool = field(init=False)
     sink_operations: FrozenSet[str] = field(init=False)
     unusable_operations: FrozenSet[str] = field(init=False)
     unusable_operations_time: timedelta = field(init=False)
 
     def __post_init__(self):
-        # Calculate unreachable and sink ops:
-        start = timer()
+        self.unusable_operations_time = timedelta()
+        if not self.skip_checks:
+            start = timer()
+            # Calculate unreachable and sink ops:
 
-        # only includes states that are reachable (and remove start)
-        reachable_states = set(self.external.nfa.states)
-        reachable_states.remove(self.external.nfa.start_state)
+            # only includes states that are reachable (and remove start)
+            reachable_states = set(self.external.nfa.states)
+            reachable_states.remove(self.external.nfa.start_state)
 
-        # only includes states that are reachable and not sink (and remove start)
-        reachable_states_without_sink = set(
-            self.external.nfa.remove_sink_states().states
-        )
-        reachable_states_without_sink.remove(self.external.nfa.start_state)
+            # only includes states that are reachable and not sink (and remove start)
+            reachable_states_without_sink = set(
+                self.external.nfa.remove_sink_states().states
+            )
+            reachable_states_without_sink.remove(self.external.nfa.start_state)
 
-        # collect unreachable operations
-        self.unusable_operations = frozenset(set(self.operations) - reachable_states)
+            # collect unreachable operations
+            self.unusable_operations = frozenset(
+                set(self.operations) - reachable_states
+            )
 
-        # collect sink operations (does not include unreachable states!)
-        self.sink_operations = frozenset(
-            reachable_states - reachable_states_without_sink
-        )
+            # collect sink operations (does not include unreachable states!)
+            self.sink_operations = frozenset(
+                reachable_states - reachable_states_without_sink
+            )
 
-        self.unusable_operations_time = get_elapsed_time(start)
+            self.unusable_operations_time = get_elapsed_time(start)
 
-        if self.failure is None:
-            if len(self.unusable_operations) > 0 or len(self.sink_operations) > 0:
-                self.failure = UnusableOperationsFailure(
-                    self.unusable_operations, self.sink_operations
-                )
-        # End of unreachable ops
-        self.is_valid = self.failure is None
+            if self.failure is None:
+                if len(self.unusable_operations) > 0 or len(self.sink_operations) > 0:
+                    self.failure = UnusableOperationsFailure(
+                        self.unusable_operations, self.sink_operations
+                    )
+            # End of unreachable ops
+            self.is_valid = self.failure is None
 
     def get_timings(self) -> Timings:
         return Timings(
@@ -872,7 +889,9 @@ class AssembledDevice:
         return model_check(self.external.nfa, word_or_formula)
 
     @classmethod
-    def make(cls, dev: Device, known_devices: TKnownDevices) -> "AssembledDevice":
+    def make(
+        cls, dev: Device, known_devices: TKnownDevices, skip_checks: bool = False
+    ) -> "AssembledDevice":
         """
         In order to assemble a device, the following steps are required:
         * ensure well formedness (start_evts <= evts, trigs <= evts, and trigs == evts)
@@ -901,10 +920,16 @@ class AssembledDevice:
                 components=components,
                 external_behavior=external_behavior,
                 triggers=dev.triggers,
+                skip_checks=skip_checks,
             )
 
-            fail = micro.get_failure(known_devices, dev.components)
+            if not skip_checks:
+                fail = micro.get_failure(known_devices, dev.components)
 
         return cls(
-            external=ext, internal=micro, failure=fail, operations=frozenset(dev.events)
+            external=ext,
+            internal=micro,
+            failure=fail,
+            operations=frozenset(dev.events),
+            skip_checks=skip_checks,
         )

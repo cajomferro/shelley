@@ -1,7 +1,7 @@
 import yaml
 from pathlib import Path
 import argparse
-from shelley import shelleyc
+from shelley.shelleyc import shelleyc
 from shelley.shelleyc import main
 from typing import Optional
 

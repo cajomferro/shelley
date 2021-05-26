@@ -6,7 +6,7 @@ import argparse
 import subprocess
 from pathlib import Path
 from typing import List, Mapping, Optional
-from shelley import shelleyc
+from shelley.shelleyc import shelleyc
 from shelley.shelleyv import shelleyv
 from shelley.shelleymc import ltlf
 
@@ -64,6 +64,7 @@ def create_fsm_models(spec: Path, uses: Path, fsm_integration: Path) -> Path:
             src_path=spec,
             uses_path=uses,
             integration=fsm_integration,
+            dump_timings=sys.stdout,
             skip_checks=True,
         )
     except shelleyc.CompilationError as err:

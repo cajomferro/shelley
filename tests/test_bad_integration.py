@@ -7,7 +7,7 @@ from pathlib import Path
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.parsers.yaml import yaml2shelley
-from shelley.shelleyc import DeviceMapping
+from shelley.shelleyc import shelleyc
 
 EXAMPLES_PATH = Path() / "shelley-examples"
 
@@ -28,7 +28,7 @@ LEDBUTTON_PATH = EXAMPLES_PATH / "bad_integration_v3" / "ledbutton.yml"
 def _get_assembled_device(path: Path) -> AssembledDevice:
     simple_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(path)
     simple_aut: AutomataDevice = shelley2automata.shelley2automata(simple_shy)
-    return AssembledDevice.make(simple_aut, DeviceMapping().__getitem__)
+    return AssembledDevice.make(simple_aut, shelleyc.DeviceMapping().__getitem__)
 
 
 button_assembled = _get_assembled_device(BUTTON_PATH)

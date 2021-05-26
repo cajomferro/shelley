@@ -7,7 +7,7 @@ import yaml
 
 from shelley.shelleyc import settings
 from shelley.shelleyc.exceptions import CompilationError
-from shelley.shelleyc import compile_shelley
+from shelley.shelleyc import shelleyc
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleyc")
@@ -69,7 +69,7 @@ def parse() -> None:
     logger.debug("Input yaml file: {0}".format(args.device))
 
     try:
-        compile_shelley(
+        shelleyc.compile_shelley(
             src_path=args.device,
             uses_path=args.uses,
             dst_path=args.output,

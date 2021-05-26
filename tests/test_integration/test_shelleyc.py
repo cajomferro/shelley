@@ -6,8 +6,10 @@ import argparse
 
 from shelley.automata import CheckedDevice
 from shelley.ast.devices import Device as ShelleyDevice
-from shelley import parsers, shelleyc
 from shelley.shelleyc import main
+from shelley.shelleyc import exceptions
+from shelley import parsers
+from shelley.shelleyc import shelleyc
 
 EXAMPLES_PATH = Path() / Path(__file__).parent / "input"
 COMPILED_PATH = EXAMPLES_PATH / "compiled"
@@ -140,7 +142,7 @@ def test_smartbutton_file_invalid_dict_uses_file() -> None:
     src_path = EXAMPLES_PATH / "smartbutton1.yml"
     args = make_args(src_path, uses_path)
 
-    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+    with pytest.raises(exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
 
     assert (
@@ -158,7 +160,7 @@ def test_smartbutton_file_not_found_uses_file() -> None:
     src_path = EXAMPLES_PATH / "smartbutton1.yml"
     args = make_args(src_path, uses_path)
 
-    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+    with pytest.raises(exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
     path = EXAMPLES_PATH / "buttonBAD.scy"
     assert (
@@ -175,7 +177,7 @@ def test_smartbutton_not_in_uses_file() -> None:
     src_path = EXAMPLES_PATH / "smartbutton1.yml"
     args = make_args(src_path, uses_path)
 
-    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+    with pytest.raises(exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
 
     assert str(exc_info.value) == "Error loading system 'Button': system not defined"
@@ -190,7 +192,7 @@ def test_smartbutton_empty_uses_file() -> None:
     src_path = EXAMPLES_PATH / "smartbutton1.yml"
     args = make_args(src_path, uses_path)
 
-    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+    with pytest.raises(exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
 
     assert str(exc_info.value) == "Error loading system 'Button': system not defined"
@@ -206,7 +208,7 @@ def test_compile_desklamp_dependency_not_found() -> None:
 
     args = make_args(src_path, uses_path)
 
-    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+    with pytest.raises(exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
 
     assert str(exc_info.value) == "Error loading system 'Led': system not defined"
@@ -223,7 +225,7 @@ def test_compile_desklamp_dependency_not_found_2() -> None:
     src_path = EXAMPLES_PATH / "desklamp.yml"
     uses_path = EXAMPLES_PATH / "uses.yml"
     args = make_args(src_path, uses_path)
-    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+    with pytest.raises(exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
 
     path = COMPILED_PATH / "led.scy"
@@ -242,7 +244,7 @@ def test_compile_ambiguous() -> None:
     uses_path = EXAMPLES_PATH / "uses.yml"
     args = make_args(src_path, uses_path)
 
-    with pytest.raises(shelleyc.exceptions.CompilationError) as exc_info:
+    with pytest.raises(exceptions.CompilationError) as exc_info:
         call_shelleyc(args)
 
     assert "Invalid device: AmbiguityFailure" in str(exc_info.value)

@@ -8,8 +8,7 @@ from shelley.automata import (
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.parsers.yaml import yaml2shelley
-from shelley.shelleyc import DeviceMapping
-from shelley.shelleyc import CompilationError
+from shelley.shelleyc import shelleyc
 
 httpclient_yml = """
   name: HTTPClient
@@ -111,7 +110,7 @@ def _get_wifi_client_assembled() -> AssembledDevice:
     )
     wificlient_aut: AutomataDevice = shelley2automata.shelley2automata(wificlient_shy)
 
-    return AssembledDevice.make(wificlient_aut, DeviceMapping().__getitem__)
+    return AssembledDevice.make(wificlient_aut, shelleyc.DeviceMapping().__getitem__)
 
 
 def _get_http_client_assembled() -> AssembledDevice:
@@ -120,7 +119,7 @@ def _get_http_client_assembled() -> AssembledDevice:
     )
     httpclient_aut: AutomataDevice = shelley2automata.shelley2automata(httpclient_shy)
 
-    return AssembledDevice.make(httpclient_aut, DeviceMapping().__getitem__)
+    return AssembledDevice.make(httpclient_aut, shelleyc.DeviceMapping().__getitem__)
 
 
 httpclient_assembled = _get_http_client_assembled()
@@ -157,9 +156,9 @@ def test_compile_wifihttp_no_known_devices() -> None:
     wifihttp_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(wifihttp_yml)
     wifihttp_aut: AutomataDevice = shelley2automata.shelley2automata(wifihttp_shy)
 
-    with pytest.raises(CompilationError) as exc_info:
+    with pytest.raises(shelleyc.CompilationError) as exc_info:
         wifihttp_assembled = AssembledDevice.make(
-            wifihttp_aut, DeviceMapping().__getitem__
+            wifihttp_aut, shelleyc.DeviceMapping().__getitem__
         )
 
     assert "Error loading system 'HTTPClient': system not defined" == str(

@@ -6,7 +6,7 @@ from shelley.automata import (
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.parsers.yaml import yaml2shelley
-from shelley.shelleyc import DeviceMapping
+from shelley.shelleyc import shelleyc
 from shelley.automata.errors import UNDECLARED_OPERATION_IN_SUBSYSTEM
 
 simple_yml: str = """
@@ -57,7 +57,7 @@ operations:
 def _get_simple_assembled() -> AssembledDevice:
     simple_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml_str(simple_yml)
     simple_aut: AutomataDevice = shelley2automata.shelley2automata(simple_shy)
-    return AssembledDevice.make(simple_aut, DeviceMapping().__getitem__)
+    return AssembledDevice.make(simple_aut, shelleyc.DeviceMapping().__getitem__)
 
 
 simple_assembled = _get_simple_assembled()

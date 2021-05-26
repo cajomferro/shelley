@@ -7,7 +7,7 @@ from shelley.automata import (
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.parsers.yaml import yaml2shelley
-from shelley.shelleyc import DeviceMapping
+from shelley.shelleyc import shelleyc
 
 httpclient_yml = """
   start_with: [connected]
@@ -109,7 +109,7 @@ def _get_wifi_client_assembled() -> AssembledDevice:
     )
     wificlient_aut: AutomataDevice = shelley2automata.shelley2automata(wificlient_shy)
 
-    return AssembledDevice.make(wificlient_aut, DeviceMapping().__getitem__)
+    return AssembledDevice.make(wificlient_aut, shelleyc.DeviceMapping().__getitem__)
 
 
 def _get_http_client_assembled() -> AssembledDevice:
@@ -118,7 +118,7 @@ def _get_http_client_assembled() -> AssembledDevice:
     )
     httpclient_aut: AutomataDevice = shelley2automata.shelley2automata(httpclient_shy)
 
-    return AssembledDevice.make(httpclient_aut, DeviceMapping().__getitem__)
+    return AssembledDevice.make(httpclient_aut, shelleyc.DeviceMapping().__getitem__)
 
 
 httpclient_assembled = _get_http_client_assembled()

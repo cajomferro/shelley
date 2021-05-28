@@ -35,7 +35,6 @@ def parse_command():
     parser.add_argument(
         "--formula", "-f", nargs="*", help="Give a correctness claim", default=[]
     )
-    parser.add_argument("--integration-check", action="store_true")
     parser.add_argument("--skip-mc", action="store_true")
     parser.add_argument("--skip-direct", action="store_true")
     parser.add_argument(
@@ -43,7 +42,6 @@ def parse_command():
         action="store_true",
         help="Check the usage of each subsystem separately.",
     )
-    parser.add_argument("--skip-integration-model", action="store_true")
     parser.add_argument(
         "-v", "--verbosity", help="increase output verbosity", action="store_true"
     )
@@ -51,9 +49,9 @@ def parse_command():
     return parser.parse_args()
 
 
-def create_fsm_models(
-    spec: Path, uses: Path, fsm_integration: Path, skip_direct_checks: bool = False
-) -> Path:
+def create_fsm_system_model(
+    spec: Path, uses: Path, fsm_system: Path, skip_direct_checks: bool = False,
+) -> shelleyc.AssembledDevice:
     """
     Create integration model by running shelleyc tool
     input: system spec + uses
@@ -65,10 +63,10 @@ def create_fsm_models(
         dump_timings = None
 
     try:
-        fsm_system: Path = shelleyc.compile_shelley(
+        dev: shelleyc.AssembledDevice = shelleyc.compile_shelley(
             src_path=spec,
+            dst_path=fsm_system,
             uses_path=uses,
-            integration=fsm_integration,
             dump_timings=dump_timings,
             skip_checks=skip_direct_checks,
         )
@@ -80,11 +78,11 @@ def create_fsm_models(
         sys.exit(255)
 
     assert fsm_system.exists()
+    logger.debug(f"Created FSM system model")
+    if dev.internal is not None:
+        logger.debug(f"Created FSM integration model")
 
-    if fsm_integration is not None:
-        assert fsm_integration.exists()
-
-    return fsm_system
+    return dev
 
 
 def create_nusmv_model(
@@ -177,9 +175,8 @@ def main():
 
     logger.debug(f"Current path: {Path.cwd()}")
 
-    subsystems: Optional[Mapping[str, Path]] = None
     spec: Path = args.spec
-    fsm_integration: Optional[Path] = None
+    fsm_system: Path = spec.parent / (spec.stem + ".scy")
     smv_system: Path = spec.parent / f"{spec.stem}.smv"
     smv_integration: Path = spec.parent / f"{spec.stem}-i.smv"
     uses: Path = args.uses
@@ -188,20 +185,10 @@ def main():
         print("ERROR! At least on checking is required!")
         sys.exit(255)
 
-    if args.integration_check:
-        if not args.uses:
-            print("ERROR! Integration check requires usages file!")
-            sys.exit(255)
-
-        subsystems: Mapping[str, Path] = dict(get_instances(args.spec, args.uses))
-        fsm_integration: Path = spec.parent / (spec.stem + "-i.scy")
-        print(f"Creating system and integration model: {spec} | {fsm_integration}")
-
-    else:
-        print(f"Creating system model: {spec}")
-
     print(f"Running direct verification...", end="")
-    fsm_system: Path = create_fsm_models(spec, uses, fsm_integration, args.skip_direct)
+    shelley_device: shelleyc.AssembledDevice = create_fsm_system_model(
+        spec, uses, fsm_system, args.skip_direct
+    )
 
     if not args.skip_direct:
         print("OK!")
@@ -209,7 +196,7 @@ def main():
         print(f"SKIP!")
 
     if not args.skip_mc:
-        print(f"Creating NuSMV system model: {fsm_system}")
+        print(f"Creating NuSMV system model: {smv_system}")
         create_nusmv_model(fsm_system, smv_system)
         print(f"Generating system specs: {fsm_system}")
         ltl_system_spec: str = ltlf.generate_system_spec(spec)
@@ -220,7 +207,13 @@ def main():
         model_check(smv_system)
         print("OK!")
 
-        if args.integration_check:
+        if shelley_device.internal is not None:
+            fsm_integration: Path = spec.parent / (spec.stem + "-i.scy")
+            print(f"Dumping FSM integration model: {fsm_integration}")
+            shelleyc.dump_integration_model(shelley_device, fsm_integration)
+            assert fsm_integration.exists()
+
+            subsystems: Mapping[str, Path] = dict(get_instances(args.spec, args.uses))
             if args.split_usage:
                 logger.debug("Split usage is enabled")
                 create_split_usage_model(spec, fsm_integration, subsystems)

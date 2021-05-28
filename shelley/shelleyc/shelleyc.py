@@ -125,6 +125,13 @@ def _get_ext(binary: bool = False) -> str:
     )
 
 
+def dump_integration_model(dev: AssembledDevice, integration: Path, binary=False):
+    logger.debug("Generating integration diagram...")
+
+    assert isinstance(dev.internal, AssembledMicroBehavior)
+    serialize(integration, dev.internal.nfa.as_dict(), binary)
+
+
 def compile_shelley(
     *,
     src_path: Path,
@@ -136,7 +143,7 @@ def compile_shelley(
     save_output: bool = True,
     skip_testing: bool = False,
     skip_checks: bool = False,
-) -> Path:
+) -> AssembledDevice:
     """
 
     :param src_path: Shelley device src path to be compiled (YAML file)
@@ -194,10 +201,7 @@ def compile_shelley(
     if (
         integration is not None and dev.internal is not None
     ):  # do this only for compound devices
-        logger.debug("Generating integration diagram...")
-
-        assert isinstance(dev.internal, AssembledMicroBehavior)
-        serialize(integration, dev.internal.nfa.as_dict(), binary)
+        dump_integration_model(dev, integration)
 
     if (skip_checks or dev.is_valid) and save_output:
         logger.debug("Compiling device: {0}".format(shelley_device.name))
@@ -227,4 +231,4 @@ def compile_shelley(
         else:
             raise CompilationError("Invalid device: {0}".format(dev.failure))
 
-    return dst_path
+    return dev

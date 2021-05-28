@@ -5,11 +5,14 @@ from typing import Any
 from karakuri import regular
 from pathlib import Path
 import json
-from io import StringIO
+import logging
 
 from shelley.automata.view import fsm2dot, fsm2tex
 from shelley.shelleyv import shelleyv
-from shelley.shelleymc import ltlf
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("shelleyv")
+VERBOSE: bool = False
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -71,7 +74,7 @@ def main() -> None:
     with args.input.open() as fp:
         d = yaml.load(fp, Loader=yaml.FullLoader)
 
-    n: regular.NFA[Any, str] = shelleyv.handle_fsm(
+    fsm_stats: shelleyv.FSMStats = shelleyv.handle_fsm(
         regular.NFA.from_dict(d),
         args.filter,
         args.dfa,
@@ -80,6 +83,10 @@ def main() -> None:
         args.no_sink,
         args.no_epsilon,
     )
+
+    n: regular.NFA[Any, str] = fsm_stats.result
+
+    print(str(fsm_stats))
 
     fp = sys.stdout if args.output is None else open(args.output, "w")
 

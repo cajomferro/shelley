@@ -1,9 +1,13 @@
-import sys
 import re
 from typing import Any, Optional
 from karakuri import regular
 from pathlib import Path
 import yaml
+import logging
+from dataclasses import dataclass
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("shelleyv")
 
 
 def fsm2smv(
@@ -21,7 +25,7 @@ def fsm2smv(
 
     n: regular.NFA[Any, str] = handle_fsm(
         regular.NFA.from_dict(fsm_dict), dfa=True, filter=filter_instance
-    )
+    ).result
 
     with smv_model.open("w") as fp:
         smv_dump(state_diagram=n.as_dict(flatten=True), fp=fp)
@@ -191,6 +195,36 @@ def fsm_dump(state_diagram, fp):
         print(src, dst, char, file=fp)
 
 
+@dataclass
+class FSMStats:
+    input: Optional[str] = None
+    dfa_no_sinks: Optional[str] = None
+    dfa: Optional[str] = None
+    dfa_min: Optional[str] = None
+    dfa_to_nfa_no_sink: Optional[str] = None
+    nfa_no_epsilon: Optional[str] = None
+    nfa_no_sinks: Optional[str] = None
+    result: Optional[regular.NFA[Any, str]] = None
+
+    def __str__(self):
+        text = ""
+        if self.input is not None:
+            text += f"Input: {self.input}\n"
+        if self.dfa is not None:
+            text += f"DFA: {self.dfa}\n"
+        if self.dfa_no_sinks is not None:
+            text += f"DFA no sinks: {self.dfa_no_sinks}\n"
+        if self.dfa_min is not None:
+            text += f"DFA minimized: {self.dfa_min}\n"
+        if self.dfa_to_nfa_no_sink is not None:
+            text += f"DFA2NFA no sinks: {self.dfa_to_nfa_no_sink}\n"
+        if self.nfa_no_epsilon is not None:
+            text += f"NFA no epsilon: {self.nfa_no_epsilon}\n"
+        if self.nfa_no_sinks is not None:
+            text += f"NFA no sinks: {self.nfa_no_sinks}\n"
+        return text
+
+
 def handle_fsm(
     n: regular.NFA[Any, str],
     filter: str = None,
@@ -199,7 +233,9 @@ def handle_fsm(
     minimize_slow: bool = False,
     no_sink: bool = False,
     no_epsilon: bool = False,
-) -> regular.NFA[Any, str]:
+) -> FSMStats:
+    fsm_stats = FSMStats()
+
     if filter is not None:
         pattern = re.compile(filter)
 
@@ -207,8 +243,12 @@ def handle_fsm(
             return x if x is None else pattern.match(x)
 
         n = n.filter_char(on_elem)
+
+    fsm_stats.input = len(n)
+
     if dfa:
-        print("Input:", len(n), file=sys.stderr)
+        # logger.debug(f"Input: {len(n)}")
+
         # Convert the DFA back into an NFA to possibly remove sink states
         if minimize:
             # Before minimizing, make sure we remove sink states, so that there
@@ -216,27 +256,39 @@ def handle_fsm(
             # way of making the resulting DFA smaller
             if not minimize_slow:
                 n = n.remove_sink_states()
-                print("No sinks:", len(n), file=sys.stderr)
+                # logger.debug("No sinks:", len(n), file=sys.stderr)
+                fsm_stats.dfa_no_sinks = len(n)
             d: regular.DFA[Any, str] = regular.nfa_to_dfa(n)
-            print("DFA:", len(d), file=sys.stderr)
+            # print("DFA:", len(d), file=sys.stderr)
+            fsm_stats.dfa = len(d)
             d = d.minimize()
-            print("Minimized DFA:", len(d), file=sys.stderr)
+            # print("Minimized DFA:", len(d), file=sys.stderr)
+            fsm_stats.dfa_min = len(d)
         else:
             d = regular.nfa_to_dfa(n).flatten()
-            print("DFA:", len(d), file=sys.stderr)
+            # print("DFA:", len(d), file=sys.stderr)
+            fsm_stats.dfa = len(d)
 
         n = regular.dfa_to_nfa(d)
 
         if no_sink:
             n = n.remove_sink_states()
-            print("NFA no sink:", len(n), file=sys.stderr)
-        return n
+            # print("NFA no sink:", len(n), file=sys.stderr)
+            fsm_stats.dfa_to_nfa_no_sink = len(n)
+
+        fsm_stats.result = n
+
     else:
-        print("Input:", len(n))
+        # print("Input:", len(n))
         if no_epsilon:
             n = n.remove_epsilon_transitions()
-            print("Remove epsilon:", len(n), file=sys.stderr)
+            # print("Remove epsilon:", len(n), file=sys.stderr)
+            fsm_stats.nfa_no_epsilon = len(n)
         if no_sink:
             n = n.remove_sink_states()
-            print("Remove sink states:", len(n), file=sys.stderr)
-        return n
+            # print("Remove sink states:", len(n), file=sys.stderr)
+            fsm_stats.nfa_no_sinks = len(n)
+
+        fsm_stats.result = n
+
+    return fsm_stats

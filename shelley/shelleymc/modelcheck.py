@@ -37,7 +37,7 @@ def parse_command():
     )
     parser.add_argument("--integration-check", action="store_true")
     parser.add_argument("--skip-mc", action="store_true")
-    parser.add_argument("--direct-checks", action="store_true")
+    parser.add_argument("--skip-direct", action="store_true")
     parser.add_argument(
         "--split-usage",
         action="store_true",
@@ -177,14 +177,23 @@ def main():
 
     logger.debug(f"Current path: {Path.cwd()}")
 
-    subsystems: Mapping[str, Path] = dict(get_instances(args.spec, args.uses))
+    subsystems: Optional[Mapping[str, Path]] = None
     spec: Path = args.spec
     fsm_integration: Optional[Path] = None
     smv_system: Path = spec.parent / f"{spec.stem}.smv"
     smv_integration: Path = spec.parent / f"{spec.stem}-i.smv"
     uses: Path = args.uses
 
+    if args.skip_mc and args.skip_direct:
+        print("ERROR! At least on checking is required!")
+        sys.exit(255)
+
     if args.integration_check:
+        if not args.uses:
+            print("ERROR! Integration check requires usages file!")
+            sys.exit(255)
+
+        subsystems: Mapping[str, Path] = dict(get_instances(args.spec, args.uses))
         fsm_integration: Path = spec.parent / (spec.stem + "-i.scy")
         print(f"Creating system and integration model: {spec} | {fsm_integration}")
 
@@ -192,11 +201,9 @@ def main():
         print(f"Creating system model: {spec}")
 
     print(f"Running direct verification...", end="")
-    fsm_system: Path = create_fsm_models(
-        spec, uses, fsm_integration, not args.direct_checks
-    )
+    fsm_system: Path = create_fsm_models(spec, uses, fsm_integration, args.skip_direct)
 
-    if args.direct_checks:
+    if not args.skip_direct:
         print("OK!")
     else:
         print(f"SKIP!")
@@ -213,19 +220,17 @@ def main():
         model_check(smv_system)
         print("OK!")
 
-        if (
-            args.integration_check and not args.split_usage
-        ) or not args.skip_integration_model:
-            logger.debug("Split usage is disabled")
-            create_nusmv_model(fsm_integration, smv_integration, args.formula)
-
         if args.integration_check:
             if args.split_usage:
+                logger.debug("Split usage is enabled")
                 create_split_usage_model(spec, fsm_integration, subsystems)
             else:
+                logger.debug("Split usage is disabled")
+                create_nusmv_model(fsm_integration, smv_integration, args.formula)
+
                 for (instance_name, instance_spec) in subsystems.items():
                     append_ltl_usage(instance_spec, instance_name, smv_integration)
 
-        print("Model checking integration...", end="")
-        model_check(smv_integration)
-        print("OK!")
+            print("Model checking integration...", end="")
+            model_check(smv_integration)
+            print("OK!")

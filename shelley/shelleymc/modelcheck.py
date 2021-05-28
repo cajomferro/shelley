@@ -59,9 +59,6 @@ def create_fsm_models(
     input: system spec + uses
     output: integration (FSM) (*-i.scy)
     """
-
-    logger.info(f"Creating integration model: {fsm_integration}")
-
     if VERBOSE:
         dump_timings = sys.stdout
     else:
@@ -83,7 +80,9 @@ def create_fsm_models(
         sys.exit(255)
 
     assert fsm_system.exists()
-    assert fsm_integration.exists()
+
+    if fsm_integration is not None:
+        assert fsm_integration.exists()
 
     return fsm_system
 
@@ -98,7 +97,6 @@ def create_nusmv_model(
     @param ltlf_formulae: optional
     """
 
-    logger.info(f"Creating NuSMV model: {smv} | formula: {ltlf_formulae}")
     shelleyv.fsm2smv(integration, smv)
 
     if ltlf_formulae is not None and len(ltlf_formulae) > 0:
@@ -111,7 +109,7 @@ def create_nusmv_model(
 
 
 def append_ltl_usage(instance_spec: Path, instance_name: str, smv_path: Path):
-    logger.info(f"Append LTL usage of {instance_name} ({instance_spec})")
+    print(f"Appending LTL usage of {instance_name} ({instance_spec})")
 
     specs = ltlf.generate_instance_spec(instance_spec, instance_name)
     for spec in specs:
@@ -163,7 +161,7 @@ def model_check(smv_path: Path) -> None:
         cp: subprocess.CompletedProcess = subprocess.run(
             nusmv_call, capture_output=True, check=True
         )
-        check_nusmv_output(cp.stdout.decode())
+        # check_nusmv_output(cp.stdout.decode())
     except subprocess.CalledProcessError as err:
         logger.error(err.output.decode() + err.stderr.decode())
         sys.exit(255)
@@ -181,36 +179,53 @@ def main():
 
     subsystems: Mapping[str, Path] = dict(get_instances(args.spec, args.uses))
     spec: Path = args.spec
-    fsm_integration: Path = spec.parent / (spec.stem + "-i.scy")
+    fsm_integration: Optional[Path] = None
     smv_system: Path = spec.parent / f"{spec.stem}.smv"
     smv_integration: Path = spec.parent / f"{spec.stem}-i.smv"
     uses: Path = args.uses
 
+    if args.integration_check:
+        fsm_integration: Path = spec.parent / (spec.stem + "-i.scy")
+        print(f"Creating system and integration model: {spec} | {fsm_integration}")
+
+    else:
+        print(f"Creating system model: {spec}")
+
+    print(f"Running direct verification...", end="")
     fsm_system: Path = create_fsm_models(
         spec, uses, fsm_integration, not args.direct_checks
     )
-    create_nusmv_model(fsm_system, smv_system)
-    ltl_system_spec: str = ltlf.generate_system_spec(spec)
-    with smv_system.open("a+") as fp:
-        fp.write(f"{ltl_system_spec}\n")
+
+    if args.direct_checks:
+        print("OK!")
+    else:
+        print(f"SKIP!")
 
     if not args.skip_mc:
-        logger.info("Model checking system...")
+        print(f"Creating NuSMV system model: {fsm_system}")
+        create_nusmv_model(fsm_system, smv_system)
+        print(f"Generating system specs: {fsm_system}")
+        ltl_system_spec: str = ltlf.generate_system_spec(spec)
+        with smv_system.open("a+") as fp:
+            fp.write(f"{ltl_system_spec}\n")
+
+        print("Model checking system...", end="")
         model_check(smv_system)
+        print("OK!")
 
-    if (
-        args.integration_check and not args.split_usage
-    ) or not args.skip_integration_model:
-        logger.debug("Split usage is disabled")
-        create_nusmv_model(fsm_integration, smv_integration, args.formula)
+        if (
+            args.integration_check and not args.split_usage
+        ) or not args.skip_integration_model:
+            logger.debug("Split usage is disabled")
+            create_nusmv_model(fsm_integration, smv_integration, args.formula)
 
-    if args.integration_check:
-        if args.split_usage:
-            create_split_usage_model(spec, fsm_integration, subsystems)
-        else:
-            for (instance_name, instance_spec) in subsystems.items():
-                append_ltl_usage(instance_spec, instance_name, smv_integration)
+        if args.integration_check:
+            if args.split_usage:
+                create_split_usage_model(spec, fsm_integration, subsystems)
+            else:
+                for (instance_name, instance_spec) in subsystems.items():
+                    append_ltl_usage(instance_spec, instance_name, smv_integration)
 
-    if not args.skip_mc:
-        logger.info("Model checking integration...")
+        print("Model checking integration...", end="")
         model_check(smv_integration)
+        print("OK!")

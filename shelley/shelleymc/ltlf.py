@@ -15,6 +15,7 @@ from shelley.parsers.ltlf_lark_parser import (
     Until,
     Bool,
     Eventually,
+    ExistsFinally,
     Formula,
 )
 from shelley.parsers.ltlf_lark_parser import parser as ltlf_parser
@@ -119,14 +120,13 @@ def generate_system_spec(
 
     dev: ShelleyDevice = shelley_lark_parser.parse(spec)
 
-    formula: Formula = Eventually(
-        And(
-            And.make(Equal(var_action, Action(op)) for op in dev.events.list_str()),
-            Not(eos),
-        )
-    )
+    specs_lines = ""
 
-    return f"LTLSPEC {formula} ;"
+    for op in dev.events.list_str():
+        formula: Formula = ExistsFinally(And(Equal(var_action, Action(op)), Not(eos)))
+        specs_lines += f"SPEC {formula} ;\n"
+
+    return specs_lines
 
 
 def generate_instance_spec(

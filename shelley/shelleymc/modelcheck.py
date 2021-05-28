@@ -62,18 +62,24 @@ def create_fsm_models(
 
     logger.info(f"Creating integration model: {fsm_integration}")
 
+    if VERBOSE:
+        dump_timings = sys.stdout
+    else:
+        dump_timings = None
+
     try:
         fsm_system: Path = shelleyc.compile_shelley(
             src_path=spec,
             uses_path=uses,
             integration=fsm_integration,
-            dump_timings=sys.stdout,
+            dump_timings=dump_timings,
             skip_checks=skip_direct_checks,
         )
     except shelleyc.CompilationError as err:
         if VERBOSE:
-            logger.exception(err, exc_info=True)
-        logger.error(err)
+            logger.error(err, exc_info=True)
+        else:
+            logger.error(err)
         sys.exit(255)
 
     assert fsm_system.exists()
@@ -158,8 +164,8 @@ def model_check(smv_path: Path) -> None:
             nusmv_call, capture_output=True, check=True
         )
         check_nusmv_output(cp.stdout.decode())
-    except subprocess.CalledProcessError:
-        logger.exception("NuSMV error!")
+    except subprocess.CalledProcessError as err:
+        logger.error(err.output.decode() + err.stderr.decode())
         sys.exit(255)
 
 
@@ -185,8 +191,8 @@ def main():
     )
     create_nusmv_model(fsm_system, smv_system)
     ltl_system_spec: str = ltlf.generate_system_spec(spec)
-    # with smv_system.open("a+") as fp:
-    #     fp.write(f"{ltl_system_spec}\n")
+    with smv_system.open("a+") as fp:
+        fp.write(f"{ltl_system_spec}\n")
 
     if not args.skip_mc:
         logger.info("Model checking system...")

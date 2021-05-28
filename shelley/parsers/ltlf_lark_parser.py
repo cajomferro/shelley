@@ -162,6 +162,19 @@ def WeakUntil(left, right):
     "Left must hold until right; right may never happen."
 
 
+@dataclass
+class ExistsFinally(Formula):
+    """
+    p is true in a state s0 if there exists a series of transitions 
+    s_0 -> s_1, s_1 -> s_2, ...,s_{n−1} -> s_n such that p is true in s_n
+
+    TODO: THIS IS A CTL FORMULA RATHER THAN LTLf!
+    """
+
+    formula: Formula
+    __str__ = unop("EF")
+
+
 parser = Lark.open("ltlf_grammar.lark", rel_to=__file__, start="formula")
 
 

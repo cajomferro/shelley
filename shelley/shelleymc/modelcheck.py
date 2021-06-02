@@ -59,6 +59,7 @@ def create_fsm_system_model(
     """
     if VERBOSE:
         dump_timings = sys.stdout
+        shelleyc.settings.VERBOSE = True
     else:
         dump_timings = None
 
@@ -185,15 +186,15 @@ def main():
         print("ERROR! At least on checking is required!")
         sys.exit(255)
 
-    print(f"Running direct verification...", end="")
+    # print(f"Running direct verification...", end="")
     shelley_device: shelleyc.AssembledDevice = create_fsm_system_model(
         spec, uses, fsm_system, args.skip_direct
     )
 
-    if not args.skip_direct:
-        print("OK!")
-    else:
-        print(f"SKIP!")
+    # if not args.skip_direct:
+    #     print("OK!")
+    # else:
+    #     print(f"SKIP!")
 
     if not args.skip_mc:
         print(f"Creating NuSMV system model: {smv_system}")

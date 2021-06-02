@@ -222,7 +222,7 @@ class FSMStats:
             text += f"NFA no epsilon: {self.nfa_no_epsilon}\n"
         if self.nfa_no_sinks is not None:
             text += f"NFA no sinks: {self.nfa_no_sinks}\n"
-        return text
+        return text.strip()
 
 
 def handle_fsm(

@@ -12,7 +12,6 @@ from shelley.shelleyv import shelleyv
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleyv")
-VERBOSE: bool = False
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -55,6 +54,9 @@ def create_parser() -> argparse.ArgumentParser:
         "--minimize", default=False, action="store_true", help="Minimize the DFA"
     )
     parser.add_argument(
+        "-v", "--verbosity", help="increase output verbosity", action="store_true"
+    )
+    parser.add_argument(
         "-o",
         "--output",
         nargs="?",
@@ -68,6 +70,10 @@ def create_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = create_parser()
     args: argparse.Namespace = parser.parse_args()
+
+    if args.verbosity:
+        logger.setLevel(logging.DEBUG)
+
     if args.minimize and not args.dfa:
         parser.error("The '--minimize' option requires '--dfa'")
 
@@ -86,7 +92,7 @@ def main() -> None:
 
     n: regular.NFA[Any, str] = fsm_stats.result
 
-    print(str(fsm_stats))
+    logger.debug(str(fsm_stats))
 
     fp = sys.stdout if args.output is None else open(args.output, "w")
 

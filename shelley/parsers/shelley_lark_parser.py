@@ -135,8 +135,10 @@ class ShelleyLanguage(LTLParser):
             name=name, events=events, behaviors=behaviors, triggers=triggers,
         )
 
-        device.test_macro = dict()
-        device.test_micro = dict()
+        # device.test_macro = dict()
+        # device.test_micro = dict()
+        if len(enforce) > 0:
+            device.enforce_formulae = enforce
 
         return device
 

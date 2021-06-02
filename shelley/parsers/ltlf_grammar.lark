@@ -8,7 +8,6 @@ formula:
     | implies
     | equiv
     | next
-    | next
     | until
     | globally
     | eventually

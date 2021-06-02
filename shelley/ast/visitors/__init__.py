@@ -1,18 +1,20 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING
 
-from shelley.ast.devices import Device
-from shelley.ast.actions import Action, Actions
-from shelley.ast.events import Event, Events
-from shelley.ast.behaviors import Behavior, Behaviors
-from shelley.ast.components import Component, Components
-from shelley.ast.triggers import Trigger, Triggers
-from shelley.ast.rules import (
-    TriggerRuleSequence,
-    TriggerRuleChoice,
-    TriggerRuleEvent,
-    TriggerRuleFired,
-)
+if TYPE_CHECKING:
+    from shelley.ast.devices import Device
+    from shelley.ast.actions import Action, Actions
+    from shelley.ast.events import Event, Events
+    from shelley.ast.behaviors import Behavior, Behaviors
+    from shelley.ast.components import Component, Components
+    from shelley.ast.triggers import Trigger, Triggers
+    from shelley.ast.rules import (
+        TriggerRuleSequence,
+        TriggerRuleChoice,
+        TriggerRuleEvent,
+        TriggerRuleFired,
+    )
 
 
 class Visitor(ABC):

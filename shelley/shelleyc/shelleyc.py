@@ -231,4 +231,4 @@ def compile_shelley(
         else:
             raise CompilationError("Invalid device: {0}".format(dev.failure))
 
-    return dev
+    return shelley_device, dev

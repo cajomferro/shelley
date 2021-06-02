@@ -1,8 +1,10 @@
-from typing import List
-from shelley.parsers import shelley_lark_parser
+from typing import List, TYPE_CHECKING
+from shelley.parsers import shelley_lark_parser, ltlf_lark_parser
 from pathlib import Path
 from dataclasses import dataclass
-from shelley.ast.devices import Device as ShelleyDevice
+
+if TYPE_CHECKING:
+    from shelley.ast.devices import Device as ShelleyDevice
 from shelley.parsers.ltlf_lark_parser import (
     And,
     Equal,
@@ -18,7 +20,6 @@ from shelley.parsers.ltlf_lark_parser import (
     ExistsFinally,
     Formula,
 )
-from shelley.parsers.ltlf_lark_parser import parser as ltlf_parser
 
 
 @dataclass
@@ -34,8 +35,21 @@ class Op:
         self.targets.append(name)
 
 
+def parse_ltlf_formulae(ltlf_formulas: List[str]) -> List[Formula]:
+    converted_list: List[Formula] = list()
+    for formula in ltlf_formulas:
+        tree = ltlf_lark_parser.parser.parse(formula)
+        ltlf: Formula = ltlf_lark_parser.LTLParser().transform(tree)
+        converted_list.append(ltlf)
+
+    return converted_list
+
+
 def convert_ltlf_formulae(
-    ltlf_formulas: List[str], name: str, eos: Action = None, var_action: Action = None
+    ltlf_formulas: List[Formula],
+    name: str = None,
+    eos: Action = None,
+    var_action: Action = None,
 ):
     """
     Convert LTLf to NuSMV LTL
@@ -91,10 +105,8 @@ def convert_ltlf_formulae(
         return rec(formula)
 
     for formula in ltlf_formulas:
-        tree = ltlf_parser.parse(formula)
-        ltlf = ltlf_parser.LTLParser().transform(tree)
         ltl_formulae.append(
-            f"LTLSPEC {ltlf2ltl(ltlf, name=name, eos_var=eos, action_var=var_action)}"
+            f"LTLSPEC {ltlf2ltl(formula, name=name, eos_var=eos, action_var=var_action)}"
         )
 
     return ltl_formulae
@@ -231,8 +243,9 @@ def main():
         for spec in ltl_specs:
             print(spec)
     elif args.command in ["f", "formula"]:
+        ltlf_formulae: List[Formula] = parse_ltlf_formulae(args.formulas)
         ltl_formulae: List[str] = convert_ltlf_formulae(
-            args.formulas,
+            ltlf_formulae,
             name=args.name,
             eos=Action(args.var_end_of_sequence),
             var_action=Action(args.var_action),

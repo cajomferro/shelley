@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Mapping, List, TYPE_CHECKING, Optional
+from dataclasses import dataclass, field
 
 from shelley.ast.node import Node
 from shelley.ast.actions import Actions
@@ -7,6 +8,7 @@ from shelley.ast.behaviors import Behaviors
 from shelley.ast.components import Components
 from shelley.ast.triggers import Triggers
 from shelley.ast.events import Events
+from shelley.parsers.ltlf_lark_parser import Formula
 
 if TYPE_CHECKING:
     from shelley.ast.visitors import Visitor
@@ -21,44 +23,20 @@ def discover_uses(components: Components) -> List[str]:
     return uses
 
 
+@dataclass
 class Device(Node):
-    """
-    \\hard{D} -> categoria sintática
-    """
-
     name: str
-    actions: Actions
-    events: Events  # TODO: change to Events later
+    events: Events
     behaviors: Behaviors
-    uses: List[str]
-    components: Components
     triggers: Triggers
-    test_macro: Mapping[str, Mapping[str, List[str]]]
-    test_micro: Mapping[str, Mapping[str, List[str]]]
+    actions: Actions = field(default_factory=Actions)
+    uses: List[str] = field(default_factory=list)
+    components: Components = field(default_factory=Components)
+    test_macro: Mapping[str, Mapping[str, List[str]]] = field(default_factory=dict)
+    test_micro: Mapping[str, Mapping[str, List[str]]] = field(default_factory=dict)
+    enforce_formulae: List[Formula] = field(default_factory=list)
 
-    def __init__(
-        self,
-        name: str,
-        events: Events,
-        behaviors: Behaviors,
-        triggers: Triggers,
-        actions: Optional[Actions] = None,
-        uses: Optional[List[str]] = None,
-        components: Optional[Components] = None,
-    ) -> None:
-        if actions is None:
-            actions = Actions()
-        if uses is None:
-            uses = []
-        if components is None:
-            components = Components()
-        self.name = name
-        self.actions = actions
-        self.events = events
-        self.behaviors = behaviors
-        self.uses = uses
-        self.components = components
-        self.triggers = triggers
+    def __post_init__(self) -> None:
 
         # find used devices from components if not specified
         if len(self.uses) == 0 and len(self.components.components_to_devices) != 0:

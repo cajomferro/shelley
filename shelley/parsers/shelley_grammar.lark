@@ -22,8 +22,6 @@ modifiers:
   | initial final
   | final initial
 
-ident: CNAME
-
 next: "->" [ident ("," ident)* [","]] -> next_evts
 
 sig:  [modifiers] ident next
@@ -46,6 +44,25 @@ sys:
 COMMENT: /#[^\n]*/
 
 %import .ltlf_grammar.formula
+%import .ltlf_grammar.atom
+%import .ltlf_grammar.ident
+%import .ltlf_grammar.act
+%import .ltlf_grammar.true
+%import .ltlf_grammar.false
+%import .ltlf_grammar.bool
+%import .ltlf_grammar.paren
+%import .ltlf_grammar.land
+%import .ltlf_grammar.lor
+%import .ltlf_grammar.lnot
+%import .ltlf_grammar.next -> xnext
+%import .ltlf_grammar.until
+%import .ltlf_grammar.implies
+%import .ltlf_grammar.equiv
+%import .ltlf_grammar.globally
+%import .ltlf_grammar.eventually
+%import .ltlf_grammar.last
+%import .ltlf_grammar.eq
+
 %import common.CNAME
 %import common.WS
 %ignore WS

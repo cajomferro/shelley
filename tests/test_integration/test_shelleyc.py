@@ -4,22 +4,15 @@ from typing import Optional, Any
 from pathlib import Path
 import argparse
 
-from shelley.automata import CheckedDevice
-from shelley.ast.devices import Device as ShelleyDevice
 from shelley.shelleyc import main
 from shelley.shelleyc import exceptions
-from shelley import parsers
 from shelley.shelleyc import shelleyc
 
 EXAMPLES_PATH = Path() / Path(__file__).parent / "input"
 COMPILED_PATH = EXAMPLES_PATH / "compiled"
 
 
-def empty_devices(name: str) -> CheckedDevice:
-    raise ValueError()
-
-
-def call_shelleyc(args: argparse.Namespace, **kwargs: Any) -> Path:
+def call_shelleyc(args: argparse.Namespace, **kwargs: Any) -> None:
     data = dict(
         src_path=args.device,
         uses_path=args.uses,
@@ -29,7 +22,7 @@ def call_shelleyc(args: argparse.Namespace, **kwargs: Any) -> Path:
         save_output=args.save_output,
     )
     data.update(kwargs)
-    return shelleyc.compile_shelley(**data)
+    shelleyc.compile_shelley(**data)
 
 
 def _remove_compiled_dir() -> None:
@@ -45,38 +38,9 @@ def _remove_compiled_files(outdir: Path) -> None:
         file.unlink()
 
 
-def _get_shelley_device(name: str) -> ShelleyDevice:
-    path = (
-        Path.cwd()
-        / EXAMPLES_PATH
-        / "{name}.{ext}".format(
-            name=name, ext=shelleyc.settings.EXT_SHELLEY_SOURCE_YAML[0]
-        )
-    )
-    return parsers.get_shelley_from_yaml(path)
-
-
-def _get_compiled_path(name: str, binary: bool = False) -> Path:
-    COMPILED_PATH.mkdir(parents=True, exist_ok=True)
-    if binary:
-        ext = shelleyc.settings.EXT_SHELLEY_COMPILED_BIN  # scb
-    else:
-        ext = shelleyc.settings.EXT_SHELLEY_COMPILED_YAML  # scy
-    return Path.cwd() / COMPILED_PATH / "{0}.{1}".format(name, ext)
-
-
 def get_path(p: Path) -> str:
     assert isinstance(p, Path)
     return str(COMPILED_PATH / (p.stem + ".scy"))
-
-
-def mk_use(**kwargs: Path) -> str:
-    assert len(kwargs) == 1
-    for key, val in kwargs.items():
-        assert isinstance(val, Path)
-        assert isinstance(key, str)
-        return str(val) + ":" + key
-    raise ValueError()
 
 
 def make_args(src_path: Path, uses_path: Optional[Path] = None) -> argparse.Namespace:
@@ -101,13 +65,13 @@ def make_args(src_path: Path, uses_path: Optional[Path] = None) -> argparse.Name
     return args
 
 
-### TEST COMPILER ###
+# TEST COMPILER #
 
 
-def _compile_simple_device(device_name: str) -> Path:
+def _compile_simple_device(device_name: str) -> None:
     src_path = EXAMPLES_PATH / (device_name + ".yml")
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
-    return call_shelleyc(make_args(src_path), save_output=True)
+    call_shelleyc(make_args(src_path), save_output=True)
 
 
 def test_not_found_device() -> None:
@@ -115,7 +79,7 @@ def test_not_found_device() -> None:
     parser = main.create_parser()
     args = parser.parse_args(["-d", src_path])
 
-    with pytest.raises(FileNotFoundError) as exc_info:
+    with pytest.raises(FileNotFoundError):
         call_shelleyc(args)
 
 
@@ -132,7 +96,7 @@ def test_compile_buton_no_output() -> None:
     assert not outpath.exists()
 
 
-### smartbutton
+# test smartbutton
 
 
 def test_smartbutton_file_invalid_dict_uses_file() -> None:

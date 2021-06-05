@@ -173,15 +173,18 @@ def create_instance_model(
 
 def check_nusmv_output(raw_output: str):
     lines_output: List[str] = raw_output.splitlines()
-    # print(lines_output)
-
-    # filter_output = [line for line in lines_output if line.startswith("-- specification")]
-    for line in lines_output:
-        print(line)
+    error: bool = False
 
     for line in lines_output:
         if line.startswith("-- specification") and "is false" in line:
-            sys.exit(255)
+            error = True
+
+    if error is True or VERBOSE:
+        for line in lines_output:
+            print(line)
+
+    if error is True:
+        sys.exit(255)
 
 
 def model_check(smv_path: Path) -> None:
@@ -194,7 +197,7 @@ def model_check(smv_path: Path) -> None:
         cp: subprocess.CompletedProcess = subprocess.run(
             nusmv_call, capture_output=True, check=True
         )
-        # check_nusmv_output(cp.stdout.decode())
+        check_nusmv_output(cp.stdout.decode())
     except subprocess.CalledProcessError as err:
         logger.error(err.output.decode() + err.stderr.decode())
         sys.exit(255)

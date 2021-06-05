@@ -121,9 +121,9 @@ def smv_dump(
             lines.append((f"{var_state}={src}{act}", ["TRUE", "FALSE"]))
     lines.append(("TRUE", "FALSE"))
     next_var_case(var_eos, lines)
-    print(f"FAIRNESS {var_eos};", file=fp)
+    print(f"\nFAIRNESS {var_eos};", file=fp)
 
-    print(f"LTLSPEC F ({var_eos}); -- sanity check", file=fp)
+    print(f"\nLTLSPEC F ({var_eos}); -- sanity check", file=fp)
     print(
         f"LTLSPEC G ({var_eos} -> G({var_eos}) & X({var_eos})); -- sanity check",
         file=fp,

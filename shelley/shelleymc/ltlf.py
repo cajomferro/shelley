@@ -1,10 +1,9 @@
-from typing import List, TYPE_CHECKING
+from typing import List
 from shelley.parsers import shelley_lark_parser, ltlf_lark_parser
 from pathlib import Path
 from dataclasses import dataclass
 
-if TYPE_CHECKING:
-    from shelley.ast.devices import Device as ShelleyDevice
+from shelley.ast.devices import Device
 from shelley.parsers.ltlf_lark_parser import (
     And,
     Equal,
@@ -50,7 +49,7 @@ def convert_ltlf_formulae(
     name: str = None,
     eos: Action = None,
     var_action: Action = None,
-):
+) -> List[str]:
     """
     Convert LTLf to NuSMV LTL
 
@@ -66,7 +65,7 @@ def convert_ltlf_formulae(
     if var_action is None:
         var_action = Action("_action")
 
-    ltl_formulae: List[str] = []
+    ltl_formulae: List[str] = list()
 
     def ltlf2ltl(formula, name, eos_var, action_var):
         """
@@ -113,12 +112,11 @@ def convert_ltlf_formulae(
 
 
 def generate_system_spec(
-    spec: Path, eos: Action = None, var_action: Action = None
-) -> str:
+    dev: Device, eos: Action = None, var_action: Action = None
+) -> List[str]:
     """
 
-    @param spec:
-    @param prefix:
+    @param dev: Shelley device instance
     @param eos: NuSMV variable used to represent the end of a sequence
     @param var_action: NuSMV variable used to represent the current FSM state.
     @return:
@@ -130,23 +128,23 @@ def generate_system_spec(
     if var_action is None:
         var_action = Action("_action")
 
-    dev: ShelleyDevice = shelley_lark_parser.parse(spec)
+    system_specs: List[str] = list()
 
-    specs_lines = ""
+    system_specs.append(f"\n-- SYSTEM SPECS")
 
     for op in dev.events.list_str():
         formula: Formula = ExistsFinally(And(Equal(var_action, Action(op)), Not(eos)))
-        specs_lines += f"SPEC {formula} ;\n"
+        system_specs.append(f"SPEC {formula} ;")
 
-    return specs_lines
+    return system_specs
 
 
 def generate_instance_spec(
-    spec_path: Path, prefix: str, eos: Action = None, var_action: Action = None
-):
+    dev: Device, prefix: str, eos: Action = None, var_action: Action = None
+) -> List[str]:
     """
 
-    @param spec_path:
+    @param dev:
     @param prefix:
     @param eos: NuSMV variable used to represent the end of a sequence
     @param var_action: NuSMV variable used to represent the current FSM state.
@@ -161,14 +159,14 @@ def generate_instance_spec(
     ltl_specs: List[str] = []
 
     targets = dict()
-    dev: ShelleyDevice = shelley_lark_parser.parse(spec_path)
+
     for (src, dst) in dev.behaviors.as_list_tuples():
         dsts = targets.get(src, None)
         if dsts is None:
             evt = dev.events.find_by_name(src)
             targets[src] = dsts = Op.make(evt.is_final)
         dsts.add(dst)
-    forms = []
+    forms: List[Formula] = []
 
     def mk_act(name):
         return And(Equal(var_action, Action(prefix + "_" + name)), Not(eos))
@@ -188,8 +186,18 @@ def generate_instance_spec(
         will_happen = Or.make(args)
         f = Always(Implies(mk_act(src), Next(Until(tau(), will_happen))))
         forms.append(f)
+
+    ltl_specs.append(f"\n-- INSTANCE SPECS ({prefix}: {dev.name})")
     for f in forms:
         ltl_specs.append(f"LTLSPEC {f} ;")
+
+    ltl_spec_formulae = convert_ltlf_formulae(
+        dev.enforce_formulae, prefix, eos, var_action
+    )
+    if len(ltl_spec_formulae) > 0:
+        ltl_specs.append(f"\n-- ENFORCE SPECS ({prefix}: {dev.name})")
+    for enforce_spec in ltl_spec_formulae:
+        ltl_specs.append(f"{enforce_spec}")
 
     return ltl_specs
 
@@ -234,8 +242,9 @@ def parse_command():
 def main():
     args = parse_command()
     if args.command in ["i", "instance"]:
+        dev: Device = shelley_lark_parser.parse(args.spec)
         ltl_specs: List[str] = generate_instance_spec(
-            spec_path=args.spec,
+            dev=dev,
             prefix=args.name,
             eos=Action(args.var_end_of_sequence),
             var_action=Action(args.var_action),

@@ -24,7 +24,7 @@ def get_instances(dev_path: Path, uses_path: Path):
         uses = yaml.safe_load(f)
     dev = shelley_lark_parser.parse(dev_path)
     for (k, v) in dev.components:
-        filename = Path(uses[v])
+        filename = Path(uses_path.parent / uses[v])
         yield (k, filename.parent / f"{filename.stem}.shy")
 
 

@@ -133,7 +133,7 @@ def generate_system_spec(
     system_specs.append(f"\n-- SYSTEM SPECS")
 
     for op in dev.events.list_str():
-        formula: Formula = ExistsFinally(And(Equal(var_action, Action(op)), Not(eos)))
+        formula: Formula = ExistsFinally(And(Equal(var_action, Action(op)), ExistsFinally(eos)))
         system_specs.append(f"SPEC {formula} ;")
 
     return system_specs

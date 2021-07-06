@@ -85,17 +85,15 @@ def generate_config(
     current_dir_sources: List[str] = [
         source.stem + ".scy" for source in Path(example_path).glob("*.shy")
     ]
-    # print(set(current_dir_sources))
     uses: Optional[Dict[str, str]] = _collect_uses(uses_path)
+
     if uses is not None:
         main_source_set = set(current_dir_sources) - set(uses.values())
     else:
         uses = {}
         main_source_set = set(current_dir_sources)
-    # print(uses_set)
 
     main_source_filename = main_source_set.pop()
-    # print(main_source_filename)
 
     deps_smv = ""
     deps_scy = ""
@@ -103,12 +101,9 @@ def generate_config(
     stats = ""
 
     uses_parents: List[str] = []
-    for use_path in uses.values():
-        # print(use_path)  # relative path to use file with extension
-        use_basename_path = Path(use_path).name  # basename with extension
+    for use_path in uses.values():  # order of uses matters!
         use_basename = Path(use_path).stem  # basename without extension
         parent = Path(use_path).parent  # relative parent path
-        # print(parent)
         if parent.name != Path(main_source_filename).parent.name:
             uses_parents.append(str(parent))
             deps_smv += f"	$(MAKE) -C {parent} {use_basename}.smv\n"
@@ -124,7 +119,6 @@ def generate_config(
 
     makefile_content: str = MAKEFILE_TEMPLATE
 
-    # print(uses_parents)
     makefile_content = makefile_content.replace("$$USES_PATH$$", uses_path.name)
     makefile_content = makefile_content.replace("$$DEPS_SMV$$", deps_smv)
     makefile_content = makefile_content.replace("$$DEPS_SCY$$", deps_scy)
@@ -201,23 +195,6 @@ Timer: timer.scy
     assert uses == {"Valve": "valve.scy", "Timer": "timer.scy"}
 
 
-def _collect_examples(input: Path) -> List[Path]:
-    target_folders: List[Path] = []  # args.input may be one ore more examples
-
-    if input is None:
-        target_folders.append(Path())  # add current folder
-    else:
-        if input.is_file():  # load several examples from a yaml
-            with input.open() as f:
-                targets = yaml.safe_load(f)
-                for target in targets:
-                    target_folders.append(Path(target))
-        else:  # add a specific folder
-            target_folders.append(input)
-
-    return target_folders
-
-
 # def _collect_exclude(
 #     exclude: Optional[List[str]] = None, exclude_from_file: Optional[Path] = None
 # ) -> List[str]:
@@ -280,6 +257,14 @@ def _collect_examples(input: Path) -> List[Path]:
 #     assert exclude_files_list == ["xx.shy", "yy.mk", "zz.shy", "kk.mk"]
 
 
+def run(example_path: str, uses_file_path: str):
+    makefile_content: str = generate_config(example_path, uses_file_path)
+    makefile_path: Path = example_path / "Makefile"
+
+    with makefile_path.open("w") as f:
+        f.write(makefile_content)
+
+
 def main() -> None:
     args: argparse.Namespace = create_parser().parse_args()
 
@@ -287,24 +272,17 @@ def main() -> None:
     #     args.exclude, args.exclude_from_file
     # )
 
-    examples_paths: List[Path] = _collect_examples(args.input)
+    if args.input is None:
+        example_path: Path = Path()  # add current folder
+    else:
+        example_path: Path = args.input
 
-    uses_file_path: Path = args.uses
+    if args.uses is None:
+        uses_file_path: Path = example_path / "uses.yml"
+    else:
+        uses_file_path: Path = args.uses
 
-    for example_path in examples_paths:
-        print(f"Processing {example_path}")
-        try:
-            if uses_file_path is None:
-                uses_file_path: Path = example_path / "uses.yml"
-            makefile_content: str = generate_config(example_path, uses_file_path)
-            makefile_path: Path = example_path / "Makefile"
-
-            with makefile_path.open("w") as f:
-                f.write(makefile_content)
-        except Exception:
-            traceback.print_exc()
-
-    print("Done!")
+    run(example_path, uses_file_path)
 
 
 if __name__ == "__main__":

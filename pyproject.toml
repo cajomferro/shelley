@@ -31,6 +31,7 @@ yaml2lark = "shelley.parsers.yaml.yaml2lark:main"
 shelleyc = "shelley.shelleyc.main:main"
 shelleyv = "shelley.shelleyv.main:main"
 shelleys = "shelley.shelleys.main:main"
+shelley-makefile = "shelley.util.generate_makefile:main"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

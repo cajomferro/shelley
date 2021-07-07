@@ -32,6 +32,7 @@ shelleyc = "shelley.shelleyc.main:main"
 shelleyv = "shelley.shelleyv.main:main"
 shelleys = "shelley.shelleys.main:main"
 shelley-makefile = "shelley.util.generate_makefile:main"
+shelley-makefile-bad = "shelley.util.generate_makefile_bad:main"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

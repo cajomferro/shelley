@@ -1,8 +1,10 @@
+import pytest
 from pathlib import Path
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
 from shelley.parsers.shelley_lark_parser import parser as lark_parser, ShelleyLanguage
 from shelley.ast.devices import Device
 from shelley.parsers.yaml import yaml2lark
+from lark.visitors import VisitError
 
 WORKDIR_PATH = Path() / Path(__file__).parent / "workdir"
 
@@ -148,6 +150,141 @@ def test_desklamp() -> None:
     shelley_device.accept(visitor)
 
     assert visitor.result.strip() == shelley_ast_desklamp
+
+
+def test_sink_operation() -> None:
+    source_controller: str = """Controller (a: Valve, b: Valve, t: Timer) {
+ initial level1 -> standby1 {
+  a.on; t.begin; 
+ }
+ level2 -> standby2 {
+  t.end; b.on; t.begin; 
+ }
+ levelX ->  {
+  a.on; a.off; 
+ }
+ final standby1 -> level1 {
+  t.out; a.off; 
+ }
+ final standby2 -> level1 {
+  t.out; {b.off; a.off; } + {a.off; b.off; }
+ }}"""
+
+    tree = lark_parser.parse(source_controller)
+
+    with pytest.raises(VisitError) as exc_info:
+        shelley_device = ShelleyLanguage().transform(tree)
+
+    assert (
+        str(exc_info.value.orig_exc)
+        == "Unusable operation levelX. Hint: Mark levelX as final or declare operations on the right side."
+    )
+
+
+def test_undeclared_operation_on_right_side() -> None:
+    source_controller: str = """Controller (a: Valve, b: Valve, t: Timer) {
+     initial level1 -> standby1, level2, levelX {
+      a.on; t.begin; 
+     }
+     level2 -> standby2 {
+      t.end; b.on; t.begin; 
+     }
+     final standby1 -> level1 {
+      t.out; a.off; 
+     }
+     final standby2 -> level1 {
+      t.out; {b.off; a.off; } + {a.off; b.off; }
+     }
+
+    }"""
+
+    tree = lark_parser.parse(source_controller)
+
+    with pytest.raises(VisitError) as exc_info:
+        shelley_device = ShelleyLanguage().transform(tree)
+
+    assert (
+        str(exc_info.value.orig_exc)
+        == "Operation levelX on the right side of level1 is never declared!"
+    )
+
+
+def test_undeclared_operation_on_right_side_base() -> None:
+    source_controller: str = """base Controller  {
+     initial level1 -> standby1, level2, levelX;
+     level2 -> standby2;
+     final standby1 -> level1;
+     final standby2 -> level1;
+    }"""
+
+    tree = lark_parser.parse(source_controller)
+
+    with pytest.raises(VisitError) as exc_info:
+        shelley_device = ShelleyLanguage().transform(tree)
+
+    assert (
+        str(exc_info.value.orig_exc)
+        == "Operation levelX on the right side of level1 is never declared!"
+    )
+
+
+def test_unusable_operation() -> None:
+    """
+    In this case, levelX is a sink operation but the parser doesn't detect this.
+    The "Unusable operation" error will be raised in a later phase of the compilation process.
+    """
+    source_controller: str = """Controller (a: Valve, b: Valve, t: Timer) {
+ initial level1 -> standby1, level2, levelX {
+  a.on; t.begin; 
+ }
+ level2 -> standby2 {
+  t.end; b.on; t.begin; 
+ }
+ levelX -> levelX {
+  a.off; t.out;
+ }
+ final standby1 -> level1 {
+  t.out; a.off; 
+ }
+ final standby2 -> level1 {
+  t.out; {b.off; a.off; } + {a.off; b.off; }
+ }
+
+}"""
+
+    expected_ast_controller: str = """Device Controller uses Valve, Timer:
+  events:
+    level1, level2, levelX, standby1, standby2
+  start events:
+    level1
+  final events:
+    standby1, standby2
+  behaviours:
+    level1 -> standby1
+    level1 -> level2
+    level1 -> levelX
+    level2 -> standby2
+    levelX -> levelX
+    standby1 -> level1
+    standby2 -> level1
+  subsystems:
+    Valve a, Valve b, Timer t
+  triggers:
+    level1: a.on ; t.begin
+    level2: t.end ; b.on ; t.begin
+    levelX: a.off ; t.out
+    standby1: t.out ; a.off
+    standby2: t.out ; ( b.off ; a.off xor a.off ; b.off )"""
+
+    tree = lark_parser.parse(source_controller)
+    shelley_device = ShelleyLanguage().transform(tree)
+
+    visitor = PrettyPrintVisitor(components=shelley_device.components)
+    shelley_device.accept(visitor)
+
+    print(visitor.result.strip())
+
+    assert visitor.result.strip() == expected_ast_controller
 
 
 def test_yaml2_lark_translation():

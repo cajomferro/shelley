@@ -94,17 +94,32 @@ class ShelleyLanguage(LTLParser):
             if len(nxt) > 0:
                 for n in nxt:
                     behaviors.create(
-                        copy.copy(evt), Event(name=n, is_start=False, is_final=True)
+                        copy.copy(evt),
+                        # at this point we don't know the initial/final modifiers for the operation on the right side
+                        Event(name=n, is_start=False, is_final=True),
                     )
             else:
                 behaviors.create(copy.copy(evt))  # operation without next operations
             evts.add(evt)
 
         for beh in behaviors:
-            if beh.e2 is not None and not evts.find_by_name(beh.e2.name):
+            if not beh.e1.is_final and beh.e2 is None:
+                # a non-final operation without next operations is a sink
                 raise ValueError(
-                    f"{errors.WFORMED_UNDECLARED_OPERATION_RIGHT_SIDE(beh.e1.name, beh.e2.name)}"
+                    f"{errors.WFORMED_NON_FINAL_LEFT_OPERATION_WITHOUT_RIGHT_SIDE(beh.e1.name)}"
                 )
+
+            if beh.e2 is not None:
+                operation = evts.find_by_name(beh.e2.name)
+                if operation is None:
+                    # make sure that all operations on the right side are also declared on the left
+                    raise ValueError(
+                        f"{errors.WFORMED_UNDECLARED_OPERATION_RIGHT_SIDE(beh.e1.name, beh.e2.name)}"
+                    )
+                else:
+                    # updates the initial/final modifiers for the operation on the right side (e2)
+                    beh.e2.is_start = operation.is_start
+                    beh.e2.is_final = operation.is_final
 
         return evts, triggers, behaviors
 

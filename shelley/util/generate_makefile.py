@@ -15,6 +15,8 @@ all: smv
 
 pdf: $$MAIN_SYSTEM$$.pdf
 
+png: $$MAIN_SYSTEM$$.png
+
 smv: $$MAIN_SYSTEM$$.smv
 
 scy: $$MAIN_SYSTEM$$.scy

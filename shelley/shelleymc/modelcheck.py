@@ -77,7 +77,7 @@ def create_fsm_system_model(
         if VERBOSE:
             logger.error(err, exc_info=True)
         else:
-            logger.error(err)
+            print(err)
         sys.exit(255)
 
     assert fsm_system.exists()
@@ -199,7 +199,7 @@ def model_check(smv_path: Path) -> None:
         )
         check_nusmv_output(cp.stdout.decode())
     except subprocess.CalledProcessError as err:
-        logger.error(err.output.decode() + err.stderr.decode())
+        print(err.output.decode() + err.stderr.decode())
         sys.exit(255)
 
 

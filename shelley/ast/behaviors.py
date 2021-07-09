@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 @dataclass(order=True)
 class Behavior(Node):
     e1: Event
-    e2: Event
+    e2: Optional[Event]
     action: Optional[Action]
 
     def accept(self, visitor: Visitor) -> None:
@@ -21,7 +21,9 @@ class Behavior(Node):
 
     def __str__(self):
         return (
-            "{0} -> {1}".format(self.e1.name, self.e2.name)
+            "{0} -> {1}".format(
+                self.e1.name, self.e2.name if self.e2 is not None else ""
+            )
             if self.action is None
             else "{0} -> {1}() {2}".format(self.e1.name, self.action.name, self.e2.name)
         )
@@ -86,7 +88,9 @@ class Behaviors(Node):
     def __len__(self):
         return len(self._data)
 
-    def create(self, e1: Event, e2: Event, a: Optional[Action] = None) -> Behavior:
+    def create(
+        self, e1: Event, e2: Optional[Event] = None, a: Optional[Action] = None
+    ) -> Behavior:
         behavior = Behavior(e1, e2, a)
         if behavior not in self._data:
             self._data.append(behavior)

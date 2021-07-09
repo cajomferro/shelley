@@ -75,7 +75,9 @@ class PrettyPrintVisitor(Visitor):
                 element.e1.name, element.action.name, element.e2.name
             )
         else:
-            self.result += "    {0} -> {1}\n".format(element.e1.name, element.e2.name)
+            self.result += "    {0} -> {1}\n".format(
+                element.e1.name, element.e2.name if element.e2 is not None else ""
+            )
 
     def visit_behaviors(self, element: Behaviors) -> None:
         for behaviour in element.list():

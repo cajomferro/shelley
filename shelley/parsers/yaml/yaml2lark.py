@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from shelley import parsers
+from typing import List
 from shelley.parsers.yaml import yaml2shelley
 
 from typing import Optional, Tuple, Dict, Any
@@ -85,16 +85,15 @@ class Yaml2Lark(Visitor):
 
     def visit_behaviors(self, element: Behaviors) -> Dict:
         operations = {}
-        for behaviour in element.list():
-            op_name = behaviour.e1.name
-            next_op_name = behaviour.e2.name
-            if op_name not in operations:
-                operations[op_name] = {}
-                operations[op_name]["is_initial"] = behaviour.e1.is_start
-                operations[op_name]["is_final"] = behaviour.e1.is_final
-                operations[op_name]["next"] = [next_op_name]
+        for beh in element.list():
+            next_op_name_list: List[str] = [beh.e2.name] if beh.e2 is not None else []
+            if beh.e1.name not in operations:
+                operations[beh.e1.name] = {}
+                operations[beh.e1.name]["is_initial"] = beh.e1.is_start
+                operations[beh.e1.name]["is_final"] = beh.e1.is_final
+                operations[beh.e1.name]["next"] = next_op_name_list
             else:
-                operations[op_name]["next"].append(next_op_name)
+                operations[beh.e1.name]["next"] += next_op_name_list
 
         return operations
 

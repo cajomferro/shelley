@@ -7,6 +7,7 @@ from shelley.ast.rules import (
     TriggerRuleSequence,
     TriggerRuleFired,
 )
+from shelley.parsers import errors
 from pathlib import Path
 from shelley.ast.triggers import Trigger, Triggers, TriggersListDuplicatedError
 from shelley.ast.components import Components
@@ -90,11 +91,20 @@ class ShelleyLanguage(LTLParser):
         behaviors = Behaviors()
         for evt, nxt, code in args:
             triggers.add(code)
-            for n in nxt:
-                behaviors.create(
-                    copy.copy(evt), Event(name=n, is_start=False, is_final=True)
-                )
+            if len(nxt) > 0:
+                for n in nxt:
+                    behaviors.create(
+                        copy.copy(evt), Event(name=n, is_start=False, is_final=True)
+                    )
+            else:
+                behaviors.create(copy.copy(evt))  # operation without next operations
             evts.add(evt)
+
+        for beh in behaviors:
+            if beh.e2 is not None and not evts.find_by_name(beh.e2.name):
+                raise ValueError(
+                    f"{errors.WFORMED_UNDECLARED_OPERATION_RIGHT_SIDE(beh.e1.name, beh.e2.name)}"
+                )
 
         return evts, triggers, behaviors
 
@@ -124,12 +134,21 @@ class ShelleyLanguage(LTLParser):
         triggers = Triggers()
         behaviors = Behaviors()
         for (evt, nxt) in sigs:
-            for n in nxt:
-                behaviors.create(
-                    copy.copy(evt), Event(name=n, is_start=False, is_final=True)
-                )
+            if len(nxt) > 0:
+                for n in nxt:
+                    behaviors.create(
+                        copy.copy(evt), Event(name=n, is_start=False, is_final=True)
+                    )
+            else:
+                behaviors.create(copy.copy(evt))  # operation without next operations
             events.add(evt)
             triggers.create(evt, TriggerRuleFired())
+
+        for beh in behaviors:
+            if not events.find_by_name(beh.e2.name):
+                raise ValueError(
+                    f"{errors.WFORMED_UNDECLARED_OPERATION_RIGHT_SIDE(beh.e1.name, beh.e2.name)}"
+                )
 
         device = Device(
             name=name, events=events, behaviors=behaviors, triggers=triggers,

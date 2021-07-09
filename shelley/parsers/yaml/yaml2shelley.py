@@ -268,7 +268,8 @@ def _parse_events(
     for event_name, event_data in src_events.items():
         try:
             e1: Event = events[event_name]
-            for e2 in _parse_event_list(event_data, KEY_NEXT, events):
+            e2_events: List[Event] = _parse_event_list(event_data, KEY_NEXT, events)
+            for e2 in e2_events:
                 try:
                     behaviors.create(e1, e2)
                 except BehaviorsListDuplicatedError:
@@ -277,6 +278,8 @@ def _parse_events(
                         reason=f"Repeated operation {e2.name!r} in section '{KEY_NEXT}'",
                         hints=["Ensure that there are no repeated operations in list."],
                     )
+            if len(e2_events) == 0:
+                behaviors.create(e1, None)
         except ShelleyParserError as err:
             raise OperationDeclError(names=[event_name], parent=err)
 

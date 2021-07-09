@@ -468,15 +468,15 @@ class MicroBehavior:
 class ComponentUsageFailure:
     projected: DFA[Any, str]
     component: DFA[Any, str]
+    component_name: str
     is_valid: bool = field(init=False)
     validation_time: timedelta = field(init=False)
 
     def __post_init__(self) -> None:
         start = timer()
 
-        # TODO: there is no info about component name here
         if len(list(self.projected.end_states)) == 0:
-            raise ValueError(errors.UNUSABLE_COMPONENT_TEXT)
+            raise ValueError(errors.UNUSABLE_COMPONENT_TEXT(self.component_name))
 
         self.is_valid = self.component.contains(self.projected)
 
@@ -509,7 +509,11 @@ class ComponentUsageFailure:
 
     @classmethod
     def make(
-        cls, micro: NFA[Any, str], component: NFA[Any, str], optional: bool = True
+        cls,
+        micro: NFA[Any, str],
+        component: NFA[Any, str],
+        component_name: str,
+        optional: bool = True,
     ) -> "ComponentUsageFailure":
         """
         Restrict the language of a micro behavior using a component's alphabet
@@ -519,7 +523,11 @@ class ComponentUsageFailure:
             nil = DFA[Any, str].make_nil(projected.alphabet)
             projected = projected.subtract(nil)
 
-        return cls(component=nfa_to_dfa(component), projected=projected,)
+        return cls(
+            component=nfa_to_dfa(component),
+            projected=projected,
+            component_name=component_name,
+        )
 
 
 @dataclass
@@ -710,7 +718,7 @@ class AssembledMicroBehavior:
                     (
                         k,
                         ComponentUsageFailure.make(
-                            micro=micro.nfa, component=c.behavior
+                            micro=micro.nfa, component=c.behavior, component_name=c.name
                         ),
                     )
                     for k, c in components.items()

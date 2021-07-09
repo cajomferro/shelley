@@ -24,7 +24,9 @@ SYSTEM_START_STATE_KEYWORD_RESERVED = (
     lambda x: f"Start state '{x}' cannot have the same name as an event."
 )
 # SUC1: component with zero operations used
-UNUSABLE_COMPONENT_TEXT = "Subsystem is declared but no operation is invoked."
+UNUSABLE_COMPONENT_TEXT = (
+    lambda x: f"Subsystem {x} is declared but no operation is invoked."
+)
 
 # Invalid system
 UNUSABLE_OPERATIONS_TEXT = "Unusable operation error"

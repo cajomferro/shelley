@@ -6,27 +6,27 @@ from shelley.automata import (
 from pathlib import Path
 from shelley import shelley2automata
 from shelley.ast.devices import Device as ShelleyDevice
-from shelley.parsers.yaml import yaml2shelley
+from shelley.parsers import shelley_lark_parser
 from shelley.shelleyc import shelleyc
 
-EXAMPLES_PATH = Path() / "shelley-examples"
+EXAMPLES_PATH = Path() / Path(__file__).parent.parent / "shelley-examples"
 
 # bad_integration_v1
-BUTTON_PATH = EXAMPLES_PATH / "base" / "button.yml"
-SMARTBUTTON_PATH = EXAMPLES_PATH / "bad_integration_v1" / "smartbutton.yml"
+BUTTON_PATH = EXAMPLES_PATH / "base" / "button.shy"
+SMARTBUTTON_PATH = EXAMPLES_PATH / "bad_integration_v1" / "smartbutton.shy"
 
 # bad_integration_v2
-TIMER_PATH = EXAMPLES_PATH / "base" / "timer.yml"
-CLICKBUTTON_PATH = EXAMPLES_PATH / "bad_integration_v2" / "clickbutton.yml"
+TIMER_PATH = EXAMPLES_PATH / "base" / "timer.shy"
+CLICKBUTTON_PATH = EXAMPLES_PATH / "bad_integration_v2" / "clickbutton.shy"
 
 # bad_integration_v3
-LED_PATH = EXAMPLES_PATH / "base" / "led_strict.yml"
-SIMPLE_BUTTON_PATH = EXAMPLES_PATH / "base" / "simple_button.yml"
-LEDBUTTON_PATH = EXAMPLES_PATH / "bad_integration_v3" / "ledbutton.yml"
+LED_PATH = EXAMPLES_PATH / "base" / "led_strict.shy"
+SIMPLE_BUTTON_PATH = EXAMPLES_PATH / "base" / "simple_button.shy"
+LEDBUTTON_PATH = EXAMPLES_PATH / "bad_integration_v3" / "ledbutton.shy"
 
 
 def _get_assembled_device(path: Path) -> AssembledDevice:
-    simple_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(path)
+    simple_shy: ShelleyDevice = shelley_lark_parser.parse(path)
     simple_aut: AutomataDevice = shelley2automata.shelley2automata(simple_shy)
     return AssembledDevice.make(simple_aut, shelleyc.DeviceMapping().__getitem__)
 
@@ -46,9 +46,7 @@ def test_bad_integration_v1() -> None:
 
     # parse yaml and assemble device
     known_devices = {"Button": button_assembled.external}
-    composition_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(
-        SMARTBUTTON_PATH
-    )
+    composition_shy: ShelleyDevice = shelley_lark_parser.parse(SMARTBUTTON_PATH)
     composition_aut: AutomataDevice = shelley2automata.shelley2automata(composition_shy)
 
     composition_assembled = AssembledDevice.make(
@@ -100,9 +98,7 @@ def test_bad_integration_v2() -> None:
         "Button": button_assembled.external,
         "Timer": timer_assembled.external,
     }
-    composition_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(
-        CLICKBUTTON_PATH
-    )
+    composition_shy: ShelleyDevice = shelley_lark_parser.parse(CLICKBUTTON_PATH)
     composition_aut: AutomataDevice = shelley2automata.shelley2automata(composition_shy)
 
     composition_assembled = AssembledDevice.make(
@@ -142,9 +138,7 @@ def test_bad_integration_v3() -> None:
         "Button": button_assembled.external,
         "Timer": timer_assembled.external,
     }
-    composition_shy: ShelleyDevice = yaml2shelley.get_shelley_from_yaml(
-        CLICKBUTTON_PATH
-    )
+    composition_shy: ShelleyDevice = shelley_lark_parser.parse(CLICKBUTTON_PATH)
     composition_aut: AutomataDevice = shelley2automata.shelley2automata(composition_shy)
 
     composition_assembled = AssembledDevice.make(

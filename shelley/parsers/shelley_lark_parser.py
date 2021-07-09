@@ -177,7 +177,7 @@ class ShelleyLanguage(LTLParser):
         return device
 
 
-def parse(source: Path):
+def parse(source: Path) -> Device:
     with Path.open(source) as fp:
         tree = parser.parse(fp.read())
     return ShelleyLanguage().transform(tree)

@@ -11,7 +11,10 @@ logger = logging.getLogger("shelleyv")
 
 
 def fsm2smv(
-    fsm_model: Path, smv_model: Path, filter_instance: Optional[str] = None
+    fsm_model: Path,
+    smv_model: Path,
+    filter_instance: Optional[str] = None,
+    ctl_compatible: bool = False,
 ) -> None:
     """
     Convert an FSM model (.scy) to an SMV model (.smv).
@@ -28,14 +31,22 @@ def fsm2smv(
     ).result
 
     with smv_model.open("w") as fp:
-        smv_dump(state_diagram=n.as_dict(flatten=True), fp=fp)
+        smv_dump(
+            state_diagram=n.as_dict(flatten=True), fp=fp, ctl_compatible=ctl_compatible
+        )
 
 
 # LTLSPEC (action=level1) -> (action=standby1 | action=level1);
 def smv_dump(
-    state_diagram, fp, var_action="_action", var_eos="_eos", var_state="_state"
+    state_diagram,
+    fp,
+    var_action: str = "_action",
+    var_eos: str = "_eos",
+    var_state: str = "_state",
+    ctl_action_init: str = "_ainit",
+    ctl_first_state: int = -1,
+    ctl_compatible: bool = False,
 ) -> None:
-
     to_act = lambda x: x if x is None else x.replace(".", "_")
     INDENT = "    "
 
@@ -71,11 +82,16 @@ def smv_dump(
             if edge["char"] is not None
         )
     )
+
     acts.sort()
     print("MODULE main", file=fp)
     print("VAR", file=fp)
     decl_var(f"{var_eos}", "boolean")
-    decl_var(f"{var_action}", acts)
+
+    if ctl_compatible is True:
+        decl_var(f"{var_action}", [ctl_action_init] + acts)
+    else:
+        decl_var(f"{var_action}", acts)
 
     states = list(
         set(x["src"] for x in state_diagram["edges"]).union(
@@ -83,25 +99,56 @@ def smv_dump(
         )
     )
     states.sort()
-    decl_var(f"{var_state}", states)
+
+    if ctl_compatible is True:
+        decl_var(f"{var_state}", [ctl_first_state] + states)
+    else:
+        decl_var(f"{var_state}", states)
+
     print("ASSIGN", file=fp)
 
     # State
-    init_var(f"{var_state}", [state_diagram["start_state"]])
+    if ctl_compatible is True:
+        init_var(f"{var_state}", [ctl_first_state])
+    else:
+        init_var(f"{var_state}", [state_diagram["start_state"]])
+
     print(f"{INDENT}next({var_state}) := case", file=fp)
     print(
         f"{INDENT}{INDENT}{var_eos}: {var_state}; -- finished, no change in state",
         file=fp,
     )
+
+    if ctl_compatible is True:
+
+        # dummy first state (needed for CTL)
+        print(
+            f"{INDENT}{INDENT}{var_state}={ctl_first_state}: {state_diagram['start_state']}; -- FSM initial state",
+            file=fp,
+        )
+
+        # dummy init action (needed for CTL)
+        print(
+            f"{INDENT}{INDENT}{var_action}={ctl_action_init}: {var_state}; -- never executed",
+            file=fp,
+        )
+
     for edge in state_diagram["edges"]:
         print(f"{INDENT}{INDENT}", end="", file=fp)
         src, char, dst = edge["src"], edge["char"], edge["dst"]
         add_edge(src, char, dst)
     print(f"{INDENT}esac;", file=fp)
+
     # Action
     if len(acts) > 1:
-        init_var(f"{var_action}", acts)
-        next_var_case(var_action, [(var_eos, var_action), ("TRUE", acts)])
+        if ctl_compatible is True:
+            init_var(f"{var_action}", {ctl_action_init})
+        else:
+            init_var(f"{var_action}", acts)
+
+        next_var_case(
+            var_action, [(var_eos, var_action), ("TRUE", acts),],
+        )
 
     # EOS
     init_var(
@@ -121,9 +168,11 @@ def smv_dump(
             lines.append((f"{var_state}={src}{act}", ["TRUE", "FALSE"]))
     lines.append(("TRUE", "FALSE"))
     next_var_case(var_eos, lines)
+
     print(f"\nFAIRNESS {var_eos};", file=fp)
 
     print(f"\nLTLSPEC F ({var_eos}); -- sanity check", file=fp)
+
     print(
         f"LTLSPEC G ({var_eos} -> G({var_eos}) & X({var_eos})); -- sanity check",
         file=fp,

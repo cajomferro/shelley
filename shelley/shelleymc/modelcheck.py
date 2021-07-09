@@ -101,7 +101,7 @@ def create_fsm_system_model(
 
 def create_system_model(dev: Device, fsm: Path, smv: Path):
     logger.debug(f"Creating NuSMV system model: {smv}")
-    shelleyv.fsm2smv(fsm, smv)
+    shelleyv.fsm2smv(fsm, smv, ctl_compatible=True)
 
     logger.debug(f"Generating system specs: {fsm}")
     ltl_system_specs: List[str] = ltlf.generate_system_spec(dev)

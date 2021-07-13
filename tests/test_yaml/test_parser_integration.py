@@ -1,5 +1,4 @@
 import pytest
-import re
 from shelley.automata import (
     Device as AutomataDevice,
     AssembledDevice,

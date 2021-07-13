@@ -1,8 +1,6 @@
 import pytest
 import yaml
-from pathlib import Path
 from shelley.ast.visitors.pprint import PrettyPrintVisitor
-from shelley.ast.devices import Device
 from shelley.ast.components import Components, Component
 from shelley.ast.triggers import Triggers
 from shelley.ast.events import Event

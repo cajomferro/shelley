@@ -8,7 +8,11 @@ block: "{" expr "}" -> expr
 
 call: ident "." ident ";"
 
-seq: expr expr
+seq:
+	| call expr
+	| choice expr
+	| loop expr
+	| seq expr
 
 choice: block "+" choice | block
 

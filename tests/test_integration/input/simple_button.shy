@@ -1,0 +1,4 @@
+base SimpleButton {
+ initial final pressed -> pressed ;
+
+}

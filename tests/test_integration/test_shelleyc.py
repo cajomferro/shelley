@@ -69,22 +69,22 @@ def make_args(src_path: Path, uses_path: Optional[Path] = None) -> argparse.Name
 
 
 def _compile_simple_device(device_name: str) -> None:
-    src_path = EXAMPLES_PATH / (device_name + ".yml")
+    src_path = EXAMPLES_PATH / (device_name + ".shy")
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     call_shelleyc(make_args(src_path), save_output=True)
 
 
 def test_not_found_device() -> None:
-    src_path = os.path.join(EXAMPLES_PATH, "XbuttonX.yml")
+    src_path = os.path.join(EXAMPLES_PATH, "XbuttonX.shy")
     parser = main.create_parser()
     args = parser.parse_args(["-d", src_path])
 
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(exceptions.CompilationError):
         call_shelleyc(args)
 
 
 def test_compile_buton_no_output() -> None:
-    src_path: Path = EXAMPLES_PATH / "button.yml"
+    src_path: Path = EXAMPLES_PATH / "button.shy"
     outpath: Path = COMPILED_PATH / "button.scy"
 
     assert not outpath.exists()
@@ -103,7 +103,7 @@ def test_smartbutton_file_invalid_dict_uses_file() -> None:
     assert not COMPILED_PATH.exists()
     uses_path = EXAMPLES_PATH / "invalid_uses4.yml"
 
-    src_path = EXAMPLES_PATH / "smartbutton1.yml"
+    src_path = EXAMPLES_PATH / "smartbutton1.shy"
     args = make_args(src_path, uses_path)
 
     with pytest.raises(exceptions.CompilationError) as exc_info:
@@ -121,7 +121,7 @@ def test_smartbutton_file_not_found_uses_file() -> None:
     assert not COMPILED_PATH.exists()
     uses_path = EXAMPLES_PATH / "invalid_uses3.yml"
 
-    src_path = EXAMPLES_PATH / "smartbutton1.yml"
+    src_path = EXAMPLES_PATH / "smartbutton1.shy"
     args = make_args(src_path, uses_path)
 
     with pytest.raises(exceptions.CompilationError) as exc_info:
@@ -138,7 +138,7 @@ def test_smartbutton_not_in_uses_file() -> None:
     assert not COMPILED_PATH.exists()
     uses_path = EXAMPLES_PATH / "invalid_uses2.yml"
 
-    src_path = EXAMPLES_PATH / "smartbutton1.yml"
+    src_path = EXAMPLES_PATH / "smartbutton1.shy"
     args = make_args(src_path, uses_path)
 
     with pytest.raises(exceptions.CompilationError) as exc_info:
@@ -153,7 +153,7 @@ def test_smartbutton_empty_uses_file() -> None:
     assert not COMPILED_PATH.exists()
     uses_path = EXAMPLES_PATH / "invalid_uses.yml"
 
-    src_path = EXAMPLES_PATH / "smartbutton1.yml"
+    src_path = EXAMPLES_PATH / "smartbutton1.shy"
     args = make_args(src_path, uses_path)
 
     with pytest.raises(exceptions.CompilationError) as exc_info:
@@ -167,7 +167,7 @@ def test_smartbutton_empty_uses_file() -> None:
 def test_compile_desklamp_dependency_not_found() -> None:
     COMPILED_PATH.mkdir(exist_ok=True, parents=True)
 
-    src_path = EXAMPLES_PATH / "desklamp.yml"
+    src_path = EXAMPLES_PATH / "desklamp.shy"
     uses_path = EXAMPLES_PATH / "invalid_uses.yml"
 
     args = make_args(src_path, uses_path)
@@ -186,7 +186,7 @@ def test_compile_desklamp_dependency_not_found_2() -> None:
     # _compile_simple_device('led', COMPILED_PATH) --> THIS IS NOT TO BE COMPILED ON PURPOSE
     _compile_simple_device("timer")
 
-    src_path = EXAMPLES_PATH / "desklamp.yml"
+    src_path = EXAMPLES_PATH / "desklamp.shy"
     uses_path = EXAMPLES_PATH / "uses.yml"
     args = make_args(src_path, uses_path)
     with pytest.raises(exceptions.CompilationError) as exc_info:
@@ -204,7 +204,7 @@ def test_compile_ambiguous() -> None:
     COMPILED_PATH.mkdir(parents=True, exist_ok=True)
     _compile_simple_device("simple_button")
 
-    src_path = EXAMPLES_PATH / "ambiguous.yml"
+    src_path = EXAMPLES_PATH / "ambiguous.shy"
     uses_path = EXAMPLES_PATH / "uses.yml"
     args = make_args(src_path, uses_path)
 

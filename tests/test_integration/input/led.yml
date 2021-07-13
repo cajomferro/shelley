@@ -1,8 +1,0 @@
-name: Led
-start_with: [on]
-end_with: $ANY
-operations:
-    on:
-      next: [off]
-    off:
-      next: [on]

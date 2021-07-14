@@ -152,6 +152,52 @@ def test_desklamp() -> None:
     assert visitor.result.strip() == shelley_ast_desklamp
 
 
+def test_clickbutton_variation() -> None:
+    """
+    Test that Desklamp (in Lark) is equivalent to Desklamp (Shelley AST representation)
+    """
+
+    source = """
+    ClickButtonVariation (B: Button, T: Timer) {
+     initial final single -> single, double {
+      B.press; T.begin; {T.timeout; B.release; } + {B.release; T.timeout; }
+     }
+     initial final double -> single, double {
+      B.press; 
+      T.begin; 
+      B.release; 
+      {B.press; T.timeout; B.release; } + {B.press; B.release; T.end; } + {T.end; }
+      {B.press;} # Note: this becomes a Char when converted to Regex
+     }
+    }"""
+
+    expected = """Device ClickButtonVariation uses Button, Timer:
+  events:
+    single, double
+  start events:
+    single, double
+  final events:
+    single, double
+  behaviours:
+    single -> single
+    single -> double
+    double -> single
+    double -> double
+  subsystems:
+    Button B, Timer T
+  triggers:
+    single: B.press ; T.begin ; ( T.timeout ; B.release xor B.release ; T.timeout )
+    double: B.press ; T.begin ; B.release ; ( B.press ; T.timeout ; B.release xor ( B.press ; B.release ; T.end xor T.end ) ) ; B.press"""
+
+    tree = lark_parser.parse(source)
+    shelley_device = ShelleyLanguage().transform(tree)
+
+    visitor = PrettyPrintVisitor(components=shelley_device.components)
+    shelley_device.accept(visitor)
+
+    assert visitor.result.strip() == expected
+
+
 def test_sink_operation() -> None:
     source_controller: str = """Controller (a: Valve, b: Valve, t: Timer) {
  initial level1 -> standby1 {

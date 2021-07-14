@@ -1,5 +1,3 @@
-import sys
-sys.setrecursionlimit(10000)
 import copy
 from lark import Lark, Transformer
 from shelley.ast.rules import (
@@ -25,8 +23,10 @@ parser = Lark.open("shelley_grammar.lark", rel_to=__file__, start="sys")
 
 
 class ShelleyLanguage(LTLParser):
-    def seq(self, args):
-        return TriggerRuleSequence(*args)
+    def expr(self, args):
+        if len(args) > 1:
+            return TriggerRuleSequence(*args)
+        return args[0]
 
     def call(self, args):
         c_name, e_name = args
@@ -41,16 +41,13 @@ class ShelleyLanguage(LTLParser):
         else:
             return args[0]
 
-    def expr(self, args):
-        if len(args) != 1:
-            return None
+    def single(self, args):
         return args[0]
 
     def name_type(self, args):
         return args
 
     def uses(self, name_type):
-
         self.components = Components()
         for (name, type) in name_type:
             self.components.create(name, type)

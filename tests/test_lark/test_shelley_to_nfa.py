@@ -131,52 +131,59 @@ DeskLamp (ledA: Led, ledB: Led, b: Button, t: Timer) {
             ("standby1", "level1"),
             ("standby2", "level1"),
         ],
-        components={"b": "Button", "ledA": "Led", "ledB": "Led", "t": "Timer"},
+        components={"ledA": "Led", "ledB": "Led", "b": "Button", "t": "Timer"},
         triggers={
             "level1": Concat(
-                Char("b.pressed"),
-                Concat(Char("b.released"), Concat(Char("ledA.on"), Char("t.started"))),
+                left=Concat(
+                    left=Concat(
+                        left=Char(char="b.pressed"), right=Char(char="b.released")
+                    ),
+                    right=Char(char="ledA.on"),
+                ),
+                right=Char(char="t.started"),
             ),
             "level2": Concat(
-                Char("b.pressed"),
-                Concat(
-                    Char("b.released"),
-                    Concat(
-                        Union(
-                            Concat(Char("t.canceled"), Char("ledB.on")),
-                            Concat(Char("ledB.on"), Char("t.canceled")),
+                left=Concat(
+                    left=Concat(
+                        left=Char(char="b.pressed"), right=Char(char="b.released")
+                    ),
+                    right=Union(
+                        left=Concat(
+                            left=Char(char="t.canceled"), right=Char(char="ledB.on")
                         ),
-                        Char("t.started"),
+                        right=Concat(
+                            left=Char(char="ledB.on"), right=Char(char="t.canceled")
+                        ),
                     ),
                 ),
+                right=Char(char="t.started"),
             ),
-            "standby1": Concat(Char("t.timeout"), Char("ledA.off")),
+            "standby1": Concat(
+                left=Char(char="t.timeout"), right=Char(char="ledA.off")
+            ),
             "standby2": Concat(
-                Union(
-                    Concat(
-                        Char("b.pressed"),
-                        Concat(Char("b.released"), Char("t.canceled")),
+                left=Union(
+                    left=Concat(
+                        left=Concat(
+                            left=Char(char="b.pressed"), right=Char(char="b.released")
+                        ),
+                        right=Char(char="t.canceled"),
                     ),
-                    Char("t.timeout"),
+                    right=Char(char="t.timeout"),
                 ),
-                Union(
-                    Concat(Char("ledB.off"), Char("ledA.off")),
-                    Concat(Char("ledA.off"), Char("ledB.off")),
+                right=Union(
+                    left=Concat(
+                        left=Char(char="ledB.off"), right=Char(char="ledA.off")
+                    ),
+                    right=Concat(
+                        left=Char(char="ledA.off"), right=Char(char="ledB.off")
+                    ),
                 ),
             ),
         },
     )
+
     given = shelley2automata(ShelleyLanguage().transform(lark_parser.parse(source)))
-
-    assert isinstance(given.triggers["level2"], Concat)
-    x = given.triggers["level2"].right
-    assert isinstance(x, Concat)
-
-    assert isinstance(expected.triggers["level2"], Concat)
-    y = expected.triggers["level2"].right
-    assert isinstance(y, Concat)
-
-    assert x.right == y.right
 
     assert expected == given
 
@@ -195,49 +202,44 @@ def test_clickbutton():
         components={"B": "Button", "T": "Timer"},
         triggers={
             "single": Concat(
-                left=Char(char="B.press"),
-                right=Concat(
-                    left=Char(char="T.begin"),
-                    right=Union(
-                        left=Concat(
-                            left=Char(char="T.timeout"), right=Char(char="B.release")
-                        ),
-                        right=Concat(
-                            left=Char(char="B.release"), right=Char(char="T.timeout")
-                        ),
+                left=Concat(left=Char(char="B.press"), right=Char(char="T.begin")),
+                right=Union(
+                    left=Concat(
+                        left=Char(char="T.timeout"), right=Char(char="B.release")
+                    ),
+                    right=Concat(
+                        left=Char(char="B.release"), right=Char(char="T.timeout")
                     ),
                 ),
             ),
             "double": Concat(
-                left=Char(char="B.press"),
-                right=Concat(
-                    left=Char(char="T.begin"),
-                    right=Concat(
-                        left=Char(char="B.release"),
-                        right=Concat(
-                            left=Union(
+                left=Concat(
+                    left=Concat(
+                        left=Concat(
+                            left=Char(char="B.press"), right=Char(char="T.begin")
+                        ),
+                        right=Char(char="B.release"),
+                    ),
+                    right=Union(
+                        left=Concat(
+                            left=Concat(
+                                left=Char(char="B.press"), right=Char(char="T.timeout")
+                            ),
+                            right=Char(char="B.release"),
+                        ),
+                        right=Union(
+                            left=Concat(
                                 left=Concat(
                                     left=Char(char="B.press"),
-                                    right=Concat(
-                                        left=Char(char="T.timeout"),
-                                        right=Char(char="B.release"),
-                                    ),
+                                    right=Char(char="B.release"),
                                 ),
-                                right=Union(
-                                    left=Concat(
-                                        left=Char(char="B.press"),
-                                        right=Concat(
-                                            left=Char(char="B.release"),
-                                            right=Char(char="T.end"),
-                                        ),
-                                    ),
-                                    right=Char(char="T.end"),
-                                ),
+                                right=Char(char="T.end"),
                             ),
-                            right=Char(char="B.press"),
+                            right=Char(char="T.end"),
                         ),
                     ),
                 ),
+                right=Char(char="B.press"),
             ),
         },
     )
@@ -248,7 +250,11 @@ ClickButtonVariation (B: Button, T: Timer) {
   B.press; T.begin; {T.timeout; B.release; } + {B.release; T.timeout; }
  }
  initial final double -> single, double {
-  B.press; T.begin; B.release; {B.press; T.timeout; B.release; } + {B.press; B.release; T.end; } + {T.end; }    {B.press; }
+  B.press; 
+  T.begin; 
+  B.release; 
+  {B.press; T.timeout; B.release; } + {B.press; B.release; T.end; } + {T.end; } # xor with 3 branches
+  {B.press;} # xor with 1 branch Note: this becomes a Char when converted to Regex
  }
 }"""
     given = shelley2automata(ShelleyLanguage().transform(lark_parser.parse(source)))

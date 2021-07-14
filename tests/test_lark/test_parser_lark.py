@@ -282,7 +282,7 @@ def test_unusable_operation() -> None:
     visitor = PrettyPrintVisitor(components=shelley_device.components)
     shelley_device.accept(visitor)
 
-    print(visitor.result.strip())
+    # print(visitor.result.strip())
 
     assert visitor.result.strip() == expected_ast_controller
 
@@ -335,3 +335,37 @@ def test_yaml2_lark_translation():
     )
 
     desklamp_lark_path.unlink()
+
+
+def test_lot_of_subsystem_calls():
+    """
+    311 subsystem calls
+    @return: 
+    """
+    source = """ValveGroup (v: Valve) {
+ initial final go1 -> go1 {
+  v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; 
+ }
+}"""
+
+    expexted_result = """Device ValveGroup uses Valve:
+  events:
+    go1
+  start events:
+    go1
+  final events:
+    go1
+  behaviours:
+    go1 -> go1
+  subsystems:
+    Valve v
+  triggers:
+    go1: v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1"""
+
+    tree = lark_parser.parse(source)
+    shelley_device = ShelleyLanguage().transform(tree)
+
+    visitor = PrettyPrintVisitor(components=shelley_device.components)
+    shelley_device.accept(visitor)
+    print(visitor.result.strip())
+    assert visitor.result.strip() == expexted_result

@@ -42,11 +42,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="Calculate integration NFA without sink states",
     )
     parser.add_argument(
-        "--int-dfa", action="store_false", help="Calculate integration DFA"
+        "--int-dfa", action="store_true", help="Calculate integration DFA"
     )
     parser.add_argument(
         "--int-dfa-min-no-sink",
-        action="store_false",
+        action="store_true",
         help="Calculate integration DFA minimized and without sink states",
     )
 
@@ -59,8 +59,8 @@ def handle_fsm(
     integration: bool = False,
     int_nfa: bool = True,
     int_nfa_no_sink: bool = True,
-    int_dfa: bool = True,
-    int_dfa_min_no_sink: bool = True,
+    int_dfa: bool = False,
+    int_dfa_min_no_sink: bool = False,
 ) -> None:
     if not integration:
         stats.nfa = len(n)
@@ -100,7 +100,15 @@ def main() -> None:
     if path_int.exists():
         with path_int.open(mode="r") as d:
             example_fsm: Dict = yaml.load(d, Loader=yaml.FullLoader)
-            handle_fsm(regular.NFA.from_dict(example_fsm), stats, integration=True)
+            handle_fsm(
+                regular.NFA.from_dict(example_fsm),
+                stats,
+                integration=True,
+                int_nfa=args.int_nfa,
+                int_nfa_no_sink=args.int_nfa_no_sink,
+                int_dfa=args.int_dfa,
+                int_dfa_min_no_sink=args.int_dfa_min_no_sink,
+            )
 
     with args.output.open("w") as fp:
         json.dump([asdict(stats)], fp)

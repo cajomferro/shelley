@@ -1,3 +1,5 @@
+import sys
+sys.setrecursionlimit(10000)
 import copy
 from lark import Lark, Transformer
 from shelley.ast.rules import (

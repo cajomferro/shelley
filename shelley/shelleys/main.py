@@ -8,7 +8,7 @@ from dataclasses import dataclass, asdict
 
 
 @dataclass
-class OutDevice:
+class Stats:
     nfa: Optional[int] = None
     int_nfa: Optional[int] = None
     int_nfa_no_sink: Optional[int] = None
@@ -55,55 +55,55 @@ def create_parser() -> argparse.ArgumentParser:
 
 def handle_fsm(
     n: regular.NFA[Any, str],
-    out_device: OutDevice,
+    stats: Stats,
     integration: bool = False,
     int_nfa: bool = True,
     int_nfa_no_sink: bool = True,
-    int_dfa: bool = False,
-    int_dfa_min_no_sink: bool = False,
+    int_dfa: bool = True,
+    int_dfa_min_no_sink: bool = True,
 ) -> None:
     if not integration:
-        out_device.nfa = len(n)
+        stats.nfa = len(n)
     else:
         if int_nfa:
-            out_device.int_nfa = len(n)
+            stats.int_nfa = len(n)
 
         # Before minimizing, make sure we remove sink states, so that there
         # is a unique sink state when we convert to DFA; this is a quick
         # way of making the resulting DFA smaller
         if int_nfa_no_sink:
             n = n.remove_sink_states()
-            out_device.int_nfa_no_sink = len(n)
+            stats.int_nfa_no_sink = len(n)
 
             if int_dfa:
                 d: regular.DFA[Any, str] = regular.nfa_to_dfa(n)
-                out_device.int_dfa = len(d)
+                stats.int_dfa = len(d)
 
                 if int_dfa_min_no_sink:
                     d = d.minimize()
-                    out_device.int_dfa_min_no_sink = len(d)
+                    stats.int_dfa_min_no_sink = len(d)
 
 
 def main() -> None:
     parser = create_parser()
     args: argparse.Namespace = parser.parse_args()
 
-    out_device = OutDevice()
+    stats = Stats()
 
     path_scy = args.input[0]
     path_int = args.input[1]
 
     with path_scy.open(mode="r") as d:
         example_fsm: Dict = yaml.load(d, Loader=yaml.FullLoader)
-        handle_fsm(regular.NFA.from_dict(example_fsm), out_device, integration=False)
+        handle_fsm(regular.NFA.from_dict(example_fsm), stats, integration=False)
 
     if path_int.exists():
         with path_int.open(mode="r") as d:
             example_fsm: Dict = yaml.load(d, Loader=yaml.FullLoader)
-            handle_fsm(regular.NFA.from_dict(example_fsm), out_device, integration=True)
+            handle_fsm(regular.NFA.from_dict(example_fsm), stats, integration=True)
 
     with args.output.open("w") as fp:
-        json.dump([asdict(out_device)], fp)
+        json.dump([asdict(stats)], fp)
 
     # print("NFA:", out_device.nfa)
     # print("Integration NFA:", out_device.int_nfa)

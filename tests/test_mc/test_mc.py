@@ -1,5 +1,6 @@
 from pathlib import Path
 from shelley.shelleyv import shelleyv
+from shelley.parsers.ltlf_lark_parser import *
 
 WORKDIR_PATH = Path() / Path(__file__).parent / "workdir"
 
@@ -69,7 +70,42 @@ def test_create_nusmv_model():
 
     smv_path.unlink()
 
+def test_reify_ctl1():
+    name = 'a'
+    formula = CTL(LTL_F(Action(name=name, prefix=None)))
+    EOS = Variable("eos")
+    ACT = Variable("_action")
+    given = ltlf_to_ltl(formula, eos=EOS, action=ACT)
+    expected_a = And(Equal(ACT, Variable(name)), Not(EOS))
+    assert given == expected_a
 
+def test_reify_ctl2():
+    formula = CTL(LTL_F(EndOfSequence()))
+    EOS = Variable("eos")
+    ACT = Variable("_action")
+    given = ltlf_to_ltl(formula, eos=EOS, action=ACT)
+    assert given == EOS
+
+def test_reify_ctl3():
+    name = 'a'
+    formula = CTL(Or(LTL_F(Action(name=name, prefix=None)), LTL_F(EOS)))
+    eos = Variable("eos")
+    act = Variable("_action")
+    given = ltlf_to_ltl(formula, eos=eos, action=act)
+    expected_a = Or(And(Equal(act, Variable(name)), Not(eos)), eos)
+    assert given == expected_a
+
+def test_ctl_reify():
+    name = 'start_http_ok'
+    a = LTL_F(Action(name=name, prefix=None))
+    eos = LTL_F(EndOfSequence())
+    formula = CTL(ExistsFinally(And(a, ExistsFinally(eos))))
+    EOS = Variable("eos")
+    ACT = Variable("_action")
+    #import pdb; pdb.set_trace()
+    given = ltlf_to_ltl(formula, eos=EOS, action=ACT)
+    expected_a = And(Equal(ACT, Variable(name)), Not(EOS))
+    assert given == ExistsFinally(And(expected_a, ExistsFinally(EOS)))
 #
 # def test_dfa2spec() -> None:
 #     input_path: Path = EXAMPLES_PATH / "subsystems.yml"

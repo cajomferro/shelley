@@ -1,13 +1,16 @@
-from typing import List
+from typing import List, Union, Optional
 from shelley.parsers import shelley_lark_parser, ltlf_lark_parser
 from pathlib import Path
 from dataclasses import dataclass
 
 from shelley.ast.devices import Device
+import shelley.parsers.ltlf_lark_parser
 from shelley.parsers.ltlf_lark_parser import (
+    Variable,
     And,
     Equal,
     Action,
+    NotAction,
     Not,
     Always,
     Next,
@@ -18,6 +21,11 @@ from shelley.parsers.ltlf_lark_parser import (
     Eventually,
     ExistsFinally,
     Formula,
+    ltlf_to_ltl,
+    LTL,
+    LTL_F,
+    CTL,
+    EOS,
 )
 
 
@@ -33,173 +41,99 @@ class Op:
     def add(self, name):
         self.targets.append(name)
 
+@dataclass
+class Spec:
+    formulae: List[Union[CTL, LTL, LTL_F]]
+    comment: Optional[str]
 
-def parse_ltlf_formulae(ltlf_formulas: List[str]) -> List[Formula]:
-    converted_list: List[Formula] = list()
-    for formula in ltlf_formulas:
-        tree = ltlf_lark_parser.parser.parse(formula)
-        ltlf: Formula = ltlf_lark_parser.LTLParser().transform(tree)
-        converted_list.append(ltlf)
+    def dump(self, fp, action_name:Optional[str]=None, eos_name:Optional[str]=None):
+        action = Variable("_action" if action_name is None else action_name)
+        eos = Variable("_eos" if eos_name is None else eos_name)
+        if self.comment is not None:
+            fp.write("-- ")
+            fp.write(self.comment)
+            fp.write("\n")
 
-    return converted_list
+        for f in self.formulae:
+            is_ctl = isinstance(f, CTL)
+            f = ltlf_to_ltl(f, eos=eos, action=action)
+            if is_ctl:
+                fp.write("SPEC ")
+            else:
+                fp.write("LTLSPEC ")
+            ltlf_lark_parser.dump(formula=f, fp=fp)
+            fp.write("\n")
 
-
-def convert_ltlf_formulae(
-    ltlf_formulas: List[Formula],
-    name: str = None,
-    eos: Action = None,
-    var_action: Action = None,
-) -> List[str]:
-    """
-    Convert LTLf to NuSMV LTL
-
-    @param ltlf_formulas:
-    @param name:
-    @param eos:
-    @param var_action:
-    @return:
-    """
-    if eos is None:
-        eos = Action("_eos")
-
-    if var_action is None:
-        var_action = Action("_action")
-
-    ltl_formulae: List[str] = list()
-
-    def ltlf2ltl(formula, name, eos_var, action_var):
-        """
-        Converts an LTLf formula in an LTL formula
-        """
-
-        def rec(formula):
-            if isinstance(formula, Bool):
-                return formula
-            if isinstance(formula, Action):
-                if name is not None:
-                    formula = Action(name=name + "_" + formula.name)
-                return And(Equal(action_var, formula), Not(eos_var))
-            elif isinstance(formula, Not):
-                return Not(rec(formula.formula))
-            elif isinstance(formula, Or):
-                return Or(rec(formula.left), rec(formula.right))
-            elif isinstance(formula, Equal):
-                return Equal(rec(formula.left), rec(formula.right))
-            elif isinstance(formula, And):
-                return And(rec(formula.left), rec(formula.right))
-            elif isinstance(formula, Implies):
-                return Implies(rec(formula.left), rec(formula.right))
-            elif isinstance(formula, Next):
-                return Next(And(rec(formula.formula), Not(eos_var)))
-            elif isinstance(formula, Eventually):
-                return Eventually(And(rec(formula.formula), Not(eos_var)))
-            elif isinstance(formula, Always):
-                return Always(Or(rec(formula.formula), eos_var))
-            elif isinstance(formula, Until):
-                return Until(
-                    left=rec(formula.left), right=And(rec(formula.right), Not(eos_var))
-                )
-            raise TypeError(formula)
-
-        return rec(formula)
-
-    for formula in ltlf_formulas:
-        ltl_formulae.append(
-            f"LTLSPEC {ltlf2ltl(formula, name=name, eos_var=eos, action_var=var_action)}"
+    def dumps(self, action_name:Optional[str]=None, eos_name:Optional[str]=None):
+        buffer = StringIO()
+        self.dump(
+            fp=buffer,
+            action_name=action_name,
+            eos_name=eos_name,
         )
+        return buffer.getvalue()
 
-    return ltl_formulae
-
-
-def generate_system_spec(
-    dev: Device, eos: Action = None, var_action: Action = None
-) -> List[str]:
+def generate_system_spec(dev: Device) -> Spec:
     """
-
     @param dev: Shelley device instance
-    @param eos: NuSMV variable used to represent the end of a sequence
-    @param var_action: NuSMV variable used to represent the current FSM state.
     @return:
     """
-
-    if eos is None:
-        eos = Action("_eos")
-
-    if var_action is None:
-        var_action = Action("_action")
-
-    system_specs: List[str] = list()
-
-    system_specs.append(f"\n-- SYSTEM SPECS")
-
+    specs = []
     for op in dev.events.list_str():
-        formula: Formula = ExistsFinally(And(And(Equal(var_action, Action(op)), Not(eos)), ExistsFinally(eos)))
-        system_specs.append(f"SPEC {formula} ;")
+        specs.append(CTL(ExistsFinally(
+            And(
+                LTL_F(Action(op)),
+                ExistsFinally(LTL_F(EOS))
+            )
+        )))
+    return Spec(specs, comment=f"SYSTEM VALIDITY FOR: {dev.name}")
 
-    return system_specs
-
-
-def generate_instance_spec(
-    dev: Device, prefix: str, eos: Action = None, var_action: Action = None
-) -> List[str]:
+def generate_usage_validity(dev:Device, prefix:Optional[str]) -> Spec:
     """
-
-    @param dev:
-    @param prefix:
-    @param eos: NuSMV variable used to represent the end of a sequence
-    @param var_action: NuSMV variable used to represent the current FSM state.
-    @return:
+    Generates a spec that represents the usage validity of a given device.
     """
-    if eos is None:
-        eos = Action("_eos")
-
-    if var_action is None:
-        var_action = Action("_action")
-
-    ltl_specs: List[str] = []
-
+    mk_act = lambda name: LTL_F(Action(prefix=prefix, name=name))
     targets = dict()
-
     for (src, dst) in dev.behaviors.as_list_tuples():
         dsts = targets.get(src, None)
         if dsts is None:
             evt = dev.events.find_by_name(src)
             targets[src] = dsts = Op.make(evt.is_final)
         dsts.add(dst)
-    forms: List[Formula] = []
 
-    def mk_act(name):
-        return And(Equal(var_action, Action(prefix + "_" + name)), Not(eos))
-
-    def tau():
-        return And(
-            And.make(
-                Not(Equal(var_action, Action(prefix + "_" + elem))) for elem in targets
-            ),
-            Not(eos),
-        )
-
+    if prefix is None:
+        tau = None
+    else:
+        tau = LTL_F(And.make(
+            NotAction(prefix=prefix, name=op) for op in targets
+        ))
+    lbl = "" if prefix is None else f"{prefix}: "
+    spec = Spec(formulae=[], comment=f"USAGE VALIDITY FOR {lbl}{dev.name}")
     for (src, op) in targets.items():
-        args = list(map(mk_act, op.targets))
+        successors = Or.make(map(mk_act, op.targets))
         if op.is_final:
-            args.append(eos)
-        will_happen = Or.make(args)
-        f = Always(Implies(mk_act(src), Next(Until(tau(), will_happen))))
-        forms.append(f)
+            successors = Or(successors, LTL_F(EOS))
 
-    ltl_specs.append(f"\n-- INSTANCE SPECS ({prefix}: {dev.name})")
-    for f in forms:
-        ltl_specs.append(f"LTLSPEC {f} ;")
+        # If there is a prefix, then it means there might be other
+        # actions from other prefixes which are fine to ignore.
+        # We ignore prefixes from other with TAU
+        if prefix is not None:
+            successors = Until(tau, successors)
 
-    ltl_spec_formulae = convert_ltlf_formulae(
-        dev.enforce_formulae, prefix, eos, var_action
-    )
-    if len(ltl_spec_formulae) > 0:
-        ltl_specs.append(f"\n-- ENFORCE SPECS ({prefix}: {dev.name})")
-    for enforce_spec in ltl_spec_formulae:
-        ltl_specs.append(f"{enforce_spec}")
+        spec.formulae.append(
+            LTL(Always(Implies(mk_act(src), Next(successors))))
+        )
+    return spec
 
-    return ltl_specs
+def generate_enforce_usage(dev:Device, prefix:Optional[str]) -> Spec:
+    if prefix is None:
+        lbl = ""
+    else:
+        lbl = f"{prefix}: "
+    spec = Spec(formulae=[], comment=f"ENFORCE SPECS FOR {lbl}{dev.name}")
+    for f in dev.enforce_formulae:
+        spec.formulae.append(LTL_F(f))
+    return spec
 
 
 def parse_command():

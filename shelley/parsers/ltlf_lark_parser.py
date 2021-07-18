@@ -1,31 +1,38 @@
 from lark import Lark, Transformer
-from dataclasses import dataclass
-
-
-def binop(op) -> str:
-    def to_str(self):
-        return f"{paren(self.left)} {op} {paren(self.right)}"
-
-    return to_str
-
-
-def unop(op) -> str:
-    def to_str(self):
-        return f"{op} {paren(self.formula)}"
-
-    return to_str
-
-
-def paren(elem) -> str:
-    if isinstance(elem, Bool) or isinstance(elem, Action):
-        return str(elem)
-    else:
-        return "(" + str(elem) + ")"
-
+from dataclasses import dataclass, field
+from io import StringIO
+from typing import List, Optional, IO
 
 @dataclass
 class Formula:
     pass
+
+@dataclass
+class Atomic(Formula):
+    pass
+
+@dataclass
+class BinaryOperator:
+    left: Formula
+    right: Formula
+
+
+@dataclass
+class UnaryOperator:
+    child: Formula
+
+
+@dataclass
+class CTL(Formula):
+    formula: Formula
+
+@dataclass
+class LTL(Formula):
+    formula: Formula
+
+@dataclass
+class LTL_F(Formula):
+    formula: Formula
 
 
 def fold(op, zero, args):
@@ -40,72 +47,102 @@ def fold(op, zero, args):
     else:
         return result
 
+# Atoms
 
 @dataclass
-class And(Formula):
-    left: Formula
-    right: Formula
-    __str__ = binop("&")
-
-    @classmethod
-    def make(cls, args):
-        return fold(cls, Bool(True), args)
-
-
-@dataclass
-class Equal(Formula):
-    left: Formula
-    right: Formula
-    __str__ = binop("=")
-
-
-@dataclass
-class Or(Formula):
-    left: Formula
-    right: Formula
-    __str__ = binop("|")
-
-    @classmethod
-    def make(cls, args):
-        return fold(cls, Bool(True), args)
-
-
-@dataclass
-class Not(Formula):
-    formula: Formula
-    __str__ = unop("!")
-
-
-@dataclass
-class Bool(Formula):
+class Bool(Atomic):
     value: bool
 
-    def __str__(self):
-        return "TRUE" if self.value else "FALSE"
-
-
 @dataclass
-class Action(Formula):
+class Variable(Atomic):
     name: str
 
-    def __str__(self):
-        return self.name
+@dataclass
+class Action(Atomic):
+    name: str
+    prefix: Optional[str] = field(default=None)
+
+@dataclass
+class NotAction(Atomic):
+    name: str
+    prefix: Optional[str] = field(default=None)
+
+# Specific to LTLF
+
+@dataclass
+class EndOfSequence(Atomic):
+    pass
+
+EOS = EndOfSequence()
+
+# Propositional logic
+
+@dataclass
+class Not(UnaryOperator):
+    operator = "!"
+
+@dataclass
+class And(BinaryOperator):
+    operator = "&"
+
+    @classmethod
+    def make(cls, args):
+        return fold(cls, Bool(True), args)
+
+@dataclass
+class Equal(BinaryOperator):
+    operator = "="
+
+@dataclass
+class Or(BinaryOperator):
+    operator = "|"
+
+    @classmethod
+    def make(cls, args):
+        return fold(cls, Bool(True), args)
+
+@dataclass
+class Implies(BinaryOperator):
+    operator = "->"
+
+# Linear Temporal Logic
+
 
 
 @dataclass
-class Next(Formula):
+class Next(UnaryOperator):
+    operator = "X"
     "Must be true in the following step."
-    formula: Formula
-    __str__ = unop("X")
-
 
 @dataclass
-class Until(Formula):
-    "Left must happen until right happens; right will eventually happen."
-    left: Formula
-    right: Formula
-    __str__ = binop("U")
+class Eventually(UnaryOperator):
+    "The formula will eventually hold"
+    operator = "F"
 
+@dataclass
+class Always(UnaryOperator):
+    "The formula holds at every step of the trace"
+    operator = "G"
+
+@dataclass
+class Until(BinaryOperator):
+    "Left must happen until right happens; right will eventually happen."
+    operator = "U"
+
+
+# CTL
+
+@dataclass
+class ExistsFinally(UnaryOperator):
+    """
+    p is true in a state s0 if there exists a series of transitions 
+    s_0 -> s_1, s_1 -> s_2, ...,s_{n−1} -> s_n such that p is true in s_n
+
+    TODO: THIS IS A CTL FORMULA RATHER THAN LTLf!
+    """
+    operator = "EF"
+
+# Abbreviations
 
 def Last():
     "The last instance of a trace"
@@ -117,37 +154,6 @@ def WeakNext(formula):
     return Not(Next(Not(formula)))
 
 
-@dataclass
-class Eventually(Formula):
-    "The formula will eventually hold"
-    formula: Formula
-    __str__ = unop("F")
-
-
-# def Eventually(formula):
-#     "The formula will eventually hold"
-#     return Until(Bool(True), formula)
-
-
-@dataclass
-class Always(Formula):
-    "The formula holds at every step of the trace"
-    formula: Formula
-    __str__ = unop("G")
-
-
-# def Always(formula):
-#     "The formula holds at every step of the trace"
-#     return Not(Eventually(Not(formula)))
-
-
-@dataclass
-class Implies(Formula):
-    left: Formula
-    right: Formula
-    __str__ = binop("->")
-
-
 def Equiv(left, right):
     "Logical equivalence"
     return And(Implies(left, right), Implies(right, left))
@@ -157,23 +163,140 @@ def Releases(left, right):
     "If left never becomes true, right must remain true forever."
     return Not(Until(Not(left), Not(right)))
 
+# Conversions
 
-def WeakUntil(left, right):
-    "Left must hold until right; right may never happen."
-
-
-@dataclass
-class ExistsFinally(Formula):
+def ltlf_to_ltl(formula:Formula, eos:Variable, action:Variable, prefix_separator="_") -> Formula:
     """
-    p is true in a state s0 if there exists a series of transitions 
-    s_0 -> s_1, s_1 -> s_2, ...,s_{n−1} -> s_n such that p is true in s_n
-
-    TODO: THIS IS A CTL FORMULA RATHER THAN LTLf!
+    Converts an LTLf formula in an LTL formula
     """
+    def rec(formula, mode=LTL_F):
+        while type(formula) in (LTL, CTL, LTL_F):
+            mode = type(formula)
+            formula = formula.formula
 
-    formula: Formula
-    __str__ = unop("EF")
+        if mode is LTL or mode is CTL:
+            if isinstance(formula, Atomic):
+                if not (isinstance(formula, Bool) or isinstance(formula, Variable)):
+                    raise ValueError(f"Expecting an atomic {mode.__name__} formula, but got: ", formula)
+                return formula
+            elif isinstance(formula, UnaryOperator):
+                return type(formula)(rec(formula.child, mode=mode))
+            elif isinstance(formula, BinaryOperator):
+                return type(formula)(rec(formula.left, mode=mode), rec(formula.right, mode=mode))
 
+        assert mode is LTL_F
+
+        if isinstance(formula, Bool) or isinstance(formula, Variable):
+            return formula
+        elif isinstance(formula, NotAction) or isinstance(formula, Action):
+            if formula.prefix is None:
+                name = formula.name
+            else:
+                name = formula.prefix + prefix_separator + formula.name
+            act = Equal(action, Variable(name))
+            return And(
+                Not(act) if isinstance(formula, NotAction) else act,
+                Not(rec(EOS))
+            )
+        elif isinstance(formula, EndOfSequence):
+            return eos
+        elif isinstance(formula, Not):
+            return Not(rec(formula.formula))
+        elif isinstance(formula, Or):
+            return Or(rec(formula.left), rec(formula.right))
+        elif isinstance(formula, Equal):
+            return Equal(rec(formula.left), rec(formula.right))
+        elif isinstance(formula, And):
+            return And(rec(formula.left), rec(formula.right))
+        elif isinstance(formula, Implies):
+            return Implies(rec(formula.left), rec(formula.right))
+        elif isinstance(formula, Next):
+            return Next(And(rec(formula.formula), Not(rec(EOS))))
+        elif isinstance(formula, Eventually):
+            return Eventually(And(rec(formula.formula), Not(rec(EOS))))
+        elif isinstance(formula, Always):
+            return Always(Or(rec(formula.formula), rec(EOS)))
+        elif isinstance(formula, Until):
+            return Until(
+                left=rec(formula.left),
+                right=And(
+                    rec(formula.right),
+                    Not(rec(EOS))
+                )
+            )
+        else:
+            raise ValueError(type(formula), formula, mode)
+
+    return rec(formula)
+
+
+def dump(formula:Formula, fp:IO, eos=None, nusvm_strict=True):
+    """
+    Converts a formula into an NuSMV string
+    """
+    def rec(formula):
+        # Primitives
+        if isinstance(formula, Bool):
+            fp.write("TRUE" if self.value else "FALSE")
+        elif isinstance(formula, Variable):
+            fp.write(formula.name)
+        elif isinstance(formula, Action):
+            if nusvm_strict:
+                raise ValueError(formula)
+            if formula.prefix is not None:
+                fp.write(formula.prefix)
+                fp.write(".")
+            fp.write(formula.name)
+        elif isinstance(formula, EndOfSequence):
+            if nusvm_strict:
+                raise ValueError(formula)
+            fp.write(eos if eos is not None else "ε")
+
+        elif isinstance(formula, UnaryOperator):
+            # Operator
+            fp.write(formula.operator)
+            fp.write(' ')
+            # Child
+            if isinstance(formula.child, Atomic):
+                rec(formula.child)
+            else:
+                fp.write('(')
+                rec(formula.child)
+                fp.write(')')
+
+        elif isinstance(formula, BinaryOperator):
+            # Left
+            if isinstance(formula.left, Atomic):
+                rec(formula.left)
+            else:
+                fp.write('(')
+                rec(formula.left)
+                fp.write(')')
+            # Operator
+            fp.write(' ')
+            fp.write(formula.operator)
+            fp.write(' ')
+            # Right
+            if isinstance(formula.right, Atomic):
+                rec(formula.right)
+            else:
+                fp.write('(')
+                rec(formula.right)
+                fp.write(')')
+        else:
+            raise ValueError(type(formula), formula)
+    # Recursive call
+    rec(formula)
+
+def dumps(formula, eos=None, nusvm_strict=True):
+    buffer = StringIO()
+    dump(
+        formula=formula,
+        fp=buffer,
+        eos=eos,
+        eos_variable=eos_variable,
+    )
+    return buffer.getvalue()
 
 parser = Lark.open("ltlf_grammar.lark", rel_to=__file__, start="formula")
 
@@ -204,7 +327,7 @@ class LTLParser(Transformer):
         return args[0].value
 
     def act(self, args) -> Action:
-        return Action("_".join(args))
+        return Action(*args)
 
     def lor(self, args) -> Or:
         return Or(*args)

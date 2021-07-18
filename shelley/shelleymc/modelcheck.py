@@ -88,87 +88,65 @@ def create_fsm_system_model(
     return device, assembled_device
 
 
-# def create_nusmv_model(fsm: Path, smv: Path) -> None:
-#     """
-#     Create NuSMV model file from integration file
-#     @param integration: path to integration file (FSM)
-#     @param smv: path to NuSMV model (*.smv)
-#     @param ltlf_formulae: optional
-#     """
-#
-#     shelleyv.fsm2smv(fsm, smv)
-
-
 def create_system_model(dev: Device, fsm: Path, smv: Path):
     logger.debug(f"Creating NuSMV system model: {smv}")
     shelleyv.fsm2smv(fsm, smv, ctl_compatible=True)
 
     logger.debug(f"Generating system specs: {fsm}")
-    ltl_system_specs: List[str] = ltlf.generate_system_spec(dev)
-
-    # TODO: do we want LTLf formulae from command line for system spec?
-    dump_ltl_specs(ltl_system_specs, smv)
+    append_specs([ltlf.generate_system_spec(dev)], smv)
 
 
-def append_ltl_from_command_line(formula: List[str], smv_path: Path) -> None:
-    """
-    Check if there are LTLF formulae from the command line to be parsed.
-    Translate LTLf to LTL formulae (as a list of strings)
-    @param formula: list of LTLf formulae
-    @return:
-    """
-
-    if formula is not None and len(formula) > 0:
-        logger.debug(
-            "Appending LTL formula from cmd line: {0}".format(" & ".join(formula))
-        )
-        ltlf_formulae: List[ltlf.Formula] = ltlf.parse_ltlf_formulae(formula)
-        ltl_formulae: List[str] = ltlf.convert_ltlf_formulae(ltlf_formulae)
-
-        dump_ltl_specs(ltl_formulae, smv_path, "CMD LINE SPECS")
-
-
-def dump_ltl_specs(specs: List[str], smv_path: Path, comment_line: str = None):
+def append_specs(specs:List[ltlf.Spec], smv_path: Path):
     with smv_path.open("a+") as fp:
-        if comment_line is not None:
-            fp.write(f"\n--{comment_line}\n")
         for spec in specs:
             logger.debug(spec)
-            fp.write(f"{spec}\n")
+            spec.dump(fp)
 
 
-def create_split_usage_model(
+def check_split_integration(
     system_spec: Path, integration: Path, subsystems: Mapping[str, Path]
 ) -> None:
     for (instance_name, instance_spec) in subsystems.items():
         # Create the integration SMV file
         smv_path = system_spec.parent / f"{system_spec.stem}-{instance_name}.smv"
-
+        # XXX: we want to remove the prefix from the diagram below
         logger.debug("Creating", smv_path)
         shelleyv.fsm2smv(
             fsm_model=integration,
             smv_model=smv_path,
             filter_instance=instance_name + ".*",
         )
-
-        specs = ltlf.generate_instance_spec(instance_spec, instance_name)
-        dump_ltl_specs(specs, smv_path)
-
+        spec1 = ltlf.generate_usage_validity(instance_spec, instance_name)
+        spec2 = ltlf.generate_enforce_usage(instance_spec, instance_name)
+        append_specs([spec1, spec2], smv_path)
         logger.debug("Model checking usage of", instance_name)
         model_check(smv_path)
 
 
-def create_instance_model(
-    fsm: Path, smv: Path, subsystems: Mapping[str, Path], cmd_line_specs: List[str]
+def create_integration_model(
+    fsm: Path,
+    smv: Path,
+    subsystems: Mapping[str, Path],
+    cmd_line_specs: List[str],
+    integration_check:bool=True
 ):
     shelleyv.fsm2smv(fsm, smv)
 
+    specs = []
     for (instance_name, instance_spec) in subsystems.items():
         dev: Device = shelley_lark_parser.parse(instance_spec)
-        specs = ltlf.generate_instance_spec(dev, instance_name)
-        dump_ltl_specs(specs, smv)
-
-    append_ltl_from_command_line(cmd_line_specs, smv)
+        if integration_check:
+            logger.debug("Appending integration checks")
+            specs.append(ltlf.generate_usage_validity(dev, instance_name))
+        specs.append(ltlf.generate_enforce_usage(dev, instance_name))
+    # Command-line specs
+    spec1 = ltlf.Spec(formulae=[], comment="COMMAND LINE SPECS")
+    for entry in cmd_line_specs:
+        logger.debug(f"Appending LTL formula from cmd line: {entry}")
+        spec1.formulae.append(LTL_F(ltlf.parse_ltlf_formulae(entry)))
+    specs.append(spec1)
+    # Finally, add specs to file
+    append_specs(specs, smv)
 
 
 def check_nusmv_output(raw_output: str):
@@ -228,11 +206,6 @@ def main():
         spec, uses, fsm_system, args.skip_direct
     )
 
-    # if not args.skip_direct:
-    #     print("OK!")
-    # else:
-    #     print(f"SKIP!")
-
     if not args.skip_mc:
         create_system_model(device, fsm_system, smv_system)
 
@@ -251,12 +224,12 @@ def main():
 
             if args.split_usage:
                 logger.debug("Split usage is enabled")
-                create_split_usage_model(spec, fsm_integration, subsystems)
-            else:
-                logger.debug("Split usage is disabled")
-                create_instance_model(
-                    fsm_integration, smv_integration, subsystems, args.formula
-                )
+                check_split_integration(spec, fsm_integration, subsystems)
+
+            create_integration_model(
+                fsm_integration, smv_integration, subsystems, args.formula,
+                integration_check=not args.split_usage,
+            )
 
             # print("Model checking integration...", end="")
             logger.debug("Model checking integration...")

@@ -136,7 +136,7 @@ class ModelChecker:
         if result is not None:
             specs = []
             for s in self.specs:
-                for f in spec.formulae:
+                for f in s.formulae:
                     specs.append((f, s.comment))
             for ((formula, comment), (raw_formula, trace)) in zip(specs, result):
                 if trace is not None:
@@ -239,7 +239,6 @@ def check_integration(
     smv: Path,
 ):
     mc = ModelChecker(smv)
-    spec = ltlf.Spec(formulae=[], comment="COMMAND LINE SPECS")
     spec = ltlf.Spec(formulae=[], comment="INTEGRATION CHECKS")
     for entry in dev.integration_formulae:
         logger.debug(f"Appending LTL formula from system checks: {entry}")
@@ -252,6 +251,14 @@ def check_integration(
         logger.debug("Model checking integration...")
         mc.run()
 
+
+def count_integration_claims(dev, subsystems):
+    total = 0
+    total += len(dev.integration_formulae)
+    total += len(dev.subsystem_formulae)
+    for d in subsystems.values():
+        total += len(d.enforce_formulae)
+    return total
 
 def parse_command():
     parser = argparse.ArgumentParser()
@@ -266,14 +273,6 @@ def parse_command():
     )
 
     return parser.parse_args()
-
-def count_integration_claims(dev, subsystems):
-    total = 0
-    total += len(dev.integration_formulae)
-    total += len(dev.subsystem_formulae)
-    for d in subsystems.values():
-        total += len(d.enforce_formulae)
-    return total
 
 def main():
     global VERBOSE
@@ -304,7 +303,6 @@ def main():
         return
 
     check_system(device, fsm_system, smv_system, system_validity=args.skip_direct)
-
     if assembled_device.internal is None:
         logger.debug("We found a base system, no integration to check needed.")
         return

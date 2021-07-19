@@ -39,7 +39,7 @@ user_claim :
 | "enforce" "usage" formula ";" -> enforce
 | "integration" "check" formula ";" -> integration_check
 | "system" "check" formula ";" -> system_check
-| "subsystem" ident "check" formula ";" -> subsys_check
+| "subsystem" ident "check" formula ";" -> subsystem_check
 
 user_claim_list : (user_claim) *
 

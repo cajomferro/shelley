@@ -236,8 +236,10 @@ def dump(formula:Formula, fp:IO, eos=None, nusvm_strict=True):
     """
     def rec(formula):
         # Primitives
+        if type(formula) in [LTL, CTL, LTL_F] and not nusvm_strict:
+            formula = formula.formula
         if isinstance(formula, Bool):
-            fp.write("TRUE" if self.value else "FALSE")
+            fp.write("TRUE" if formula.value else "FALSE")
         elif isinstance(formula, Variable):
             fp.write(formula.name)
         elif isinstance(formula, Action):
@@ -294,7 +296,7 @@ def dumps(formula, eos=None, nusvm_strict=True):
         formula=formula,
         fp=buffer,
         eos=eos,
-        eos_variable=eos_variable,
+        nusvm_strict=nusvm_strict,
     )
     return buffer.getvalue()
 

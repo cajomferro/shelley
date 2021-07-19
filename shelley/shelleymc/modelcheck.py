@@ -1,6 +1,6 @@
 import logging
 from typing import Tuple
-from shelley.parsers import shelley_lark_parser
+from shelley.parsers import shelley_lark_parser, ltlf_lark_parser
 import sys
 import yaml
 import argparse
@@ -29,7 +29,7 @@ def get_instances(dev_path: Path, uses_path: Path):
         filename = Path(uses_path.parent / uses[v])
         yield (k, filename.parent / f"{filename.stem}.shy")
 
-def model_check(smv_path: Path) -> None:
+def model_check(smv_path: Path):
     try:
         nusmv_call = [
             "NuSMV",
@@ -39,28 +39,84 @@ def model_check(smv_path: Path) -> None:
         cp: subprocess.CompletedProcess = subprocess.run(
             nusmv_call, capture_output=True, check=True
         )
-        check_nusmv_output(cp.stdout.decode())
+        return check_nusmv_output(cp.stdout.decode())
     except subprocess.CalledProcessError as err:
         print(err.output.decode() + err.stderr.decode())
         sys.exit(255)
 
+def parse_states(trace):
+    state = dict()
+    result = []
+    pending = False
+    for line in trace:
+        if line.startswith('-> State'):
+            if len(state) == 0:
+                continue
+            result.append(state)
+            state = dict(state)
+            pending = True
+        elif line.startswith('-- Loop'):
+            continue
+        else:
+            print(repr(line))
+            k, v = line.split(" = ", 1)
+            state[k.strip()] = v.strip()
+            pending = True
+    if pending:
+        result.append(state)
+    return result
 
+def parse_trace(trace):
+    actions = []
+    for state in parse_states(trace):
+        if state['_state'] == '-1':
+            continue
+        if state['_eos'] == 'TRUE':
+            break
+        actions.append(state['_action'])
+    return actions
 
 def check_nusmv_output(raw_output: str):
     lines_output: List[str] = raw_output.splitlines()
     error: bool = False
-
+    specs = []
+    results = []
+    handle_trace = False
+    trace = []
     for line in lines_output:
-        if line.startswith("-- specification") and "is false" in line:
-            error = True
-
+        if line.startswith("Trace ") or line.startswith('-- as demonstrated by '):
+            continue
+        if handle_trace:
+            if line.startswith("-- specification"):
+                handle_trace = False
+                results.append(parse_trace(trace))
+                trace = None
+            else:
+                trace.append(line.strip())
+                continue
+        if line.startswith("-- specification"):
+            line = line[len("-- specification"):]
+            line, answer = line.rsplit(" is ")
+            result = answer.strip() == "true"
+            specs.append(line.strip())
+            if result:
+                results.append(None)
+            else:
+                error = True
+                handle_trace = True
+                trace = []
+    if len(specs) > len(results):
+        results.append(parse_trace(trace))
     if error is True or VERBOSE:
+        print(specs, results)
         for line in lines_output:
             print(line)
-
-    if error is True:
-        sys.exit(255)
-
+    if error:
+        logger.debug(raw_output)
+    if error:
+        return list(zip(specs, results))
+    else:
+        return None
 
 @dataclass
 class ModelChecker:
@@ -81,7 +137,18 @@ class ModelChecker:
             for spec in self.specs:
                 logger.debug(spec)
                 spec.dump(fp)
-        model_check(self.file)
+        result = model_check(self.file)
+        if result is not None:
+            specs = []
+            for s in self.specs:
+                for f in spec.formulae:
+                    specs.append((f, s.comment))
+            for ((formula, comment), (raw_formula, trace)) in zip(specs, result):
+                if trace is not None:
+                    print("Error in specification:", comment, file=sys.stderr)
+                    print("Formula:", ltlf_lark_parser.dumps(formula, nusvm_strict=False), file=sys.stderr)
+                    print("Counter example:", trace, file=sys.stderr)
+                    sys.exit(255)
 
 def create_fsm_system_model(
     spec: Path, uses: Path, fsm_system: Path, skip_direct_checks: bool = False,

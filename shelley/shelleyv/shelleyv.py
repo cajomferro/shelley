@@ -175,13 +175,6 @@ def smv_dump(
 
     print(f"\nFAIRNESS {var_eos};", file=fp)
 
-    print(f"\nLTLSPEC F ({var_eos}); -- sanity check", file=fp)
-
-    print(
-        f"LTLSPEC G ({var_eos} -> G({var_eos}) & X({var_eos})); -- sanity check",
-        file=fp,
-    )
-
 
 def mclr2_dump(state_diagram, fp):
     to_state = lambda x: "Q_" + str(x)

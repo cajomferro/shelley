@@ -35,6 +35,9 @@ class Device(Node):
     test_macro: Mapping[str, Mapping[str, List[str]]] = field(default_factory=dict)
     test_micro: Mapping[str, Mapping[str, List[str]]] = field(default_factory=dict)
     enforce_formulae: List[Formula] = field(default_factory=list)
+    system_formulae: List[Formula] = field(default_factory=list)
+    integration_formulae: List[Formula] = field(default_factory=list)
+    subsystem_formulae: List[Tuple[str,Formula]] = field(default_factory=list)
 
     def __post_init__(self) -> None:
 

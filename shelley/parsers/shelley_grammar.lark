@@ -29,7 +29,19 @@ sig:  [modifiers] ident next
 
 sigs: (sig ";")+ 
 
-enforce: ["enforce" formula ";"]
+user_claim_base :
+| "enforce" "usage" formula ";" -> enforce
+| "system" "check" formula ";" -> system_check
+
+user_claim_base_list : (user_claim_base)*
+
+user_claim :
+| "enforce" "usage" formula ";" -> enforce
+| "integration" "check" formula ";" -> integration_check
+| "system" "check" formula ";" -> system_check
+| "subsystem" ident "check" formula ";" -> subsys_check
+
+user_claim_list : (user_claim) *
 
 op : sig block
 
@@ -39,14 +51,14 @@ name_type: ident ":" ident
 uses: [name_type ("," name_type)* [","]]
 
 sys:
-| ident "(" uses ")" ops [enforce] -> new_sys
-| "base"  ident "{" sigs [enforce] "}" -> base_sys
+| ident "(" uses ")" ops user_claim_list -> new_sys
+| "base"  ident "{" sigs user_claim_base_list "}" -> base_sys
 
 COMMENT: /#[^\n]*/
 
 %import .ltlf_grammar.formula
-%import .ltlf_grammar.atom
 %import .ltlf_grammar.ident
+%import .ltlf_grammar.atom
 %import .ltlf_grammar.act
 %import .ltlf_grammar.true
 %import .ltlf_grammar.false
@@ -55,7 +67,7 @@ COMMENT: /#[^\n]*/
 %import .ltlf_grammar.land
 %import .ltlf_grammar.lor
 %import .ltlf_grammar.lnot
-%import .ltlf_grammar.next -> xnext
+%import .ltlf_grammar.lnext
 %import .ltlf_grammar.until
 %import .ltlf_grammar.implies
 %import .ltlf_grammar.equiv

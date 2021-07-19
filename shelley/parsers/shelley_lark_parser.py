@@ -14,13 +14,41 @@ from shelley.ast.components import Components
 from shelley.ast.events import Event, Events
 from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError
 from shelley.ast.devices import Device
-from shelley.parsers.ltlf_lark_parser import LTLParser
+from shelley.parsers.ltlf_lark_parser import LTLParser, Formula
+from dataclasses import dataclass
 
 INITIAL = 1
 FINAL = 2
 
 parser = Lark.open("shelley_grammar.lark", rel_to=__file__, start="sys")
 
+@dataclass
+class Enforce:
+    formula: Formula
+
+@dataclass
+class IntegrationCheck:
+    formula: Formula
+
+@dataclass
+class SystemCheck:
+    formula: Formula
+
+@dataclass
+class SubsystemCheck:
+    name: str
+    formula: Formula
+
+def add_user_claims(device, user_claims):
+    for entry in user_claims:
+        if isinstance(entry, Enforce):
+            device.enforce_formulae.append(entry.formula)
+        elif isinstance(entry, IntegrationCheck):
+            device.integration_formulae.append(entry.formula)
+        elif isinstance(entry, SystemCheck):
+            device.system_formulae.append(entry.formula)
+        elif isinstance(entry, SubsystemCheck):
+            device.subsystem_formulae.append((entry.name, entry.formula))
 
 class ShelleyLanguage(LTLParser):
     def expr(self, args):
@@ -66,6 +94,27 @@ class ShelleyLanguage(LTLParser):
         return args
 
     def enforce(self, args):
+        return Enforce(*args)
+
+    def integration_check(self, args):
+        return IntegrationCheck(*args)
+
+    def system_check(self, args):
+        return SystemCheck(*args)
+
+    def subsystem_check(self, args):
+        return SubsystemCheck(*args)
+
+    def user_claim(self, args):
+        return args
+
+    def user_claim_list(self, args):
+        return args
+
+    def user_claim_base(self, args):
+        return args
+
+    def user_claim_base_list(self, args):
         return args
 
     def initial(self, args):
@@ -127,7 +176,7 @@ class ShelleyLanguage(LTLParser):
         return name.value
 
     def new_sys(self, args):
-        name, components, (evts, triggers, behaviors), enforce = args
+        name, components, (evts, triggers, behaviors), user_claims = args
 
         device = Device(
             name=name,
@@ -139,11 +188,12 @@ class ShelleyLanguage(LTLParser):
 
         device.test_macro = dict()
         device.test_micro = dict()
-
+        add_user_claims(device, user_claims)
         return device
 
     def base_sys(self, args):
-        name, sigs, enforce = args
+        name, sigs, user_claims = args
+        print(user_claims)
         events = Events()
         triggers = Triggers()
         behaviors = Behaviors()
@@ -168,10 +218,7 @@ class ShelleyLanguage(LTLParser):
             name=name, events=events, behaviors=behaviors, triggers=triggers,
         )
 
-        # device.test_macro = dict()
-        # device.test_micro = dict()
-        if len(enforce) > 0:
-            device.enforce_formulae = enforce
+        add_user_claims(device, user_claims)
 
         return device
 

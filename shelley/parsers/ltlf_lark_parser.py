@@ -211,11 +211,11 @@ def ltlf_to_ltl(formula:Formula, eos:Variable, action:Variable, prefix_separator
         elif isinstance(formula, Implies):
             return Implies(rec(formula.left), rec(formula.right))
         elif isinstance(formula, Next):
-            return Next(And(rec(formula.formula), Not(rec(EOS))))
+            return Next(And(rec(formula.child), Not(rec(EOS))))
         elif isinstance(formula, Eventually):
-            return Eventually(And(rec(formula.formula), Not(rec(EOS))))
+            return Eventually(And(rec(formula.child), Not(rec(EOS))))
         elif isinstance(formula, Always):
-            return Always(Or(rec(formula.formula), rec(EOS)))
+            return Always(Or(rec(formula.child), rec(EOS)))
         elif isinstance(formula, Until):
             return Until(
                 left=rec(formula.left),
@@ -320,7 +320,7 @@ class LTLParser(Transformer):
     def formula(self, args):
         return args[0]
 
-    def next(self, args) -> Next:
+    def lnext(self, args) -> Next:
         return Next(*args)
 
     def ident(self, args):

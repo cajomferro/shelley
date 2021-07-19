@@ -11,6 +11,8 @@ from shelley.shelleyc import shelleyc
 from shelley.ast.devices import Device
 from shelley.shelleyv import shelleyv
 from shelley.shelleymc import ltlf
+from dataclasses import dataclass, field
+from shelley.shelleymc.ltlf import Spec
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleymc")
@@ -27,6 +29,41 @@ def get_instances(dev_path: Path, uses_path: Path):
         filename = Path(uses_path.parent / uses[v])
         yield (k, filename.parent / f"{filename.stem}.shy")
 
+def model_check(smv_path: Path) -> None:
+    try:
+        nusmv_call = [
+            "NuSMV",
+            str(smv_path),
+        ]
+        logger.debug(" ".join(nusmv_call))
+        cp: subprocess.CompletedProcess = subprocess.run(
+            nusmv_call, capture_output=True, check=True
+        )
+        check_nusmv_output(cp.stdout.decode())
+    except subprocess.CalledProcessError as err:
+        print(err.output.decode() + err.stderr.decode())
+        sys.exit(255)
+
+@dataclass
+class ModelChecker:
+    file: Path
+    specs: List[Spec] = field(default_factory=list)
+    def add(self, spec:Spec):
+        self.specs.append(spec)
+
+    def __len__(self):
+        return sum(len(s) for s in self.specs)
+
+    def run(self):
+        count = len(self)
+        if count == 0:
+            logger.debug(f"Skip model checking {self.path} (0 formulas)")
+            return
+        with self.file.open("a+") as fp:
+            for spec in self.specs:
+                logger.debug(spec)
+                spec.dump(fp)
+        model_check(self.file)
 
 def parse_command():
     parser = argparse.ArgumentParser()
@@ -88,19 +125,15 @@ def create_fsm_system_model(
     return device, assembled_device
 
 
-def create_system_model(dev: Device, fsm: Path, smv: Path):
+def check_system(dev: Device, fsm: Path, smv: Path, system_validity:bool=True):
     logger.debug(f"Creating NuSMV system model: {smv}")
     shelleyv.fsm2smv(fsm, smv, ctl_compatible=True)
+    mc = ModelChecker(smv)
+    if system_validity:
+        logger.debug(f"Generating system specs: {fsm}")
+        mc.add(ltlf.generate_system_spec(dev))
+    mc.run()
 
-    logger.debug(f"Generating system specs: {fsm}")
-    append_specs([ltlf.generate_system_spec(dev)], smv)
-
-
-def append_specs(specs:List[ltlf.Spec], smv_path: Path):
-    with smv_path.open("a+") as fp:
-        for spec in specs:
-            logger.debug(spec)
-            spec.dump(fp)
 
 
 def check_usage(
@@ -112,27 +145,25 @@ def check_usage(
 
     for (instance_name, instance_spec) in subsystems.items():
         dev: Device = shelley_lark_parser.parse(instance_spec)
-        specs = []
-        if integration_check:
-            logger.debug(f"Adding integration check for {instance_name}")
-            specs.append(ltlf.generate_usage_validity(dev, prefix=None))
-        specs.append(ltlf.generate_enforce_usage(dev, prefix=None))
-        if sum(len(s) for s in specs) == 0:
-            logger.debug(f"Skip model checking usage (0 formulas): '{instance_name}'")
-            continue
-
         # Create the integration SMV file
         smv_path = system_spec.parent / f"{system_spec.stem}-d-{instance_name}.smv"
+        mc = ModelChecker(smv_path)
 
+        if integration_check:
+            logger.debug(f"Adding integration check for {instance_name}")
+            mc.add(ltlf.generate_usage_validity(dev, prefix=None))
+        mc.add(ltlf.generate_enforce_usage(dev, prefix=None))
+        if len(mc) == 0:
+            logger.debug(f"Skip model checking usage (0 formulas): '{instance_name}'")
+            continue
         logger.debug(f"Creating usage behavior for '{instance_name}': {smv_path}")
         shelleyv.fsm2smv(
             fsm_model=integration,
             smv_model=smv_path,
             project_prefix=instance_name + ".",
         )
-        append_specs(specs, smv_path)
         logger.debug(f"Model checking usage behavior: '{instance_name}'")
-        model_check(smv_path)
+        mc.run()
 
 
 def check_user_claims(
@@ -142,20 +173,18 @@ def check_user_claims(
     cmd_line_specs: List[str],
     integration_check:bool=True
 ):
-    if len(cmd_line_specs) == 0:
-        return
-    # Create the integration SMV
-    logger.debug(f"Creating integration file: {smv}")
-    shelleyv.fsm2smv(fsm, smv)
-    # Command-line specs
+    mc = ModelChecker(smv)
     spec = ltlf.Spec(formulae=[], comment="COMMAND LINE SPECS")
     for entry in cmd_line_specs:
         logger.debug(f"Appending LTL formula from cmd line: {entry}")
         spec.formulae.append(LTL_F(ltlf.parse_ltlf_formulae(entry)))
-    # Finally, add specs to file
-    append_specs([spec], smv)
-    logger.debug("Model checking integration...")
-    model_check(smv)
+    mc.add(spec)
+    if len(mc) > 0:
+        # Create the integration SMV
+        logger.debug(f"Creating integration file: {smv}")
+        shelleyv.fsm2smv(fsm, smv)
+        logger.debug("Model checking integration...")
+        mc.run()
 
 
 def check_nusmv_output(raw_output: str):
@@ -171,22 +200,6 @@ def check_nusmv_output(raw_output: str):
             print(line)
 
     if error is True:
-        sys.exit(255)
-
-
-def model_check(smv_path: Path) -> None:
-    try:
-        nusmv_call = [
-            "NuSMV",
-            str(smv_path),
-        ]
-        logger.debug(" ".join(nusmv_call))
-        cp: subprocess.CompletedProcess = subprocess.run(
-            nusmv_call, capture_output=True, check=True
-        )
-        check_nusmv_output(cp.stdout.decode())
-    except subprocess.CalledProcessError as err:
-        print(err.output.decode() + err.stderr.decode())
         sys.exit(255)
 
 
@@ -216,13 +229,7 @@ def main():
     )
 
     if not args.skip_mc:
-        create_system_model(device, fsm_system, smv_system)
-
-        # print("Model checking system...", end="")
-        logger.debug("Model checking system...")
-        model_check(smv_system)
-        logger.debug("OK!")
-
+        check_system(device, fsm_system, smv_system)
         if assembled_device.internal is not None:
             if not args.skip_direct and len(device.enforce_formulae) == 0 and len(args.formula) == 0:
                 logger.debug("Skip model check integration, because: integration checks are DIRECT, 0 enforces, 0 user claims.")

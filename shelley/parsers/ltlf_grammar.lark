@@ -7,7 +7,7 @@ formula:
     | lnot
     | implies
     | equiv
-    | next
+    | lnext
     | until
     | globally
     | eventually
@@ -26,7 +26,7 @@ paren: "(" formula ")"
 land: formula "&" formula
 lor: formula "|" formula
 lnot: "!" formula
-next: "X" formula
+lnext: "X" formula
 until: formula "U" formula
 implies: formula "->" formula
 equiv: formula "<->" formula

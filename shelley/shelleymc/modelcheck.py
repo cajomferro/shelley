@@ -12,7 +12,7 @@ from shelley.ast.devices import Device
 from shelley.shelleyv import shelleyv
 from shelley.shelleymc import ltlf
 from dataclasses import dataclass, field
-from shelley.shelleymc.ltlf import Spec
+from shelley.shelleymc.ltlf import Spec, Formula
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleymc")
@@ -44,6 +44,24 @@ def model_check(smv_path: Path) -> None:
         print(err.output.decode() + err.stderr.decode())
         sys.exit(255)
 
+
+
+def check_nusmv_output(raw_output: str):
+    lines_output: List[str] = raw_output.splitlines()
+    error: bool = False
+
+    for line in lines_output:
+        if line.startswith("-- specification") and "is false" in line:
+            error = True
+
+    if error is True or VERBOSE:
+        for line in lines_output:
+            print(line)
+
+    if error is True:
+        sys.exit(255)
+
+
 @dataclass
 class ModelChecker:
     file: Path
@@ -64,29 +82,6 @@ class ModelChecker:
                 logger.debug(spec)
                 spec.dump(fp)
         model_check(self.file)
-
-def parse_command():
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--spec", "-s", type=Path, help="Shelley specification.", required=True
-    )
-    parser.add_argument("--uses", "-u", type=Path, help="The uses YAML file.")
-    parser.add_argument(
-        "--formula", "-f", nargs="*", help="Give a correctness claim", default=[]
-    )
-    parser.add_argument("--skip-mc", action="store_true")
-    parser.add_argument("--skip-direct", action="store_true")
-    parser.add_argument(
-        "--split-usage",
-        action="store_true",
-        help="Check the usage of each subsystem separately.",
-    )
-    parser.add_argument(
-        "-v", "--verbosity", help="increase output verbosity", action="store_true"
-    )
-
-    return parser.parse_args()
-
 
 def create_fsm_system_model(
     spec: Path, uses: Path, fsm_system: Path, skip_direct_checks: bool = False,
@@ -129,15 +124,22 @@ def check_system(dev: Device, fsm: Path, smv: Path, system_validity:bool=True):
     logger.debug(f"Creating NuSMV system model: {smv}")
     shelleyv.fsm2smv(fsm, smv, ctl_compatible=True)
     mc = ModelChecker(smv)
+    spec = Spec([], "SYSTEM CHECKS")
+    for f in dev.system_formulae:
+        spec.formlae.append(LTL_F(f))
+    mc.add(spec)
+
     if system_validity:
         logger.debug(f"Generating system specs: {fsm}")
         mc.add(ltlf.generate_system_spec(dev))
     mc.run()
 
 
-
 def check_usage(
-    system_spec: Path, integration: Path, subsystems: Mapping[str, Path],
+    system_spec: Path,
+    integration: Path,
+    subsystems: Mapping[str, Path],
+    subsystem_formulae: List[Tuple[str,Formula]],
     integration_check:bool=True,
 ) -> None:
     if not integration_check:
@@ -148,7 +150,7 @@ def check_usage(
         # Create the integration SMV file
         smv_path = system_spec.parent / f"{system_spec.stem}-d-{instance_name}.smv"
         mc = ModelChecker(smv_path)
-
+        mc.add(ltlf.generate_subsystem_checks(subsystem_formulae, instance_name))
         if integration_check:
             logger.debug(f"Adding integration check for {instance_name}")
             mc.add(ltlf.generate_usage_validity(dev, prefix=None))
@@ -166,7 +168,8 @@ def check_usage(
         mc.run()
 
 
-def check_user_claims(
+def check_integration(
+    dev: Device,
     fsm: Path,
     smv: Path,
     subsystems: Mapping[str, Path],
@@ -179,6 +182,11 @@ def check_user_claims(
         logger.debug(f"Appending LTL formula from cmd line: {entry}")
         spec.formulae.append(LTL_F(ltlf.parse_ltlf_formulae(entry)))
     mc.add(spec)
+    spec = ltlf.Spec(formulae=[], comment="INTEGRATION CHECKS")
+    for entry in dev.system_formulae:
+        logger.debug(f"Appending LTL formula from system checks: {entry}")
+        spec.formulae.append(LTL_F(entry))
+    mc.add(spec)
     if len(mc) > 0:
         # Create the integration SMV
         logger.debug(f"Creating integration file: {smv}")
@@ -187,21 +195,27 @@ def check_user_claims(
         mc.run()
 
 
-def check_nusmv_output(raw_output: str):
-    lines_output: List[str] = raw_output.splitlines()
-    error: bool = False
+def parse_command():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--spec", "-s", type=Path, help="Shelley specification.", required=True
+    )
+    parser.add_argument("--uses", "-u", type=Path, help="The uses YAML file.")
+    parser.add_argument(
+        "--formula", "-f", nargs="*", help="Give a correctness claim", default=[]
+    )
+    parser.add_argument("--skip-mc", action="store_true")
+    parser.add_argument("--skip-direct", action="store_true")
+    parser.add_argument(
+        "--split-usage",
+        action="store_true",
+        help="Check the usage of each subsystem separately.",
+    )
+    parser.add_argument(
+        "-v", "--verbosity", help="increase output verbosity", action="store_true"
+    )
 
-    for line in lines_output:
-        if line.startswith("-- specification") and "is false" in line:
-            error = True
-
-    if error is True or VERBOSE:
-        for line in lines_output:
-            print(line)
-
-    if error is True:
-        sys.exit(255)
-
+    return parser.parse_args()
 
 def main():
     global VERBOSE
@@ -242,11 +256,21 @@ def main():
             subsystems: Mapping[str, Path] = dict(get_instances(args.spec, args.uses))
 
             logger.debug("Check integration validity")
-            check_usage(spec, fsm_integration, subsystems, integration_check=args.skip_direct)
+            check_usage(
+                system_spec=spec,
+                integration=fsm_integration,
+                subsystems=subsystems,
+                integration_check=args.skip_direct,
+                subsystem_formulae=device.subsystem_formulae,
+            )
 
             logger.debug("Check user correctness claims")
-            check_user_claims(
-                fsm_integration, smv_integration, subsystems, args.formula,
+            check_integration(
+                device,
+                fsm_integration,
+                smv_integration,
+                subsystems,
+                args.formula,
             )
 
             # print("Model checking integration...", end="")

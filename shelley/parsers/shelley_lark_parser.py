@@ -193,7 +193,6 @@ class ShelleyLanguage(LTLParser):
 
     def base_sys(self, args):
         name, sigs, user_claims = args
-        print(user_claims)
         events = Events()
         triggers = Triggers()
         behaviors = Behaviors()

@@ -1,4 +1,4 @@
-from typing import List, Union, Optional
+from typing import List, Union, Optional, Tuple
 from shelley.parsers import shelley_lark_parser, ltlf_lark_parser
 from pathlib import Path
 from dataclasses import dataclass
@@ -137,6 +137,12 @@ def generate_enforce_usage(dev:Device, prefix:Optional[str]) -> Spec:
         spec.formulae.append(LTL_F(f))
     return spec
 
+def generate_subsystem_checks(subsystem_formulae: List[Tuple[str,Formula]], prefix:str) -> Spec:
+    spec = Spec(formulae=[], comment=f"SUBSYSTEM CHECKS FOR {prefix}")
+    for (k, f) in subsystem_formulae:
+        if k == prefix:
+            spec.formulae.append(LTL_F(f))
+    return spec
 
 def parse_command():
     from argparse import ArgumentParser

@@ -142,7 +142,7 @@ def check_usage(
     subsystem_formulae: List[Tuple[str,Formula]],
     integration_validity:bool=True,
 ) -> None:
-    if not integration_check:
+    if not integration_validity:
         logger.debug(f"Integration validity will *NOT* be enforced by the model checker.")
 
     for (instance_name, instance_spec) in subsystems.items():

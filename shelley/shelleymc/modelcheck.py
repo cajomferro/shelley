@@ -103,50 +103,59 @@ def append_specs(specs:List[ltlf.Spec], smv_path: Path):
             spec.dump(fp)
 
 
-def check_split_integration(
-    system_spec: Path, integration: Path, subsystems: Mapping[str, Path]
+def check_usage(
+    system_spec: Path, integration: Path, subsystems: Mapping[str, Path],
+    integration_check:bool=True,
 ) -> None:
+    if not integration_check:
+        logger.debug(f"Integration validity will *NOT* be enforced by the model checker.")
+
     for (instance_name, instance_spec) in subsystems.items():
+        dev: Device = shelley_lark_parser.parse(instance_spec)
+        specs = []
+        if integration_check:
+            logger.debug(f"Adding integration check for {instance_name}")
+            specs.append(ltlf.generate_usage_validity(dev, prefix=None))
+        specs.append(ltlf.generate_enforce_usage(dev, prefix=None))
+        if sum(len(s) for s in specs) == 0:
+            logger.debug(f"Skip model checking usage (0 formulas): '{instance_name}'")
+            continue
+
         # Create the integration SMV file
-        smv_path = system_spec.parent / f"{system_spec.stem}-{instance_name}.smv"
-        # XXX: we want to remove the prefix from the diagram below
-        logger.debug("Creating", smv_path)
+        smv_path = system_spec.parent / f"{system_spec.stem}-d-{instance_name}.smv"
+
+        logger.debug(f"Creating usage behavior for '{instance_name}': {smv_path}")
         shelleyv.fsm2smv(
             fsm_model=integration,
             smv_model=smv_path,
-            filter_instance=instance_name + ".*",
+            project_prefix=instance_name + ".",
         )
-        spec1 = ltlf.generate_usage_validity(instance_spec, instance_name)
-        spec2 = ltlf.generate_enforce_usage(instance_spec, instance_name)
-        append_specs([spec1, spec2], smv_path)
-        logger.debug("Model checking usage of", instance_name)
+        append_specs(specs, smv_path)
+        logger.debug(f"Model checking usage behavior: '{instance_name}'")
         model_check(smv_path)
 
 
-def create_integration_model(
+def check_user_claims(
     fsm: Path,
     smv: Path,
     subsystems: Mapping[str, Path],
     cmd_line_specs: List[str],
     integration_check:bool=True
 ):
+    if len(cmd_line_specs) == 0:
+        return
+    # Create the integration SMV
+    logger.debug(f"Creating integration file: {smv}")
     shelleyv.fsm2smv(fsm, smv)
-
-    specs = []
-    for (instance_name, instance_spec) in subsystems.items():
-        dev: Device = shelley_lark_parser.parse(instance_spec)
-        if integration_check:
-            logger.debug("Appending integration checks")
-            specs.append(ltlf.generate_usage_validity(dev, instance_name))
-        specs.append(ltlf.generate_enforce_usage(dev, instance_name))
     # Command-line specs
-    spec1 = ltlf.Spec(formulae=[], comment="COMMAND LINE SPECS")
+    spec = ltlf.Spec(formulae=[], comment="COMMAND LINE SPECS")
     for entry in cmd_line_specs:
         logger.debug(f"Appending LTL formula from cmd line: {entry}")
-        spec1.formulae.append(LTL_F(ltlf.parse_ltlf_formulae(entry)))
-    specs.append(spec1)
+        spec.formulae.append(LTL_F(ltlf.parse_ltlf_formulae(entry)))
     # Finally, add specs to file
-    append_specs(specs, smv)
+    append_specs([spec], smv)
+    logger.debug("Model checking integration...")
+    model_check(smv)
 
 
 def check_nusmv_output(raw_output: str):
@@ -215,6 +224,9 @@ def main():
         logger.debug("OK!")
 
         if assembled_device.internal is not None:
+            if not args.skip_direct and len(device.enforce_formulae) == 0 and len(args.formula) == 0:
+                logger.debug("Skip model check integration, because: integration checks are DIRECT, 0 enforces, 0 user claims.")
+                return
             fsm_integration: Path = spec.parent / (spec.stem + "-i.scy")
             logger.debug(f"Dumping FSM integration model: {fsm_integration}")
             shelleyc.dump_integration_model(assembled_device, fsm_integration)
@@ -222,16 +234,13 @@ def main():
 
             subsystems: Mapping[str, Path] = dict(get_instances(args.spec, args.uses))
 
-            if args.split_usage:
-                logger.debug("Split usage is enabled")
-                check_split_integration(spec, fsm_integration, subsystems)
+            logger.debug("Check integration validity")
+            check_usage(spec, fsm_integration, subsystems, integration_check=args.skip_direct)
 
-            create_integration_model(
+            logger.debug("Check user correctness claims")
+            check_user_claims(
                 fsm_integration, smv_integration, subsystems, args.formula,
-                integration_check=not args.split_usage,
             )
 
             # print("Model checking integration...", end="")
-            logger.debug("Model checking integration...")
-            model_check(smv_integration)
             logger.debug("OK!")

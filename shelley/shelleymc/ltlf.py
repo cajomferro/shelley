@@ -45,6 +45,8 @@ class Op:
 class Spec:
     formulae: List[Union[CTL, LTL, LTL_F]]
     comment: Optional[str]
+    def __len__(self):
+        return len(self.formulae)
 
     def dump(self, fp, action_name:Optional[str]=None, eos_name:Optional[str]=None):
         action = Variable("_action" if action_name is None else action_name)

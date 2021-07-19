@@ -13,7 +13,7 @@ logger = logging.getLogger("shelleyv")
 def fsm2smv(
     fsm_model: Path,
     smv_model: Path,
-    filter_instance: Optional[str] = None,
+    project_prefix: Optional[str] = None,
     ctl_compatible: bool = False,
 ) -> None:
     """
@@ -27,12 +27,16 @@ def fsm2smv(
         fsm_dict = yaml.load(fp, Loader=yaml.FullLoader)
 
     n: regular.NFA[Any, str] = handle_fsm(
-        regular.NFA.from_dict(fsm_dict), dfa=True, filter=filter_instance
+        regular.NFA.from_dict(fsm_dict),
+        dfa=True,
+        project_prefix=project_prefix,
     ).result
 
     with smv_model.open("w") as fp:
         smv_dump(
-            state_diagram=n.as_dict(flatten=True), fp=fp, ctl_compatible=ctl_compatible
+            state_diagram=n.as_dict(flatten=True),
+            fp=fp,
+            ctl_compatible=ctl_compatible
         )
 
 
@@ -282,8 +286,21 @@ def handle_fsm(
     minimize_slow: bool = False,
     no_sink: bool = False,
     no_epsilon: bool = False,
+    project_prefix: Optional[str] = None,
 ) -> FSMStats:
     fsm_stats = FSMStats()
+
+    if project_prefix is not None:
+        translate = dict()
+        translate[None] = None
+        offset = len(project_prefix)
+        for name in n.alphabet:
+            if name is not None and name.startswith(project_prefix):
+                translate[name] = name[offset:]
+            else:
+                # Skip otherwise
+                translate[name] = None
+        n = n.map_alphabet(translate)
 
     if filter is not None:
         pattern = re.compile(filter)

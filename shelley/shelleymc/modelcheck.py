@@ -140,7 +140,7 @@ def check_usage(
     integration: Path,
     subsystems: Mapping[str, Path],
     subsystem_formulae: List[Tuple[str,Formula]],
-    integration_check:bool=True,
+    integration_validity:bool=True,
 ) -> None:
     if not integration_check:
         logger.debug(f"Integration validity will *NOT* be enforced by the model checker.")
@@ -151,7 +151,7 @@ def check_usage(
         smv_path = system_spec.parent / f"{system_spec.stem}-d-{instance_name}.smv"
         mc = ModelChecker(smv_path)
         mc.add(ltlf.generate_subsystem_checks(subsystem_formulae, instance_name))
-        if integration_check:
+        if integration_validity:
             logger.debug(f"Adding integration check for {instance_name}")
             mc.add(ltlf.generate_usage_validity(dev, prefix=None))
         mc.add(ltlf.generate_enforce_usage(dev, prefix=None))
@@ -243,7 +243,7 @@ def main():
     )
 
     if not args.skip_mc:
-        check_system(device, fsm_system, smv_system)
+        check_system(device, fsm_system, smv_system, system_validity=args.skip_direct)
         if assembled_device.internal is not None:
             if not args.skip_direct and len(device.enforce_formulae) == 0 and len(args.formula) == 0:
                 logger.debug("Skip model check integration, because: integration checks are DIRECT, 0 enforces, 0 user claims.")
@@ -260,7 +260,7 @@ def main():
                 system_spec=spec,
                 integration=fsm_integration,
                 subsystems=subsystems,
-                integration_check=args.skip_direct,
+                integration_validity=args.skip_direct,
                 subsystem_formulae=device.subsystem_formulae,
             )
 

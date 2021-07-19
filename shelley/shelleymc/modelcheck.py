@@ -58,7 +58,6 @@ def parse_states(trace):
         elif line.startswith('-- Loop'):
             continue
         else:
-            print(repr(line))
             k, v = line.split(" = ", 1)
             state[k.strip()] = v.strip()
             pending = True
@@ -107,10 +106,6 @@ def check_nusmv_output(raw_output: str):
                 trace = []
     if len(specs) > len(results):
         results.append(parse_trace(trace))
-    if error is True or VERBOSE:
-        print(specs, results)
-        for line in lines_output:
-            print(line)
     if error:
         logger.debug(raw_output)
     if error:

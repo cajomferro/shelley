@@ -341,6 +341,7 @@ class MicroBehavior:
     nfa: NFA[DecodedState, str]
     system: NFA[Any, str]
     skip_checks: bool
+    check_ambiguity: bool = field(default=False)
     dfa: DFA[Any, str] = field(init=False)
     failure: Optional[AmbiguityFailure] = field(init=False)
     is_valid: bool = field(init=False)
@@ -351,13 +352,17 @@ class MicroBehavior:
         if not self.skip_checks:
             start = timer()
             self.dfa = nfa_to_dfa(self.nfa)
-            err_trace = self.dfa.find_shortest_path(is_macro_ambiguous)
-            self.is_valid = err_trace is None
-            self.failure = (
-                None
-                if err_trace is None  # is valid
-                else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
-            )
+            if self.check_ambiguity:
+                err_trace = self.dfa.find_shortest_path(is_macro_ambiguous)
+                self.is_valid = err_trace is None
+                self.failure = (
+                    None
+                    if err_trace is None  # is valid
+                    else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
+                )
+            else:
+                self.is_valid = True
+                self.failure = None
             self.validation_time = get_elapsed_time(start)
 
     def convert_micro_to_macro(self, seq: Sequence[str]) -> MacroTrace:

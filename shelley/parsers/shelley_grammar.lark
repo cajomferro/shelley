@@ -45,13 +45,13 @@ user_claim_list : (user_claim) *
 
 op : sig block
 
-ops : "{" op+ "}"
+ops : op+
 
 name_type: ident ":" ident
 uses: [name_type ("," name_type)* [","]]
 
 sys:
-| ident "(" uses ")" ops user_claim_list -> new_sys
+| ident "(" uses ")" "{" ops user_claim_list "}" -> new_sys
 | "base"  ident "{" sigs user_claim_base_list "}" -> base_sys
 
 COMMENT: /#[^\n]*/

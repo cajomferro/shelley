@@ -12,7 +12,7 @@ from shelley.ast.devices import Device
 from shelley.shelleyv import shelleyv
 from shelley.shelleymc import ltlf
 from dataclasses import dataclass, field
-from shelley.shelleymc.ltlf import Spec, Formula
+from shelley.shelleymc.ltlf import Spec, Formula, LTL_F, Next, LTL
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleymc")
@@ -126,7 +126,9 @@ def check_system(dev: Device, fsm: Path, smv: Path, system_validity:bool=True):
     mc = ModelChecker(smv)
     spec = Spec([], "SYSTEM CHECKS")
     for f in dev.system_formulae:
-        spec.formlae.append(LTL_F(f))
+        # Since the model is CTL-compatible, then we need to prefix each
+        # LTL formula with a next, so we skip the dummy initial state.
+        spec.formulae.append(LTL(Next(LTL_F(f))))
     mc.add(spec)
 
     if system_validity:
@@ -183,7 +185,7 @@ def check_integration(
         spec.formulae.append(LTL_F(ltlf.parse_ltlf_formulae(entry)))
     mc.add(spec)
     spec = ltlf.Spec(formulae=[], comment="INTEGRATION CHECKS")
-    for entry in dev.system_formulae:
+    for entry in dev.integration_formulae:
         logger.debug(f"Appending LTL formula from system checks: {entry}")
         spec.formulae.append(LTL_F(entry))
     mc.add(spec)

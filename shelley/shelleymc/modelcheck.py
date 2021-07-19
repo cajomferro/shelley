@@ -121,8 +121,6 @@ def create_fsm_system_model(
 
 
 def check_system(dev: Device, fsm: Path, smv: Path, system_validity:bool=True):
-    logger.debug(f"Creating NuSMV system model: {smv}")
-
     mc = ModelChecker(smv)
     spec = Spec([], "SYSTEM CHECKS")
     for f in dev.system_formulae:
@@ -134,6 +132,7 @@ def check_system(dev: Device, fsm: Path, smv: Path, system_validity:bool=True):
         logger.debug(f"Generating system specs: {fsm}")
         mc.add(ltlf.generate_system_spec(dev))
     if len(mc) > 0:
+        logger.debug(f"Creating NuSMV system model: {smv}")
         shelleyv.fsm2smv(fsm, smv, ctl_compatible=True)
         mc.run()
     else:
@@ -259,7 +258,7 @@ def main():
         return
 
     fsm_integration: Path = spec.parent / (spec.stem + "-i.scy")
-    logger.debug(f"Dumping FSM integration model: {fsm_integration}")
+    logger.debug(f"Saving FSM integration model to disk: {fsm_integration}")
     shelleyc.dump_integration_model(assembled_device, fsm_integration)
     assert fsm_integration.exists()
 

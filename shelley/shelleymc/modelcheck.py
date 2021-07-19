@@ -75,7 +75,7 @@ class ModelChecker:
     def run(self):
         count = len(self)
         if count == 0:
-            logger.debug(f"Skip model checking {self.path} (0 formulas)")
+            logger.debug(f"Skip model checking {self.file} (0 formulas)")
             return
         with self.file.open("a+") as fp:
             for spec in self.specs:
@@ -122,7 +122,7 @@ def create_fsm_system_model(
 
 def check_system(dev: Device, fsm: Path, smv: Path, system_validity:bool=True):
     logger.debug(f"Creating NuSMV system model: {smv}")
-    shelleyv.fsm2smv(fsm, smv, ctl_compatible=True)
+
     mc = ModelChecker(smv)
     spec = Spec([], "SYSTEM CHECKS")
     for f in dev.system_formulae:
@@ -130,25 +130,27 @@ def check_system(dev: Device, fsm: Path, smv: Path, system_validity:bool=True):
         # LTL formula with a next, so we skip the dummy initial state.
         spec.formulae.append(LTL(Next(LTL_F(f))))
     mc.add(spec)
-
     if system_validity:
         logger.debug(f"Generating system specs: {fsm}")
         mc.add(ltlf.generate_system_spec(dev))
-    mc.run()
+    if len(mc) > 0:
+        shelleyv.fsm2smv(fsm, smv, ctl_compatible=True)
+        mc.run()
+    else:
+        logger.debug("No model checking needed for system.")
 
 
 def check_usage(
     system_spec: Path,
     integration: Path,
-    subsystems: Mapping[str, Path],
+    subsystems: Mapping[str, Device],
     subsystem_formulae: List[Tuple[str,Formula]],
     integration_validity:bool=True,
 ) -> None:
     if not integration_validity:
         logger.debug(f"Integration validity will *NOT* be enforced by the model checker.")
 
-    for (instance_name, instance_spec) in subsystems.items():
-        dev: Device = shelley_lark_parser.parse(instance_spec)
+    for (instance_name, dev) in subsystems.items():
         # Create the integration SMV file
         smv_path = system_spec.parent / f"{system_spec.stem}-d-{instance_name}.smv"
         mc = ModelChecker(smv_path)
@@ -174,16 +176,9 @@ def check_integration(
     dev: Device,
     fsm: Path,
     smv: Path,
-    subsystems: Mapping[str, Path],
-    cmd_line_specs: List[str],
-    integration_check:bool=True
 ):
     mc = ModelChecker(smv)
     spec = ltlf.Spec(formulae=[], comment="COMMAND LINE SPECS")
-    for entry in cmd_line_specs:
-        logger.debug(f"Appending LTL formula from cmd line: {entry}")
-        spec.formulae.append(LTL_F(ltlf.parse_ltlf_formulae(entry)))
-    mc.add(spec)
     spec = ltlf.Spec(formulae=[], comment="INTEGRATION CHECKS")
     for entry in dev.integration_formulae:
         logger.debug(f"Appending LTL formula from system checks: {entry}")
@@ -203,21 +198,21 @@ def parse_command():
         "--spec", "-s", type=Path, help="Shelley specification.", required=True
     )
     parser.add_argument("--uses", "-u", type=Path, help="The uses YAML file.")
-    parser.add_argument(
-        "--formula", "-f", nargs="*", help="Give a correctness claim", default=[]
-    )
     parser.add_argument("--skip-mc", action="store_true")
     parser.add_argument("--skip-direct", action="store_true")
-    parser.add_argument(
-        "--split-usage",
-        action="store_true",
-        help="Check the usage of each subsystem separately.",
-    )
     parser.add_argument(
         "-v", "--verbosity", help="increase output verbosity", action="store_true"
     )
 
     return parser.parse_args()
+
+def count_integration_claims(dev, subsystems):
+    total = 0
+    total += len(dev.integration_formulae)
+    total += len(dev.subsystem_formulae)
+    for d in subsystems.values():
+        total += len(d.enforce_formulae)
+    return total
 
 def main():
     global VERBOSE
@@ -244,36 +239,42 @@ def main():
         spec, uses, fsm_system, args.skip_direct
     )
 
-    if not args.skip_mc:
-        check_system(device, fsm_system, smv_system, system_validity=args.skip_direct)
-        if assembled_device.internal is not None:
-            if not args.skip_direct and len(device.enforce_formulae) == 0 and len(args.formula) == 0:
-                logger.debug("Skip model check integration, because: integration checks are DIRECT, 0 enforces, 0 user claims.")
-                return
-            fsm_integration: Path = spec.parent / (spec.stem + "-i.scy")
-            logger.debug(f"Dumping FSM integration model: {fsm_integration}")
-            shelleyc.dump_integration_model(assembled_device, fsm_integration)
-            assert fsm_integration.exists()
+    if args.skip_mc:
+        return
 
-            subsystems: Mapping[str, Path] = dict(get_instances(args.spec, args.uses))
+    check_system(device, fsm_system, smv_system, system_validity=args.skip_direct)
 
-            logger.debug("Check integration validity")
-            check_usage(
-                system_spec=spec,
-                integration=fsm_integration,
-                subsystems=subsystems,
-                integration_validity=args.skip_direct,
-                subsystem_formulae=device.subsystem_formulae,
-            )
+    if assembled_device.internal is None:
+        logger.debug("We found a base system, no integration to check needed.")
+        return
 
-            logger.debug("Check user correctness claims")
-            check_integration(
-                device,
-                fsm_integration,
-                smv_integration,
-                subsystems,
-                args.formula,
-            )
+    subsystems: Mapping[str, Device] = dict(
+        (k,shelley_lark_parser.parse(v))
+        for k, v in get_instances(args.spec, args.uses)
+    )
+    user_claims = count_integration_claims(device, subsystems)
+    logger.debug(f"Model check integration validity: {args.skip_direct}; user claims: {user_claims}")
+    if not args.skip_direct and user_claims == 0:
+        logger.debug("No model checking needed for integration.")
+        return
 
-            # print("Model checking integration...", end="")
-            logger.debug("OK!")
+    fsm_integration: Path = spec.parent / (spec.stem + "-i.scy")
+    logger.debug(f"Dumping FSM integration model: {fsm_integration}")
+    shelleyc.dump_integration_model(assembled_device, fsm_integration)
+    assert fsm_integration.exists()
+
+    logger.debug("Check the usage of each subsystem")
+    check_usage(
+        system_spec=spec,
+        integration=fsm_integration,
+        subsystems=subsystems,
+        integration_validity=args.skip_direct,
+        subsystem_formulae=device.subsystem_formulae,
+    )
+
+    logger.debug("Check integration claims")
+    check_integration(
+        device,
+        fsm_integration,
+        smv_integration,
+    )

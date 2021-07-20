@@ -201,7 +201,7 @@ def ltlf_to_ltl(formula:Formula, eos:Variable, action:Variable, prefix_separator
         elif isinstance(formula, EndOfSequence):
             return eos
         elif isinstance(formula, Not):
-            return Not(rec(formula.formula))
+            return Not(rec(formula.child))
         elif isinstance(formula, Or):
             return Or(rec(formula.left), rec(formula.right))
         elif isinstance(formula, Equal):

@@ -26,11 +26,14 @@ def fsm2smv(
     with fsm_model.open("r") as fp:
         fsm_dict = yaml.load(fp, Loader=yaml.FullLoader)
 
-    n: regular.NFA[Any, str] = handle_fsm(
+    d: regular.DFA[Any, str] = handle_fsm(
         regular.NFA.from_dict(fsm_dict),
         dfa=True,
         project_prefix=project_prefix,
-    ).result
+    ).result_dfa
+    # Make sure that there is no empty string
+    d = d.subtract(regular.DFA.make_nil(d.alphabet))
+    n = regular.dfa_to_nfa(d)
 
     with smv_model.open("w") as fp:
         smv_dump(
@@ -250,6 +253,7 @@ class FSMStats:
     dfa_to_nfa_no_sink: Optional[str] = None
     nfa_no_epsilon: Optional[str] = None
     nfa_no_sinks: Optional[str] = None
+    result_dfa: Optional[regular.DFA[Any, str]] = None
     result: Optional[regular.NFA[Any, str]] = None
 
     def __str__(self):
@@ -327,7 +331,7 @@ def handle_fsm(
             d = regular.nfa_to_dfa(n).flatten()
             # print("DFA:", len(d), file=sys.stderr)
             fsm_stats.dfa = len(d)
-
+        fsm_stats.result_dfa = d
         n = regular.dfa_to_nfa(d)
 
         if no_sink:

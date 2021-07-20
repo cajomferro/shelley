@@ -142,7 +142,8 @@ class ModelChecker:
                 if trace is not None:
                     print("Error in specification:", comment, file=sys.stderr)
                     print("Formula:", ltlf_lark_parser.dumps(formula, nusvm_strict=False), file=sys.stderr)
-                    print("Counter example:", "; ".join(trace), file=sys.stderr)
+                    trace_str = "; ".join(trace) if len(trace) > 0 else "(empty)"
+                    print("Counter example:", trace_str, file=sys.stderr)
                     sys.exit(255)
 
 def create_fsm_system_model(

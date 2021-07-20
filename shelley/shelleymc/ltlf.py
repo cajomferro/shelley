@@ -1,7 +1,7 @@
 from typing import List, Union, Optional, Tuple
 from shelley.parsers import shelley_lark_parser, ltlf_lark_parser
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from shelley.ast.devices import Device
 import shelley.parsers.ltlf_lark_parser
@@ -33,18 +33,27 @@ from shelley.parsers.ltlf_lark_parser import (
 class Op:
     targets: list
     is_final: bool
+    is_initial: bool
 
     @classmethod
-    def make(cls, is_final=False):
-        return cls([], is_final)
+    def make(cls, is_final=False, is_initial=False):
+        return cls(
+            targets=[],
+            is_final=is_final,
+            is_initial=is_initial
+        )
 
     def add(self, name):
         self.targets.append(name)
 
 @dataclass
 class Spec:
-    formulae: List[Union[CTL, LTL, LTL_F]]
-    comment: Optional[str]
+    formulae: List[Union[CTL, LTL, LTL_F]] = field(default_factory=list)
+    comment: Optional[str] = field(default=None)
+
+    def add(self, formula):
+        self.formulae.append(formula)
+
     def __len__(self):
         return len(self.formulae)
 
@@ -90,49 +99,36 @@ def generate_system_spec(dev: Device) -> Spec:
         )))
     return Spec(specs, comment=f"SYSTEM VALIDITY FOR: {dev.name}")
 
-def generate_usage_validity(dev:Device, prefix:Optional[str]) -> Spec:
+def generate_usage_validity(dev:Device, prefix:str) -> Spec:
     """
     Generates a spec that represents the usage validity of a given device.
     """
-    mk_act = lambda name: LTL_F(Action(prefix=prefix, name=name))
+    mk_act = lambda name: LTL_F(Action(name=name))
+    initials = [EOS]
     targets = dict()
     for (src, dst) in dev.behaviors.as_list_tuples():
         dsts = targets.get(src, None)
         if dsts is None:
             evt = dev.events.find_by_name(src)
-            targets[src] = dsts = Op.make(evt.is_final)
+            targets[src] = dsts = Op.make(
+                is_final=evt.is_final,
+                is_initial=evt.is_start,
+            )
+            if evt.is_start:
+                initials.append(Action(name=src))
         dsts.add(dst)
 
-    if prefix is None:
-        tau = None
-    else:
-        tau = LTL_F(And.make(
-            NotAction(prefix=prefix, name=op) for op in targets
-        ))
-    lbl = "" if prefix is None else f"{prefix}: "
-    spec = Spec(formulae=[], comment=f"USAGE VALIDITY FOR {lbl}{dev.name}")
+    spec = Spec(comment=f"USAGE VALIDITY FOR {prefix}: {dev.name}")
+    spec.add(LTL_F(Or.make(initials)))
     for (src, op) in targets.items():
         successors = Or.make(map(mk_act, op.targets))
         if op.is_final:
             successors = Or(successors, LTL_F(EOS))
-
-        # If there is a prefix, then it means there might be other
-        # actions from other prefixes which are fine to ignore.
-        # We ignore prefixes from other with TAU
-        if prefix is not None:
-            successors = Until(tau, successors)
-
-        spec.formulae.append(
-            LTL(Always(Implies(mk_act(src), Next(successors))))
-        )
+        spec.add(LTL(Always(Implies(mk_act(src), Next(successors)))))
     return spec
 
-def generate_enforce_usage(dev:Device, prefix:Optional[str]) -> Spec:
-    if prefix is None:
-        lbl = ""
-    else:
-        lbl = f"{prefix}: "
-    spec = Spec(formulae=[], comment=f"ENFORCE SPECS FOR {lbl}{dev.name}")
+def generate_enforce_usage(dev:Device, prefix:str) -> Spec:
+    spec = Spec(formulae=[], comment=f"ENFORCE SPECS FOR {prefix}: {dev.name}")
     for f in dev.enforce_formulae:
         spec.formulae.append(LTL_F(f))
     return spec

@@ -218,8 +218,8 @@ def check_usage(
         mc.add(ltlf.generate_subsystem_checks(subsystem_formulae, instance_name))
         if integration_validity:
             logger.debug(f"Adding integration check for {instance_name}")
-            mc.add(ltlf.generate_usage_validity(dev, prefix=None))
-        mc.add(ltlf.generate_enforce_usage(dev, prefix=None))
+            mc.add(ltlf.generate_usage_validity(dev, prefix=instance_name))
+        mc.add(ltlf.generate_enforce_usage(dev, prefix=instance_name))
         if len(mc) == 0:
             logger.debug(f"Skip model checking usage (0 formulas): '{instance_name}'")
             continue

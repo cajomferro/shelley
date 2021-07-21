@@ -329,7 +329,9 @@ class LTLParser(Transformer):
         return args[0].value
 
     def act(self, args) -> Action:
-        return Action(*args)
+        if len(args) == 2:
+            return Action(prefix=args[0], name=args[1])
+        return Action(args[0])
 
     def lor(self, args) -> Or:
         return Or(*args)

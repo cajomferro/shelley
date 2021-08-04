@@ -52,6 +52,9 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--skip-checks", help="Skip validity tests.", action="store_true",
     )
+    parser.add_argument(
+        "--check-ambiguity", help="Also check ambiguity.", action="store_true",
+    )
     return parser
 
 
@@ -79,6 +82,7 @@ def parse() -> None:
             save_output=args.save_output,
             skip_testing=args.skip_testing,
             skip_checks=args.skip_checks,
+            check_ambiguity=args.check_ambiguity,
         )
         logger.debug("OK!")
     except CompilationError as error:

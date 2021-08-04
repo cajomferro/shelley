@@ -19,6 +19,7 @@ def call_shelleyc(args: argparse.Namespace, **kwargs: Any) -> None:
         dst_path=args.output,
         binary=args.binary,
         skip_checks=args.skip_checks,
+        check_ambiguity=args.check_ambiguity,
         save_output=args.save_output,
     )
     data.update(kwargs)
@@ -56,10 +57,13 @@ def make_args(src_path: Path, uses_path: Optional[Path] = None) -> argparse.Name
             ["--output", get_path(src_path)]
             + ["--uses", str(uses_path)]
             + ["--device", str(src_path)]
+            + ["--check-ambiguity"]
         )
     else:
         args = parser.parse_args(
-            ["--output", get_path(src_path)] + ["--device", str(src_path)]
+            ["--output", get_path(src_path)]
+            + ["--device", str(src_path)]
+            + ["--check-ambiguity"]
         )
 
     return args

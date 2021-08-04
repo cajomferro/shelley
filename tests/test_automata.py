@@ -181,7 +181,7 @@ def create_timer_t_nfa() -> NFA:
     return NFA(
         alphabet=[T_T, T_C, T_S],
         transition_func=NFA.transition_edges(
-            [(0, [T_S], 1), (1, [T_C, T_T], 2), (2, [T_S], 1),]  #  #  #  #
+            [(0, [T_S], 1), (1, [T_C, T_T], 2), (2, [T_S], 1),]  # #  #  #
         ),
         start_state=0,
         accepted_states=[1, 2],
@@ -356,7 +356,9 @@ def test_ambiguity_1() -> None:
         LEVEL2: Char(B_P),
     }
     components = {"b": create_button_b()}
-    res = automata.AssembledMicroBehavior.make(components, n_behavior, triggers)
+    res = automata.AssembledMicroBehavior.make(
+        components, n_behavior, triggers, check_ambiguity=True
+    )
     assert not res.micro.is_valid
     fail = res.micro.failure
     assert fail is not None
@@ -983,7 +985,7 @@ def test_invalid_behavior_4() -> None:
     micro_nfa = NFA[int, str](
         alphabet=[B_P, B_R],
         transition_func=NFA.transition_table(
-            {(0, B_R): frozenset([1]), (1, B_P): frozenset([2]),}  #  #  #
+            {(0, B_R): frozenset([1]), (1, B_P): frozenset([2]),}  # #  #
         ),
         accepted_states=[1, 2],
         start_state=0,

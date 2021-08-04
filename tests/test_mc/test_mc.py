@@ -13,30 +13,30 @@ ASSIGN
     init(_state) := {0};
     next(_state) := case
         _eos: _state; -- finished, no change in state
+        _state=0 & _action=standby1: 1;
         _state=0 & _action=level2: 1;
         _state=0 & _action=standby2: 1;
-        _state=0 & _action=standby1: 1;
         _state=0 & _action=level1: 2;
-        _state=2 & _action=level2: 3;
+        _state=2 & _action=standby1: 3;
+        _state=2 & _action=level2: 4;
         _state=2 & _action=standby2: 1;
         _state=2 & _action=level1: 1;
-        _state=2 & _action=standby1: 4;
+        _state=1 & _action=standby1: 1;
         _state=1 & _action=level2: 1;
         _state=1 & _action=standby2: 1;
-        _state=1 & _action=standby1: 1;
         _state=1 & _action=level1: 1;
-        _state=4 & _action=level2: 1;
-        _state=4 & _action=standby2: 1;
         _state=4 & _action=standby1: 1;
-        _state=4 & _action=level1: 2;
-        _state=3 & _action=level2: 1;
-        _state=3 & _action=standby1: 1;
-        _state=3 & _action=level1: 1;
-        _state=3 & _action=standby2: 5;
+        _state=4 & _action=level2: 1;
+        _state=4 & _action=level1: 1;
+        _state=4 & _action=standby2: 5;
+        _state=5 & _action=standby1: 1;
         _state=5 & _action=level2: 1;
         _state=5 & _action=standby2: 1;
-        _state=5 & _action=standby1: 1;
         _state=5 & _action=level1: 2;
+        _state=3 & _action=standby1: 1;
+        _state=3 & _action=level2: 1;
+        _state=3 & _action=standby2: 1;
+        _state=3 & _action=level1: 2;
     esac;
     init(_action) := {level1, level2, standby1, standby2};
     next(_action) := case
@@ -47,14 +47,11 @@ ASSIGN
     next(_eos) := case
         _eos : TRUE;
         _state=2 & _action=standby1 : {TRUE, FALSE};
-        _state=3 & _action=standby2 : {TRUE, FALSE};
+        _state=4 & _action=standby2 : {TRUE, FALSE};
         TRUE : FALSE;
     esac;
 
 FAIRNESS _eos;
-
-LTLSPEC F (_eos); -- sanity check
-LTLSPEC G (_eos -> G(_eos) & X(_eos)); -- sanity check
 """
 
 
@@ -70,14 +67,16 @@ def test_create_nusmv_model():
 
     smv_path.unlink()
 
+
 def test_reify_ctl1():
-    name = 'a'
+    name = "a"
     formula = CTL(LTL_F(Action(name=name, prefix=None)))
     EOS = Variable("eos")
     ACT = Variable("_action")
     given = ltlf_to_ltl(formula, eos=EOS, action=ACT)
     expected_a = And(Equal(ACT, Variable(name)), Not(EOS))
     assert given == expected_a
+
 
 def test_reify_ctl2():
     formula = CTL(LTL_F(EndOfSequence()))
@@ -86,8 +85,9 @@ def test_reify_ctl2():
     given = ltlf_to_ltl(formula, eos=EOS, action=ACT)
     assert given == EOS
 
+
 def test_reify_ctl3():
-    name = 'a'
+    name = "a"
     formula = CTL(Or(LTL_F(Action(name=name, prefix=None)), LTL_F(EOS)))
     eos = Variable("eos")
     act = Variable("_action")
@@ -95,17 +95,20 @@ def test_reify_ctl3():
     expected_a = Or(And(Equal(act, Variable(name)), Not(eos)), eos)
     assert given == expected_a
 
+
 def test_ctl_reify():
-    name = 'start_http_ok'
+    name = "start_http_ok"
     a = LTL_F(Action(name=name, prefix=None))
     eos = LTL_F(EndOfSequence())
     formula = CTL(ExistsFinally(And(a, ExistsFinally(eos))))
     EOS = Variable("eos")
     ACT = Variable("_action")
-    #import pdb; pdb.set_trace()
+    # import pdb; pdb.set_trace()
     given = ltlf_to_ltl(formula, eos=EOS, action=ACT)
     expected_a = And(Equal(ACT, Variable(name)), Not(EOS))
     assert given == ExistsFinally(And(expected_a, ExistsFinally(EOS)))
+
+
 #
 # def test_dfa2spec() -> None:
 #     input_path: Path = EXAMPLES_PATH / "subsystems.yml"

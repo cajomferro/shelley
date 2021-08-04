@@ -395,6 +395,7 @@ class MicroBehavior:
         triggers: Dict[str, Regex[str]],
         alphabet: Set[str],
         skip_checks: bool = False,
+        check_ambiguity: bool = False,
     ) -> "MicroBehavior":
         """
         Micro behavior
@@ -466,7 +467,7 @@ class MicroBehavior:
             start_state=MacroState(external_behavior.start_state),
             accepted_states=is_final,
         )
-        return cls(nfa, external_behavior, skip_checks)
+        return cls(nfa, external_behavior, skip_checks, check_ambiguity)
 
 
 @dataclass
@@ -709,13 +710,16 @@ class AssembledMicroBehavior:
         external_behavior: NFA[Any, str],
         triggers: Dict[str, Regex[str]],
         skip_checks: bool = False,
+        check_ambiguity: bool = False,
     ) -> "AssembledMicroBehavior":
         if len(components) == 0:
             raise ValueError(errors.INTEGRATION_ERROR_ZERO_COMPONENTS)
         alphabet: Set[str] = set()
         for c in components.values():
             alphabet.update(c.alphabet)
-        micro = MicroBehavior.make(external_behavior, triggers, alphabet, skip_checks)
+        micro = MicroBehavior.make(
+            external_behavior, triggers, alphabet, skip_checks, check_ambiguity
+        )
         usages = dict()
         if not skip_checks:
             usages = dict(
@@ -896,7 +900,11 @@ class AssembledDevice:
 
     @classmethod
     def make(
-        cls, dev: Device, known_devices: TKnownDevices, skip_checks: bool = False
+        cls,
+        dev: Device,
+        known_devices: TKnownDevices,
+        skip_checks: bool = False,
+        check_ambiguity: bool = False,
     ) -> "AssembledDevice":
         """
         In order to assemble a device, the following steps are required:
@@ -927,6 +935,7 @@ class AssembledDevice:
                 external_behavior=external_behavior,
                 triggers=dev.triggers,
                 skip_checks=skip_checks,
+                check_ambiguity=check_ambiguity,
             )
 
             if not skip_checks:

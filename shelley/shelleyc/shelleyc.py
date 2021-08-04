@@ -143,6 +143,7 @@ def compile_shelley(
     save_output: bool = True,
     skip_testing: bool = False,
     skip_checks: bool = False,
+    check_ambiguity: bool = False,
 ) -> AssembledDevice:
     """
 
@@ -187,7 +188,7 @@ def compile_shelley(
 
     try:
         dev = AssembledDevice.make(
-            automata_device, known_devices.__getitem__, skip_checks
+            automata_device, known_devices.__getitem__, skip_checks, check_ambiguity
         )
     except ValueError as error:
         if settings.VERBOSE:

@@ -3,13 +3,16 @@ from dataclasses import dataclass, field
 from io import StringIO
 from typing import List, Optional, IO
 
+
 @dataclass
 class Formula:
     pass
 
+
 @dataclass
 class Atomic(Formula):
     pass
+
 
 @dataclass
 class BinaryOperator:
@@ -26,9 +29,11 @@ class UnaryOperator:
 class CTL(Formula):
     formula: Formula
 
+
 @dataclass
 class LTL(Formula):
     formula: Formula
+
 
 @dataclass
 class LTL_F(Formula):
@@ -47,39 +52,49 @@ def fold(op, zero, args):
     else:
         return result
 
+
 # Atoms
+
 
 @dataclass
 class Bool(Atomic):
     value: bool
 
+
 @dataclass
 class Variable(Atomic):
     name: str
+
 
 @dataclass
 class Action(Atomic):
     name: str
     prefix: Optional[str] = field(default=None)
 
+
 @dataclass
 class NotAction(Atomic):
     name: str
     prefix: Optional[str] = field(default=None)
 
+
 # Specific to LTLF
+
 
 @dataclass
 class EndOfSequence(Atomic):
     pass
 
+
 EOS = EndOfSequence()
 
 # Propositional logic
 
+
 @dataclass
 class Not(UnaryOperator):
     operator = "!"
+
 
 @dataclass
 class And(BinaryOperator):
@@ -89,9 +104,11 @@ class And(BinaryOperator):
     def make(cls, args):
         return fold(cls, Bool(True), args)
 
+
 @dataclass
 class Equal(BinaryOperator):
     operator = "="
+
 
 @dataclass
 class Or(BinaryOperator):
@@ -101,12 +118,13 @@ class Or(BinaryOperator):
     def make(cls, args):
         return fold(cls, Bool(True), args)
 
+
 @dataclass
 class Implies(BinaryOperator):
     operator = "->"
 
-# Linear Temporal Logic
 
+# Linear Temporal Logic
 
 
 @dataclass
@@ -114,15 +132,18 @@ class Next(UnaryOperator):
     operator = "X"
     "Must be true in the following step."
 
+
 @dataclass
 class Eventually(UnaryOperator):
     "The formula will eventually hold"
     operator = "F"
 
+
 @dataclass
 class Always(UnaryOperator):
     "The formula holds at every step of the trace"
     operator = "G"
+
 
 @dataclass
 class Until(BinaryOperator):
@@ -132,6 +153,7 @@ class Until(BinaryOperator):
 
 # CTL
 
+
 @dataclass
 class ExistsFinally(UnaryOperator):
     """
@@ -140,9 +162,12 @@ class ExistsFinally(UnaryOperator):
 
     TODO: THIS IS A CTL FORMULA RATHER THAN LTLf!
     """
+
     operator = "EF"
 
+
 # Abbreviations
+
 
 def Last():
     "The last instance of a trace"
@@ -163,12 +188,17 @@ def Releases(left, right):
     "If left never becomes true, right must remain true forever."
     return Not(Until(Not(left), Not(right)))
 
+
 # Conversions
 
-def ltlf_to_ltl(formula:Formula, eos:Variable, action:Variable, prefix_separator="_") -> Formula:
+
+def ltlf_to_ltl(
+    formula: Formula, eos: Variable, action: Variable, prefix_separator="_"
+) -> Formula:
     """
     Converts an LTLf formula in an LTL formula
     """
+
     def rec(formula, mode=LTL_F):
         while type(formula) in (LTL, CTL, LTL_F):
             mode = type(formula)
@@ -177,12 +207,17 @@ def ltlf_to_ltl(formula:Formula, eos:Variable, action:Variable, prefix_separator
         if mode is LTL or mode is CTL:
             if isinstance(formula, Atomic):
                 if not (isinstance(formula, Bool) or isinstance(formula, Variable)):
-                    raise ValueError(f"Expecting an atomic {mode.__name__} formula, but got: ", formula)
+                    raise ValueError(
+                        f"Expecting an atomic {mode.__name__} formula, but got: ",
+                        formula,
+                    )
                 return formula
             elif isinstance(formula, UnaryOperator):
                 return type(formula)(rec(formula.child, mode=mode))
             elif isinstance(formula, BinaryOperator):
-                return type(formula)(rec(formula.left, mode=mode), rec(formula.right, mode=mode))
+                return type(formula)(
+                    rec(formula.left, mode=mode), rec(formula.right, mode=mode)
+                )
 
         assert mode is LTL_F
 
@@ -195,8 +230,7 @@ def ltlf_to_ltl(formula:Formula, eos:Variable, action:Variable, prefix_separator
                 name = formula.prefix + prefix_separator + formula.name
             act = Equal(action, Variable(name))
             return And(
-                Not(act) if isinstance(formula, NotAction) else act,
-                Not(rec(EOS))
+                Not(act) if isinstance(formula, NotAction) else act, Not(rec(EOS))
             )
         elif isinstance(formula, EndOfSequence):
             return eos
@@ -218,11 +252,7 @@ def ltlf_to_ltl(formula:Formula, eos:Variable, action:Variable, prefix_separator
             return Always(Or(rec(formula.child), rec(EOS)))
         elif isinstance(formula, Until):
             return Until(
-                left=rec(formula.left),
-                right=And(
-                    rec(formula.right),
-                    Not(rec(EOS))
-                )
+                left=rec(formula.left), right=And(rec(formula.right), Not(rec(EOS)))
             )
         else:
             raise ValueError(type(formula), formula, mode)
@@ -230,10 +260,11 @@ def ltlf_to_ltl(formula:Formula, eos:Variable, action:Variable, prefix_separator
     return rec(formula)
 
 
-def dump(formula:Formula, fp:IO, eos=None, nusvm_strict=True):
+def dump(formula: Formula, fp: IO, eos=None, nusvm_strict=True):
     """
     Converts a formula into an NuSMV string
     """
+
     def rec(formula):
         # Primitives
         if type(formula) in [LTL, CTL, LTL_F] and not nusvm_strict:
@@ -257,48 +288,48 @@ def dump(formula:Formula, fp:IO, eos=None, nusvm_strict=True):
         elif isinstance(formula, UnaryOperator):
             # Operator
             fp.write(formula.operator)
-            fp.write(' ')
+            fp.write(" ")
             # Child
             if isinstance(formula.child, Atomic):
                 rec(formula.child)
             else:
-                fp.write('(')
+                fp.write("(")
                 rec(formula.child)
-                fp.write(')')
+                fp.write(")")
 
         elif isinstance(formula, BinaryOperator):
             # Left
             if isinstance(formula.left, Atomic):
                 rec(formula.left)
             else:
-                fp.write('(')
+                fp.write("(")
                 rec(formula.left)
-                fp.write(')')
+                fp.write(")")
             # Operator
-            fp.write(' ')
+            fp.write(" ")
             fp.write(formula.operator)
-            fp.write(' ')
+            fp.write(" ")
             # Right
             if isinstance(formula.right, Atomic):
                 rec(formula.right)
             else:
-                fp.write('(')
+                fp.write("(")
                 rec(formula.right)
-                fp.write(')')
+                fp.write(")")
         else:
             raise ValueError(type(formula), formula)
+
     # Recursive call
     rec(formula)
+
 
 def dumps(formula, eos=None, nusvm_strict=True):
     buffer = StringIO()
     dump(
-        formula=formula,
-        fp=buffer,
-        eos=eos,
-        nusvm_strict=nusvm_strict,
+        formula=formula, fp=buffer, eos=eos, nusvm_strict=nusvm_strict,
     )
     return buffer.getvalue()
+
 
 parser = Lark.open("ltlf_grammar.lark", rel_to=__file__, start="formula")
 

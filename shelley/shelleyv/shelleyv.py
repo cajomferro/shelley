@@ -27,9 +27,7 @@ def fsm2smv(
         fsm_dict = yaml.load(fp, Loader=yaml.FullLoader)
 
     d: regular.DFA[Any, str] = handle_fsm(
-        regular.NFA.from_dict(fsm_dict),
-        dfa=True,
-        project_prefix=project_prefix,
+        regular.NFA.from_dict(fsm_dict), dfa=True, project_prefix=project_prefix,
     ).result_dfa
     # Make sure that there is no empty string
     d = d.subtract(regular.DFA.make_nil(d.alphabet))
@@ -37,9 +35,7 @@ def fsm2smv(
 
     with smv_model.open("w") as fp:
         smv_dump(
-            state_diagram=n.as_dict(flatten=True),
-            fp=fp,
-            ctl_compatible=ctl_compatible
+            state_diagram=n.as_dict(flatten=True), fp=fp, ctl_compatible=ctl_compatible
         )
 
 

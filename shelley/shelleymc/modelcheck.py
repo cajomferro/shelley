@@ -29,6 +29,7 @@ def get_instances(dev_path: Path, uses_path: Path):
         filename = Path(uses_path.parent / uses[v])
         yield (k, filename.parent / f"{filename.stem}.shy")
 
+
 def model_check(smv_path: Path):
     try:
         nusmv_call = [
@@ -44,18 +45,19 @@ def model_check(smv_path: Path):
         print(err.output.decode() + err.stderr.decode())
         sys.exit(255)
 
+
 def parse_states(trace):
     state = dict()
     result = []
     pending = False
     for line in trace:
-        if line.startswith('-> State'):
+        if line.startswith("-> State"):
             if len(state) == 0:
                 continue
             result.append(state)
             state = dict(state)
             pending = True
-        elif line.startswith('-- Loop'):
+        elif line.startswith("-- Loop"):
             continue
         else:
             k, v = line.split(" = ", 1)
@@ -65,15 +67,17 @@ def parse_states(trace):
         result.append(state)
     return result
 
+
 def parse_trace(trace):
     actions = []
     for state in parse_states(trace):
-        if state['_state'] == '-1':
+        if state["_state"] == "-1":
             continue
-        if state['_eos'] == 'TRUE':
+        if state["_eos"] == "TRUE":
             break
-        actions.append(state['_action'])
+        actions.append(state["_action"])
     return actions
+
 
 def check_nusmv_output(raw_output: str):
     lines_output: List[str] = raw_output.splitlines()
@@ -83,7 +87,7 @@ def check_nusmv_output(raw_output: str):
     handle_trace = False
     trace = []
     for line in lines_output:
-        if line.startswith("Trace ") or line.startswith('-- as demonstrated by '):
+        if line.startswith("Trace ") or line.startswith("-- as demonstrated by "):
             continue
         if handle_trace:
             if line.startswith("-- specification"):
@@ -94,7 +98,7 @@ def check_nusmv_output(raw_output: str):
                 trace.append(line.strip())
                 continue
         if line.startswith("-- specification"):
-            line = line[len("-- specification"):]
+            line = line[len("-- specification") :]
             line, answer = line.rsplit(" is ")
             result = answer.strip() == "true"
             specs.append(line.strip())
@@ -113,11 +117,13 @@ def check_nusmv_output(raw_output: str):
     else:
         return None
 
+
 @dataclass
 class ModelChecker:
     file: Path
     specs: List[Spec] = field(default_factory=list)
-    def add(self, spec:Spec):
+
+    def add(self, spec: Spec):
         self.specs.append(spec)
 
     def __len__(self):
@@ -141,10 +147,15 @@ class ModelChecker:
             for ((formula, comment), (raw_formula, trace)) in zip(specs, result):
                 if trace is not None:
                     print("Error in specification:", comment, file=sys.stderr)
-                    print("Formula:", ltlf_lark_parser.dumps(formula, nusvm_strict=False), file=sys.stderr)
+                    print(
+                        "Formula:",
+                        ltlf_lark_parser.dumps(formula, nusvm_strict=False),
+                        file=sys.stderr,
+                    )
                     trace_str = "; ".join(trace) if len(trace) > 0 else "(empty)"
                     print("Counter example:", trace_str, file=sys.stderr)
                     sys.exit(255)
+
 
 def create_fsm_system_model(
     spec: Path, uses: Path, fsm_system: Path, skip_direct_checks: bool = False,
@@ -183,7 +194,7 @@ def create_fsm_system_model(
     return device, assembled_device
 
 
-def check_system(dev: Device, fsm: Path, smv: Path, system_validity:bool=True):
+def check_system(dev: Device, fsm: Path, smv: Path, system_validity: bool = True):
     mc = ModelChecker(smv)
     spec = Spec([], "SYSTEM CHECKS")
     for f in dev.system_formulae:
@@ -206,11 +217,13 @@ def check_usage(
     system_spec: Path,
     integration: Path,
     subsystems: Mapping[str, Device],
-    subsystem_formulae: List[Tuple[str,Formula]],
-    integration_validity:bool=True,
+    subsystem_formulae: List[Tuple[str, Formula]],
+    integration_validity: bool = True,
 ) -> None:
     if not integration_validity:
-        logger.debug(f"Integration validity will *NOT* be enforced by the model checker.")
+        logger.debug(
+            f"Integration validity will *NOT* be enforced by the model checker."
+        )
 
     for (instance_name, dev) in subsystems.items():
         # Create the integration SMV file
@@ -235,9 +248,7 @@ def check_usage(
 
 
 def check_integration(
-    dev: Device,
-    fsm: Path,
-    smv: Path,
+    dev: Device, fsm: Path, smv: Path,
 ):
     mc = ModelChecker(smv)
     spec = ltlf.Spec(formulae=[], comment="INTEGRATION CHECKS")
@@ -261,6 +272,7 @@ def count_integration_claims(dev, subsystems):
         total += len(d.enforce_formulae)
     return total
 
+
 def parse_command():
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -274,6 +286,7 @@ def parse_command():
     )
 
     return parser.parse_args()
+
 
 def main():
     global VERBOSE
@@ -309,11 +322,13 @@ def main():
         return
 
     subsystems: Mapping[str, Device] = dict(
-        (k,shelley_lark_parser.parse(v))
+        (k, shelley_lark_parser.parse(v))
         for k, v in get_instances(args.spec, args.uses)
     )
     user_claims = count_integration_claims(device, subsystems)
-    logger.debug(f"Model check integration validity: {args.skip_direct}; user claims: {user_claims}")
+    logger.debug(
+        f"Model check integration validity: {args.skip_direct}; user claims: {user_claims}"
+    )
     if not args.skip_direct and user_claims == 0:
         logger.debug("No model checking needed for integration.")
         return
@@ -334,7 +349,5 @@ def main():
 
     logger.debug("Check integration claims")
     check_integration(
-        device,
-        fsm_integration,
-        smv_integration,
+        device, fsm_integration, smv_integration,
     )

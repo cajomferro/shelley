@@ -37,14 +37,11 @@ class Op:
 
     @classmethod
     def make(cls, is_final=False, is_initial=False):
-        return cls(
-            targets=[],
-            is_final=is_final,
-            is_initial=is_initial
-        )
+        return cls(targets=[], is_final=is_final, is_initial=is_initial)
 
     def add(self, name):
         self.targets.append(name)
+
 
 @dataclass
 class Spec:
@@ -57,7 +54,9 @@ class Spec:
     def __len__(self):
         return len(self.formulae)
 
-    def dump(self, fp, action_name:Optional[str]=None, eos_name:Optional[str]=None):
+    def dump(
+        self, fp, action_name: Optional[str] = None, eos_name: Optional[str] = None
+    ):
         action = Variable("_action" if action_name is None else action_name)
         eos = Variable("_eos" if eos_name is None else eos_name)
         if self.comment is not None:
@@ -75,14 +74,13 @@ class Spec:
             ltlf_lark_parser.dump(formula=f, fp=fp)
             fp.write("\n")
 
-    def dumps(self, action_name:Optional[str]=None, eos_name:Optional[str]=None):
+    def dumps(self, action_name: Optional[str] = None, eos_name: Optional[str] = None):
         buffer = StringIO()
         self.dump(
-            fp=buffer,
-            action_name=action_name,
-            eos_name=eos_name,
+            fp=buffer, action_name=action_name, eos_name=eos_name,
         )
         return buffer.getvalue()
+
 
 def generate_system_spec(dev: Device) -> Spec:
     """
@@ -91,15 +89,13 @@ def generate_system_spec(dev: Device) -> Spec:
     """
     specs = []
     for op in dev.events.list_str():
-        specs.append(CTL(ExistsFinally(
-            And(
-                LTL_F(Action(op)),
-                ExistsFinally(LTL_F(EOS))
-            )
-        )))
+        specs.append(
+            CTL(ExistsFinally(And(LTL_F(Action(op)), ExistsFinally(LTL_F(EOS)))))
+        )
     return Spec(specs, comment=f"SYSTEM VALIDITY FOR: {dev.name}")
 
-def generate_usage_validity(dev:Device, prefix:str) -> Spec:
+
+def generate_usage_validity(dev: Device, prefix: str) -> Spec:
     """
     Generates a spec that represents the usage validity of a given device.
     """
@@ -111,8 +107,7 @@ def generate_usage_validity(dev:Device, prefix:str) -> Spec:
         if dsts is None:
             evt = dev.events.find_by_name(src)
             targets[src] = dsts = Op.make(
-                is_final=evt.is_final,
-                is_initial=evt.is_start,
+                is_final=evt.is_final, is_initial=evt.is_start,
             )
             if evt.is_start:
                 initials.append(Action(name=src))
@@ -127,18 +122,23 @@ def generate_usage_validity(dev:Device, prefix:str) -> Spec:
         spec.add(LTL(Always(Implies(mk_act(src), Next(successors)))))
     return spec
 
-def generate_enforce_usage(dev:Device, prefix:str) -> Spec:
+
+def generate_enforce_usage(dev: Device, prefix: str) -> Spec:
     spec = Spec(formulae=[], comment=f"ENFORCE SPECS FOR {prefix}: {dev.name}")
     for f in dev.enforce_formulae:
         spec.formulae.append(LTL_F(f))
     return spec
 
-def generate_subsystem_checks(subsystem_formulae: List[Tuple[str,Formula]], prefix:str) -> Spec:
+
+def generate_subsystem_checks(
+    subsystem_formulae: List[Tuple[str, Formula]], prefix: str
+) -> Spec:
     spec = Spec(formulae=[], comment=f"SUBSYSTEM CHECKS FOR {prefix}")
     for (k, f) in subsystem_formulae:
         if k == prefix:
             spec.formulae.append(LTL_F(f))
     return spec
+
 
 def parse_command():
     from argparse import ArgumentParser

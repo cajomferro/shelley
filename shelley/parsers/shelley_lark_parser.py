@@ -22,22 +22,27 @@ FINAL = 2
 
 parser = Lark.open("shelley_grammar.lark", rel_to=__file__, start="sys")
 
+
 @dataclass
 class Enforce:
     formula: Formula
+
 
 @dataclass
 class IntegrationCheck:
     formula: Formula
 
+
 @dataclass
 class SystemCheck:
     formula: Formula
+
 
 @dataclass
 class SubsystemCheck:
     name: str
     formula: Formula
+
 
 def add_user_claims(device, user_claims):
     for entry in user_claims:
@@ -49,6 +54,7 @@ def add_user_claims(device, user_claims):
             device.system_formulae.append(entry.formula)
         elif isinstance(entry, SubsystemCheck):
             device.subsystem_formulae.append((entry.name, entry.formula))
+
 
 class ShelleyLanguage(LTLParser):
     def expr(self, args):

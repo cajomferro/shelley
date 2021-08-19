@@ -141,7 +141,7 @@ def compile_shelley(
     integration: Optional[Path] = None,
     dump_timings: Optional[IO[str]] = None,
     save_output: bool = True,
-    skip_testing: bool = False,
+    skip_testing: bool = True,
     skip_checks: bool = False,
     check_ambiguity: bool = False,
 ) -> AssembledDevice:
@@ -204,16 +204,20 @@ def compile_shelley(
     ):  # do this only for compound devices
         dump_integration_model(dev, integration)
 
+
+
     if (skip_checks or dev.is_valid) and save_output:
         logger.debug("Compiling device: {0}".format(shelley_device.name))
         serialize(dst_path, dev.external.nfa.as_dict(), binary)
         logger.debug("Compiled file: {0}".format(dst_path))
 
-    if not skip_checks:
+    if skip_checks:
+        logger.debug("Skip direct checks")
+    else:
         # Do not ignore checks
         if dev.is_valid:
             if skip_testing:
-                logger.debug("Skipping tests")
+                logger.debug("Skip testing traces")
             else:
                 try:
                     # test macro traces

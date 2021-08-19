@@ -16,6 +16,7 @@ from shelley.shelleymc.ltlf import Spec, Formula, LTL_F, Next, LTL
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleymc")
+logger_shelleyc = logging.getLogger("shelleyc")
 VERBOSE: bool = False
 
 
@@ -141,7 +142,7 @@ class ModelChecker:
         result = model_check(self.file)
         if result is not None:
             specs = []
-            for s in self.specs:
+            for s in self.specs:  # [::-1]:  # NuSMV lists CTL before LTL
                 for f in s.formulae:
                     specs.append((f, s.comment))
             for ((formula, comment), (raw_formula, trace)) in zip(specs, result):
@@ -294,6 +295,7 @@ def main():
 
     if args.verbosity:
         VERBOSE = True
+        logger_shelleyc.setLevel(logging.DEBUG)
         logger.setLevel(logging.DEBUG)
 
     logger.debug(f"Current path: {Path.cwd()}")

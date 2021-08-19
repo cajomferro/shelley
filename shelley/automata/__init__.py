@@ -1,3 +1,4 @@
+import logging
 from typing import (
     List,
     Dict,
@@ -37,6 +38,7 @@ from datetime import timedelta
 
 from shelley.automata import errors
 
+logger = logging.getLogger("shelleyc")
 
 def get_elapsed_time(start: float) -> timedelta:
     return timedelta(seconds=timer() - start)
@@ -353,6 +355,7 @@ class MicroBehavior:
             start = timer()
             self.dfa = nfa_to_dfa(self.nfa)
             if self.check_ambiguity:
+                logger.debug("Checking ambiguity")
                 err_trace = self.dfa.find_shortest_path(is_macro_ambiguous)
                 self.is_valid = err_trace is None
                 self.failure = (
@@ -360,10 +363,13 @@ class MicroBehavior:
                     if err_trace is None  # is valid
                     else AmbiguityFailure.make(dfa=self.dfa, micro_trace=err_trace)
                 )
+                self.validation_time = get_elapsed_time(start)
             else:
+                logger.debug("Skip ambiguity check")
                 self.is_valid = True
                 self.failure = None
-            self.validation_time = get_elapsed_time(start)
+                self.validation_time = timedelta()
+
 
     def convert_micro_to_macro(self, seq: Sequence[str]) -> MacroTrace:
         for der in self.nfa.get_derivations(seq):

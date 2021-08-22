@@ -272,7 +272,7 @@ icu = ["PyICU (>=1.0.0)"]
 name = "numpy"
 version = "1.21.2"
 description = "NumPy is the fundamental package for array computing with Python."
-category = "main"
+category = "dev"
 optional = false
 python-versions = ">=3.7,<3.11"
 
@@ -507,7 +507,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.11"
-content-hash = "3404aa21612c94672da7bd33a236708c8696e8dbda82736b172f036bf92b3534"
+content-hash = "3c790e47a304aa0c506a141bd9beef3e7b0b5de8b5cfd211dc5d56956dbdadba"
 
 [metadata.files]
 aiohttp = [

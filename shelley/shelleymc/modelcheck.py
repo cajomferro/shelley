@@ -254,7 +254,7 @@ def check_integration(
     mc = ModelChecker(smv)
     spec = ltlf.Spec(formulae=[], comment="INTEGRATION CHECKS")
     for entry in dev.integration_formulae:
-        logger.debug(f"Appending LTL formula from system checks: {entry}")
+        logger.debug(f"Appending LTL formula from integration checks: {entry}")
         spec.formulae.append(LTL_F(entry))
     mc.add(spec)
     if len(mc) > 0:
@@ -263,6 +263,8 @@ def check_integration(
         shelleyv.fsm2smv(fsm, smv)
         logger.debug("Model checking integration...")
         mc.run()
+    else:
+        logger.debug(f"Skip model checking integration (0 formulas)")
 
 
 def count_integration_claims(dev, subsystems):
@@ -316,6 +318,7 @@ def main():
     )
 
     if args.skip_mc:
+        logger.debug("Skipping model checking with --skip-mc.")
         return
 
     check_system(device, fsm_system, smv_system, system_validity=args.skip_direct)

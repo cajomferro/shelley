@@ -885,10 +885,10 @@ class AssembledDevice:
 
     def get_timings(self) -> Timings:
         return Timings(
-            ambiguity_check_time=None
+            ambiguity_check_time=timedelta()
             if self.internal is None or self.internal.micro is None
             else self.internal.micro.validation_time,
-            integration_check_time=None
+            integration_check_time=timedelta()
             if self.internal is None
             else self.internal.validation_time,
             unusable_operations_time=self.unusable_operations_time,

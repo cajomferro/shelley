@@ -27,7 +27,7 @@ def fsm2smv(
         fsm_dict = yaml.load(fp, Loader=yaml.FullLoader)
 
     d: regular.DFA[Any, str] = handle_fsm(
-        regular.NFA.from_dict(fsm_dict), dfa=True, project_prefix=project_prefix,
+        regular.NFA.from_dict(fsm_dict), dfa=True, minimize=True, project_prefix=project_prefix,
     ).result_dfa
     # Make sure that there is no empty string
     d = d.subtract(regular.DFA.make_nil(d.alphabet))

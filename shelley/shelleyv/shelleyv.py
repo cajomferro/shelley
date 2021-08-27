@@ -333,7 +333,7 @@ def handle_fsm(
             d = d.flatten()
 
         if dfa_no_empty_string:
-            # Make sure that there is no empty string
+            # Make sure that there is no empty string, this is important for LTLf
             # TODO: this option breaks the states' numbers
             d = d.subtract(regular.DFA.make_nil(d.alphabet))
             fsm_stats.dfa_no_empty_string = len(d)

@@ -90,7 +90,10 @@ def main() -> None:
         args.no_epsilon,
     )
 
-    n: regular.NFA[Any, str] = fsm_stats.result
+    if args.dfa:
+        n: regular.NFA[Any, str] = fsm_stats.result_dfa
+    else:
+        n: regular.NFA[Any, str] = fsm_stats.result
 
     logger.debug(str(fsm_stats))
 

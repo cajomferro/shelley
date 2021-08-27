@@ -27,7 +27,7 @@ def fsm2smv(
         fsm_dict = yaml.load(fp, Loader=yaml.FullLoader)
 
     d: regular.DFA[Any, str] = handle_fsm(
-        regular.NFA.from_dict(fsm_dict), dfa=True, minimize=True, project_prefix=project_prefix,
+        regular.NFA.from_dict(fsm_dict), dfa=True, no_sink=True, project_prefix=project_prefix,
     ).result_dfa
     # Make sure that there is no empty string
     d = d.subtract(regular.DFA.make_nil(d.alphabet))
@@ -324,18 +324,17 @@ def handle_fsm(
             # print("Minimized DFA:", len(d), file=sys.stderr)
             fsm_stats.dfa_min = len(d)
         else:
+            if no_sink:
+                n = n.remove_sink_states()
+                fsm_stats.dfa_to_nfa_no_sink = len(n)
+
             d = regular.nfa_to_dfa(n).flatten()
             # print("DFA:", len(d), file=sys.stderr)
             fsm_stats.dfa = len(d)
+
         fsm_stats.result_dfa = d
-        n = regular.dfa_to_nfa(d)
-
-        if no_sink:
-            n = n.remove_sink_states()
-            # print("NFA no sink:", len(n), file=sys.stderr)
-            fsm_stats.dfa_to_nfa_no_sink = len(n)
-
-        fsm_stats.result = n
+        #n = regular.dfa_to_nfa(d)
+        #fsm_stats.result = n
 
     else:
         # print("Input:", len(n))

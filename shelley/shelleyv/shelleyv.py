@@ -26,12 +26,17 @@ def fsm2smv(
     with fsm_model.open("r") as fp:
         fsm_dict = yaml.load(fp, Loader=yaml.FullLoader)
 
-    d: regular.DFA[Any, str] = handle_fsm(
-        regular.NFA.from_dict(fsm_dict), dfa=True, no_sink=True, project_prefix=project_prefix,
-    ).result_dfa
-    # Make sure that there is no empty string
-    d = d.subtract(regular.DFA.make_nil(d.alphabet))
-    n = regular.dfa_to_nfa(d)
+    fsm_stats: FSMStats = handle_fsm(
+        regular.NFA.from_dict(fsm_dict),
+        dfa=True,
+        no_sink=True,
+        dfa_no_empty_string=True,
+        project_prefix=project_prefix,
+    )
+
+    logger.debug(str(fsm_stats))
+
+    n: regular.NFA[Any, str] = fsm_stats.result
 
     with smv_model.open("w") as fp:
         smv_dump(
@@ -123,7 +128,6 @@ def smv_dump(
     )
 
     if ctl_compatible is True:
-
         # dummy first state (needed for CTL)
         print(
             f"{INDENT}{INDENT}{var_state}={ctl_first_state}: {state_diagram['start_state']}; -- FSM initial state",
@@ -243,10 +247,10 @@ def fsm_dump(state_diagram, fp):
 @dataclass
 class FSMStats:
     input: Optional[str] = None
-    dfa_no_sinks: Optional[str] = None
     dfa: Optional[str] = None
     dfa_min: Optional[str] = None
-    dfa_to_nfa_no_sink: Optional[str] = None
+    dfa_no_empty_string: Optional[str] = None
+    dfa_nil: Optional[str] = None
     nfa_no_epsilon: Optional[str] = None
     nfa_no_sinks: Optional[str] = None
     result_dfa: Optional[regular.DFA[Any, str]] = None
@@ -255,19 +259,21 @@ class FSMStats:
     def __str__(self):
         text = ""
         if self.input is not None:
-            text += f"Input: {self.input}\n"
-        if self.dfa is not None:
-            text += f"DFA: {self.dfa}\n"
-        if self.dfa_no_sinks is not None:
-            text += f"DFA no sinks: {self.dfa_no_sinks}\n"
-        if self.dfa_min is not None:
-            text += f"DFA minimized: {self.dfa_min}\n"
-        if self.dfa_to_nfa_no_sink is not None:
-            text += f"DFA2NFA no sinks: {self.dfa_to_nfa_no_sink}\n"
+            text += f"NFA input: {self.input}\n"
         if self.nfa_no_epsilon is not None:
             text += f"NFA no epsilon: {self.nfa_no_epsilon}\n"
         if self.nfa_no_sinks is not None:
             text += f"NFA no sinks: {self.nfa_no_sinks}\n"
+        if self.dfa is not None:
+            text += f"DFA: {self.dfa}\n"
+        if self.dfa_min is not None:
+            text += f"DFA minimized: {self.dfa_min}\n"
+        if self.dfa_no_empty_string is not None:
+            text += f"DFA no empty string: {self.dfa_no_empty_string}\n"
+        if self.result_dfa is not None:
+            text += f"DFA result: {len(self.result_dfa)}\n"
+        if self.result is not None:
+            text += f"NFA result: {len(self.result)}\n"
         return text.strip()
 
 
@@ -275,9 +281,9 @@ def handle_fsm(
     n: regular.NFA[Any, str],
     filter: str = None,
     dfa: bool = False,
-    minimize: bool = False,
-    minimize_slow: bool = False,
-    no_sink: bool = False,
+    dfa_no_empty_string: bool = False,
+    dfa_minimize: bool = False,
+    no_sink: bool = False,  # set this to True for faster DFA minimization
     no_epsilon: bool = False,
     project_prefix: Optional[str] = None,
 ) -> FSMStats:
@@ -305,48 +311,37 @@ def handle_fsm(
 
     fsm_stats.input = len(n)
 
-    if dfa:
-        # logger.debug(f"Input: {len(n)}")
+    if no_sink:  # FASTER DFA MINIMIZATION
+        # NOTE: If minimizing, by removing sink states before there
+        # is a unique sink state when we convert to DFA; this is a quick
+        # way of making the resulting DFA smaller
+        n = n.remove_sink_states()
+        fsm_stats.nfa_no_sinks = len(n)
 
-        # Convert the DFA back into an NFA to possibly remove sink states
-        if minimize:
-            # Before minimizing, make sure we remove sink states, so that there
-            # is a unique sink state when we convert to DFA; this is a quick
-            # way of making the resulting DFA smaller
-            if not minimize_slow:
-                n = n.remove_sink_states()
-                # logger.debug("No sinks:", len(n), file=sys.stderr)
-                fsm_stats.dfa_no_sinks = len(n)
-            d: regular.DFA[Any, str] = regular.nfa_to_dfa(n)
-            # print("DFA:", len(d), file=sys.stderr)
-            fsm_stats.dfa = len(d)
-            d = d.minimize()
-            # print("Minimized DFA:", len(d), file=sys.stderr)
+    if no_epsilon:
+        n = n.remove_epsilon_transitions()
+        fsm_stats.nfa_no_epsilon = len(n)
+
+    if dfa:
+        d: regular.DFA[Any, str] = regular.nfa_to_dfa(n)
+        fsm_stats.dfa = len(d)
+
+        if dfa_minimize:
+            d = d.flatten(minimize=True)
             fsm_stats.dfa_min = len(d)
         else:
-            if no_sink:
-                n = n.remove_sink_states()
-                fsm_stats.dfa_to_nfa_no_sink = len(n)
+            d = d.flatten()
 
-            d = regular.nfa_to_dfa(n).flatten()
-            # print("DFA:", len(d), file=sys.stderr)
-            fsm_stats.dfa = len(d)
+        if dfa_no_empty_string:
+            # Make sure that there is no empty string
+            # TODO: this option breaks the states' numbers
+            d = d.subtract(regular.DFA.make_nil(d.alphabet))
+            fsm_stats.dfa_no_empty_string = len(d)
 
         fsm_stats.result_dfa = d
-        #n = regular.dfa_to_nfa(d)
-        #fsm_stats.result = n
+        fsm_stats.result = regular.dfa_to_nfa(d)
 
     else:
-        # print("Input:", len(n))
-        if no_epsilon:
-            n = n.remove_epsilon_transitions()
-            # print("Remove epsilon:", len(n), file=sys.stderr)
-            fsm_stats.nfa_no_epsilon = len(n)
-        if no_sink:
-            n = n.remove_sink_states()
-            # print("Remove sink states:", len(n), file=sys.stderr)
-            fsm_stats.nfa_no_sinks = len(n)
-
         fsm_stats.result = n
 
     return fsm_stats

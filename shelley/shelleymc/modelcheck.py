@@ -17,6 +17,7 @@ from shelley.shelleymc.ltlf import Spec, Formula, LTL_F, Next, LTL
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleymc")
 logger_shelleyc = logging.getLogger("shelleyc")
+logger_shelleyv = logging.getLogger("shelleyv")
 VERBOSE: bool = False
 
 
@@ -298,6 +299,7 @@ def main():
     if args.verbosity:
         VERBOSE = True
         logger_shelleyc.setLevel(logging.DEBUG)
+        logger_shelleyv.setLevel(logging.DEBUG)
         logger.setLevel(logging.DEBUG)
 
     logger.debug(f"Current path: {Path.cwd()}")

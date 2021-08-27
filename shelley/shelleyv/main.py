@@ -21,20 +21,17 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "input", type=Path, help="Path to the compiled file (.scy or .scb)",
     )
+    parser.add_argument("--dfa", action="store_true", help="Convert to DFA first")
     parser.add_argument(
-        "--dfa", default=False, action="store_true", help="Convert to a DFA first"
+        "--dfa-no-empty-string",
+        action="store_true",
+        help="Make sure that there is no empty string",
     )
     parser.add_argument(
         "--no-epsilon",
         default=False,
         action="store_true",
         help="Remove epsilon transitions",
-    )
-    parser.add_argument(
-        "--minimize-slow",
-        default=False,
-        action="store_true",
-        help="Runs the naive DFA minimization algorithm",
     )
     parser.add_argument(
         "--format",
@@ -48,11 +45,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="Keep only the (operations/calls) that match the given regex, hide (epsilon) the remaining ones.",
     )
     parser.add_argument(
-        "--no-sink", default=False, action="store_true", help="Remove sink states"
+        "--no-sink",
+        action="store_true",
+        help="Remove sink states, this is much faster for DFA generation",
     )
-    parser.add_argument(
-        "--minimize", default=False, action="store_true", help="Minimize the DFA"
-    )
+    parser.add_argument("--minimize", action="store_true", help="Minimize the DFA")
     parser.add_argument(
         "-v", "--verbosity", help="increase output verbosity", action="store_true"
     )
@@ -77,25 +74,26 @@ def main() -> None:
     if args.minimize and not args.dfa:
         parser.error("The '--minimize' option requires '--dfa'")
 
+    if args.dfa_no_empty_string and not args.dfa:
+        parser.error("The '--dfa-no-empty-string' option requires '--dfa'")
+
     with args.input.open() as fp:
         d = yaml.load(fp, Loader=yaml.FullLoader)
 
     fsm_stats: shelleyv.FSMStats = shelleyv.handle_fsm(
-        regular.NFA.from_dict(d),
-        args.filter,
-        args.dfa,
-        args.minimize,
-        args.minimize_slow,
-        args.no_sink,
-        args.no_epsilon,
+        n=regular.NFA.from_dict(d),
+        filter=args.filter,
+        dfa=args.dfa,
+        dfa_no_empty_string=args.dfa_no_empty_string,
+        dfa_minimize=args.minimize,
+        no_sink=args.no_sink,
+        no_epsilon=args.no_epsilon,
     )
 
-    if args.dfa:
-        n: regular.NFA[Any, str] = fsm_stats.result_dfa
-    else:
-        n: regular.NFA[Any, str] = fsm_stats.result
+    n: regular.NFA[Any, str] = fsm_stats.result
 
     logger.debug(str(fsm_stats))
+    # print(str(fsm_stats))
 
     fp = sys.stdout if args.output is None else open(args.output, "w")
 

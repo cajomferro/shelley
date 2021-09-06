@@ -6,10 +6,11 @@ from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import (
     TriggerRuleSequence,
     TriggerRuleChoice,
+    TriggerRuleLoop,
     TriggerRuleEvent,
     TriggerRuleFired,
 )
-from karakuri.regular import Regex, Char, Concat, Union, NIL, VOID
+from karakuri.regular import Regex, Char, Concat, Union, NIL, Star
 
 
 class TRules2RegexVisitor(TriggersVisitor):
@@ -47,6 +48,12 @@ class TRules2RegexVisitor(TriggersVisitor):
             result = Union(result, next_r)
 
         self.current_regex = result
+
+    def visit_trigger_rule_loop(self, element: TriggerRuleLoop) -> None:
+
+        assert element is not None
+        element.loop.accept(self)
+        self.current_regex = Star(self.current_regex)
 
     def visit_trigger(self, element: Trigger) -> None:
         element.trigger_rule.accept(self)

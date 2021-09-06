@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Mapping, List, TYPE_CHECKING, Optional
+from typing import Mapping, List, TYPE_CHECKING, Tuple
 from dataclasses import dataclass, field
 
 from shelley.ast.node import Node

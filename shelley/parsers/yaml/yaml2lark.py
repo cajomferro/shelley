@@ -16,6 +16,7 @@ from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import (
     TriggerRuleSequence,
     TriggerRuleChoice,
+    TriggerRuleLoop,
     TriggerRuleEvent,
     TriggerRuleFired,
 )
@@ -54,6 +55,9 @@ class Yaml2Lark(Visitor):
         result += "}"
 
         return result
+
+    def visit_trigger_rule_loop(self, element: TriggerRuleLoop) -> Any:
+        pass  # TODO: this was implemented after the Lark parser (there is not loop syntax for the YAML examples)
 
     def visit_trigger(self, element: Trigger) -> Any:
         # self.result += "    {0}: ".format(element.event.name)

@@ -4,6 +4,7 @@ from shelley.ast.rules import (
     TriggerRule,
     TriggerRuleEvent,
     TriggerRuleChoice,
+    TriggerRuleLoop,
     TriggerRuleSequence,
     TriggerRuleFired,
 )
@@ -69,11 +70,15 @@ class ShelleyLanguage(LTLParser):
 
     def choice(self, args):
         if len(args) != 1:
-            choice = TriggerRuleChoice()
-            choice.choices.extend(args)
-            return choice
+            rule = TriggerRuleChoice()
+            rule.choices.extend(args)
+            return rule
         else:
             return args[0]
+
+    def loop(self, args):
+        rule = TriggerRuleLoop(*args)
+        return rule
 
     def single(self, args):
         return args[0]

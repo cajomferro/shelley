@@ -5,28 +5,28 @@ from shelley.ast.visitors.pprint import PrettyPrintVisitor
 
 source_led = """
 base Led {
- initial final on -> off ;
- final off -> on ;
+ initial final on -> off;
+ final off -> on;
 }
 """
 
 source_button = """
 base Button {
- initial final pressed -> released ;
- final released -> pressed ;
+ initial final pressed -> released;
+ final released -> pressed;
 }
 """
 
 source_timer = """
 base Timer {
- initial started -> canceled, timeout ;
- final canceled -> started ;
- final timeout -> started ;
+ initial started -> canceled, timeout;
+ final canceled -> started;
+ final timeout -> started;
 }
 """
 
 source_desklamp = """
-DeskLamp (ledA: Led, ledB: Led, b: Button, t: Timer) {
+DeskLamp(ledA: Led, ledB: Led, b: Button, t: Timer) {
  initial final level1 -> standby1, level2 {
   b.pressed; b.released; ledA.on; t.started; 
  }
@@ -115,10 +115,10 @@ def test_pprint_desklamp() -> None:
   subsystems:
     Led ledA, Led ledB, Button b, Timer t
   triggers:
-    level1: b.pressed ; b.released ; ledA.on ; t.started
-    level2: b.pressed ; b.released ; ( t.canceled ; ledB.on xor ledB.on ; t.canceled ) ; t.started
-    standby1: t.timeout ; ledA.off
-    standby2: ( b.pressed ; b.released ; t.canceled xor t.timeout ) ; ( ledB.off ; ledA.off xor ledA.off ; ledB.off )
+    level1: b.pressed; b.released; ledA.on; t.started;
+    level2: b.pressed; b.released; (t.canceled; ledB.on;) xor (ledB.on; t.canceled;) t.started;
+    standby1: t.timeout; ledA.off;
+    standby2: (b.pressed; b.released; t.canceled;) xor (t.timeout;) (ledB.off; ledA.off;) xor (ledA.off; ledB.off;)
 
 """
 

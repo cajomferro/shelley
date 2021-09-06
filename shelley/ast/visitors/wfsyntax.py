@@ -11,6 +11,7 @@ from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import (
     TriggerRuleSequence,
     TriggerRuleChoice,
+    TriggerRuleLoop,
     TriggerRuleEvent,
     TriggerRuleFired,
 )
@@ -37,6 +38,9 @@ class CheckWFSyntaxVisitor(Visitor):
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
         for choice in element.choices:
             choice.accept(self)
+
+    def visit_trigger_rule_loop(self, element: TriggerRuleLoop) -> None:
+        element.loop.accept(self)
 
     def visit_component(self, element: Component) -> None:
         element.check(

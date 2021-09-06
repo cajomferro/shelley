@@ -11,6 +11,7 @@ from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import (
     TriggerRuleSequence,
     TriggerRuleChoice,
+    TriggerRuleLoop,
     TriggerRuleEvent,
     TriggerRuleFired,
 )
@@ -30,22 +31,28 @@ class PrettyPrintVisitor(Visitor):
         self.result += "fired"
 
     def visit_trigger_rule_event(self, element: TriggerRuleEvent) -> None:
-        self.result += "{0}.{1} ".format(element.component.name, element.event)
+        self.result += "{0}.{1}".format(element.component.name, element.event)
+        self.result += ";"
 
     def visit_trigger_rule_sequence(self, element: TriggerRuleSequence) -> None:
         # self.result += "( "
         element.left_trigger_rule.accept(self)
-        self.result += "; "
+        self.result += " "
         element.right_trigger_rule.accept(self)
         # self.result += ") "
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
-        self.result += "( "
+        self.result += "("
         for rule in element.choices[0:-1]:
             rule.accept(self)
-            self.result += "xor "
+            self.result += ") xor ("
         element.choices[-1].accept(self)
-        self.result += ") "
+        self.result += ")"
+
+    def visit_trigger_rule_loop(self, element: TriggerRuleLoop) -> None:
+        self.result += "loop("
+        element.loop.accept(self)
+        self.result += ")"
 
     def visit_trigger(self, element: Trigger) -> None:
         self.result += "    {0}: ".format(element.event.name)

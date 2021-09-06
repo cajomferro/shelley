@@ -41,6 +41,10 @@ class Visitor(ABC):
         pass
 
     @abstractmethod
+    def visit_trigger_rule_loop(self, element: TriggerRuleChoice) -> None:
+        pass
+
+    @abstractmethod
     def visit_trigger(self, element: Trigger) -> None:
         pass
 

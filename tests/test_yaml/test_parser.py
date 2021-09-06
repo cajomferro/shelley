@@ -183,7 +183,7 @@ integration:
     visitor = PrettyPrintVisitor(components=c)
     t.accept(visitor)
 
-    assert visitor.result.strip() == "click: T.t ; T.t ; B.p ; B.r"
+    assert visitor.result.strip() == "click: T.t; T.t; B.p; B.r;"
 
 
 def test_xor_3_options_nested() -> None:
@@ -209,7 +209,7 @@ integration:
 
     assert (
         visitor.result.strip()
-        == "click: ( B.p ; T.t ; B.r xor ( B.p ; T.e ; B.r xor T.t ) )"
+        == "click: (B.p; T.t; B.r;) xor ((B.p; T.e; B.r;) xor (T.t;))"
     )
 
 
@@ -235,7 +235,7 @@ integration:
 
     assert (
         visitor.result.strip()
-        == "click: ( B.p ; T.t ; B.r xor B.p ; T.e ; B.r xor T.t )"
+        == "click: (B.p; T.t; B.r;) xor (B.p; T.e; B.r;) xor (T.t;)"
     )
 
 
@@ -261,7 +261,7 @@ def test_xor_2_options() -> None:
     visitor = PrettyPrintVisitor(components=c)
     t.accept(visitor)
 
-    assert visitor.result.strip() == "click: ( T.t xor B.p )"
+    assert visitor.result.strip() == "click: (T.t;) xor (B.p;)"
 
 
 def test_xor_1_options() -> None:
@@ -281,7 +281,7 @@ def test_xor_1_options() -> None:
 
     visitor = PrettyPrintVisitor(components=c)
     t.accept(visitor)
-    assert visitor.result.strip() == "click: ( T.t )"
+    assert visitor.result.strip() == "click: (T.t;)"
 
 
 def test_xor_seq() -> None:
@@ -311,7 +311,7 @@ integration:
     t.accept(visitor)
     assert (
         visitor.result.strip()
-        == "click: ( ( b1.pressed ; b2.pressed xor b2.pressed ; b1.pressed ) xor b3.pressed )"
+        == "click: ((b1.pressed; b2.pressed;) xor (b2.pressed; b1.pressed;)) xor (b3.pressed;)"
     )
 
 
@@ -344,7 +344,7 @@ integration:
     t.accept(visitor)
     assert (
         visitor.result.strip()
-        == "click: ( b1.pressed ; ( b2.pressed xor b3.pressed ) xor ( b2.pressed xor b3.pressed ) ; b1.pressed )"
+        == "click: (b1.pressed; (b2.pressed;) xor (b3.pressed;)) xor ((b2.pressed;) xor (b3.pressed;) b1.pressed;)"
     )
 
 
@@ -482,10 +482,10 @@ operations:
   subsystems:
     Led ledA, Led ledB, Button b, Timer t
   triggers:
-    level1: b.pressed ; b.released ; ledA.on ; t.started
-    level2: b.pressed ; b.released ; ( t.canceled ; ledB.on xor ledB.on ; t.canceled ) ; t.started
-    standby1: t.timeout ; ledA.off
-    standby2: ( b.pressed ; b.released ; t.canceled xor t.timeout ) ; ( ledB.off ; ledA.off xor ledA.off ; ledB.off )"""
+    level1: b.pressed; b.released; ledA.on; t.started;
+    level2: b.pressed; b.released; (t.canceled; ledB.on;) xor (ledB.on; t.canceled;) t.started;
+    standby1: t.timeout; ledA.off;
+    standby2: (b.pressed; b.released; t.canceled;) xor (t.timeout;) (ledB.off; ledA.off;) xor (ledA.off; ledB.off;)"""
     )
 
 
@@ -537,9 +537,9 @@ operations:
   subsystems:
     Button b1, Button b2, Led lgreen, Led lred
   triggers:
-    send: b1.pressed ; b1.released
-    ok: ( lred.on ; lred.off xor lgreen.on ; lgreen.off )
-    off: b2.pressed ; b2.released"""
+    send: b1.pressed; b1.released;
+    ok: (lred.on; lred.off;) xor (lgreen.on; lgreen.off;)
+    off: b2.pressed; b2.released;"""
     )
 
 
@@ -596,7 +596,7 @@ test_integration:
   subsystems:
     Button b
   triggers:
-    on: b.pressed ; b.released"""
+    on: b.pressed; b.released;"""
     )
 
     assert shelley_device.test_macro["ok"] == {
@@ -682,6 +682,6 @@ def test_ambiguous_3buttons() -> None:
   subsystems:
     Button b1, Button b2, Button b3
   triggers:
-    button1AndOther: ( ( b1.pressed ; b2.pressed xor b1.pressed ; b3.pressed ) xor ( b2.pressed ; b1.pressed xor b3.pressed ; b1.pressed ) )
-    button3OrOthers: ( ( b1.pressed ; b2.pressed xor b2.pressed ; b1.pressed ) xor b3.pressed )"""
+    button1AndOther: ((b1.pressed; b2.pressed;) xor (b1.pressed; b3.pressed;)) xor ((b2.pressed; b1.pressed;) xor (b3.pressed; b1.pressed;))
+    button3OrOthers: ((b1.pressed; b2.pressed;) xor (b2.pressed; b1.pressed;)) xor (b3.pressed;)"""
     )

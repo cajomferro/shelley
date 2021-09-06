@@ -10,6 +10,7 @@ from shelley.ast.triggers import Trigger, Triggers
 from shelley.ast.rules import (
     TriggerRuleSequence,
     TriggerRuleChoice,
+    TriggerRuleLoop,
     TriggerRuleEvent,
     TriggerRuleFired,
 )
@@ -26,6 +27,9 @@ class TriggersVisitor(Visitor):
         pass
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> None:
+        pass
+
+    def visit_trigger_rule_loop(self, element: TriggerRuleLoop) -> None:
         pass
 
     def visit_trigger(self, element: Trigger) -> None:

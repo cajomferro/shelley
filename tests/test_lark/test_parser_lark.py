@@ -5,6 +5,9 @@ from shelley.parsers.shelley_lark_parser import parser as lark_parser, ShelleyLa
 from shelley.ast.devices import Device
 from shelley.parsers.yaml import yaml2lark
 from lark.visitors import VisitError
+from shelley.shelley2automata import shelley2automata
+from shelley.automata import Device as AutomataDevice
+from karakuri.regular import Char, Concat, Union, Star
 
 WORKDIR_PATH = Path() / Path(__file__).parent / "workdir"
 
@@ -58,10 +61,10 @@ shelley_ast_desklamp = """Device DeskLamp uses Led, Button, Timer:
   subsystems:
     Led ledA, Led ledB, Button b, Timer t
   triggers:
-    level1: b.pressed ; b.released ; ledA.on ; t.started
-    level2: b.pressed ; b.released ; ( t.canceled ; ledB.on xor ledB.on ; t.canceled ) ; t.started
-    standby1: t.timeout ; ledA.off
-    standby2: ( b.pressed ; b.released ; t.canceled xor t.timeout ) ; ( ledB.off ; ledA.off xor ledA.off ; ledB.off )"""
+    level1: b.pressed; b.released; ledA.on; t.started;
+    level2: b.pressed; b.released; (t.canceled; ledB.on;) xor (ledB.on; t.canceled;) t.started;
+    standby1: t.timeout; ledA.off;
+    standby2: (b.pressed; b.released; t.canceled;) xor (t.timeout;) (ledB.off; ledA.off;) xor (ledA.off; ledB.off;)"""
 
 lark_led = """
 base Led {
@@ -186,8 +189,8 @@ def test_clickbutton_variation() -> None:
   subsystems:
     Button B, Timer T
   triggers:
-    single: B.press ; T.begin ; ( T.timeout ; B.release xor B.release ; T.timeout )
-    double: B.press ; T.begin ; B.release ; ( B.press ; T.timeout ; B.release xor ( B.press ; B.release ; T.end xor T.end ) ) ; B.press"""
+    single: B.press; T.begin; (T.timeout; B.release;) xor (B.release; T.timeout;)
+    double: B.press; T.begin; B.release; (B.press; T.timeout; B.release;) xor ((B.press; B.release; T.end;) xor (T.end;)) B.press;"""
 
     tree = lark_parser.parse(source)
     shelley_device = ShelleyLanguage().transform(tree)
@@ -316,11 +319,11 @@ def test_unusable_operation() -> None:
   subsystems:
     Valve a, Valve b, Timer t
   triggers:
-    level1: a.on ; t.begin
-    level2: t.end ; b.on ; t.begin
-    levelX: a.off ; t.out
-    standby1: t.out ; a.off
-    standby2: t.out ; ( b.off ; a.off xor a.off ; b.off )"""
+    level1: a.on; t.begin;
+    level2: t.end; b.on; t.begin;
+    levelX: a.off; t.out;
+    standby1: t.out; a.off;
+    standby2: t.out; (b.off; a.off;) xor (a.off; b.off;)"""
 
     tree = lark_parser.parse(source_controller)
     shelley_device = ShelleyLanguage().transform(tree)
@@ -406,7 +409,7 @@ def test_lot_of_subsystem_calls():
   subsystems:
     Valve v
   triggers:
-    go1: v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1 ; v.x1"""
+    go1: v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1; v.x1;"""
 
     tree = lark_parser.parse(source)
     shelley_device = ShelleyLanguage().transform(tree)
@@ -415,3 +418,102 @@ def test_lot_of_subsystem_calls():
     shelley_device.accept(visitor)
     print(visitor.result.strip())
     assert visitor.result.strip() == expexted_result
+
+
+def test_loop() -> None:
+    """
+    Test that Kleene star rule mixed with other rules
+    """
+    lark_valvehandler: str = """
+        ValveHandler(
+            v1: Valve,
+            v2: Valve,
+            v3: Valve) {    
+
+            initial final go -> go {
+                {loop {{v1.on; v1.off;} + {v2.on; v2.off;}} v3.on; v3.off;} + {loop {v1.on; v1.off;}}
+            }
+
+
+        }
+        """
+
+    lark_valve = """
+    base Valve {
+
+      initial final on -> off;
+
+      final off -> on;
+    }
+        """
+
+    def pprint():
+        tree = lark_parser.parse(lark_valvehandler)
+        shelley_device = ShelleyLanguage().transform(tree)
+
+        visitor = PrettyPrintVisitor(components=shelley_device.components)
+        shelley_device.accept(visitor)
+
+        # print(visitor.result.strip())
+
+        assert (
+            visitor.result.strip()
+            == """Device ValveHandler uses Valve:
+  events:
+    go
+  start events:
+    go
+  final events:
+    go
+  behaviours:
+    go -> go
+  subsystems:
+    Valve v1, Valve v2, Valve v3
+  triggers:
+    go: (loop((v1.on; v1.off;) xor (v2.on; v2.off;)) v3.on; v3.off;) xor (loop(v1.on; v1.off;))"""
+        )
+
+        return shelley_device
+
+    def shelley2nfa():
+
+        expected = AutomataDevice(
+            start_events=["go"],
+            final_events=["go"],
+            events=["go"],
+            behavior=[("go", "go")],
+            components={"v1": "Valve", "v2": "Valve", "v3": "Valve"},
+            triggers={
+                "go": Union(
+                    left=Concat(
+                        left=Concat(
+                            left=Star(
+                                child=Union(
+                                    left=Concat(
+                                        left=Char(char="v1.on"),
+                                        right=Char(char="v1.off"),
+                                    ),
+                                    right=Concat(
+                                        left=Char(char="v2.on"),
+                                        right=Char(char="v2.off"),
+                                    ),
+                                )
+                            ),
+                            right=Char(char="v3.on"),
+                        ),
+                        right=Char(char="v3.off"),
+                    ),
+                    right=Star(
+                        child=Concat(left=Char(char="v1.on"), right=Char(char="v1.off"))
+                    ),
+                )
+            },
+        )
+
+        automata = shelley2automata(shelley_device)
+        print(automata)
+
+        assert expected == automata
+
+    shelley_device = pprint()
+    shelley2nfa()

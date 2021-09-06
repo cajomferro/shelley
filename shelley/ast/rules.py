@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Dict, List
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from shelley.ast.node import Node
 from shelley.ast.components import Component, Components
@@ -9,6 +9,14 @@ from shelley.ast.components import Component, Components
 if TYPE_CHECKING:
     from shelley.ast.visitors import Visitor
     from shelley.ast.devices import Device
+
+
+class TriggerRuleDeviceNotDeclaredError(Exception):
+    pass
+
+
+class TriggerRuleEventNotDeclaredError(Exception):
+    pass
 
 
 class TriggerRule(Node):
@@ -111,9 +119,15 @@ class TriggerRuleChoice(TriggerRule):
         return visitor.visit_trigger_rule_choice(self)
 
 
-class TriggerRuleDeviceNotDeclaredError(Exception):
-    pass
+@dataclass(order=True)
+class TriggerRuleLoop(TriggerRule):
+    loop: TriggerRule
 
+    def accept(self, visitor: Visitor) -> None:
+        """
+        Note that we're calling `visitConcreteComponentA`, which matches the
+        current class name. This way we let the visitor know the class of the
+        component it works with.
+        """
 
-class TriggerRuleEventNotDeclaredError(Exception):
-    pass
+        return visitor.visit_trigger_rule_loop(self)

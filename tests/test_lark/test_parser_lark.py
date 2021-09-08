@@ -7,7 +7,7 @@ from shelley.parsers.yaml import yaml2lark
 from lark.visitors import VisitError
 from shelley.shelley2automata import shelley2automata
 from shelley.automata import Device as AutomataDevice
-from karakuri.regular import Char, Concat, Union, Star
+from karakuri.regular import Char, Concat, Union, Star, Nil
 
 WORKDIR_PATH = Path() / Path(__file__).parent / "workdir"
 
@@ -420,6 +420,39 @@ def test_lot_of_subsystem_calls():
     assert visitor.result.strip() == expexted_result
 
 
+def test_absent_next_option() -> None:
+    fauly_led_spec = """
+base Led {
+ initial on -> ok, error ;
+ ok -> off;
+ final error -> ; # NO NEXT OPTION HERE
+ final off -> off, on ;
+}
+"""
+
+    tree = lark_parser.parse(fauly_led_spec)
+    shelley_device = ShelleyLanguage().transform(tree)
+
+    automata = shelley2automata(shelley_device)
+
+    expected = AutomataDevice(
+        start_events=["on"],
+        final_events=["error", "off"],
+        events=["on", "ok", "error", "off"],
+        behavior=[
+            ("on", "ok"),
+            ("on", "error"),
+            ("ok", "off"),
+            ("error", "None"),
+            ("off", "off"),
+            ("off", "on"),
+        ],
+        components={},
+        triggers={"on": Nil(), "ok": Nil(), "error": Nil(), "off": Nil()},
+    )
+    assert expected == automata
+
+
 def test_loop() -> None:
     """
     Test that Kleene star rule mixed with other rules
@@ -511,8 +544,6 @@ def test_loop() -> None:
         )
 
         automata = shelley2automata(shelley_device)
-        print(automata)
-
         assert expected == automata
 
     shelley_device = pprint()

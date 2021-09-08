@@ -219,7 +219,7 @@ class ShelleyLanguage(LTLParser):
             triggers.create(evt, TriggerRuleFired())
 
         for beh in behaviors:
-            if not events.find_by_name(beh.e2.name):
+            if beh.e2 is not None and not events.find_by_name(beh.e2.name):
                 raise ValueError(
                     f"{errors.WFORMED_UNDECLARED_OPERATION_RIGHT_SIDE(beh.e1.name, beh.e2.name)}"
                 )

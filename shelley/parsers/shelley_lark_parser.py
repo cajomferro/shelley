@@ -81,7 +81,10 @@ class ShelleyLanguage(LTLParser):
         return rule
 
     def single(self, args):
-        return args[0]
+        # return args[0]
+        if len(args) > 0:
+            return args[0]
+        return TriggerRuleFired()  # empty body
 
     def name_type(self, args):
         return args

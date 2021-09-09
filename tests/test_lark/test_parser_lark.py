@@ -420,6 +420,128 @@ def test_lot_of_subsystem_calls():
     assert visitor.result.strip() == expexted_result
 
 
+def test_empty_loop() -> None:
+    button_handler = """
+ButtonHandler (b: Button) {
+ initial final begin ->   {
+	b.press; b.release; loop{} # EMPTY LOOP
+ }
+}
+"""
+
+    tree = lark_parser.parse(button_handler)
+    shelley_device = ShelleyLanguage().transform(tree)
+
+    automata = shelley2automata(shelley_device)
+    print(automata)
+    expected = AutomataDevice(
+        start_events=["begin"],
+        final_events=["begin"],
+        events=["begin"],
+        behavior=[("begin", "None")],
+        components={"b": "Button"},
+        triggers={
+            "begin": Concat(
+                left=Concat(left=Char(char="b.press"), right=Char(char="b.release")),
+                right=Star(child=Nil()),
+            )
+        },
+    )
+
+    assert expected == automata
+
+
+def test_empty_xor() -> None:
+    button_handler = """
+ButtonHandler (b: Button) {
+ initial final begin ->   {
+	b.press; b.release; {} # EMPTY XOR
+ }
+}
+"""
+
+    tree = lark_parser.parse(button_handler)
+    shelley_device = ShelleyLanguage().transform(tree)
+
+    automata = shelley2automata(shelley_device)
+    print(automata)
+    expected = AutomataDevice(
+        start_events=["begin"],
+        final_events=["begin"],
+        events=["begin"],
+        behavior=[("begin", "None")],
+        components={"b": "Button"},
+        triggers={
+            "begin": Concat(
+                left=Concat(left=Char(char="b.press"), right=Char(char="b.release")),
+                right=Nil(),
+            )
+        },
+    )
+
+    assert expected == automata
+
+
+def test_empty_xor_v2() -> None:
+    button_handler = """
+ButtonHandler (b: Button) {
+ initial final begin ->   {
+	b.press; b.release; {} + {} # EMPTY XOR
+ }
+}
+"""
+
+    tree = lark_parser.parse(button_handler)
+    shelley_device = ShelleyLanguage().transform(tree)
+
+    automata = shelley2automata(shelley_device)
+    print(automata)
+    expected = AutomataDevice(
+        start_events=["begin"],
+        final_events=["begin"],
+        events=["begin"],
+        behavior=[("begin", "None")],
+        components={"b": "Button"},
+        triggers={
+            "begin": Concat(
+                left=Concat(left=Char(char="b.press"), right=Char(char="b.release")),
+                right=Union(left=Nil(), right=Nil()),
+            )
+        },
+    )
+
+    assert expected == automata
+
+
+def test_empty_body() -> None:
+    button_handler = """
+ButtonHandler (b: Button) {
+ initial begin -> end  {
+	b.press; b.release;
+ }
+  initial final end ->  {} # EMPTY BODY
+}
+"""
+
+    tree = lark_parser.parse(button_handler)
+    shelley_device = ShelleyLanguage().transform(tree)
+
+    automata = shelley2automata(shelley_device)
+
+    expected = AutomataDevice(
+        start_events=["begin", "end"],
+        final_events=["end"],
+        events=["begin", "end"],
+        behavior=[("begin", "end"), ("end", "None")],
+        components={"b": "Button"},
+        triggers={
+            "begin": Concat(left=Char(char="b.press"), right=Char(char="b.release")),
+            "end": Nil(),
+        },
+    )
+    assert expected == automata
+
+
 def test_absent_next_option() -> None:
     fauly_led_spec = """
 base Led {

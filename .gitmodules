@@ -1,3 +1,4 @@
 [submodule "shelley-examples"]
 	path = shelley-examples
 	url = git@gitlab.com:safeiot/shelley-examples.git
+	branch = master

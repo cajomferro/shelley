@@ -180,6 +180,7 @@ def create_fsm_system_model(
             uses_path=uses,
             dump_timings=dump_timings,
             skip_checks=skip_direct_checks,
+            check_ambiguity=False,
         )
     except shelleyc.CompilationError as err:
         if VERBOSE:

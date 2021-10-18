@@ -10,6 +10,27 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleyv")
 
 
+def dump_subsystem_fsm(
+    integration_fsm: Path, submodel_fsm: Path, project_prefix: str
+) -> None:
+    with integration_fsm.open("r") as fp:
+        fsm_dict = yaml.load(fp, Loader=yaml.FullLoader)
+
+    fsm_stats: FSMStats = handle_fsm(
+        regular.NFA.from_dict(fsm_dict),
+        dfa=True,
+        no_sink=True,
+        dfa_no_empty_string=True,
+        project_prefix=project_prefix,
+    )
+
+    n: regular.NFA[Any, str] = fsm_stats.result
+
+    # dump the .scy file for the submodule
+    with submodel_fsm.open("w") as fp:
+        yaml.dump(n.as_dict(flatten=True), fp)
+
+
 def fsm2smv(
     fsm_model: Path,
     smv_model: Path,
@@ -37,6 +58,17 @@ def fsm2smv(
     logger.debug(str(fsm_stats))
 
     n: regular.NFA[Any, str] = fsm_stats.result
+    # Note: we could use fsm_stats.result_dfa but it would generate a "bigger" FSM
+    # time(dfa2nfa)+time(nusmv(smaller_fsm)) vs time(nusmv(bigger_fsm))?
+
+    # print(len(fsm_stats.result)) -> less states (also a DFA since dfa2nfa=dfa)
+    # print(len(fsm_stats.result_dfa)) -> more states
+
+    # # dump the .scy file for the submodule
+    # if project_prefix is not None:
+    #     subsystem_model = Path(f"{smv_model.stem}.scy")
+    #     with subsystem_model.open("w") as fp:
+    #         yaml.dump(n.as_dict(flatten=True), fp)
 
     with smv_model.open("w") as fp:
         smv_dump(

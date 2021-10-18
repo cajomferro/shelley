@@ -6,29 +6,23 @@ from pathlib import Path
 MAKEFILE_TEMPLATE = """include ../common.mk
 USES = -u $$USES_PATH$$
 
-all: smv
-
-smv: $$MAIN_SYSTEM$$.smv
+all: scy
 
 scy: $$MAIN_SYSTEM$$.scy
 
 USES = -u uses.yml
 
-deps_smv:
-$$DEPS_SMV$$
 deps_scy:
 $$DEPS_SCY$$
-$$MAIN_SYSTEM$$.smv: $$MAIN_SYSTEM$$.shy deps_smv
-	! $(SHELLEYMC) $(USES) -s $< --skip-direct $(DEBUG)
 
 $$MAIN_SYSTEM$$.scy: $$MAIN_SYSTEM$$.shy deps_scy
-	! $(SHELLEYMC) $(USES) -s $< --skip-mc $(DEBUG)
+	! $(SHELLEYMC) $(USES) -s $< $(VALIDITY_CHECKS) $(DEBUG)
 
 clean:
 	rm -f *.scy *.pdf *.png *.gv *-stats.json *.int *.smv
 $$CLEAN_DEPS$$
 
-.PHONY: all pdf scy deps clean smv
+.PHONY: all pdf scy deps clean
 
 """
 
@@ -71,7 +65,6 @@ def generate_config(
 
     main_source_filename = main_source_set.pop()
 
-    deps_smv = ""
     deps_scy = ""
     clean_deps = ""
 
@@ -81,17 +74,14 @@ def generate_config(
         parent = Path(use_path).parent  # relative parent path
         if parent.name != Path(main_source_filename).parent.name:
             uses_parents.append(str(parent))
-            deps_smv += f"	$(MAKE) -C {parent} {use_basename}.smv\n"
             deps_scy += f"	$(MAKE) -C {parent} {use_basename}.scy\n"
             clean_deps += f"	$(MAKE) -C {parent} clean\n"
         else:
-            deps_smv += f"	$(MAKE) {use_basename}.smv\n"
             deps_scy += f"	$(MAKE) {use_basename}.scy\n"
 
     makefile_content: str = MAKEFILE_TEMPLATE
 
     makefile_content = makefile_content.replace("$$USES_PATH$$", uses_path.name)
-    makefile_content = makefile_content.replace("$$DEPS_SMV$$", deps_smv)
     makefile_content = makefile_content.replace("$$DEPS_SCY$$", deps_scy)
     makefile_content = makefile_content.replace("$$CLEAN_DEPS$$", clean_deps)
 

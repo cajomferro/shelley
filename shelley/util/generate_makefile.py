@@ -1,4 +1,3 @@
-import traceback
 import argparse
 import yaml
 import logging
@@ -10,26 +9,23 @@ logger = logging.getLogger("convert2lark")
 
 MAKEFILE_TEMPLATE = """include ../common.mk
 USES = -u $$USES_PATH$$
+#VALIDITY_CHECKS=--skip-direct
+#VALIDITY_CHECKS=--skip-mc
 
-all: smv
+all: scy
 
 pdf: $$MAIN_SYSTEM$$.pdf
 
 png: $$MAIN_SYSTEM$$.png
 
-smv: $$MAIN_SYSTEM$$.smv
-
 scy: $$MAIN_SYSTEM$$.scy
 
 USES = -u uses.yml
 
-deps_smv:
-$$DEPS_SMV$$
-deps_scy:
-$$DEPS_SCY$$
-$$MAIN_SYSTEM$$.smv: deps_smv $$MAIN_SYSTEM$$.shy
+deps:
+$$DEPS$$
 
-$$MAIN_SYSTEM$$.scy: deps_scy $$MAIN_SYSTEM$$.shy
+$$MAIN_SYSTEM$$.scy: deps $$MAIN_SYSTEM$$.shy
 
 $$EXAMPLE_FOLDER$$-stats.json:
 $$STATS$$
@@ -39,7 +35,7 @@ clean:
 	rm -f *.scy *.pdf *.png *.gv *-stats.json *.int *.smv
 $$CLEAN_DEPS$$
 
-.PHONY: all pdf scy deps clean smv
+.PHONY: all pdf scy deps clean
 
 """
 
@@ -97,8 +93,7 @@ def generate_config(
 
     main_source_filename = main_source_set.pop()
 
-    deps_smv = ""
-    deps_scy = ""
+    deps = ""
     clean_deps = ""
     stats = ""
 
@@ -108,22 +103,21 @@ def generate_config(
         parent = Path(use_path).parent  # relative parent path
         if parent.name != Path(main_source_filename).parent.name:
             uses_parents.append(str(parent))
-            deps_smv += f"	$(MAKE) -C {parent} {use_basename}.smv\n"
-            deps_scy += f"	$(MAKE) -C {parent} {use_basename}.scy\n"
+            deps += f"	$(MAKE) -C {parent} {use_basename}.scy\n"
             clean_deps += f"	$(MAKE) -C {parent} clean\n"
             stats += f"	$(MAKE) -C {parent} {use_basename}-stats.json\n"
         else:
-            deps_smv += f"	$(MAKE) {use_basename}.smv\n"
-            deps_scy += f"	$(MAKE) {use_basename}.scy\n"
+            deps += f"	$(MAKE) {use_basename}.scy\n"
             stats += f"	$(MAKE) {use_basename}-stats.json\n"
+
+    deps = deps[:-1]  # remove extra newline
 
     stats += f"	$(MAKE) {Path(main_source_filename).stem}-stats.json\n"
 
     makefile_content: str = MAKEFILE_TEMPLATE
 
     makefile_content = makefile_content.replace("$$USES_PATH$$", uses_path.name)
-    makefile_content = makefile_content.replace("$$DEPS_SMV$$", deps_smv)
-    makefile_content = makefile_content.replace("$$DEPS_SCY$$", deps_scy)
+    makefile_content = makefile_content.replace("$$DEPS$$", deps)
     makefile_content = makefile_content.replace("$$CLEAN_DEPS$$", clean_deps)
     makefile_content = makefile_content.replace("$$STATS$$", stats)
 

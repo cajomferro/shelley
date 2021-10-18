@@ -312,7 +312,7 @@ def main():
     uses: Path = args.uses
 
     if args.skip_mc and args.skip_direct:
-        print("ERROR! At least on checking is required!")
+        print("ERROR! Choose one check-validity algorithm only!")
         sys.exit(255)
 
     # print(f"Running direct verification...", end="")

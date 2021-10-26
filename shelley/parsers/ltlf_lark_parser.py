@@ -129,8 +129,8 @@ class Implies(BinaryOperator):
 
 @dataclass
 class Next(UnaryOperator):
-    operator = "X"
     "Must be true in the following step."
+    operator = "X"
 
 
 @dataclass
@@ -283,7 +283,7 @@ def dump(formula: Formula, fp: IO, eos=None, nusvm_strict=True):
         elif isinstance(formula, EndOfSequence):
             if nusvm_strict:
                 raise ValueError(formula)
-            fp.write(eos if eos is not None else "ε")
+            fp.write(eos if eos is not None else "END")
 
         elif isinstance(formula, UnaryOperator):
             # Operator
@@ -335,6 +335,9 @@ parser = Lark.open("ltlf_grammar.lark", rel_to=__file__, start="formula")
 
 
 class LTLParser(Transformer):
+    def end(self, args) -> Last:
+        return Last()
+
     def true(self, args) -> Bool:
         return True
 

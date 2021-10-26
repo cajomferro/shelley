@@ -59,6 +59,7 @@ COMMENT: /#[^\n]*/
 %import .ltlf_grammar.formula
 %import .ltlf_grammar.ident
 %import .ltlf_grammar.atom
+%import .ltlf_grammar.end
 %import .ltlf_grammar.act
 %import .ltlf_grammar.true
 %import .ltlf_grammar.false

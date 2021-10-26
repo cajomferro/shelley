@@ -13,14 +13,19 @@ formula:
     | eventually
     | eq
 atom:
+	| end
     | bool
     | act
+
 ident: CNAME
-act: (ident ".")? ident
+
+end: "END"
 
 true: "true"
 false: "false"
 bool: true | false
+
+act: (ident ".")? ident
 
 paren: "(" formula ")"
 land: formula "&" formula

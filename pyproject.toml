@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "shelley"
-version = "0.1.17"
+version = "0.1.18"
 description = "Check system integration"
 authors = ["Carlos Mão de Ferro", "Tiago Cogumbreiro", "Francisco Martins"]
 license = "MIT"

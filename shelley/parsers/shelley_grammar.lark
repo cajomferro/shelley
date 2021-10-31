@@ -23,7 +23,7 @@ modifiers:
   | initial final
   | final initial
 
-next: "->" [ident ("," ident)* [","]] -> next_evts
+next: ("->"| "~>") [ident ("," ident)* [","]] -> next_evts
 
 sig:  [modifiers] ident next
 

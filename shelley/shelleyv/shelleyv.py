@@ -19,7 +19,6 @@ def dump_subsystem_fsm(
     fsm_stats: FSMStats = handle_fsm(
         regular.NFA.from_dict(fsm_dict),
         dfa=True,
-        no_sink=True,
         dfa_no_empty_string=True,
         project_prefix=project_prefix,
     )
@@ -50,7 +49,6 @@ def fsm2smv(
     fsm_stats: FSMStats = handle_fsm(
         regular.NFA.from_dict(fsm_dict),
         dfa=True,
-        no_sink=True,
         dfa_no_empty_string=True,
         project_prefix=project_prefix,
     )
@@ -284,7 +282,7 @@ class FSMStats:
     dfa_no_empty_string: Optional[str] = None
     dfa_nil: Optional[str] = None
     nfa_no_epsilon: Optional[str] = None
-    nfa_no_sinks: Optional[str] = None
+    nfa_no_sink: Optional[str] = None
     result_dfa: Optional[regular.DFA[Any, str]] = None
     result: Optional[regular.NFA[Any, str]] = None
 
@@ -293,15 +291,15 @@ class FSMStats:
         if self.input is not None:
             text += f"NFA input: {self.input}\n"
         if self.nfa_no_epsilon is not None:
-            text += f"NFA no epsilon: {self.nfa_no_epsilon}\n"
-        if self.nfa_no_sinks is not None:
-            text += f"NFA no sinks: {self.nfa_no_sinks}\n"
+            text += f"NFA without epsilon: {self.nfa_no_epsilon}\n"
+        if self.nfa_no_sink is not None:
+            text += f"NFA without sink states: {self.nfa_no_sink}\n"
         if self.dfa is not None:
             text += f"DFA: {self.dfa}\n"
         if self.dfa_min is not None:
             text += f"DFA minimized: {self.dfa_min}\n"
         if self.dfa_no_empty_string is not None:
-            text += f"DFA no empty string: {self.dfa_no_empty_string}\n"
+            text += f"DFA without empty strings: {self.dfa_no_empty_string}\n"
         if self.result_dfa is not None:
             text += f"DFA result: {len(self.result_dfa)}\n"
         if self.result is not None:
@@ -315,9 +313,10 @@ def handle_fsm(
     dfa: bool = False,
     dfa_no_empty_string: bool = False,
     dfa_minimize: bool = False,
-    no_sink: bool = False,  # set this to True for faster DFA minimization
+    nfa_no_sink: bool = False,  # set this to True for faster DFA minimization
     no_epsilon: bool = False,
     project_prefix: Optional[str] = None,
+    dfa_no_sink: Optional[bool] = False,
 ) -> FSMStats:
     fsm_stats = FSMStats()
 
@@ -343,12 +342,13 @@ def handle_fsm(
 
     fsm_stats.input = len(n)
 
-    if no_sink:  # FASTER DFA MINIMIZATION
-        # NOTE: If minimizing, by removing sink states before there
+    if nfa_no_sink:
+        # FASTER DFA MINIMIZATION
+        # NOTE: If minimizing DFA, by removing sink states before there
         # is a unique sink state when we convert to DFA; this is a quick
         # way of making the resulting DFA smaller
         n = n.remove_sink_states()
-        fsm_stats.nfa_no_sinks = len(n)
+        fsm_stats.nfa_no_sink = len(n)
 
     if no_epsilon:
         n = n.remove_epsilon_transitions()
@@ -372,6 +372,9 @@ def handle_fsm(
 
         fsm_stats.result_dfa = d
         fsm_stats.result = regular.dfa_to_nfa(d)
+
+        if dfa_no_sink:
+            fsm_stats.result = fsm_stats.result.remove_sink_states()
 
     else:
         fsm_stats.result = n

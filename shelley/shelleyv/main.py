@@ -28,6 +28,11 @@ def create_parser() -> argparse.ArgumentParser:
         help="Make sure that there is no empty string",
     )
     parser.add_argument(
+        "--dfa-no-sink",
+        action="store_true",
+        help="Remove sink states after converting to DFA",
+    )
+    parser.add_argument(
         "--no-epsilon",
         default=False,
         action="store_true",
@@ -45,7 +50,7 @@ def create_parser() -> argparse.ArgumentParser:
         help="Keep only the (operations/calls) that match the given regex, hide (epsilon) the remaining ones.",
     )
     parser.add_argument(
-        "--no-sink",
+        "--nfa-no-sink",
         action="store_true",
         help="Remove sink states, this is much faster for DFA generation",
     )
@@ -77,6 +82,9 @@ def main() -> None:
     if args.dfa_no_empty_string and not args.dfa:
         parser.error("The '--dfa-no-empty-string' option requires '--dfa'")
 
+    if args.dfa_no_sink and not args.dfa:
+        parser.error("The '--dfa-no-sink' option requires '--dfa'")
+
     with args.input.open() as fp:
         d = yaml.load(fp, Loader=yaml.FullLoader)
 
@@ -85,8 +93,9 @@ def main() -> None:
         filter=args.filter,
         dfa=args.dfa,
         dfa_no_empty_string=args.dfa_no_empty_string,
+        dfa_no_sink=args.dfa_no_sink,
         dfa_minimize=args.minimize,
-        no_sink=args.no_sink,
+        nfa_no_sink=args.nfa_no_sink,
         no_epsilon=args.no_epsilon,
     )
 

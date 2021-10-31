@@ -20,7 +20,6 @@ def dump_subsystem_fsm(
         regular.NFA.from_dict(fsm_dict),
         dfa=True,
         dfa_no_empty_string=True,
-        nfa_no_sink=True,
         project_prefix=project_prefix,
     )
 
@@ -51,7 +50,6 @@ def fsm2smv(
         regular.NFA.from_dict(fsm_dict),
         dfa=True,
         dfa_no_empty_string=True,
-        nfa_no_sink=True,
         project_prefix=project_prefix,
     )
 

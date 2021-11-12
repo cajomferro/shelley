@@ -11,12 +11,13 @@ python = ">=3.8,<3.11"
 pyyaml = "^5.3.1"
 graphviz = "^0.14"
 radon = "^4.3.2"
-karukuri = {git = "https://gitlab.com/umb-svl/karukuri", rev = "adc33180dd4f073958cc374246d1f75a11af22eb"}
-lark="^0.11.1"
+karakuri = {git = "https://gitlab.com/umb-svl/karakuri.git", rev = "adc33180dd4f073958cc374246d1f75a11af22eb"}
+lark = "^0.11.3"
+
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.770"
-pytest = "^5.4.1"
+pytest = "^6.2.5"
 black = "^19.10b0"
 Pygments = "^2.6.1"
 snakeviz="^2.1.0"

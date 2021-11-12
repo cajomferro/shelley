@@ -201,6 +201,21 @@ optional = false
 python-versions = "*"
 
 [[package]]
+name = "karukuri"
+version = "0.0.1"
+description = "Karakuri includes algorithms related to regular languages: finite-state machines (FSM), deterministic automata (DFA), non-deterministic automata (NFA), regular expressions (REGEX)."
+category = "main"
+optional = false
+python-versions = ">=3.0"
+develop = false
+
+[package.source]
+type = "git"
+url = "https://gitlab.com/umb-svl/karakuri.git"
+reference = "adc33180dd4f073958cc374246d1f75a11af22eb"
+resolved_reference = "adc33180dd4f073958cc374246d1f75a11af22eb"
+
+[[package]]
 name = "lark"
 version = "0.11.3"
 description = "a modern parsing library"
@@ -515,7 +530,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8,<3.11"
-content-hash = "bfaf303e04626052f2260633c5be9345760e191c0e37bb17d81cabbbdbdb6476"
+content-hash = "a07a9c66f9183728b6094b534154ae3dfe225701e9445aa8fe15d103ffda7926"
 
 [metadata.files]
 aiohttp = [
@@ -729,6 +744,7 @@ iniconfig = [
     {file = "iniconfig-1.1.1-py2.py3-none-any.whl", hash = "sha256:011e24c64b7f47f6ebd835bb12a743f2fbe9a26d4cecaa7f53bc4f35ee9da8b3"},
     {file = "iniconfig-1.1.1.tar.gz", hash = "sha256:bc3af051d7d14b2ee5ef9969666def0cd1a000e121eaea580d4a313df4b37f32"},
 ]
+karukuri = []
 lark = [
     {file = "lark-0.11.3.tar.gz", hash = "sha256:3100d9749b5a85735ec428b83100876a5da664804579e729c23a36341f961e7e"},
 ]

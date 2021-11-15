@@ -143,17 +143,20 @@ class Shelley2Lark(Visitor):
         if len(element.system_formulae) > 0:
             self.result += '\n'
         for formula in element.system_formulae:
-            self.result+= f" system check {ltlf_lark_parser.dumps(formula, nusvm_strict=True)};\n"
+            self.result+= f" system check {ltlf_lark_parser.dumps(formula, nusvm_strict=False)};\n"
 
         if len(element.integration_formulae) > 0:
             self.result += '\n'
         for formula in element.integration_formulae:
-            self.result+= f" integration check {ltlf_lark_parser.dumps(formula, nusvm_strict=True)};\n"
+            self.result+= f" integration check {ltlf_lark_parser.dumps(formula, nusvm_strict=False)};\n"
 
         if len(element.subsystem_formulae)  > 0:
             self.result += '\n'
         for subsystem, formula in element.subsystem_formulae:
-            self.result+= f" subsystem {subsystem} check {ltlf_lark_parser.dumps(formula, nusvm_strict=True)};\n"
+            self.result+= f" subsystem {subsystem} check {ltlf_lark_parser.dumps(formula, nusvm_strict=False)};\n"
+
+        # TODO: better way to handle this!?
+        self.result = self.result.replace("(! (X TRUE))", "END")
 
         self.result += f"\n}}"
 

@@ -70,6 +70,8 @@ COMMENT: /#[^\n]*/
 %import .ltlf_grammar.lnot
 %import .ltlf_grammar.lnext
 %import .ltlf_grammar.until
+%import .ltlf_grammar.releases
+%import .ltlf_grammar.wuntil
 %import .ltlf_grammar.implies
 %import .ltlf_grammar.equiv
 %import .ltlf_grammar.globally

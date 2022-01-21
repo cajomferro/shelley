@@ -189,6 +189,13 @@ def Releases(left, right):
     return Not(Until(Not(left), Not(right)))
 
 
+def WeakUntil(left, right):
+    "ψ has to hold at least until φ; if φ never becomes true, ψ must remain true forever. <=> φ R (φ ∨ ψ) <=> (ψ U φ) ∨ G ψ"
+    # return Releases(right, Or(right, left))
+    return Or(Until(left, right), Always(left))
+
+
+
 # Conversions
 
 
@@ -375,6 +382,12 @@ class LTLParser(Transformer):
 
     def until(self, args) -> Until:
         return Until(*args)
+
+    def releases(self, args) -> Releases:
+        return Releases(*args)
+
+    def wuntil(self, args) -> WeakUntil:
+        return WeakUntil(*args)
 
     def implies(self, args) -> Implies:
         return Implies(*args)

@@ -9,6 +9,8 @@ formula:
     | equiv
     | lnext
     | until
+    | releases
+    | wuntil
     | globally
     | eventually
     | eq
@@ -33,6 +35,8 @@ lor: formula "|" formula
 lnot: "!" formula
 lnext: "X" formula
 until: formula "U" formula
+releases: formula "R" formula
+wuntil: formula "W" formula
 implies: formula "->" formula
 equiv: formula "<->" formula
 globally: "G" formula

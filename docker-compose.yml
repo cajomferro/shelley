@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  main:
+    container_name: shelleyc
+    build:
+      context: .
+#    env_file: settings/.env
+    stdin_open: true
+    tty: true
+    volumes:
+      - "./shelley:/app/shelley"
+
+

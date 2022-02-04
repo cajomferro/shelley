@@ -1,0 +1,15 @@
+.git
+.gitmodules
+.ipynb_checkpoints
+.DS_Store
+.gitignore
+env.*
+tmp
+.mypy_cache
+.dockerignore
+Dockerfile
+docker-compose.yml
+.idea
+LICENSE
+shelleymc-sequence-diagram.drawio
+pekoe-examples

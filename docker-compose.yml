@@ -10,5 +10,10 @@ services:
     tty: true
     volumes:
       - "./shelley:/app/shelley"
+      - "./shelley-examples:/app/shelley-examples"
+      - "./tests:/app/tests"
+      - "./poetry.lock:/app/poetry.lock"
+      - "./pyproject.toml:/app/pyproject.toml"
+      - "./README.rst:/app/README.rst"
 
 

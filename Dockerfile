@@ -38,4 +38,5 @@ ENV COMMIT_HASH=${COMMIT_HASH}
 
 # Install project dependencies (using poetry)
 RUN poetry config virtualenvs.create false --local # disable poetry virtualenvs
+RUN poetry update
 RUN poetry install

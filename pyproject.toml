@@ -13,7 +13,7 @@ graphviz = "^0.14"
 radon = "^4.3.2"
 karukuri = {git = "https://gitlab.com/umb-svl/karakuri.git", rev = "adc33180dd4f073958cc374246d1f75a11af22eb"}
 lark = "^0.11.3"
-
+astroid = "^2.8.4" # required for shelleypy
 
 [tool.poetry.dev-dependencies]
 mypy = "^0.770"
@@ -36,6 +36,8 @@ shelleyv = "shelley.shelleyv.main:main"
 shelleys = "shelley.shelleys.main:main"
 shelley-makefile = "shelley.util.generate_makefile:main"
 shelley-makefile-bad = "shelley.util.generate_makefile_bad:main"
+shelleypy = "shelleypy.checker.main:main"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

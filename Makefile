@@ -15,7 +15,6 @@ init:
 	$(GIT) submodule foreach git checkout master
 
 pull:
-	
 	$(GIT) pull --recurse-submodules
 
 deps:

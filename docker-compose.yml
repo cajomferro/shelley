@@ -15,5 +15,5 @@ services:
       - "./poetry.lock:/app/poetry.lock"
       - "./pyproject.toml:/app/pyproject.toml"
       - "./README.rst:/app/README.rst"
-
+      - "./shelleypy:/app/shelleypy"
 

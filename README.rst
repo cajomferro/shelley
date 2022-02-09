@@ -11,7 +11,7 @@ Docker Installation (recommended)
 .. code-block:: shell
 
    docker compose build # this might take a while
-   docker-compose run --rm main bash
+   docker compose run --rm main bash
 
 The poetry.lock file is also mounted in order to be able to commit this file after updating.
 

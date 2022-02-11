@@ -5,6 +5,29 @@ Shelley checker
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :target: https://github.com/psf/black
 
+Update the project
+##################
+
+.. code-block:: shell
+
+   make pull
+
+Building the project
+####################
+
+.. code-block:: shell
+
+   make docker-build
+
+Spawning a bash environment
+###########################
+
+.. code-block:: shell
+
+   make docker-run
+
+The commands above use docker which is the recommended way of using this project. For details, see below.
+
 Docker Installation (recommended)
 #################################
 

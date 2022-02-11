@@ -17,6 +17,12 @@ init:
 pull:
 	$(GIT) pull --recurse-submodules
 
+docker-build:
+	docker compose build
+
+docker-run:
+	docker compose run --rm main bash
+
 deps:
 	$(PO) update
 

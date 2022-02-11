@@ -4,9 +4,9 @@ import logging
 import argparse
 import sys
 
-from shelleypy.checker import settings
-from shelleypy.checker.exceptions import CompilationError
-from shelleypy.checker.checker import check
+from shelley.shelleypy.checker import settings
+from shelley.shelleypy.checker.exceptions import CompilationError
+from shelley.shelleypy.checker.checker import check
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyshelley")

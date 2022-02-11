@@ -24,7 +24,7 @@ from astroid import (
 
 from lark import Lark, Transformer
 
-from shelleypy.checker.exceptions import CompilationError
+from shelley.shelleypy.checker.exceptions import CompilationError
 
 from shelley.parsers.ltlf_lark_parser import LTLParser
 from shelley.parsers import ltlf_lark_parser

@@ -77,7 +77,9 @@ class Spec:
     def dumps(self, action_name: Optional[str] = None, eos_name: Optional[str] = None):
         buffer = StringIO()
         self.dump(
-            fp=buffer, action_name=action_name, eos_name=eos_name,
+            fp=buffer,
+            action_name=action_name,
+            eos_name=eos_name,
         )
         return buffer.getvalue()
 
@@ -107,7 +109,8 @@ def generate_usage_validity(dev: Device, prefix: str) -> Spec:
         if dsts is None:
             evt = dev.events.find_by_name(src)
             targets[src] = dsts = Op.make(
-                is_final=evt.is_final, is_initial=evt.is_start,
+                is_final=evt.is_final,
+                is_initial=evt.is_start,
             )
             if evt.is_start:
                 initials.append(Action(name=src))

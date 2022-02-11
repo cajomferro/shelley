@@ -40,6 +40,7 @@ from shelley.automata import errors
 
 logger = logging.getLogger("shelleyc")
 
+
 def get_elapsed_time(start: float) -> timedelta:
     return timedelta(seconds=timer() - start)
 
@@ -370,7 +371,6 @@ class MicroBehavior:
                 self.failure = None
                 self.validation_time = timedelta()
 
-
     def convert_micro_to_macro(self, seq: Sequence[str]) -> MacroTrace:
         for der in self.nfa.get_derivations(seq):
             rest: List[str] = []
@@ -582,7 +582,11 @@ class TriggerIntegrationFailure:
             self.component_errors.items(), key=lambda x: x[0]
         ):
             trace, trace_hl = self._str_trace(
-                lbl=f"  {name!r}: ", trace=macro_trace, errs={err_idx,},
+                lbl=f"  {name!r}: ",
+                trace=macro_trace,
+                errs={
+                    err_idx,
+                },
             )
             lines.append(trace)
             lines.append(trace_hl)
@@ -747,13 +751,15 @@ def ensure_well_formed(dev: Device) -> None:
     start_evts = set(dev.start_events)
     if not (start_evts <= evts):
         raise ValueError(
-            f"{errors.WFORMED_UNDECLARED_START_EVENT}: ", start_evts - evts,
+            f"{errors.WFORMED_UNDECLARED_START_EVENT}: ",
+            start_evts - evts,
         )
     # Get keys
     trigs = set(dev.triggers)
     if not (trigs <= evts):
         raise ValueError(
-            f"{errors.WFORMED_UNDECLARED_TRIGGER_EVENT}: ", trigs - evts,
+            f"{errors.WFORMED_UNDECLARED_TRIGGER_EVENT}: ",
+            trigs - evts,
         )
     if trigs != evts:
         raise ValueError(f"{errors.WFORMED_UNDECLARED_TRIGGER_RULE}: ", evts - trigs)

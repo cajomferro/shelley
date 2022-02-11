@@ -19,7 +19,9 @@ def create_parser() -> argparse.ArgumentParser:
         description="Visualize compiled files as state diagrams"
     )
     parser.add_argument(
-        "input", type=Path, help="Path to the compiled file (.scy or .scb)",
+        "input",
+        type=Path,
+        help="Path to the compiled file (.scy or .scb)",
     )
     parser.add_argument("--dfa", action="store_true", help="Convert to DFA first")
     parser.add_argument(

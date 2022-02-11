@@ -99,7 +99,9 @@ class ShelleyLanguage(LTLParser):
         modifiers, name, nxt = args
         return (
             Event(
-                name=name, is_start=INITIAL in modifiers, is_final=FINAL in modifiers,
+                name=name,
+                is_start=INITIAL in modifiers,
+                is_final=FINAL in modifiers,
             ),
             nxt,
         )
@@ -228,7 +230,10 @@ class ShelleyLanguage(LTLParser):
                 )
 
         device = Device(
-            name=name, events=events, behaviors=behaviors, triggers=triggers,
+            name=name,
+            events=events,
+            behaviors=behaviors,
+            triggers=triggers,
         )
 
         add_user_claims(device, user_claims)

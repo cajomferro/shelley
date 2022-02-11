@@ -150,7 +150,11 @@ def parse_bool_field(
             return default_value
 
 
-def _parse_event_list(data: dict, key: str, events: Events,) -> List[Event]:
+def _parse_event_list(
+    data: dict,
+    key: str,
+    events: Events,
+) -> List[Event]:
     ANY = "$ANY"
     TITLE = f"section {key!r}"
     HINTS = [
@@ -160,7 +164,9 @@ def _parse_event_list(data: dict, key: str, events: Events,) -> List[Event]:
         obj = data[key]
     except KeyError:
         raise ShelleyParserError(
-            title=TITLE, reason=f"section {key!r} is missing", hints=HINTS,
+            title=TITLE,
+            reason=f"section {key!r} is missing",
+            hints=HINTS,
         )
     if not (isinstance(obj, list) or (isinstance(obj, str) and obj.strip() == ANY)):
         raise ShelleyParserError(

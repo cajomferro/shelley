@@ -204,8 +204,6 @@ def compile_shelley(
     ):  # do this only for compound devices
         dump_integration_model(dev, integration)
 
-
-
     if (skip_checks or dev.is_valid) and save_output:
         logger.debug("Compiling device: {0}".format(shelley_device.name))
         serialize(dst_path, dev.external.nfa.as_dict(), binary)

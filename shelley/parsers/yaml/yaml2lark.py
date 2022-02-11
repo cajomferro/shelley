@@ -5,6 +5,7 @@ from shelley.parsers.yaml import yaml2shelley
 
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
 
+
 def translate(yaml_source: Path, lark_source: Path):
     shelley_device = yaml2shelley.get_shelley_from_yaml(yaml_source)
     visitor = Shelley2Lark(components=shelley_device.components)

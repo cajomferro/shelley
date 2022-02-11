@@ -31,7 +31,10 @@ def create_parser() -> argparse.ArgumentParser:
         required=True,
     )
     parser.add_argument(
-        "-i", "--integration", type=Path, help="dump the integration diagram",
+        "-i",
+        "--integration",
+        type=Path,
+        help="dump the integration diagram",
     )
     parser.add_argument(
         "--dump-timings",
@@ -47,13 +50,19 @@ def create_parser() -> argparse.ArgumentParser:
         action="store_false",
     )
     parser.add_argument(
-        "--skip-testing", help="do not check traces", action="store_true",
+        "--skip-testing",
+        help="do not check traces",
+        action="store_true",
     )
     parser.add_argument(
-        "--skip-checks", help="Skip validity tests.", action="store_true",
+        "--skip-checks",
+        help="Skip validity tests.",
+        action="store_true",
     )
     parser.add_argument(
-        "--check-ambiguity", help="Also check ambiguity.", action="store_true",
+        "--check-ambiguity",
+        help="Also check ambiguity.",
+        action="store_true",
     )
     return parser
 

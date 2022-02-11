@@ -131,7 +131,9 @@ class Shelley2Lark(Visitor):
 
             if not len(element.components):
                 if len(triggers[operation]):
-                    raise Exception("Device has 0 components but there are operations with non-empty body!")
+                    raise Exception(
+                        "Device has 0 components but there are operations with non-empty body!"
+                    )
                 body = ";"
             else:
                 body = (
@@ -148,17 +150,17 @@ class Shelley2Lark(Visitor):
             )
 
         if len(element.system_formulae) > 0:
-            self.result += '\n'
+            self.result += "\n"
         for formula in element.system_formulae:
             self.result += f" system check {ltlf_lark_parser.dumps(formula, nusvm_strict=False)};\n"
 
         if len(element.integration_formulae) > 0:
-            self.result += '\n'
+            self.result += "\n"
         for formula in element.integration_formulae:
             self.result += f" integration check {ltlf_lark_parser.dumps(formula, nusvm_strict=False)};\n"
 
         if len(element.subsystem_formulae) > 0:
-            self.result += '\n'
+            self.result += "\n"
         for subsystem, formula in element.subsystem_formulae:
             self.result += f" subsystem {subsystem} check {ltlf_lark_parser.dumps(formula, nusvm_strict=False)};\n"
 

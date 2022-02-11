@@ -7,7 +7,20 @@ import astroid
 import yaml
 import copy
 
-from astroid import parse, extract_node, AsyncFunctionDef, Expr, Match, Await, Call, If, Return, ClassDef, Decorators, AnnAssign
+from astroid import (
+    parse,
+    extract_node,
+    AsyncFunctionDef,
+    Expr,
+    Match,
+    Await,
+    Call,
+    If,
+    Return,
+    ClassDef,
+    Decorators,
+    AnnAssign,
+)
 
 from lark import Lark, Transformer
 
@@ -23,7 +36,12 @@ from shelley.ast.actions import Actions, Action
 from shelley.ast.devices import discover_uses
 from shelley.ast.behaviors import Behaviors, Behavior
 from shelley.ast.triggers import Triggers, Trigger, TriggerRule
-from shelley.ast.rules import TriggerRuleSequence, TriggerRuleEvent, TriggerRuleFired, TriggerRuleChoice
+from shelley.ast.rules import (
+    TriggerRuleSequence,
+    TriggerRuleEvent,
+    TriggerRuleFired,
+    TriggerRuleChoice,
+)
 from shelley.ast.components import Components, Component
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
 
@@ -52,21 +70,31 @@ def parse_uses(uses_path: Optional[Path]) -> Dict[str, str]:
 class StrangeVisitor:
     def __init__(self):
         self.device = Device(
-            name="", events=Events(), behaviors=Behaviors(), triggers=Triggers(), components=Components()
+            name="",
+            events=Events(),
+            behaviors=Behaviors(),
+            triggers=Triggers(),
+            components=Components(),
         )
         self.current_operation: Optional[Event] = None
         self.current_rule: TriggerRule = TriggerRuleFired()
-        self.ltlf_parser = Lark.open("ltlf_grammar.lark", rel_to=ltlf_lark_parser.__file__, start="formula").parse
+        self.ltlf_parser = Lark.open(
+            "ltlf_grammar.lark", rel_to=ltlf_lark_parser.__file__, start="formula"
+        ).parse
 
     def print_call(self, parent_name, func_call: Call):
         subystem_call = func_call.func.attrname
         subystem_instance = func_call.func.expr.attrname
         exprself = func_call.func.expr.expr.name
-        logger.debug(f"    {parent_name} call: {exprself}.{subystem_instance}.{subystem_call}")
+        logger.debug(
+            f"    {parent_name} call: {exprself}.{subystem_instance}.{subystem_call}"
+        )
 
     def _process_operation(self, node):
         logger.debug(f"Operation: {node.name}")
-        self.current_operation: Event = self.device.events.create(node.name, is_start=False, is_final=False)
+        self.current_operation: Event = self.device.events.create(
+            node.name, is_start=False, is_final=False
+        )
         self.find(node.decorators)
         if len(self.device.uses) > 0:
             for x in node.body:
@@ -89,10 +117,10 @@ class StrangeVisitor:
                             formula = LTLParser().transform(self.ltlf_parser(claim))
                             self.device.integration_formulae.append(formula)
                         elif claim.startswith("subsystem"):
-                            parts = claim.split(" ") # separate by spaces
-                            name = parts[1] # get subystem name from formula
-                            parts = parts[3:] # remove 'subsystem XX check' from string
-                            claim = " ".join(parts) # re-join by spaces
+                            parts = claim.split(" ")  # separate by spaces
+                            name = parts[1]  # get subystem name from formula
+                            parts = parts[3:]  # remove 'subsystem XX check' from string
+                            claim = " ".join(parts)  # re-join by spaces
                             formula = LTLParser().transform(self.ltlf_parser(claim))
                             self.device.subsystem_formulae.append((name, formula))
 
@@ -107,18 +135,28 @@ class StrangeVisitor:
                                     next_ops_list = kw.value.elts
                                     if len(next_ops_list) == 0:
                                         self.device.behaviors.create(
-                                            copy.copy(self.current_operation))  # operation without next operations
+                                            copy.copy(self.current_operation)
+                                        )  # operation without next operations
                                     for next_op in next_ops_list:
-                                        self.device.behaviors.create(copy.copy(self.current_operation),
-                                                                     Event(name=next_op.value, is_start=False,
-                                                                           is_final=True))
+                                        self.device.behaviors.create(
+                                            copy.copy(self.current_operation),
+                                            Event(
+                                                name=next_op.value,
+                                                is_start=False,
+                                                is_final=True,
+                                            ),
+                                        )
                     case "system":
                         for kw in x.keywords:
                             match kw.arg:
                                 case "uses":
                                     for name, type in kw.value.items:
-                                        self.device.components.create(name.value, type.value)
-                                        self.device.uses = discover_uses(self.device.components) # TODO: melhorar isto?
+                                        self.device.components.create(
+                                            name.value, type.value
+                                        )
+                                        self.device.uses = discover_uses(
+                                            self.device.components
+                                        )  # TODO: melhorar isto?
 
     def _process_if(self, node: astroid.NodeNG):
         # TODO: add support for choice with more than 2 branches
@@ -137,17 +175,22 @@ class StrangeVisitor:
         self.current_rule = save_rule
         branch_rule = TriggerRuleChoice()
         branch_rule.choices.extend([left_rule, right_rule])
-        if not(isinstance(left_rule, TriggerRuleFired) and isinstance(right_rule, TriggerRuleFired)):  # only proceed if 'ifelse' have calls inside
+        if not (
+            isinstance(left_rule, TriggerRuleFired)
+            and isinstance(right_rule, TriggerRuleFired)
+        ):  # only proceed if 'ifelse' have calls inside
             match self.current_rule:
                 case TriggerRuleFired():
                     self.current_rule = branch_rule
                 case TriggerRule():  # any other type of rule
-                    self.current_rule = TriggerRuleSequence(self.current_rule, branch_rule)
+                    self.current_rule = TriggerRuleSequence(
+                        self.current_rule, branch_rule
+                    )
 
     def _process_match_cases(self, node_cases: List[astroid.MatchCase]):
         save_rule: TriggerRule = copy.copy(self.current_rule)
         self.current_rule = TriggerRuleFired()
-        branches_rules : List[TriggerRule] = list()
+        branches_rules: List[TriggerRule] = list()
         for case in node_cases:
             logger.debug(f"    Match case: {case.pattern}")
             for x in case.body:
@@ -155,8 +198,8 @@ class StrangeVisitor:
             if not isinstance(self.current_rule, TriggerRuleFired):
                 branches_rules.append(copy.copy(self.current_rule))
             self.current_rule = TriggerRuleFired()
-        self.current_rule = save_rule # restore rule before finding match cases
-        if len(branches_rules) > 0: # only proceed if match cases have calls inside
+        self.current_rule = save_rule  # restore rule before finding match cases
+        if len(branches_rules) > 0:  # only proceed if match cases have calls inside
             choice_rule = TriggerRuleChoice()
             choice_rule.choices.extend(branches_rules)
             # finally, append the choices rule to a previously rule or not
@@ -164,25 +207,31 @@ class StrangeVisitor:
                 case TriggerRuleFired():
                     self.current_rule = choice_rule
                 case TriggerRule():  # any other type of rule previously existent
-                    self.current_rule = TriggerRuleSequence(self.current_rule, choice_rule)
+                    self.current_rule = TriggerRuleSequence(
+                        self.current_rule, choice_rule
+                    )
 
     def _process_await(self, node: astroid.NodeNG):
-            if isinstance(node, Call):
-                subystem_call = node.func.attrname
-                subystem_instance = node.func.expr.attrname
-                exprself = node.func.expr.expr.name
-                try:
-                    component: Component = self.device.components[subystem_instance]
-                except KeyError as err:
-                    sys.exit(
-                        f"PyShelley error\nInvalid subsystem '{subystem_instance}' in '{subystem_instance}.{subystem_call}' on line {node.lineno}")
-                logger.debug(f"    Await call: {exprself}.{subystem_instance}.{subystem_call}")
-                match self.current_rule:
-                    case TriggerRuleFired():
-                        self.current_rule = TriggerRuleEvent(component, subystem_call)
-                    case TriggerRule():  # any other type of rule
-                        self.current_rule = TriggerRuleSequence(self.current_rule,
-                                                                TriggerRuleEvent(component, subystem_call))
+        if isinstance(node, Call):
+            subystem_call = node.func.attrname
+            subystem_instance = node.func.expr.attrname
+            exprself = node.func.expr.expr.name
+            try:
+                component: Component = self.device.components[subystem_instance]
+            except KeyError as err:
+                sys.exit(
+                    f"PyShelley error\nInvalid subsystem '{subystem_instance}' in '{subystem_instance}.{subystem_call}' on line {node.lineno}"
+                )
+            logger.debug(
+                f"    Await call: {exprself}.{subystem_instance}.{subystem_call}"
+            )
+            match self.current_rule:
+                case TriggerRuleFired():
+                    self.current_rule = TriggerRuleEvent(component, subystem_call)
+                case TriggerRule():  # any other type of rule
+                    self.current_rule = TriggerRuleSequence(
+                        self.current_rule, TriggerRuleEvent(component, subystem_call)
+                    )
 
     def find(self, node):
         match node:
@@ -196,7 +245,9 @@ class StrangeVisitor:
                     self.find(x)
             case AsyncFunctionDef():
                 self._process_operation(node)
-                self.device.triggers.create(copy.copy(self.current_operation), copy.copy(self.current_rule))
+                self.device.triggers.create(
+                    copy.copy(self.current_operation), copy.copy(self.current_rule)
+                )
                 self.current_rule = TriggerRuleFired()
             case Decorators():
                 self._process_decorators(node)
@@ -204,7 +255,7 @@ class StrangeVisitor:
                 # logger.debug(node)
                 self.find(node.value)
             case Expr():
-                #logger.debug(node.value)
+                # logger.debug(node.value)
                 self.find(node.value)
             case Await():
                 # logger.debug(node)
@@ -217,7 +268,6 @@ class StrangeVisitor:
                 logger.debug(f"    Case return: {node.value.value}")
             case If():
                 self._process_if(node)
-
 
 
 def check(src_path: Path, uses_path: Path, output_path: Path):

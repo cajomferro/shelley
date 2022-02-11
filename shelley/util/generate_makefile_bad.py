@@ -42,14 +42,18 @@ def create_parser() -> argparse.ArgumentParser:
         help="Path to an example or a YAML file with several examples. If this is empty, assume current folder.",
     )
     parser.add_argument(
-        "--uses", type=Path, default=None, help="Path to uses.yml",
+        "--uses",
+        type=Path,
+        default=None,
+        help="Path to uses.yml",
     )
 
     return parser
 
 
 def generate_config(
-    example_path: Path, uses_path: Optional[Path] = None,
+    example_path: Path,
+    uses_path: Optional[Path] = None,
 ):
 
     current_dir_sources: List[str] = [

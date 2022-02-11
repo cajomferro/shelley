@@ -62,7 +62,10 @@ def create_parser() -> argparse.ArgumentParser:
         help="Path to an example or a YAML file with several examples. If this is empty, assume current folder.",
     )
     parser.add_argument(
-        "--uses", type=Path, default=None, help="Path to uses.yml",
+        "--uses",
+        type=Path,
+        default=None,
+        help="Path to uses.yml",
     )
     # parser.add_argument(
     #     "--exclude",
@@ -82,8 +85,8 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def generate_makefile_content(
-        example_path: Path,
-        uses_path: Optional[Path] = None,
+    example_path: Path,
+    uses_path: Optional[Path] = None,
 ):
     python_files: List[Path] = _collect_py_files(example_path)
     logger.debug("Found python files: {0}".format(python_files))
@@ -112,7 +115,9 @@ def generate_makefile_content(
         msg = """Could not decide what is the main source!
         Found .shy files: {current_dir_sources}
         Uses: {uses}
-                """.format(current_dir_sources=scy_files, uses=uses)
+                """.format(
+            current_dir_sources=scy_files, uses=uses
+        )
         logger.error(msg)
         sys.exit(255)
 
@@ -160,8 +165,10 @@ def generate_makefile_content(
         makefile_content = makefile_content.replace("$$CLEAN_EXT$$", default_clean_ext)
     else:
         makefile_content = makefile_content.replace("$$ALL_TARGET$$", "py")
-        makefile_content = makefile_content.replace("$$PYTHON_TARGETS$$",
-                                                    f"py: {' '.join(_collect_shy_files(python_files))} scy")
+        makefile_content = makefile_content.replace(
+            "$$PYTHON_TARGETS$$",
+            f"py: {' '.join(_collect_shy_files(python_files))} scy",
+        )
         default_clean_ext += " *.shy"
         makefile_content = makefile_content.replace("$$CLEAN_EXT$$", default_clean_ext)
 
@@ -193,7 +200,10 @@ def _collect_scy_files(example_path: Path, target_ext: str = "scy"):
     """
     Get a list of .scy filenames by searching sources that have target_ext
     """
-    return [source.stem + ".scy" for source in Path(example_path).glob("*.{0}".format(target_ext))]
+    return [
+        source.stem + ".scy"
+        for source in Path(example_path).glob("*.{0}".format(target_ext))
+    ]
 
 
 def _collect_uses(uses_path: Path) -> Optional[Dict[str, str]]:

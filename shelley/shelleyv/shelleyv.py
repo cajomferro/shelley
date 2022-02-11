@@ -186,7 +186,11 @@ def smv_dump(
             init_var(f"{var_action}", acts)
 
         next_var_case(
-            var_action, [(var_eos, var_action), ("TRUE", acts),],
+            var_action,
+            [
+                (var_eos, var_action),
+                ("TRUE", acts),
+            ],
         )
 
     # EOS

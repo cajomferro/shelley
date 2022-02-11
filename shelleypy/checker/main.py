@@ -14,10 +14,12 @@ logger = logging.getLogger("pyshelley")
 
 def get_command_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Compile shelley files")
-    parser.add_argument("input", nargs=1, type=Path,
-                        help="Path to the input system (Python file)")
-    parser.add_argument("-u", "--uses", type=Path, required=True,
-                        help="path to the Shelley spec (YAML)")
+    parser.add_argument(
+        "input", nargs=1, type=Path, help="Path to the input system (Python file)"
+    )
+    parser.add_argument(
+        "-u", "--uses", type=Path, required=True, help="path to the Shelley spec (YAML)"
+    )
     parser.add_argument("-o", "--output", type=Path, help="path to store shelley file")
     parser.add_argument(
         "-v", "--verbosity", help="increase output verbosity", action="store_true"

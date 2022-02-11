@@ -160,7 +160,10 @@ class ModelChecker:
 
 
 def create_fsm_system_model(
-    spec: Path, uses: Path, fsm_system: Path, skip_direct_checks: bool = False,
+    spec: Path,
+    uses: Path,
+    fsm_system: Path,
+    skip_direct_checks: bool = False,
 ) -> Tuple[Device, shelleyc.AssembledDevice]:
     """
     Create integration model by running shelleyc tool
@@ -251,7 +254,9 @@ def check_usage(
 
 
 def check_integration(
-    dev: Device, fsm: Path, smv: Path,
+    dev: Device,
+    fsm: Path,
+    smv: Path,
 ):
     mc = ModelChecker(smv)
     spec = ltlf.Spec(formulae=[], comment="INTEGRATION CHECKS")
@@ -357,5 +362,7 @@ def main():
 
     logger.debug("Check integration claims")
     check_integration(
-        device, fsm_integration, smv_integration,
+        device,
+        fsm_integration,
+        smv_integration,
     )

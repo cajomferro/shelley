@@ -157,7 +157,7 @@ class Until(BinaryOperator):
 @dataclass
 class ExistsFinally(UnaryOperator):
     """
-    p is true in a state s0 if there exists a series of transitions 
+    p is true in a state s0 if there exists a series of transitions
     s_0 -> s_1, s_1 -> s_2, ...,s_{n−1} -> s_n such that p is true in s_n
 
     TODO: THIS IS A CTL FORMULA RATHER THAN LTLf!
@@ -193,7 +193,6 @@ def WeakUntil(left, right):
     "ψ has to hold at least until φ; if φ never becomes true, ψ must remain true forever. <=> φ R (φ ∨ ψ) <=> (ψ U φ) ∨ G ψ"
     # return Releases(right, Or(right, left))
     return Or(Until(left, right), Always(left))
-
 
 
 # Conversions
@@ -333,7 +332,10 @@ def dump(formula: Formula, fp: IO, eos=None, nusvm_strict=True):
 def dumps(formula, eos=None, nusvm_strict=True):
     buffer = StringIO()
     dump(
-        formula=formula, fp=buffer, eos=eos, nusvm_strict=nusvm_strict,
+        formula=formula,
+        fp=buffer,
+        eos=eos,
+        nusvm_strict=nusvm_strict,
     )
     return buffer.getvalue()
 

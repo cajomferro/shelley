@@ -11,10 +11,11 @@ services:
     volumes:
       - "./shelley:/app/shelley"
       - "./shelley-examples:/app/shelley-examples"
+      - "./shelley/shelleypy:/app/shelley/shelleypy"
       - "./tests:/app/tests"
       - "./poetry.lock:/app/poetry.lock"
       - "./pyproject.toml:/app/pyproject.toml"
       - "./Makefile:/app/Makefile"
       - "./README.rst:/app/README.rst"
-      - "./shelleypy:/app/shelleypy"
+
 

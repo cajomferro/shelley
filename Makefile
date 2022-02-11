@@ -39,6 +39,6 @@ clean:
 	$(MAKE) -C examples clean
 
 format:
-	$(BLACK) .
+	$(BLACK) shelley
 
 .PHONY: init check test all examples

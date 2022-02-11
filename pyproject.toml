@@ -16,9 +16,9 @@ lark = "^0.11.3"
 astroid = "^2.8.4" # required for shelleypy
 
 [tool.poetry.dev-dependencies]
-mypy = "^0.770"
+mypy = "^0.931"
 pytest = "^6.2.5"
-black = "^19.10b0"
+black = "^22.1.0"
 Pygments = "^2.6.1"
 snakeviz="^2.1.0"
 aiohttp = "^3.7.4" # required for blackd

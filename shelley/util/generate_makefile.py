@@ -1,18 +1,23 @@
 import argparse
+import sys
+
 import yaml
 import logging
 from typing import List, Optional, Dict
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("convert2lark")
+logger = logging.getLogger("generate_makefile")
 
 MAKEFILE_TEMPLATE = """include ../common.mk
+
+MAKEFLAGS += --no-print-directory
+
 USES = -u $$USES_PATH$$
 #VALIDITY_CHECKS=--skip-direct
 #VALIDITY_CHECKS=--skip-mc
 
-all: scy
+all: $$ALL_TARGET$$
 
 pdf: $$MAIN_SYSTEM$$.pdf
 
@@ -21,6 +26,8 @@ png: $$MAIN_SYSTEM$$.png
 scy: $$MAIN_SYSTEM$$.scy
 
 USES = -u uses.yml
+
+$$PYTHON_TARGETS$$
 
 deps:
 $$DEPS$$
@@ -32,7 +39,7 @@ $$STATS$$
 stats: $$EXAMPLE_FOLDER$$-stats.json
 
 clean:
-	rm -f *.scy *.pdf *.png *.gv *-stats.json *.int *.smv
+	rm -f $$CLEAN_EXT$$
 $$CLEAN_DEPS$$
 
 .PHONY: all pdf scy deps clean
@@ -74,24 +81,42 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def generate_config(
-    example_path: Path,
-    uses_path: Optional[Path] = None,
-    # exclude_files: Optional[List[str]] = None,
+def generate_makefile_content(
+        example_path: Path,
+        uses_path: Optional[Path] = None,
 ):
+    python_files: List[Path] = _collect_py_files(example_path)
+    logger.debug("Found python files: {0}".format(python_files))
 
-    current_dir_sources: List[str] = [
-        source.stem + ".scy" for source in Path(example_path).glob("*.shy")
-    ]
+    if python_files:
+        scy_files: List[str] = _collect_scy_files(example_path, "py")
+    else:
+        scy_files: List[str] = _collect_scy_files(example_path, "shy")
+
+    logger.debug("Found .scy files: {0}".format(scy_files))
+
     uses: Optional[Dict[str, str]] = _collect_uses(uses_path)
+    logger.debug("Found uses: {0}".format(uses))
 
     if uses is not None:
-        main_source_set = set(current_dir_sources) - set(uses.values())
+        main_source_set = set(scy_files) - set(uses.values())
+        if len(main_source_set) > 1:
+            logger.warning(f"Found too many main files: {main_source_set}")
     else:
         uses = {}
-        main_source_set = set(current_dir_sources)
+        main_source_set = set(scy_files)
 
-    main_source_filename = main_source_set.pop()
+    try:
+        main_source_filename = main_source_set.pop()
+    except KeyError:
+        msg = """Could not decide what is the main source!
+        Found .shy files: {current_dir_sources}
+        Uses: {uses}
+                """.format(current_dir_sources=scy_files, uses=uses)
+        logger.error(msg)
+        sys.exit(255)
+
+    logger.debug("Guessing main: {0}".format(main_source_filename))
 
     deps = ""
     clean_deps = ""
@@ -128,20 +153,53 @@ def generate_config(
         "$$EXAMPLE_FOLDER$$", Path(example_path).absolute().name
     )
 
-    # print(makefile_content)
+    default_clean_ext = "*.scy *.pdf *.png *.gv *-stats.json *.int *.smv"
+    if not python_files:
+        makefile_content = makefile_content.replace("$$ALL_TARGET$$", "scy")
+        makefile_content = makefile_content.replace("$$PYTHON_TARGETS$$", "")
+        makefile_content = makefile_content.replace("$$CLEAN_EXT$$", default_clean_ext)
+    else:
+        makefile_content = makefile_content.replace("$$ALL_TARGET$$", "py")
+        makefile_content = makefile_content.replace("$$PYTHON_TARGETS$$",
+                                                    f"py: {' '.join(_collect_shy_files(python_files))} scy")
+        default_clean_ext += " *.shy"
+        makefile_content = makefile_content.replace("$$CLEAN_EXT$$", default_clean_ext)
+
+    # logger.debug(makefile_content)
 
     return makefile_content
 
 
-def test_generate_config():
-    generate_config(Path("./shelley-examples/aquamote_core_v4"))
+def test_generate_makefile_content():
+    generate_makefile_content(Path("./shelley-examples/aquamote_core_v4"))
 
 
-def test_generate_config_2():
-    generate_config(Path("./shelley-examples/paper_frankenstein_example"))
+def test_generate_makefile_content():
+    generate_makefile_content(Path("./shelley-examples/paper_frankenstein_example"))
+
+
+def _collect_py_files(example_path: Path):
+    return [source for source in Path(example_path).glob("*.py")]
+
+
+def _collect_shy_files(python_files: List[Path]):
+    """
+    Get a list of .shy filenames given a list of already collected python files
+    """
+    return [source.stem + ".shy" for source in python_files]
+
+
+def _collect_scy_files(example_path: Path, target_ext: str = "scy"):
+    """
+    Get a list of .scy filenames by searching sources that have target_ext
+    """
+    return [source.stem + ".scy" for source in Path(example_path).glob("*.{0}".format(target_ext))]
 
 
 def _collect_uses(uses_path: Path) -> Optional[Dict[str, str]]:
+    """
+    Return example: {'Valve': 'valve.scy', 'Controller': 'controller.scy'}
+    """
     uses: Optional[Dict[str, str]] = None
     if uses_path.exists():
         with uses_path.open("r") as f:
@@ -254,7 +312,7 @@ Timer: timer.scy
 
 
 def run(example_path: str, uses_file_path: str):
-    makefile_content: str = generate_config(example_path, uses_file_path)
+    makefile_content: str = generate_makefile_content(example_path, uses_file_path)
     makefile_path: Path = example_path / "Makefile"
 
     with makefile_path.open("w") as f:
@@ -267,6 +325,9 @@ def main() -> None:
     # exclude_files_list: Optional[List[str]] = _collect_exclude(
     #     args.exclude, args.exclude_from_file
     # )
+
+    if args.verbosity:
+        logger.setLevel(logging.DEBUG)
 
     if args.input is None:
         example_path: Path = Path()  # add current folder

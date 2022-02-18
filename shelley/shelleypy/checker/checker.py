@@ -1,5 +1,5 @@
 import sys
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Union, Any
 from pathlib import Path
 import logging
 
@@ -82,6 +82,12 @@ class StrangeVisitor:
         self.ltlf_parser = Lark.open(
             "ltlf_grammar.lark", rel_to=ltlf_lark_parser.__file__, start="formula"
         ).parse
+        self._current_method_node: Optional[
+            Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
+        ] = None
+        self._current_op_decorator: Optional[Dict[Any]] = None
+        self._method_return_idx: int = 0
+        self._return_check: bool = False
 
     def print_call(self, parent_name, func_call: Call):
         subystem_call = func_call.func.attrname
@@ -91,33 +97,69 @@ class StrangeVisitor:
             f"    {parent_name} call: {exprself}.{subystem_instance}.{subystem_call}"
         )
 
-    def _process_operation(self, node):
-        try:
-            logger.debug(f"Operation: {node.name}")
-            self.current_operation: Event = self.device.events.create(
-                node.name, is_start=False, is_final=False
-            )
-            decorators = self.find(node.decorators)
-            assert decorators is not None and "operation" in decorators
+    def _process_operation(
+        self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
+    ):
+        if node.decorators:
+            self._current_op_decorator = self.find(node.decorators)
+            assert self._current_op_decorator["type"] == "operation"
+            self._current_op_decorator["name"] = node.name
+            logger.debug(f"Method: {node.name}")
+            self._method_return_idx = 0
 
             if len(self.device.uses) > 0:
                 for x in node.body:
                     self.find(x)
-
-            self.device.triggers.create(
-                copy.copy(self.current_operation), copy.copy(self.current_rule)
+        else:
+            logger.debug(
+                f"Found method {node.name} but it is not annotated as an operation!"
             )
-            self.current_rule = TriggerRuleFired()
-        except AssertionError:
-            logger.debug(f"Found function {node.name} but it is not annotated as an operation!")
+
+    def _process_return(self, node):
+        """
+        For now, let's create a Shelley operation for each return.
+        An alternative (smarter but more difficult to implement) approach would be to create a Shelley operation
+        for each "type" of return.
+        """
+        return_next: str = (
+            node.value.value
+        )  # TODO: for now, we just accept single-string return
+        self._method_return_idx += 1
+        operation_name: str = f"{self._current_op_decorator['name']}_{return_next}_{self._method_return_idx}"
+
+        logger.debug(f"    Operation: {operation_name}")
+
+        self.current_operation: Event = self.device.events.create(
+            operation_name,
+            is_start=self._current_op_decorator["initial"],
+            is_final=self._current_op_decorator["final"],
+        )
+
+        next_ops_list = self._current_op_decorator["next"]
+        if len(next_ops_list) == 0:
+            self.device.behaviors.create(
+                copy.copy(self.current_operation)
+            )  # operation without next operations
+        for next_op in next_ops_list:
+            self.device.behaviors.create(
+                copy.copy(self.current_operation),
+                Event(
+                    name=next_op.value,
+                    is_start=False,
+                    is_final=True,
+                ),
+            )
+
+        self.device.triggers.create(
+            copy.copy(self.current_operation), copy.copy(self.current_rule)
+        )
+        self.current_rule = TriggerRuleFired()
+        self._return_check = True
 
     def _process_decorators(self, node):
-        decorators_names : List[str] = []
         for x in node.nodes:
             if isinstance(x, Call):
-                current_decorator_name = x.func.name
-                decorators_names.append(current_decorator_name)
-                match current_decorator_name:
+                match x.func.name:
                     case "claim":
                         claim: str = x.args[0].value
                         logger.debug(f"Claim: {claim}")
@@ -139,27 +181,21 @@ class StrangeVisitor:
                             self.device.subsystem_formulae.append((name, formula))
 
                     case "operation":
+                        decorator = {
+                            "type": "operation",
+                            "initial": False,
+                            "final": False,
+                            "next": [],
+                        }
                         for kw in x.keywords:
                             match kw.arg:
-                                case "final":
-                                    self.current_operation.is_final = True
                                 case "initial":
-                                    self.current_operation.is_start = True
+                                    decorator["initial"] = True
+                                case "final":
+                                    decorator["final"] = True
                                 case "next":
-                                    next_ops_list = kw.value.elts
-                                    if len(next_ops_list) == 0:
-                                        self.device.behaviors.create(
-                                            copy.copy(self.current_operation)
-                                        )  # operation without next operations
-                                    for next_op in next_ops_list:
-                                        self.device.behaviors.create(
-                                            copy.copy(self.current_operation),
-                                            Event(
-                                                name=next_op.value,
-                                                is_start=False,
-                                                is_final=True,
-                                            ),
-                                        )
+                                    decorator["next"] = kw.value.elts
+                        return decorator
                     case "system":
                         for kw in x.keywords:
                             match kw.arg:
@@ -171,7 +207,6 @@ class StrangeVisitor:
                                         self.device.uses = discover_uses(
                                             self.device.components
                                         )  # TODO: melhorar isto?
-        return decorators_names
 
     def _process_if(self, node: astroid.NodeNG):
         # TODO: add support for choice with more than 2 branches
@@ -204,27 +239,17 @@ class StrangeVisitor:
 
     def _process_match_cases(self, node_cases: List[astroid.MatchCase]):
         save_rule: TriggerRule = copy.copy(self.current_rule)
-        self.current_rule = TriggerRuleFired()
-        branches_rules: List[TriggerRule] = list()
         for case in node_cases:
             logger.debug(f"    Match case: {case.pattern}")
+            self.current_rule = save_rule
+            self._return_check = False  # we must have a return for each match case
             for x in case.body:
                 self.find(x)
-            if not isinstance(self.current_rule, TriggerRuleFired):
-                branches_rules.append(copy.copy(self.current_rule))
-            self.current_rule = TriggerRuleFired()
-        self.current_rule = save_rule  # restore rule before finding match cases
-        if len(branches_rules) > 0:  # only proceed if match cases have calls inside
-            choice_rule = TriggerRuleChoice()
-            choice_rule.choices.extend(branches_rules)
-            # finally, append the choices rule to a previously rule or not
-            match self.current_rule:
-                case TriggerRuleFired():
-                    self.current_rule = choice_rule
-                case TriggerRule():  # any other type of rule previously existent
-                    self.current_rule = TriggerRuleSequence(
-                        self.current_rule, choice_rule
-                    )
+            if not self._return_check:
+                sys.exit(
+                    f"PyShelley error\nExpecting return after line {x.lineno}. Did you forget the return statement in this case?"
+                )
+
 
     def _process_call(self, node: astroid.NodeNG):
         subystem_call = node.func.attrname
@@ -237,9 +262,7 @@ class StrangeVisitor:
                 sys.exit(
                     f"PyShelley error\nInvalid subsystem '{subystem_instance}' in '{subystem_instance}.{subystem_call}' on line {node.lineno}"
                 )
-            logger.debug(
-                f"    Call: {exprself}.{subystem_instance}.{subystem_call}"
-            )
+            logger.debug(f"    Call: {exprself}.{subystem_instance}.{subystem_call}")
             match self.current_rule:
                 case TriggerRuleFired():
                     self.current_rule = TriggerRuleEvent(component, subystem_call)
@@ -267,10 +290,8 @@ class StrangeVisitor:
             case Decorators():
                 return self._process_decorators(node)
             case AnnAssign():
-                # logger.debug(node)
                 self.find(node.value)
             case Expr():
-                # logger.debug(node.value)
                 self.find(node.value)
             case Call():
                 self._process_call(node)
@@ -283,6 +304,7 @@ class StrangeVisitor:
                 self.find(node.subject)
                 self._process_match_cases(node.cases)
             case Return():
+                self._process_return(node)
                 logger.debug(f"    Case return: {node.value.value}")
             case If():
                 self._process_if(node)

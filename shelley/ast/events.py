@@ -30,7 +30,7 @@ class Events(Node):
 
     def add(self, elem: Event) -> None:
         if elem.name in self._events:
-            raise EventsListDuplicatedError()
+            raise EventsListDuplicatedError(elem.name)
 
         self._events[elem.name] = elem
         self._data.append(elem)

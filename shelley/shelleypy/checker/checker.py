@@ -85,9 +85,10 @@ class StrangeVisitor:
         self._current_method_node: Optional[
             Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
         ] = None
-        self._current_op_decorator: Optional[Dict[Any]] = None
+        self._current_op_decorator: Optional[Dict[str, Any]] = None
         self._method_return_idx: int = 0
         self._return_check: bool = False
+        self._collect_extra_ops: List[Dict[str, Any]] = list()
 
     def print_call(self, parent_name, func_call: Call):
         subystem_call = func_call.func.attrname
@@ -95,6 +96,32 @@ class StrangeVisitor:
         exprself = func_call.func.expr.expr.name
         logger.debug(
             f"    {parent_name} call: {exprself}.{subystem_instance}.{subystem_call}"
+        )
+
+    def _create_operation(self, name, is_initial, is_final, next_ops_list, rules):
+        current_operation: Event = self.device.events.create(
+            name,
+            is_start=is_initial,
+            is_final=is_final,
+        )
+
+        if len(next_ops_list) == 0:
+            self.device.behaviors.create(
+                copy.copy(current_operation)
+            )  # operation without next operations
+
+        for next_op in next_ops_list:
+            self.device.behaviors.create(
+                copy.copy(current_operation),
+                Event(
+                    name=next_op,
+                    is_start=False,
+                    is_final=True,
+                ),
+            )
+
+        self.device.triggers.create(
+            copy.copy(current_operation), copy.copy(rules)
         )
 
     def _process_operation(
@@ -107,9 +134,40 @@ class StrangeVisitor:
             logger.debug(f"Method: {node.name}")
             self._method_return_idx = 0
 
-            if len(self.device.uses) > 0:
+            if len(self.device.uses) == 0:
+                self._create_operation(node.name,
+                                       self._current_op_decorator["initial"],
+                                       self._current_op_decorator["final"],
+                                       self._current_op_decorator["next"],
+                                       TriggerRuleFired()
+                                       )
+            else:
                 for x in node.body:
                     self.find(x)
+
+                if len(self._collect_extra_ops) == 1:
+                    self._create_operation(node.name,
+                                           self._current_op_decorator["initial"],
+                                           self._current_op_decorator["final"],
+                                           self._current_op_decorator["next"],
+                                           self._collect_extra_ops[0]["rules"]
+                                           )
+                else:
+                    for extra_op in self._collect_extra_ops:
+                        self._create_operation(extra_op["name"],
+                                               False,
+                                               self._current_op_decorator["final"],
+                                               extra_op["next"],
+                                               extra_op["rules"]
+                                               )
+                    self._create_operation(node.name,
+                                           self._current_op_decorator["initial"],
+                                           False,
+                                           [extra_op["name"] for extra_op in self._collect_extra_ops],
+                                           TriggerRuleFired()
+                                           )
+
+                self._collect_extra_ops = []
         else:
             logger.debug(
                 f"Found method {node.name} but it is not annotated as an operation!"
@@ -129,46 +187,18 @@ class StrangeVisitor:
 
         logger.debug(f"    Operation: {operation_name}")
 
-        self.current_operation: Event = self.device.events.create(
-            operation_name,
-            is_start=self._current_op_decorator["initial"],
-            is_final=self._current_op_decorator["final"],
-        )
+        self._collect_extra_ops.append({
+            "name": operation_name,
+            "next": [return_next],
+            "rules": self.current_rule
+        })
 
         next_ops_list = self._current_op_decorator["next"]
-        if len(next_ops_list) == 0:
-            self.device.behaviors.create(
-                copy.copy(self.current_operation)
-            )  # operation without next operations
-
-        # TODO: add support for return with several operations
-        # for next_op in next_ops_list:
-        #     self.device.behaviors.create(
-        #         copy.copy(self.current_operation),
-        #         Event(
-        #             name=next_op,
-        #             is_start=False,
-        #             is_final=True,
-        #         ),
-        #     )
-
-        if not return_next in next_ops_list:
+        if next_ops_list and not return_next in next_ops_list:
             sys.exit(
                 f"PyShelley error\nReturn name '{return_next}' does not match possible next operations in line {node.lineno}!"
             )
 
-        self.device.behaviors.create(
-            copy.copy(self.current_operation),
-            Event(
-                name=return_next,
-                is_start=False,
-                is_final=True,
-            ),
-        )
-
-        self.device.triggers.create(
-            copy.copy(self.current_operation), copy.copy(self.current_rule)
-        )
         self.current_rule = TriggerRuleFired()
         self._return_check = True
 

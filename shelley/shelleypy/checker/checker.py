@@ -120,12 +120,10 @@ class StrangeVisitor:
                 ),
             )
 
-        self.device.triggers.create(
-            copy.copy(current_operation), copy.copy(rules)
-        )
+        self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))
 
     def _process_operation(
-            self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
+        self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
     ):
         if node.decorators:
             self._current_op_decorator = self.find(node.decorators)
@@ -134,38 +132,44 @@ class StrangeVisitor:
             logger.debug(f"Method: {node.name}")
             self._method_return_idx = 0
 
-            if len(self.device.uses) == 0:
-                self._create_operation(node.name,
-                                       self._current_op_decorator["initial"],
-                                       self._current_op_decorator["final"],
-                                       self._current_op_decorator["next"],
-                                       TriggerRuleFired()
-                                       )
+            if len(self.device.uses) == 0:  # base system, do not inspect body
+                self._create_operation(
+                    node.name,
+                    self._current_op_decorator["initial"],
+                    self._current_op_decorator["final"],
+                    self._current_op_decorator["next"],
+                    TriggerRuleFired(),
+                )
             else:
                 for x in node.body:
-                    self.find(x)
+                    self.find(x)  # inspect body
 
+                # for single-return methods, use the name of the method
                 if len(self._collect_extra_ops) == 1:
-                    self._create_operation(node.name,
-                                           self._current_op_decorator["initial"],
-                                           self._current_op_decorator["final"],
-                                           self._current_op_decorator["next"],
-                                           self._collect_extra_ops[0]["rules"]
-                                           )
-                else:
+                    self._create_operation(
+                        node.name,
+                        self._current_op_decorator["initial"],
+                        self._current_op_decorator["final"],
+                        self._current_op_decorator["next"],
+                        self._collect_extra_ops[0]["rules"],
+                    )
+                else:  # for multiple-return methods, use the name of the extra operations...
                     for extra_op in self._collect_extra_ops:
-                        self._create_operation(extra_op["name"],
-                                               False,
-                                               self._current_op_decorator["final"],
-                                               extra_op["next"],
-                                               extra_op["rules"]
-                                               )
-                    self._create_operation(node.name,
-                                           self._current_op_decorator["initial"],
-                                           False,
-                                           [extra_op["name"] for extra_op in self._collect_extra_ops],
-                                           TriggerRuleFired()
-                                           )
+                        self._create_operation(
+                            extra_op["name"],
+                            False,
+                            self._current_op_decorator["final"],
+                            extra_op["next"],
+                            extra_op["rules"],
+                        )
+                    # ... and map the original operation with the extra operations
+                    self._create_operation(
+                        node.name,
+                        self._current_op_decorator["initial"],
+                        False,
+                        [extra_op["name"] for extra_op in self._collect_extra_ops],
+                        TriggerRuleFired(),
+                    )
 
                 self._collect_extra_ops = []
         else:
@@ -187,11 +191,9 @@ class StrangeVisitor:
 
         logger.debug(f"    Operation: {operation_name}")
 
-        self._collect_extra_ops.append({
-            "name": operation_name,
-            "next": [return_next],
-            "rules": self.current_rule
-        })
+        self._collect_extra_ops.append(
+            {"name": operation_name, "next": [return_next], "rules": self.current_rule}
+        )
 
         next_ops_list = self._current_op_decorator["next"]
         if next_ops_list and not return_next in next_ops_list:
@@ -240,7 +242,9 @@ class StrangeVisitor:
                                 case "final":
                                     decorator["final"] = True
                                 case "next":
-                                    decorator["next"] = [op.value for op in kw.value.elts]
+                                    decorator["next"] = [
+                                        op.value for op in kw.value.elts
+                                    ]
                         return decorator
                     case "system":
                         for kw in x.keywords:
@@ -272,8 +276,8 @@ class StrangeVisitor:
         branch_rule = TriggerRuleChoice()
         branch_rule.choices.extend([left_rule, right_rule])
         if not (
-                isinstance(left_rule, TriggerRuleFired)
-                and isinstance(right_rule, TriggerRuleFired)
+            isinstance(left_rule, TriggerRuleFired)
+            and isinstance(right_rule, TriggerRuleFired)
         ):  # only proceed if 'ifelse' have calls inside
             match self.current_rule:
                 case TriggerRuleFired():

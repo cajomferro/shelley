@@ -11,6 +11,7 @@ from astroid import (
     parse,
     extract_node,
     AsyncFunctionDef,
+    FunctionDef,
     Expr,
     Match,
     Await,
@@ -91,19 +92,27 @@ class StrangeVisitor:
         )
 
     def _process_operation(self, node):
-        logger.debug(f"Operation: {node.name}")
-        self.current_operation: Event = self.device.events.create(
-            node.name, is_start=False, is_final=False
-        )
-        self.find(node.decorators)
-        if len(self.device.uses) > 0:
-            for x in node.body:
-                self.find(x)
+        try:
+            logger.debug(f"Operation: {node.name}")
+            self.current_operation: Event = self.device.events.create(
+                node.name, is_start=False, is_final=False
+            )
+            decorators = self.find(node.decorators)
+            assert decorators is not None and "operation" in decorators
+
+            if len(self.device.uses) > 0:
+                for x in node.body:
+                    self.find(x)
+        except AssertionError:
+            logger.debug(f"Found function {node.name} but it is not annotated as an operation!")
 
     def _process_decorators(self, node):
+        decorators_names : List[str] = []
         for x in node.nodes:
             if isinstance(x, Call):
-                match x.func.name:
+                current_decorator_name = x.func.name
+                decorators_names.append(current_decorator_name)
+                match current_decorator_name:
                     case "claim":
                         claim: str = x.args[0].value
                         logger.debug(f"Claim: {claim}")
@@ -157,6 +166,7 @@ class StrangeVisitor:
                                         self.device.uses = discover_uses(
                                             self.device.components
                                         )  # TODO: melhorar isto?
+        return decorators_names
 
     def _process_if(self, node: astroid.NodeNG):
         # TODO: add support for choice with more than 2 branches
@@ -211,9 +221,9 @@ class StrangeVisitor:
                         self.current_rule, choice_rule
                     )
 
-    def _process_await(self, node: astroid.NodeNG):
-        if isinstance(node, Call):
-            subystem_call = node.func.attrname
+    def _process_call(self, node: astroid.NodeNG):
+        subystem_call = node.func.attrname
+        try:
             subystem_instance = node.func.expr.attrname
             exprself = node.func.expr.expr.name
             try:
@@ -223,7 +233,7 @@ class StrangeVisitor:
                     f"PyShelley error\nInvalid subsystem '{subystem_instance}' in '{subystem_instance}.{subystem_call}' on line {node.lineno}"
                 )
             logger.debug(
-                f"    Await call: {exprself}.{subystem_instance}.{subystem_call}"
+                f"    Call: {exprself}.{subystem_instance}.{subystem_call}"
             )
             match self.current_rule:
                 case TriggerRuleFired():
@@ -232,6 +242,8 @@ class StrangeVisitor:
                     self.current_rule = TriggerRuleSequence(
                         self.current_rule, TriggerRuleEvent(component, subystem_call)
                     )
+        except AttributeError:
+            logger.debug(f"   Ignoring Call: {subystem_call}")
 
     def find(self, node):
         match node:
@@ -249,19 +261,28 @@ class StrangeVisitor:
                     copy.copy(self.current_operation), copy.copy(self.current_rule)
                 )
                 self.current_rule = TriggerRuleFired()
+            case FunctionDef():
+                self._process_operation(node)
+                self.device.triggers.create(
+                    copy.copy(self.current_operation), copy.copy(self.current_rule)
+                )
+                self.current_rule = TriggerRuleFired()
             case Decorators():
-                self._process_decorators(node)
+                return self._process_decorators(node)
             case AnnAssign():
                 # logger.debug(node)
                 self.find(node.value)
             case Expr():
                 # logger.debug(node.value)
                 self.find(node.value)
+            case Call():
+                self._process_call(node)
             case Await():
-                # logger.debug(node)
-                self._process_await(node.value)
+                logger.debug(f"    Await")
+                self.find(node.value)
             case Match():
-                self.print_call("Match", node.subject.value)
+                logger.debug(f"    Match")
+                # self.print_call("Match", node.subject.value)
                 self.find(node.subject)
                 self._process_match_cases(node.cases)
             case Return():

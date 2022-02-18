@@ -98,7 +98,7 @@ class StrangeVisitor:
         )
 
     def _process_operation(
-        self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
+            self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
     ):
         if node.decorators:
             self._current_op_decorator = self.find(node.decorators)
@@ -140,15 +140,31 @@ class StrangeVisitor:
             self.device.behaviors.create(
                 copy.copy(self.current_operation)
             )  # operation without next operations
-        for next_op in next_ops_list:
-            self.device.behaviors.create(
-                copy.copy(self.current_operation),
-                Event(
-                    name=next_op.value,
-                    is_start=False,
-                    is_final=True,
-                ),
+
+        # TODO: add support for return with several operations
+        # for next_op in next_ops_list:
+        #     self.device.behaviors.create(
+        #         copy.copy(self.current_operation),
+        #         Event(
+        #             name=next_op,
+        #             is_start=False,
+        #             is_final=True,
+        #         ),
+        #     )
+
+        if not return_next in next_ops_list:
+            sys.exit(
+                f"PyShelley error\nReturn name '{return_next}' does not match possible next operations in line {node.lineno}!"
             )
+
+        self.device.behaviors.create(
+            copy.copy(self.current_operation),
+            Event(
+                name=return_next,
+                is_start=False,
+                is_final=True,
+            ),
+        )
 
         self.device.triggers.create(
             copy.copy(self.current_operation), copy.copy(self.current_rule)
@@ -194,7 +210,7 @@ class StrangeVisitor:
                                 case "final":
                                     decorator["final"] = True
                                 case "next":
-                                    decorator["next"] = kw.value.elts
+                                    decorator["next"] = [op.value for op in kw.value.elts]
                         return decorator
                     case "system":
                         for kw in x.keywords:
@@ -226,8 +242,8 @@ class StrangeVisitor:
         branch_rule = TriggerRuleChoice()
         branch_rule.choices.extend([left_rule, right_rule])
         if not (
-            isinstance(left_rule, TriggerRuleFired)
-            and isinstance(right_rule, TriggerRuleFired)
+                isinstance(left_rule, TriggerRuleFired)
+                and isinstance(right_rule, TriggerRuleFired)
         ):  # only proceed if 'ifelse' have calls inside
             match self.current_rule:
                 case TriggerRuleFired():
@@ -249,7 +265,6 @@ class StrangeVisitor:
                 sys.exit(
                     f"PyShelley error\nExpecting return after line {x.lineno}. Did you forget the return statement in this case?"
                 )
-
 
     def _process_call(self, node: astroid.NodeNG):
         subystem_call = node.func.attrname

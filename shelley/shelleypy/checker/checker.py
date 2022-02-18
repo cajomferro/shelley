@@ -103,6 +103,11 @@ class StrangeVisitor:
             if len(self.device.uses) > 0:
                 for x in node.body:
                     self.find(x)
+
+            self.device.triggers.create(
+                copy.copy(self.current_operation), copy.copy(self.current_rule)
+            )
+            self.current_rule = TriggerRuleFired()
         except AssertionError:
             logger.debug(f"Found function {node.name} but it is not annotated as an operation!")
 
@@ -257,16 +262,8 @@ class StrangeVisitor:
                     self.find(x)
             case AsyncFunctionDef():
                 self._process_operation(node)
-                self.device.triggers.create(
-                    copy.copy(self.current_operation), copy.copy(self.current_rule)
-                )
-                self.current_rule = TriggerRuleFired()
             case FunctionDef():
                 self._process_operation(node)
-                self.device.triggers.create(
-                    copy.copy(self.current_operation), copy.copy(self.current_rule)
-                )
-                self.current_rule = TriggerRuleFired()
             case Decorators():
                 return self._process_decorators(node)
             case AnnAssign():

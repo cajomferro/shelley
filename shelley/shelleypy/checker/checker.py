@@ -307,18 +307,25 @@ class StrangeVisitor:
             exprself = node.func.expr.expr.name
             try:
                 component: Component = self.device.components[subystem_instance]
-            except KeyError as err:
-                sys.exit(
-                    f"PyShelley error\nInvalid subsystem '{subystem_instance}' in '{subystem_instance}.{subystem_call}' on line {node.lineno}"
+
+                logger.debug(
+                    f"    Call: {exprself}.{subystem_instance}.{subystem_call}"
                 )
-            logger.debug(f"    Call: {exprself}.{subystem_instance}.{subystem_call}")
-            match self.current_rule:
-                case TriggerRuleFired():
-                    self.current_rule = TriggerRuleEvent(component, subystem_call)
-                case TriggerRule():  # any other type of rule
-                    self.current_rule = TriggerRuleSequence(
-                        self.current_rule, TriggerRuleEvent(component, subystem_call)
-                    )
+                match self.current_rule:
+                    case TriggerRuleFired():
+                        self.current_rule = TriggerRuleEvent(component, subystem_call)
+                    case TriggerRule():  # any other type of rule
+                        self.current_rule = TriggerRuleSequence(
+                            self.current_rule,
+                            TriggerRuleEvent(component, subystem_call),
+                        )
+            except KeyError as err:
+                pass
+                # TODO: make sure we handle invalid subsystems here
+                # sys.exit(
+                #     f"PyShelley error\nInvalid subsystem '{subystem_instance}' in '{subystem_instance}.{subystem_call}' on line {node.lineno}"
+                # )
+
         except AttributeError:
             logger.debug(f"   Ignoring Call: {subystem_call}")
 

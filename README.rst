@@ -145,3 +145,16 @@ In this example, we replace the word "micro" by "integration".
     export LC_CTYPE=C
     export LANG=C
     find . -type f -print0 | xargs -0 sed -i '' -e "s/micro:/integration:/g"
+
+
+Setting Docker with PyCharm
+###########################
+
+`Debugging a Containerized Django App in PyCharm 
+<https://testdriven.io/blog/django-debugging-pycharm/>`_.
+
+
+How to debug using PyCharm and Docker
+#####################################
+
+.. image:: media/docker-debug-configuration.png

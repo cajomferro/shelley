@@ -287,49 +287,78 @@ class StrangeVisitor:
                         self.current_rule, branch_rule
                     )
 
-    def _process_match_cases(self, node_cases: List[astroid.MatchCase]):
+    def _process_match_cases(
+        self, match_call: str, node_cases: List[astroid.MatchCase]
+    ):
         save_rule: TriggerRule = copy.copy(self.current_rule)
         for case in node_cases:
             logger.debug(f"    Match case: {case.pattern}")
             self.current_rule = save_rule
             self._return_check = False  # we must have a return for each match case
+
+            case_name = case.pattern.value.value # this must be a string!
+
+            match_exprself, match_subystem_instance, _ = match_call.split(".")
+
+            # the first call name must match the case name
+            first_node = case.body[0]
+            assert isinstance(first_node, Expr)
+            assert isinstance(first_node.value, Call)
+            first_node = first_node.value.func
+            first_node_subystem_call = first_node.attrname
+            first_node_subystem_instance = first_node.expr.attrname
+            first_node_exprself = first_node.expr.expr.name
+            first_node_call_name = f"{first_node_exprself}.{first_node_subystem_instance}.{first_node_subystem_call}"
+            expected_call_name = f"{match_exprself}.{match_subystem_instance}.{case_name}"
+            try:
+                assert first_node_call_name == expected_call_name
+            except AssertionError:
+                sys.exit(
+                    f"PyShelley error in line {first_node.lineno}.\nExpecting {expected_call_name} but found {first_node_call_name}. The first subsystem call must match the case name!"
+                )
+
             for x in case.body:
                 self.find(x)
+
             if not self._return_check:
                 sys.exit(
                     f"PyShelley error\nExpecting return after line {x.lineno}. Did you forget the return statement in this case?"
                 )
 
-    def _process_call(self, node: astroid.NodeNG):
-        subystem_call = node.func.attrname
+    def _process_call(self, node: Call):
         try:
+            subystem_call = node.func.attrname
             subystem_instance = node.func.expr.attrname
             exprself = node.func.expr.expr.name
-            try:
-                component: Component = self.device.components[subystem_instance]
-
-                logger.debug(
-                    f"    Call: {exprself}.{subystem_instance}.{subystem_call}"
-                )
-                match self.current_rule:
-                    case TriggerRuleFired():
-                        self.current_rule = TriggerRuleEvent(component, subystem_call)
-                    case TriggerRule():  # any other type of rule
-                        self.current_rule = TriggerRuleSequence(
-                            self.current_rule,
-                            TriggerRuleEvent(component, subystem_call),
-                        )
-            except KeyError as err:
-                pass
-                # TODO: make sure we handle invalid subsystems here
-                # sys.exit(
-                #     f"PyShelley error\nInvalid subsystem '{subystem_instance}' in '{subystem_instance}.{subystem_call}' on line {node.lineno}"
-                # )
-
+            call_name = f"{exprself}.{subystem_instance}.{subystem_call}"
         except AttributeError:
-            logger.debug(f"   Ignoring Call: {subystem_call}")
+            logger.debug(f"    Ignoring Call: {node.func.repr_tree()}")
+            return
 
-    def find(self, node):
+        try:
+            component: Component = self.device.components[subystem_instance]
+        except KeyError as err:
+            logger.debug(f"    Ignoring Call: {call_name}")
+            return
+
+        match self.current_rule:
+            case TriggerRuleFired():
+                self.current_rule = TriggerRuleEvent(component, subystem_call)
+            case TriggerRule():  # any other type of rule
+                self.current_rule = TriggerRuleSequence(
+                    self.current_rule,
+                    TriggerRuleEvent(component, subystem_call),
+                )
+
+        logger.debug(f"    Call: {call_name}")
+        return f"{call_name}"
+
+    def find(self, node, expects_node_type=None, **kwargs):
+        if expects_node_type:
+            assert isinstance(node, expects_node_type)
+
+        ret = None
+
         match node:
             # TODO: case func=__init__ check if subsystems are well declared
 
@@ -350,20 +379,20 @@ class StrangeVisitor:
             case Expr():
                 self.find(node.value)
             case Call():
-                self._process_call(node)
+                ret = self._process_call(node)
             case Await():
                 logger.debug(f"    Await")
                 self.find(node.value)
             case Match():
                 logger.debug(f"    Match")
-                # self.print_call("Match", node.subject.value)
-                self.find(node.subject)
-                self._process_match_cases(node.cases)
+                match_call = self.find(node.subject, expects_node_type=Call)
+                self._process_match_cases(match_call, node.cases)
             case Return():
                 self._process_return(node)
                 logger.debug(f"    Case return: {node.value.value}")
             case If():
                 self._process_if(node)
+        return ret
 
 
 def check(src_path: Path, uses_path: Path, output_path: Path):

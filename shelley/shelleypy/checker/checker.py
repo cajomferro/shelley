@@ -68,7 +68,7 @@ def parse_uses(uses_path: Optional[Path]) -> Dict[str, str]:
         )
 
 
-class StrangeVisitor:
+class PyVisitor:
     def __init__(self):
         self.device = Device(
             name="",
@@ -89,14 +89,6 @@ class StrangeVisitor:
         self._method_return_idx: int = 0
         self._return_check: bool = False
         self._collect_extra_ops: List[Dict[str, Any]] = list()
-
-    def print_call(self, parent_name, func_call: Call):
-        subystem_call = func_call.func.attrname
-        subystem_instance = func_call.func.expr.attrname
-        exprself = func_call.func.expr.expr.name
-        logger.debug(
-            f"    {parent_name} call: {exprself}.{subystem_instance}.{subystem_call}"
-        )
 
     def _create_operation(self, name, is_initial, is_final, next_ops_list, rules):
         current_operation: Event = self.device.events.create(
@@ -125,57 +117,68 @@ class StrangeVisitor:
     def _process_operation(
         self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
     ):
-        if node.decorators:
-            self._current_op_decorator = self.find(node.decorators)
-            assert self._current_op_decorator["type"] == "operation"
-            self._current_op_decorator["name"] = node.name
-            logger.debug(f"Method: {node.name}")
-            self._method_return_idx = 0
+        def show_error():
+            logger.debug(
+                f"Found method {node.name} but it is not annotated as an operation!"
+            )
 
-            if len(self.device.uses) == 0:  # base system, do not inspect body
+        if not node.decorators:
+            show_error()
+            return
+
+        self._current_op_decorator = self.find(node.decorators)
+        if not self._current_op_decorator:
+            show_error()
+            return
+
+        if not self._current_op_decorator["type"] == "operation":
+            show_error()
+            return
+
+        self._current_op_decorator["name"] = node.name
+        logger.debug(f"Method: {node.name}")
+        self._method_return_idx = 0
+
+        if len(self.device.uses) == 0:  # base system, do not inspect body
+            self._create_operation(
+                node.name,
+                self._current_op_decorator["initial"],
+                self._current_op_decorator["final"],
+                self._current_op_decorator["next"],
+                TriggerRuleFired(),
+            )
+        else:
+            for x in node.body:
+                self.find(x)  # inspect body
+
+            # for single-return methods, use the name of the method
+            if len(self._collect_extra_ops) == 1:
                 self._create_operation(
                     node.name,
                     self._current_op_decorator["initial"],
                     self._current_op_decorator["final"],
                     self._current_op_decorator["next"],
+                    self._collect_extra_ops[0]["rules"],
+                )
+            else:  # for multiple-return methods, use the name of the extra operations...
+                for extra_op in self._collect_extra_ops:
+                    self._create_operation(
+                        extra_op["name"],
+                        False,
+                        self._current_op_decorator["final"],
+                        extra_op["next"],
+                        extra_op["rules"],
+                    )
+                # ... and map the original operation with the extra operations
+                self._create_operation(
+                    node.name,
+                    self._current_op_decorator["initial"],
+                    False,
+                    [extra_op["name"] for extra_op in self._collect_extra_ops],
                     TriggerRuleFired(),
                 )
-            else:
-                for x in node.body:
-                    self.find(x)  # inspect body
 
-                # for single-return methods, use the name of the method
-                if len(self._collect_extra_ops) == 1:
-                    self._create_operation(
-                        node.name,
-                        self._current_op_decorator["initial"],
-                        self._current_op_decorator["final"],
-                        self._current_op_decorator["next"],
-                        self._collect_extra_ops[0]["rules"],
-                    )
-                else:  # for multiple-return methods, use the name of the extra operations...
-                    for extra_op in self._collect_extra_ops:
-                        self._create_operation(
-                            extra_op["name"],
-                            False,
-                            self._current_op_decorator["final"],
-                            extra_op["next"],
-                            extra_op["rules"],
-                        )
-                    # ... and map the original operation with the extra operations
-                    self._create_operation(
-                        node.name,
-                        self._current_op_decorator["initial"],
-                        False,
-                        [extra_op["name"] for extra_op in self._collect_extra_ops],
-                        TriggerRuleFired(),
-                    )
-
-                self._collect_extra_ops = []
-        else:
-            logger.debug(
-                f"Found method {node.name} but it is not annotated as an operation!"
-            )
+            self._collect_extra_ops = []
 
     def _process_return(self, node):
         """
@@ -296,7 +299,7 @@ class StrangeVisitor:
             self.current_rule = save_rule
             self._return_check = False  # we must have a return for each match case
 
-            case_name = case.pattern.value.value # this must be a string!
+            case_name = case.pattern.value.value  # this must be a string!
 
             match_exprself, match_subystem_instance, _ = match_call.split(".")
 
@@ -309,7 +312,9 @@ class StrangeVisitor:
             first_node_subystem_instance = first_node.expr.attrname
             first_node_exprself = first_node.expr.expr.name
             first_node_call_name = f"{first_node_exprself}.{first_node_subystem_instance}.{first_node_subystem_call}"
-            expected_call_name = f"{match_exprself}.{match_subystem_instance}.{case_name}"
+            expected_call_name = (
+                f"{match_exprself}.{match_subystem_instance}.{case_name}"
+            )
             try:
                 assert first_node_call_name == expected_call_name
             except AssertionError:
@@ -373,7 +378,7 @@ class StrangeVisitor:
             case FunctionDef():
                 self._process_operation(node)
             case Decorators():
-                return self._process_decorators(node)
+                ret = self._process_decorators(node)
             case AnnAssign():
                 self.find(node.value)
             case Expr():
@@ -404,7 +409,7 @@ def check(src_path: Path, uses_path: Path, output_path: Path):
 
     # print(tree.repr_tree())
 
-    svis = StrangeVisitor()
+    svis = PyVisitor()
     svis.find(tree)
 
     # visitor = PrettyPrintVisitor(components=svis.device.components)

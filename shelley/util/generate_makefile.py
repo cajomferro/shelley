@@ -135,13 +135,13 @@ def generate_makefile_content(
             uses_parents.append(str(parent))
             deps += f"	$(MAKE) -C {parent} {use_basename}.scy\n"
             if python_files:
-                deps += f"	$(MAKE) -C {parent} i_{use_basename}.scy\n"
+                deps += f"	$(MAKE) -C {parent} integration_{use_basename}.scy\n"
             clean_deps += f"	$(MAKE) -C {parent} clean\n"
             stats += f"	$(MAKE) -C {parent} {use_basename}-stats.json\n"
         else:
             deps += f"	$(MAKE) {use_basename}.scy\n"
             if python_files:
-                deps += f"	$(MAKE) i_{use_basename}.scy\n"
+                deps += f"	$(MAKE) integration_{use_basename}.scy\n"
             stats += f"	$(MAKE) {use_basename}-stats.json\n"
 
     deps = deps[:-1]  # remove extra newline

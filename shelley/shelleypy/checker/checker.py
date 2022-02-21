@@ -21,6 +21,8 @@ from astroid import (
     ClassDef,
     Decorators,
     AnnAssign,
+    MatchSequence,
+    MatchCase
 )
 
 from lark import Lark, Transformer
@@ -196,7 +198,7 @@ class PyVisitor:
         """
         return_next: str = (
             node.value.value
-        )  # TODO: for now, we just accept single-string return
+        )  # TODO: for now, we should accept a list of string in the return, see paper_example_python_app_v2-controller.py-line30
         self._method_return_idx += 1
         operation_name: str = f"{self._current_op_decorator['name']}_{return_next}_{self._method_return_idx}"
 
@@ -301,26 +303,39 @@ class PyVisitor:
                     )
 
     def _check_case(self, case: astroid.MatchCase, match_call: str):
-        case_name = case.pattern.value.value  # this must be a string!
-
-        match_exprself, match_subystem_instance, _ = match_call.split(".")
-
-        # the first call name must match the case name
         first_node = case.body[0]
-        assert isinstance(first_node, Expr)
-        assert isinstance(first_node.value, Call)
-        first_node = first_node.value.func
-        first_node_subystem_call = first_node.attrname
-        first_node_subystem_instance = first_node.expr.attrname
-        first_node_exprself = first_node.expr.expr.name
-        first_node_call_name = f"{first_node_exprself}.{first_node_subystem_instance}.{first_node_subystem_call}"
-        expected_call_name = f"{match_exprself}.{match_subystem_instance}.{case_name}"
-        try:
-            assert first_node_call_name == expected_call_name
-        except AssertionError:
-            sys.exit(
-                f"PyShelley error in line {first_node.lineno}.\nExpecting {expected_call_name} but found {first_node_call_name}. The first subsystem call must match the case name!"
-            )
+        if isinstance(case.pattern, MatchSequence):
+            try:
+                assert len(case.body) == 1
+                assert isinstance(first_node,
+                                  Return), f"Expecting Expr in line {first_node.lineno}, found {type(first_node)}!"
+            except AssertionError:
+                sys.exit(
+                    f"PyShelley error in line {first_node.lineno}.\nCases with several options must be followed by a return statement!"
+                )
+        else:
+            case_name = case.pattern.value.value  # this must be a string!
+
+            match_exprself, match_subystem_instance, _ = match_call.split(".")
+
+            # the first call name must match the case name
+
+            assert isinstance(first_node, Expr), f"Expecting Expr in line {first_node.lineno}, found {type(first_node)}!"
+            if isinstance(first_node.value, Await):
+                first_node = first_node.value
+            assert isinstance(first_node.value, Call), f"Expecting Expr.Call in line {first_node.lineno}, found {type(first_node.value)}!"
+            first_node = first_node.value.func
+            first_node_subystem_call = first_node.attrname
+            first_node_subystem_instance = first_node.expr.attrname
+            first_node_exprself = first_node.expr.expr.name
+            first_node_call_name = f"{first_node_exprself}.{first_node_subystem_instance}.{first_node_subystem_call}"
+            expected_call_name = f"{match_exprself}.{match_subystem_instance}.{case_name}"
+            try:
+                assert first_node_call_name == expected_call_name
+            except AssertionError:
+                sys.exit(
+                    f"PyShelley error in line {first_node.lineno}.\nExpecting {expected_call_name} but found {first_node_call_name}. The first subsystem call must match the case name!"
+                )
 
     def _process_match_cases(
         self, match_call: str, node_cases: List[astroid.MatchCase]
@@ -371,7 +386,7 @@ class PyVisitor:
 
     def find(self, node, expects_node_type=None, **kwargs):
         if expects_node_type:
-            assert isinstance(node, expects_node_type)
+            assert type(node) in expects_node_type, f"Expecting node type {expects_node_type} but found {type(node)}"
 
         ret = None
 
@@ -398,10 +413,10 @@ class PyVisitor:
                 ret = self._process_call(node)
             case Await():
                 logger.debug(f"    Await")
-                self.find(node.value)
+                ret = self.find(node.value)
             case Match():
                 logger.debug(f"    Match")
-                match_call = self.find(node.subject, expects_node_type=Call)
+                match_call = self.find(node.subject, expects_node_types=[Call, Await])
                 self._process_match_cases(match_call, node.cases)
             case Return():
                 self._process_return(node)
@@ -531,7 +546,7 @@ def check(src_path: Path, uses_path: Path, output_path: Path):
         tree = extract_node(f.read())
 
     # print(tree.repr_tree())
-    process_visitor(tree, Path(output_path.parent, f"i_{output_path.name}"))
+    process_visitor(tree, Path(output_path.parent, f"integration_{output_path.name}"))
     process_visitor(tree, output_path, external_only=True)
 
     # for x in svis.device.system_formulae:

@@ -531,7 +531,7 @@ def check(src_path: Path, uses_path: Path, output_path: Path):
         tree = extract_node(f.read())
 
     # print(tree.repr_tree())
-    process_visitor(tree, Path(output_path.parent, f"_int_{output_path.name}"))
+    process_visitor(tree, Path(output_path.parent, f"i_{output_path.name}"))
     process_visitor(tree, output_path, external_only=True)
 
     # for x in svis.device.system_formulae:

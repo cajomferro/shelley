@@ -22,7 +22,9 @@ from astroid import (
     Decorators,
     AnnAssign,
     MatchSequence,
-    MatchCase
+    MatchCase,
+    MatchValue,
+    Const,
 )
 
 from lark import Lark, Transformer
@@ -80,7 +82,7 @@ class PyVisitor:
             triggers=Triggers(),
             components=Components(),
         )
-        self._current_operation: Optional[Event] = None
+        self._current_operation: Optional[str] = None
         self._current_rule: TriggerRule = TriggerRuleFired()
         self.ltlf_parser = Lark.open(
             "ltlf_grammar.lark", rel_to=ltlf_lark_parser.__file__, start="formula"
@@ -91,7 +93,8 @@ class PyVisitor:
         self._current_op_decorator: Optional[Dict[str, Any]] = None
         self._method_return_idx: int = 0
         self._return_check: bool = False
-        self._collect_extra_ops: List[Dict[str, Any]] = list()
+        self._collect_extra_ops: Dict[str, Any] = dict()
+        self._saved_operations = list()
 
     def _create_operation(self, name, is_initial, is_final, next_ops_list, rules):
         current_operation: Event = self.device.events.create(
@@ -127,27 +130,27 @@ class PyVisitor:
                 self._current_op_decorator["initial"],
                 self._current_op_decorator["final"],
                 self._current_op_decorator["next"],
-                self._collect_extra_ops[0]["rules"],
+                list(self._collect_extra_ops)[0]["rules"],
             )
         else:  # for multiple-return methods, use the name of the extra operations...
-            for extra_op in self._collect_extra_ops:
+            for extra_op_name, extra_op_info in self._collect_extra_ops.items():
                 self._create_operation(
-                    extra_op["name"],
+                    extra_op_name,
                     False,
                     self._current_op_decorator["final"],
-                    extra_op["next"],
-                    extra_op["rules"],
+                    extra_op_info["next"],
+                    extra_op_info["rules"],
                 )
             # ... and map the original operation with the extra operations
             self._create_operation(
                 node.name,
                 self._current_op_decorator["initial"],
                 False,
-                [extra_op["name"] for extra_op in self._collect_extra_ops],
+                [extra_op_name for extra_op_name in self._collect_extra_ops.keys()],
                 TriggerRuleFired(),
             )
 
-        self._collect_extra_ops = []
+        self._collect_extra_ops = dict()
 
     def _process_operation(
         self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
@@ -190,32 +193,7 @@ class PyVisitor:
 
             self._create_operations(node)
 
-    def _process_return(self, node):
-        """
-        For now, let's create a Shelley operation for each return.
-        An alternative (smarter but more difficult to implement) approach would be to create a Shelley operation
-        for each "type" of return.
-        """
-        return_next: str = (
-            node.value.value
-        )  # TODO: for now, we should accept a list of string in the return, see paper_example_python_app_v2-controller.py-line30
-        self._method_return_idx += 1
-        operation_name: str = f"{self._current_op_decorator['name']}_{return_next}_{self._method_return_idx}"
-
-        logger.debug(f"    Operation: {operation_name}")
-
-        self._collect_extra_ops.append(
-            {"name": operation_name, "next": [return_next], "rules": self._current_rule}
-        )
-
-        next_ops_list = self._current_op_decorator["next"]
-        if next_ops_list and not return_next in next_ops_list:
-            sys.exit(
-                f"PyShelley error\nReturn name '{return_next}' does not match possible next operations in line {node.lineno}!"
-            )
-
-        self._current_rule = TriggerRuleFired()
-        self._return_check = True
+        self._saved_operations = list()
 
     def _process_decorators(self, node):
         for x in node.nodes:
@@ -237,7 +215,9 @@ class PyVisitor:
                             elif claim.startswith("subsystem"):
                                 parts = claim.split(" ")  # separate by spaces
                                 name = parts[1]  # get subystem name from formula
-                                parts = parts[3:]  # remove 'subsystem XX check' from string
+                                parts = parts[
+                                    3:
+                                ]  # remove 'subsystem XX check' from string
                                 claim = " ".join(parts)  # re-join by spaces
                                 formula = LTLParser().transform(self.ltlf_parser(claim))
                                 self.device.subsystem_formulae.append((name, formula))
@@ -273,19 +253,51 @@ class PyVisitor:
                                                 self.device.components
                                             )  # TODO: melhorar isto?
 
+    def _process_return(self, node):
+        """
+        For now, let's create a Shelley operation for each return.
+        An alternative (smarter but more difficult to implement) approach would be to create a Shelley operation
+        for each "type" of return.
+        """
+        if isinstance(node.value, Const):
+            return_next: List[str] = [(node.value.value)]
+        else:
+            return_next: List[str] = [x.value for x in node.value.elts]
+
+        self._method_return_idx += 1
+        operation_name: str = (
+            f"{self._current_op_decorator['name']}_{self._method_return_idx}"
+        )
+
+        logger.debug(f"    Operation: {operation_name}")
+
+        self._current_operation = operation_name
+        self._saved_operations.append(self._current_operation)
+        self._collect_extra_ops[operation_name] = {"next": return_next}
+
+        next_ops_list = self._current_op_decorator["next"]
+        if next_ops_list and not all(elem in next_ops_list for elem in return_next):
+            sys.exit(
+                f"PyShelley error in line {node.lineno}: Return names {return_next} do not match possible next operations {next_ops_list}!"
+            )
+
+        self._return_check = True
+
     def _process_if(self, node: astroid.NodeNG):
         # TODO: add support for choice with more than 2 branches
-        # TODO: possibly merge this code with "_process_match_cases"?
+        # TODO: add support for return inside if else?
         save_rule: TriggerRule = copy.copy(self._current_rule)
         self._current_rule = TriggerRuleFired()
         logger.debug("  If")
         for x in node.body:
             self.find(x)
+
         left_rule = copy.copy(self._current_rule)
         self._current_rule = TriggerRuleFired()
         logger.debug("  Else")
         for x in node.orelse:
             self.find(x)
+
         right_rule = copy.copy(self._current_rule)
         self._current_rule = save_rule
         branch_rule = TriggerRuleChoice()
@@ -302,40 +314,60 @@ class PyVisitor:
                         self._current_rule, branch_rule
                     )
 
+        if self._return_check:
+            for op_name in self._saved_operations:
+                try:
+                    old_rule = self._collect_extra_ops[op_name]["rules"]
+                    new_rule = TriggerRuleSequence(save_rule, old_rule)
+                    self._collect_extra_ops[op_name].update({"rules": new_rule})
+                except KeyError:
+                    pass
+
+            self._saved_operations = list()
+
     def _check_case(self, case: astroid.MatchCase, match_call: str):
         first_node = case.body[0]
-        if isinstance(case.pattern, MatchSequence):
-            try:
-                assert len(case.body) == 1
-                assert isinstance(first_node,
-                                  Return), f"Expecting Expr in line {first_node.lineno}, found {type(first_node)}!"
-            except AssertionError:
-                sys.exit(
-                    f"PyShelley error in line {first_node.lineno}.\nCases with several options must be followed by a return statement!"
-                )
-        else:
+        if isinstance(case.pattern, MatchValue):
             case_name = case.pattern.value.value  # this must be a string!
 
             match_exprself, match_subystem_instance, _ = match_call.split(".")
 
-            # the first call name must match the case name
-
-            assert isinstance(first_node, Expr), f"Expecting Expr in line {first_node.lineno}, found {type(first_node)}!"
+            # the first call name SHOULD match the case name
+            # assert isinstance(first_node,
+            #                   Expr), f"Expecting Expr in line {first_node.lineno}, found {type(first_node)}!"
             if isinstance(first_node.value, Await):
                 first_node = first_node.value
-            assert isinstance(first_node.value, Call), f"Expecting Expr.Call in line {first_node.lineno}, found {type(first_node.value)}!"
-            first_node = first_node.value.func
-            first_node_subystem_call = first_node.attrname
-            first_node_subystem_instance = first_node.expr.attrname
-            first_node_exprself = first_node.expr.expr.name
-            first_node_call_name = f"{first_node_exprself}.{first_node_subystem_instance}.{first_node_subystem_call}"
-            expected_call_name = f"{match_exprself}.{match_subystem_instance}.{case_name}"
-            try:
-                assert first_node_call_name == expected_call_name
-            except AssertionError:
-                sys.exit(
-                    f"PyShelley error in line {first_node.lineno}.\nExpecting {expected_call_name} but found {first_node_call_name}. The first subsystem call must match the case name!"
+            # assert isinstance(first_node.value,
+            #                   Call), f"Expecting Expr.Call in line {first_node.lineno}, found {type(first_node.value)}!"
+
+            if isinstance(first_node.value, Call):
+                first_node = first_node.value.func
+                first_node_subystem_call = first_node.attrname
+                first_node_subystem_instance = first_node.expr.attrname
+                first_node_exprself = first_node.expr.expr.name
+                first_node_call_name = f"{first_node_exprself}.{first_node_subystem_instance}.{first_node_subystem_call}"
+                expected_call_name = (
+                    f"{match_exprself}.{match_subystem_instance}.{case_name}"
                 )
+
+                if not first_node_call_name == expected_call_name:
+                    logger.warning(
+                        f"PyShelley warning in line {first_node.lineno}: Expecting {expected_call_name} but found {first_node_call_name}. The first subsystem call should match the case name!"
+                    )
+            # try:
+            #     assert first_node_call_name == expected_call_name
+            # except AssertionError:
+            #     sys.exit(
+            #         f"PyShelley error in line {first_node.lineno}.\nExpecting {expected_call_name} but found {first_node_call_name}. The first subsystem call must match the case name!"
+            #     )
+        else:
+            # try:
+            #     assert len(case.body) == 1
+            #     assert isinstance(first_node, Return)
+            # except AssertionError:
+            sys.exit(
+                f"PyShelley error in line {first_node.lineno}: Cases with several options are not supported!"
+            )
 
     def _process_match_cases(
         self, match_call: str, node_cases: List[astroid.MatchCase]
@@ -350,6 +382,11 @@ class PyVisitor:
 
             for x in case.body:
                 self.find(x)
+
+            self._collect_extra_ops[self._current_operation].update(
+                {"rules": self._current_rule}
+            )
+            self._current_rule = TriggerRuleFired()
 
             if not self._return_check:
                 sys.exit(
@@ -386,7 +423,9 @@ class PyVisitor:
 
     def find(self, node, expects_node_type=None, **kwargs):
         if expects_node_type:
-            assert type(node) in expects_node_type, f"Expecting node type {expects_node_type} but found {type(node)}"
+            assert (
+                type(node) in expects_node_type
+            ), f"Expecting node type {expects_node_type} but found {type(node)}"
 
         ret = None
 
@@ -420,7 +459,7 @@ class PyVisitor:
                 self._process_match_cases(match_call, node.cases)
             case Return():
                 self._process_return(node)
-                logger.debug(f"    Case return: {node.value.value}")
+                logger.debug(f"    Return")
             case If():
                 self._process_if(node)
         return ret

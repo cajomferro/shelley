@@ -130,7 +130,7 @@ class PyVisitor:
                 self._current_op_decorator["initial"],
                 self._current_op_decorator["final"],
                 self._current_op_decorator["next"],
-                list(self._collect_extra_ops)[0]["rules"],
+                self._collect_extra_ops[self._current_operation]["rules"],
             )
         else:  # for multiple-return methods, use the name of the extra operations...
             for extra_op_name, extra_op_info in self._collect_extra_ops.items():
@@ -193,6 +193,7 @@ class PyVisitor:
 
             self._create_operations(node)
 
+        self._current_rule = TriggerRuleFired()
         self._saved_operations = list()
 
     def _process_decorators(self, node):
@@ -273,7 +274,10 @@ class PyVisitor:
 
         self._current_operation = operation_name
         self._saved_operations.append(self._current_operation)
-        self._collect_extra_ops[operation_name] = {"next": return_next}
+        self._collect_extra_ops[operation_name] = {
+            "next": return_next,
+            "rules": self._current_rule,
+        }
 
         next_ops_list = self._current_op_decorator["next"]
         if next_ops_list and not all(elem in next_ops_list for elem in return_next):

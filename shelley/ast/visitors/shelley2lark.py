@@ -56,7 +56,11 @@ class Shelley2Lark(Visitor):
         return result
 
     def visit_trigger_rule_loop(self, element: TriggerRuleLoop) -> Any:
-        pass  # TODO: this was implemented after the Lark parser (there is not loop syntax for the YAML examples)
+        result = "loop {"
+        result += element.loop.accept(self)
+        result += "}"
+
+        return result
 
     def visit_trigger(self, element: Trigger) -> Any:
         # self.result += "    {0}: ".format(element.event.name)

@@ -25,6 +25,7 @@ from astroid import (
     MatchCase,
     MatchValue,
     Const,
+    For
 )
 
 from lark import Lark
@@ -44,6 +45,7 @@ from shelley.ast.rules import (
     TriggerRuleEvent,
     TriggerRuleFired,
     TriggerRuleChoice,
+    TriggerRuleLoop
 )
 from shelley.ast.components import Components, Component
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
@@ -405,6 +407,16 @@ class PyVisitor:
                     f"PyShelley error\nExpecting return after line {x.lineno}. Did you forget the return statement in this case?"
                 )
 
+
+    def _process_for(self, node: For):
+        logger.debug(f"Loop")
+        save_rule: TriggerRule = copy.copy(self._current_rule)
+        for x in node.body:
+            self.find(x)
+        loop_rule = TriggerRuleLoop(self._current_rule)
+        self._current_rule = TriggerRuleSequence(save_rule, loop_rule)
+
+
     def _process_call(self, node: Call):
         try:
             subystem_call = node.func.attrname
@@ -474,6 +486,8 @@ class PyVisitor:
                 logger.debug(f"Return")
             case If():
                 self._process_if(node)
+            case For():
+                self._process_for(node)
         return ret
 
 

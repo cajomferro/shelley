@@ -1,4 +1,4 @@
-import sys
+import sys, os
 from typing import List, Optional, Dict, Union, Any
 from pathlib import Path
 import logging
@@ -27,20 +27,18 @@ from astroid import (
     Const,
 )
 
-from lark import Lark, Transformer
+from lark import Lark
 
 from shelley.shelleypy.checker.exceptions import CompilationError
 
 from shelley.parsers.ltlf_lark_parser import LTLParser
 from shelley.parsers import ltlf_lark_parser
-from shelley.parsers import errors
 
 from shelley.ast.devices import Device
 from shelley.ast.events import Events, Event
-from shelley.ast.actions import Actions, Action
 from shelley.ast.devices import discover_uses
-from shelley.ast.behaviors import Behaviors, Behavior
-from shelley.ast.triggers import Triggers, Trigger, TriggerRule
+from shelley.ast.behaviors import Behaviors
+from shelley.ast.triggers import Triggers, TriggerRule
 from shelley.ast.rules import (
     TriggerRuleSequence,
     TriggerRuleEvent,
@@ -53,6 +51,13 @@ from shelley.ast.visitors.shelley2lark import Shelley2Lark
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyshelley")
 
+
+def exit_with_error(lineno: int, msg: str):
+    logger.error(f"{msg} (l. {lineno})")
+    sys.exit(os.EX_SOFTWARE)
+
+def warning(lineno: int, msg: str):
+    logger.warning(f"{msg} (l. {lineno})")
 
 def parse_uses(uses_path: Optional[Path]) -> Dict[str, str]:
     if uses_path is None:
@@ -92,7 +97,7 @@ class PyVisitor:
         ] = None
         self._current_op_decorator: Optional[Dict[str, Any]] = None
         self._method_return_idx: int = 0
-        self._return_check: bool = False
+        self.n_returns: int = 0
         self._collect_extra_ops: Dict[str, Any] = dict()
         self._saved_operations = list()
 
@@ -156,9 +161,9 @@ class PyVisitor:
         self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
     ):
         def show_error():
-            logger.debug(
-                f"Found method {node.name} but it is not annotated as an operation!"
-            )
+            logger.debug(f"Skipping. This method is not annotated as an operation!")
+
+        logger.debug(f"Method: {node.name}")
 
         if not node.decorators:
             show_error()
@@ -174,7 +179,6 @@ class PyVisitor:
             return
 
         self._current_op_decorator["name"] = node.name
-        logger.debug(f"Method: {node.name}")
         self._method_return_idx = 0
 
         if (
@@ -201,27 +205,26 @@ class PyVisitor:
             if isinstance(x, Call):
                 match x.func.name:
                     case "claim":
-                        if not self.external_only:
-                            claim: str = x.args[0].value
-                            logger.debug(f"Claim: {claim}")
-                            claim = claim.removesuffix(";")
-                            if "system check" in claim:
-                                claim = claim.removeprefix("system check")
-                                formula = LTLParser().transform(self.ltlf_parser(claim))
-                                self.device.system_formulae.append(formula)
-                            elif "integration check" in claim:
-                                claim = claim.removeprefix("integration check")
-                                formula = LTLParser().transform(self.ltlf_parser(claim))
-                                self.device.integration_formulae.append(formula)
-                            elif claim.startswith("subsystem"):
-                                parts = claim.split(" ")  # separate by spaces
-                                name = parts[1]  # get subystem name from formula
-                                parts = parts[
-                                    3:
-                                ]  # remove 'subsystem XX check' from string
-                                claim = " ".join(parts)  # re-join by spaces
-                                formula = LTLParser().transform(self.ltlf_parser(claim))
-                                self.device.subsystem_formulae.append((name, formula))
+                        claim: str = x.args[0].value
+                        logger.debug(f"Claim: {claim}")
+                        claim = claim.removesuffix(";")
+                        if "system check" in claim and self.external_only:
+                            claim = claim.removeprefix("system check")
+                            formula = LTLParser().transform(self.ltlf_parser(claim))
+                            self.device.system_formulae.append(formula)
+                        elif "integration check" in claim and not self.external_only:
+                            claim = claim.removeprefix("integration check")
+                            formula = LTLParser().transform(self.ltlf_parser(claim))
+                            self.device.integration_formulae.append(formula)
+                        elif claim.startswith("subsystem") and not self.external_only:
+                            parts = claim.split(" ")  # separate by spaces
+                            name = parts[1]  # get subystem name from formula
+                            parts = parts[
+                                3:
+                            ]  # remove 'subsystem XX check' from string
+                            claim = " ".join(parts)  # re-join by spaces
+                            formula = LTLParser().transform(self.ltlf_parser(claim))
+                            self.device.subsystem_formulae.append((name, formula))
 
                     case "operation":
                         decorator = {
@@ -270,7 +273,7 @@ class PyVisitor:
             f"{self._current_op_decorator['name']}_{self._method_return_idx}"
         )
 
-        logger.debug(f"    Operation: {operation_name}")
+        logger.debug(f" Operation: {operation_name}")
 
         self._current_operation = operation_name
         self._saved_operations.append(self._current_operation)
@@ -281,53 +284,55 @@ class PyVisitor:
 
         next_ops_list = self._current_op_decorator["next"]
         if next_ops_list and not all(elem in next_ops_list for elem in return_next):
-            sys.exit(
-                f"PyShelley error in line {node.lineno}: Return names {return_next} do not match possible next operations {next_ops_list}!"
-            )
+            exit_with_error(node.lineno, f"Return names {return_next} do not match possible next operations {next_ops_list}!")
 
-        self._return_check = True
+        self.n_returns += 1
 
     def _process_if(self, node: astroid.NodeNG):
         # TODO: add support for choice with more than 2 branches
-        # TODO: add support for return inside if else?
+        # TODO: handle when one of the branches has return and the other not OR do not allow this
         save_rule: TriggerRule = copy.copy(self._current_rule)
+
         self._current_rule = TriggerRuleFired()
-        logger.debug("  If")
+        logger.debug("If")
         for x in node.body:
             self.find(x)
-
         left_rule = copy.copy(self._current_rule)
+
         self._current_rule = TriggerRuleFired()
-        logger.debug("  Else")
+        logger.debug("Else")
         for x in node.orelse:
             self.find(x)
-
         right_rule = copy.copy(self._current_rule)
+
         self._current_rule = save_rule
-        branch_rule = TriggerRuleChoice()
-        branch_rule.choices.extend([left_rule, right_rule])
-        if not (
-            isinstance(left_rule, TriggerRuleFired)
-            and isinstance(right_rule, TriggerRuleFired)
-        ):  # only proceed if 'ifelse' have calls inside
-            match self._current_rule:
-                case TriggerRuleFired():
-                    self._current_rule = branch_rule
-                case TriggerRule():  # any other type of rule
-                    self._current_rule = TriggerRuleSequence(
-                        self._current_rule, branch_rule
-                    )
 
-        if self._return_check:
-            for op_name in self._saved_operations:
-                try:
-                    old_rule = self._collect_extra_ops[op_name]["rules"]
-                    new_rule = TriggerRuleSequence(save_rule, old_rule)
-                    self._collect_extra_ops[op_name].update({"rules": new_rule})
-                except KeyError:
-                    pass
+        if isinstance(left_rule, TriggerRuleFired):
+            next_rule = right_rule
+        elif isinstance(right_rule, TriggerRuleFired):
+            next_rule = left_rule
+        else:
+            next_rule = TriggerRuleChoice()
+            next_rule.choices.extend([left_rule, right_rule])
 
-            self._saved_operations = list()
+        match self._current_rule:
+            case TriggerRuleFired():
+                self._current_rule = next_rule
+            case TriggerRule():  # any other type of rule
+                self._current_rule = TriggerRuleSequence(self._current_rule, next_rule)
+
+        match self.n_returns:
+            case 2: # assuming both if/else have return statements
+                for op_name in self._saved_operations:
+                    try:
+                        old_rule = self._collect_extra_ops[op_name]["rules"]
+                        new_rule = TriggerRuleSequence(save_rule, old_rule)
+                        self._collect_extra_ops[op_name].update({"rules": new_rule})
+                    except KeyError:
+                        pass
+                self._saved_operations = list()
+            case 1:
+                exit_with_error(node.lineno, "One of the if/else branches has return and the other not!")
 
     def _check_case(self, case: astroid.MatchCase, match_call: str):
         first_node = case.body[0]
@@ -378,9 +383,9 @@ class PyVisitor:
     ):
         save_rule: TriggerRule = copy.copy(self._current_rule)
         for case in node_cases:
-            logger.debug(f"    Match case: {case.pattern}")
+            logger.debug(f"Match case: {case.pattern}")
             self._current_rule = save_rule
-            self._return_check = False  # we must have a return for each match case
+            self.n_returns = 0  # we must have a return for each match case
 
             self._check_case(case, match_call)
 
@@ -392,7 +397,7 @@ class PyVisitor:
             )
             self._current_rule = TriggerRuleFired()
 
-            if not self._return_check:
+            if not self.n_returns:
                 sys.exit(
                     f"PyShelley error\nExpecting return after line {x.lineno}. Did you forget the return statement in this case?"
                 )
@@ -422,7 +427,7 @@ class PyVisitor:
                     TriggerRuleEvent(component, subystem_call),
                 )
 
-        logger.debug(f"    Call: {call_name}")
+        logger.debug(f"Call: {call_name}")
         return f"{call_name}"
 
     def find(self, node, expects_node_type=None, **kwargs):
@@ -455,15 +460,15 @@ class PyVisitor:
             case Call():
                 ret = self._process_call(node)
             case Await():
-                logger.debug(f"    Await")
+                logger.debug(f"Await")
                 ret = self.find(node.value)
             case Match():
-                logger.debug(f"    Match")
+                logger.debug(f"Match")
                 match_call = self.find(node.subject, expects_node_types=[Call, Await])
                 self._process_match_cases(match_call, node.cases)
             case Return():
                 self._process_return(node)
-                logger.debug(f"    Return")
+                logger.debug(f"Return")
             case If():
                 self._process_if(node)
         return ret

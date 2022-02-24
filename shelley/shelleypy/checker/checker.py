@@ -197,6 +197,9 @@ class PyVisitor:
 
             self._create_operations(node)
 
+            if self.n_returns == 0:
+                exit_with_error(node.lineno, "Missing return!")
+
         self._current_rule = TriggerRuleFired()
         self._saved_operations = list()
 

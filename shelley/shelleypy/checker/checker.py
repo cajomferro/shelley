@@ -112,6 +112,7 @@ class PyVisitor:
         self._current_op_decorator: Optional[Dict[str, Any]] = None
         self._method_return_idx: int = 0
         self.n_returns: int = 0
+        self._match_found: bool = False
         self._collect_extra_ops: Dict[str, Any] = dict()
         self._saved_operations = list()
 
@@ -194,6 +195,8 @@ class PyVisitor:
 
         self._current_op_decorator["name"] = node.name
         self._method_return_idx = 0
+        self.n_returns = 0
+        self.found_match = False
 
         if (
             len(self.device.uses) == 0
@@ -498,6 +501,7 @@ class PyVisitor:
                 ret = self.find(node.value)
             case Match():
                 logger.debug(f"Match")
+                self.found_match = True
                 match_call = self.find(node.subject, expects_node_types=[Call, Await])
                 self._process_match_cases(match_call, node.cases)
             case Return():

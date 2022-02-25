@@ -79,6 +79,18 @@ def parse_uses(uses_path: Optional[Path]) -> Dict[str, str]:
         )
 
 
+class ShelleyPyError(Exception):
+    LIST_CASE = "Cases with several options are not supported!"
+    MISSING_RETURN = "Missing return!"
+    CASE_MISSING_RETURN = "Missing return for case!"
+    IF_ELSE_MISSING_RETURN = "One of the if/else branches has return and the other not!"
+
+    def __init__(self, lineno: int, msg: str):
+        self.lineno = lineno
+        self.msg = msg
+        super().__init__(self.msg)
+
+
 class PyVisitor:
     def __init__(self, external_only=False):
         self.external_only = external_only
@@ -199,8 +211,8 @@ class PyVisitor:
 
             self._create_operations(node)
 
-            if self.n_returns == 0:
-                exit_with_error(node.lineno, "Missing return!")
+            if not self.found_match and self.n_returns == 0:
+                raise ShelleyPyError(node.lineno, ShelleyPyError.MISSING_RETURN)
 
         self._current_rule = TriggerRuleFired()
         self._saved_operations = list()
@@ -289,7 +301,10 @@ class PyVisitor:
 
         next_ops_list = self._current_op_decorator["next"]
         if next_ops_list and not all(elem in next_ops_list for elem in return_next):
-            exit_with_error(node.lineno, f"Return names {return_next} do not match possible next operations {next_ops_list}!")
+            raise ShelleyPyError(
+                node.lineno,
+                f"Return names {return_next} do not match possible next operations {next_ops_list}!",
+            )
 
         self.n_returns += 1
 
@@ -337,7 +352,10 @@ class PyVisitor:
                         pass
                 self._saved_operations = list()
             case 1:
-                exit_with_error(node.lineno, "One of the if/else branches has return and the other not!")
+                if not single_branch:
+                    raise ShelleyPyError(
+                        node.lineno, ShelleyPyError.IF_ELSE_MISSING_RETURN
+                    )
 
     def _check_case(self, case: astroid.MatchCase, match_call: str):
         first_node = case.body[0]
@@ -365,8 +383,9 @@ class PyVisitor:
                 )
 
                 if not first_node_call_name == expected_call_name:
-                    logger.warning(
-                        f"PyShelley warning in line {first_node.lineno}: Expecting {expected_call_name} but found {first_node_call_name}. The first subsystem call should match the case name!"
+                    warning(
+                        first_node.lineno,
+                        "Expecting {expected_call_name} but found {first_node_call_name}. The first subsystem call should match the case name!",
                     )
             # try:
             #     assert first_node_call_name == expected_call_name
@@ -379,9 +398,7 @@ class PyVisitor:
             #     assert len(case.body) == 1
             #     assert isinstance(first_node, Return)
             # except AssertionError:
-            sys.exit(
-                f"PyShelley error in line {first_node.lineno}: Cases with several options are not supported!"
-            )
+            raise ShelleyPyError(first_node.lineno, ShelleyPyError.LIST_CASE)
 
     def _process_match_cases(
         self, match_call: str, node_cases: List[astroid.MatchCase]
@@ -403,19 +420,21 @@ class PyVisitor:
             self._current_rule = TriggerRuleFired()
 
             if not self.n_returns:
-                sys.exit(
-                    f"PyShelley error\nExpecting return after line {x.lineno}. Did you forget the return statement in this case?"
-                )
-
+                raise ShelleyPyError(x.lineno, ShelleyPyError.CASE_MISSING_RETURN)
 
     def _process_for(self, node: For):
         logger.debug(f"Loop")
         save_rule: TriggerRule = copy.copy(self._current_rule)
         for x in node.body:
             self.find(x)
+
+        if self.n_returns:
+            raise ShelleyPyError(
+                node.lineno, "Return statements are not allowed inside loops!"
+            )
+
         loop_rule = TriggerRuleLoop(self._current_rule)
         self._current_rule = TriggerRuleSequence(save_rule, loop_rule)
-
 
     def _process_call(self, node: Call):
         try:
@@ -611,8 +630,14 @@ def check(src_path: Path, uses_path: Path, output_path: Path):
         tree = extract_node(f.read())
 
     # print(tree.repr_tree())
-    process_visitor(tree, Path(output_path.parent, f"integration_{output_path.name}"))
-    process_visitor(tree, output_path, external_only=True)
+
+    try:
+        process_visitor(
+            tree, Path(output_path.parent, f"integration_{output_path.name}")
+        )
+        process_visitor(tree, output_path, external_only=True)
+    except ShelleyPyError as err:
+        exit_with_error(err.lineno, err.msg)
 
     # for x in svis.device.system_formulae:
     #     print(ltlf_lark_parser.dumps(x, nusvm_strict=False))

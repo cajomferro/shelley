@@ -25,7 +25,7 @@ from astroid import (
     MatchCase,
     MatchValue,
     Const,
-    For
+    For,
 )
 
 from lark import Lark
@@ -45,7 +45,7 @@ from shelley.ast.rules import (
     TriggerRuleEvent,
     TriggerRuleFired,
     TriggerRuleChoice,
-    TriggerRuleLoop
+    TriggerRuleLoop,
 )
 from shelley.ast.components import Components, Component
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
@@ -58,8 +58,10 @@ def exit_with_error(lineno: int, msg: str):
     logger.error(f"{msg} (l. {lineno})")
     sys.exit(os.EX_SOFTWARE)
 
+
 def warning(lineno: int, msg: str):
     logger.warning(f"{msg} (l. {lineno})")
+
 
 def parse_uses(uses_path: Optional[Path]) -> Dict[str, str]:
     if uses_path is None:
@@ -239,9 +241,7 @@ class PyVisitor:
                         elif claim.startswith("subsystem") and not self.external_only:
                             parts = claim.split(" ")  # separate by spaces
                             name = parts[1]  # get subystem name from formula
-                            parts = parts[
-                                3:
-                            ]  # remove 'subsystem XX check' from string
+                            parts = parts[3:]  # remove 'subsystem XX check' from string
                             claim = " ".join(parts)  # re-join by spaces
                             formula = LTLParser().transform(self.ltlf_parser(claim))
                             self.device.subsystem_formulae.append((name, formula))
@@ -308,6 +308,11 @@ class PyVisitor:
                 node.lineno,
                 f"Return names {return_next} do not match possible next operations {next_ops_list}!",
             )
+        if not next_ops_list and return_next != [""]:
+            raise ShelleyPyError(
+                node.lineno,
+                f"Return names {return_next} do not match possible next operations {next_ops_list}!",
+            )
 
         self.n_returns += 1
 
@@ -315,6 +320,7 @@ class PyVisitor:
         # TODO: add support for choice with more than 2 branches
         # TODO: handle when one of the branches has return and the other not OR do not allow this
         save_rule: TriggerRule = copy.copy(self._current_rule)
+        single_branch: bool = True
 
         self._current_rule = TriggerRuleFired()
         logger.debug("If")
@@ -335,6 +341,7 @@ class PyVisitor:
         elif isinstance(right_rule, TriggerRuleFired):
             next_rule = left_rule
         else:
+            single_branch = False
             next_rule = TriggerRuleChoice()
             next_rule.choices.extend([left_rule, right_rule])
 
@@ -345,7 +352,7 @@ class PyVisitor:
                 self._current_rule = TriggerRuleSequence(self._current_rule, next_rule)
 
         match self.n_returns:
-            case 2: # assuming both if/else have return statements
+            case 2:  # assuming both if/else have return statements
                 for op_name in self._saved_operations:
                     try:
                         old_rule = self._collect_extra_ops[op_name]["rules"]

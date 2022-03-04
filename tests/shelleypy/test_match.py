@@ -17,7 +17,7 @@ def py2shy(py_code: str) -> str:
 
 def test_match_ok() -> None:
     """
-    Simple return inside if/else
+
     """
 
     app_py = """
@@ -57,9 +57,10 @@ def test_match_ok() -> None:
     assert shy == expected_shy
 
 
+# TODO: currently is not possible to detect code outside a match so it will generate as if it was another case branch
 def test_code_outside_match() -> None:
     """
-    Simple return inside if/else
+    self.v1.on() is outside case and should be ignored
     """
 
     app_py = """
@@ -92,7 +93,7 @@ def test_code_outside_match() -> None:
   v1.test; v2.on; 
  }
  main_3 ->  {
-  v1.on; 
+  v1.on; v1.test; v2.on; 
  }
  initial main -> main_1, main_2, main_3 {}
 
@@ -100,5 +101,72 @@ def test_code_outside_match() -> None:
 """.strip()
 
     #print(shy)
+
+    assert shy == expected_shy
+
+
+def test_nested_match() -> None:
+    """
+    Match inside match (based on paper_example_app_v2/controller.py)
+    """
+
+    app_py = """
+    @system(uses={"a": "Valve", "b": "Valve"})
+    class Controller:
+        def __init__(self):
+            self.a = Valve()
+            self.b = Valve()
+    
+        @operation(initial=True, next=["close", "fail"])
+        def try_open(self):
+            match self.a.test():
+                case "open":
+                    self.a.open()
+                    match self.b.test():
+                        case "open":
+                            self.b.open()
+                            return "close"
+                        case "clean":
+                            self.b.clean()
+                            self.a.close()
+                            return "fail"
+                case "clean":
+                    self.a.clean()
+                    return "fail"
+    
+        @operation(final=True, next=["try_open"])
+        def fail(self):
+            print("Failed to open valves")
+            return "try_open"
+    
+        @operation(final=True, next=["try_open"])
+        def close(self):
+            self.a.close()
+            self.b.close()
+            return "try_open"
+    """
+
+    shy = py2shy(app_py)
+
+    expected_shy = """Controller (a: Valve, b: Valve) {
+ try_open_1 -> close {
+  a.test; a.open; b.test; b.open; 
+ }
+ try_open_2 -> fail {
+  a.test; a.open; b.test; b.clean; a.close; 
+ }
+ try_open_3 -> fail {
+  a.test; a.clean; 
+ }
+ initial try_open -> try_open_1, try_open_2, try_open_3 {}
+ final fail -> try_open {}
+ final close -> try_open {
+  a.close; b.close; 
+ }
+
+}
+""".strip()
+
+    # print(shy)
 
     assert shy == expected_shy

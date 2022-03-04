@@ -117,6 +117,7 @@ class PyVisitor:
         self._match_found: bool = False
         self._collect_extra_ops: Dict[str, Any] = dict()
         self._saved_operations = list()
+        self._saved_case_rules: List[TriggerRule] = list()
 
     def _create_operation(self, name, is_initial, is_final, next_ops_list, rules):
         current_operation: Event = self.device.events.create(
@@ -199,6 +200,7 @@ class PyVisitor:
         self._method_return_idx = 0
         self.n_returns = 0
         self.found_match = False
+        self._saved_case_rules = list()
 
         if (
             len(self.device.uses) == 0
@@ -213,6 +215,11 @@ class PyVisitor:
         else:
             for x in node.body:
                 self.find(x)  # inspect body
+
+            for case_rule in self._saved_case_rules:
+                self._collect_extra_ops[self._current_operation].update(
+                    {"rules": TriggerRuleSequence(self._current_rule, case_rule)}
+                )
 
             self._create_operations(node)
 
@@ -382,7 +389,7 @@ class PyVisitor:
             # assert isinstance(first_node.value,
             #                   Call), f"Expecting Expr.Call in line {first_node.lineno}, found {type(first_node.value)}!"
 
-            if isinstance(first_node.value, Call):
+            elif isinstance(first_node.value, Call):
                 first_node = first_node.value.func
                 first_node_subystem_call = first_node.attrname
                 first_node_subystem_instance = first_node.expr.attrname
@@ -413,10 +420,11 @@ class PyVisitor:
     def _process_match_cases(
         self, match_call: str, node_cases: List[astroid.MatchCase]
     ):
-        save_rule: TriggerRule = copy.copy(self._current_rule)
         for case in node_cases:
             logger.debug(f"Match case: {case.pattern}")
-            self._current_rule = save_rule
+
+            save_rule: TriggerRule = copy.copy(self._current_rule)
+
             self.n_returns = 0  # we must have a return for each match case
 
             self._check_case(case, match_call)
@@ -424,13 +432,14 @@ class PyVisitor:
             for x in case.body:
                 self.find(x)
 
-            self._collect_extra_ops[self._current_operation].update(
-                {"rules": self._current_rule}
-            )
-            self._current_rule = TriggerRuleFired()
+            self._saved_case_rules.append(self._current_rule)
+
+            self._current_rule = save_rule
 
             if not self.n_returns:
                 raise ShelleyPyError(x.lineno, ShelleyPyError.CASE_MISSING_RETURN)
+
+        self._current_rule = TriggerRuleFired()
 
     def _process_for(self, node: For):
         logger.debug(f"Loop")

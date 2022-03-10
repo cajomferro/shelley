@@ -1,0 +1,41 @@
+Sectors (v1: Valve, v2: Valve, v3: Valve, v4: Valve, t: Timer) {
+ initial final sector1 -> sector1, sector2, sector3, sector4 {
+  v1.on; t.wait; v1.off;
+ }
+ initial final sector2 -> sector1, sector2, sector3, sector4 {
+  v2.on; t.wait; v2.off;
+ }
+ initial final sector3 -> sector1, sector2, sector3, sector4 {
+  v3.on; t.wait; v3.off;
+ }
+ initial final sector4 -> sector1, sector2, sector3, sector4{
+  v4.on; t.wait; v4.off;
+ }
+
+ # REVER ESTA FÓRMULA, ACHO QUE PRECISO DE CTL
+ system check G ((sector1 | sector2 | sector3 | sector4) -> ( (X (sector1 | sector2 | sector3 | sector4)) | END));
+ #system check G (sector4 -> ((X sector1) | (X sector2) | END)); # this works even if sector2 does not follow sector4
+ #system check G ((sector4 -> (X sector1)) | (sector4 -> (X sector2)) | (sector4 -> END)); # this works even if sector2 does not follow sector4
+ #system check (G (sector4 -> ((X sector1) | END))) & (G (sector4 -> ((X sector2) | END)));
+
+
+ system check F sector1 | F sector2 | F sector3 | F sector4 ; # at least one of the valves is executed
+
+ #integration check G (t.wait -> X !t.wait); this is override by the line below
+ #integration check G (t.wait -> (X (v1.off | v2.off | v3.off | v4.off))); this is override by the line below
+
+ #integration check G ((v1.on | v2.on | v3.on | v4.on) -> X (t.wait & (X (v1.off | v2.off | v3.off | v4.off))));
+
+ integration check G ((v1.on -> X (t.wait & (X (v1.off)))) & (v2.on -> X (t.wait & (X (v2.off)))) & (v3.on -> X (t.wait & (X (v3.off)))) & (v4.on -> X (t.wait & (X (v4.off)))));
+
+ integration check G (v1.on -> ((! v2.on) U (! v3.on) U (! v4.on) ) U v1.off); # isto é equivalente?
+ integration check G ((v1.on -> ((! v2.on) & (! v3.on) & (! v4.on) ) U v1.off) & (v2.on -> ((! v1.on) & (! v3.on) & (! v4.on) ) U v2.off) & (v3.on -> ((! v1.on) & (! v2.on) & (! v4.on) ) U v3.off) & (v4.on -> ((! v1.on) & (! v2.on) & (! v3.on) ) U v4.off));
+
+ integration check G (v1.on -> F (v1.off));
+ integration check G (v2.on -> F (v2.off));
+ integration check G (v3.on -> F (v3.off));
+ integration check G (v4.on -> F (v4.off));
+
+}
+
+

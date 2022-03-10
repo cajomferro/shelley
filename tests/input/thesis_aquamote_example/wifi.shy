@@ -1,0 +1,27 @@
+base WiFi {
+	initial enable -> connect;
+	final disable -> enable;
+	connect ~> connect_ok, connect_error; # this call returns different values that are important for the choice
+	connect_ok -> get_rssi, disable;
+	connect_error -> disable;
+	get_rssi -> get_rssi, disable;
+
+	system check enable & F (disable & END);
+
+# initial network_join -> join_ok, join_error;
+# final join_error -> network_join ;
+# join_ok -> connect, network_leave;
+# final network_leave -> network_join;
+# connect -> connect_ok, connect_error, connect_timeout;
+# connect_ok -> disconnect, write;
+# connect_error -> connect, network_leave;
+# connect_timeout -> connect, network_leave ;
+# write -> write_timeout, write_data_ready, write_error ;
+# write_error -> write, disconnect;
+# write_timeout -> write, disconnect;
+# write_data_ready -> read, write, disconnect; # i might not be interested in read at all
+# read -> write, disconnect;
+# disconnect -> connect, network_leave;
+#
+# system check G (network_join -> F (join_ok | join_error));
+}

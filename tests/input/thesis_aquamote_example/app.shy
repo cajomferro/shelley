@@ -1,0 +1,17 @@
+App (c: Controller) {
+	initial final run -> {
+#		c.run;
+		c.boot;
+		{
+			loop {c.try_update; c.update_error;}
+			c.try_update;
+			{c.update_ok; c.follow_new_plan;} + {c.update_error; c.follow_default_plan;}
+		} + {}
+		c.sleep;
+	}
+
+	system check F (run & END);
+	integration check G (c.boot -> F (c.sleep & END));
+	integration check G (c.update_ok -> X c.follow_new_plan);
+	#integration check G ((!c.update_error) -> ( (X !c.follow_default_plan) | END ));
+}

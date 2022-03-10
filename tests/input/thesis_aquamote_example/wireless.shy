@@ -1,0 +1,92 @@
+Wireless(wifi: WiFi, http: HTTP) {
+	initial start ~> start_ok, start_failed { # this call returns different values that are important for the choice
+		wifi.enable;
+		wifi.connect;
+	}
+	final stop -> start {
+		wifi.disable;
+	}
+
+#	start_ok_alt -> request {
+#		wifi.connect_ok;
+#	}
+
+	start_ok -> request {
+		wifi.connect_ok;
+		wifi.get_rssi;
+	}
+
+	start_failed -> stop {
+		wifi.connect_error;
+	}
+
+	request -> request, stop{
+		loop {http.connect; http.connect_failed; http.disconnect;}
+		http.connect;
+		{
+			http.connect_ok;
+			loop {http.post; http.post_error;}
+			{http.post; http.post_error;}
+			+
+			{http.post; http.post_ok;}
+		}
+# COMO É QUE GARANTO QUE ISTO NÃO PODE SER IGNORADO??? ver o conceito de ~>, gerar o wireless-i-n.png para ver a diferença
+
+#SPEC AG (((_action = http_connect) & (! _eos)) -> EX ((_action = http_connect_ok) & (! _eos) & EX ((_action = http_post) & (! _eos))))
+#SPEC AG (((_action = http_connect) & (! _eos)) -> EX ((_action = http_connect_failed) & (! _eos) & EF ( ( ((_action = wifi_disable) & (! _eos)) & !((_action = http_connect) & (! _eos) )))))
+
+# ACHO QUE ESTA FUNCIONA!
+#SPEC AG (((_action=http_connect_failed) & (! _eos)) -> EX ((_action=http_disconnect & (! _eos)) & EX (!(_action=http_connect & (! _eos)) & EF ((_action=wifi_disable & (! _eos))))))
+		+
+		{
+			http.connect_failed;
+		}
+
+		http.disconnect;
+	}
+
+	system check start & F (stop & END);
+
+	#integration check G (http_connect -> X (http.connect_failed & X (http.disconnect & (X !http.connect -> X wifi.disable))));
+
+	# THIS IS CTL RIGHT?!
+	#integration check G (http.connect -> X (http.connect_ok | http.connect_failed));
+
+	#integration check G (http.connect -> F (http.connect_failed)); this is false as expected (it might always succeed)
+	integration check G (http.connect_failed -> X http.disconnect);
+
+	#integration check G(wifi.connect_ok -> X http.connect); # se isto é falso pq é que a próxima é verdadeira?
+	#integration check G (wifi.enable -> F ((wifi.connect_ok -> X wifi.enable) | wifi.connect_error)); # This doesn't make sense but it passes (the below formula is what we want)
+	integration check G (wifi.enable -> F ((wifi.get_rssi & (X (http.connect))) | wifi.connect_error));
+	#integration check G (wifi.connect_ok -> F http.connect); # this is already checked by the previous claim
+
+	integration check G (http.post -> F wifi.disable);
+
+	integration check G (((! (wifi.get_rssi | http.disconnect)) -> ((X ! http.connect) | END  )));
+
+	#integration check G (((wifi.get_rssi) -> X (http.connect | wifi.disable ))); # This doesn't make sense but it passes. The right hand of OR doesn't matter if it is true or false since the left is true.
+	#integration check G (((wifi.connect) -> X (http.connect | wifi.disable ))); # This is false as expected
+	#integration check G (((wifi.connect) -> F (http.connect | wifi.enable ))); # This is false as expected, it might happen that none of the clauses inside F are true
+	#integration check G (((wifi.enable) -> F (http.connect | wifi.enable ))); # This is true because the right side of F is true
+
+}
+
+#WirelessHandler(wifi: WiFiClient){#, req: Requests) {
+#	initial start -> request {
+#		wifi.enable;
+#		wifi.connect;
+#		loop {
+#			{wifi.connect_error;}
+#			+
+#			{wifi.connect_timeout;}
+#			wifi.disable;
+#			wifi.enable;
+#			wifi.connect;
+#		}
+#		wifi.connect_ok;
+#	}
+#
+#	final request -> {
+#		wifi.disable;
+#	}
+#}

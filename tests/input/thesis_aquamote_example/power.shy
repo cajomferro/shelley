@@ -1,0 +1,6 @@
+base Power {
+ initial wake_up -> sleep ;
+ final sleep -> wake_up;
+
+ system check wake_up & F (sleep & END);
+}

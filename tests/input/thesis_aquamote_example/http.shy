@@ -1,0 +1,29 @@
+base HTTP {
+ initial connect ~> connect_ok, connect_failed;
+ connect_ok -> get, post, disconnect;
+ connect_failed -> disconnect;
+ get ~> get_ok, get_error; # this call returns different values that are important for the choice
+ get_ok -> get, post, disconnect;
+ get_error -> get, post, disconnect;
+ post ~> post_ok, post_error; # this call returns different values that are important for the choice
+ post_ok -> get, post, disconnect;
+ post_error -> get, post, disconnect;
+ final disconnect -> connect;
+
+ system check connect & F (disconnect & END);
+ #system check (!connect -> END);
+}
+
+# This info is not enough to validate a program
+#base HTTP {
+# initial connect -> get, post, disconnect;
+# get -> get, post, disconnect;
+# post -> get, post, disconnect;
+# final disconnect -> connect;
+#
+# system check connect;
+#}
+
+# Examples of errors
+## omitting the disconnect in get_ok, get_error, post_ok, and post_error:
+#   - These operations do not reach a yield point: get_ok, get_error, post_error, get, post_ok, post

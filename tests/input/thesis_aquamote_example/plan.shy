@@ -1,0 +1,8 @@
+base Plan {
+ initial final update -> update, reset;
+ initial final reset -> update, reset;
+
+ system check (update | reset);
+}
+
+

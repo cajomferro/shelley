@@ -3,7 +3,7 @@ from shelley.ast.devices import Device as ShelleyDevice
 from shelley.parsers import shelley_lark_parser
 from shelley.ast.visitors.count_calls import CountCalls
 
-EXAMPLES_PATH = Path() / Path(__file__).parent.parent / "shelley-examples"
+EXAMPLES_PATH = Path() / Path(__file__).parent / "input"
 
 
 def test_sectors():

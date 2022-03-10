@@ -1,0 +1,59 @@
+Controller (s: Sectors, pw: Power, w: Wireless, pl: Plan) {
+
+ initial final run -> {
+    pw.wake_up;
+    {
+	    loop {w.start; w.start_failed; w.stop;}
+	    w.start;
+	    {
+	        w.start_ok;
+	        loop {w.request;}
+	        w.request; # at least one
+	        w.stop;
+	        pl.update;
+	        loop{{s.sector1;} + {s.sector2;} + {s.sector3;} + {s.sector4;}}
+	    }
+	    +
+	    {
+	        w.start_failed;
+			w.stop;
+			pl.reset;
+	        s.sector1;
+	        s.sector2;
+	        s.sector3;
+	        s.sector4;
+	    }
+    }
+    +
+    {
+        # loop{{s.sector1;} + {s.sector2;} + {s.sector3;} + {s.sector4;}} # FAILS R2
+    } #-> FAILS R3
+    pw.sleep;
+ }
+
+ # thesis-explained claims
+
+ # first thing is boot
+ system check F run;
+
+ # RULE 1 - at least one request is required if wifi is connected, checked by integration before
+ integration check G ((w.start_ok & F w.stop) -> X w.request);
+
+ # RULE 2 - it is not possible to run any sector without a wifi tentative first
+ integration check G ((pw.wake_up & (X (!w.start))) -> (!(F (s.sector1)) & !(F (s.sector2)) & !(F (s.sector3)) & !(F (s.sector4))));
+ #integration check G ((pw.wake_up & (X (!w.start))) -> X pw.sleep); # redundant, similar in effect to the previous one
+ #integration check G (pw.wake_up -> X (!s.sector1 &  !s.sector2 & !s.sector3 & !s.sector4)); redundant
+
+ # RULE 2.1 - it is not possible to sleep without a wifi tentative first (even more restrictive than R2.1)
+ # integration check G ((pw.wake_up & (X (!w.start))) -> X !pw.sleep);
+
+ # Rule 2.2 - it is not possible to sleep without a wifi tentative first and at least one sector run (even more restrictive than R2.2)
+ #integration check G ((!(w.stop | s.sector1 | s.sector2 | s.sector3 | s.sector4 )) -> ((X !pw.sleep) | END));
+
+ # Rule 3 - If all requests fail, I stick to the default plan which is to run all sectors from 1 to 4
+ #integration check G ((w.start & !(F w.request)) -> ((! F(s.sector3)) & (! F(s.sector4))));
+ integration check G ((w.start & !(F w.request)) -> ((F (s.sector1 & X(s.sector2 & X (s.sector3 & X (s.sector4)))))));
+
+ # Rule 4 - If requests don't fail, I follow the new plan
+ integration check G ((w.start & (F w.request)) -> ((F (s.sector1 | s.sector2 | s.sector3 | s.sector4 | END))));
+}

@@ -1,3 +1,4 @@
+import copy
 import logging
 from typing import Mapping, List
 import shelley.ast.triggers
@@ -5,8 +6,7 @@ from shelley.shelleypy.checker.checker import PyVisitor
 from shelley.shelleypy.checker.checker import extract_node
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
 from shelley.ast.devices import Device as ShelleyDevice
-from shelley.ast.behaviors import Behaviors
-from shelley.ast.behaviors import Behavior
+from shelley.ast.behaviors import Behaviors, BehaviorsListDuplicatedError, Behavior
 from shelley.ast.events import Event, Events
 from shelley.ast.triggers import Triggers, Trigger
 from shelley.ast.rules import TriggerRuleChoice
@@ -38,11 +38,17 @@ def update_behaviors(device: ShelleyDevice, to_be_merged):
     behaviors = device.behaviors
     logger.debug("Before: ", behaviors.list_str())
     merged_behaviors = Behaviors()
-    for key, value in to_be_merged.items():
+    for op_name, extra_ops in to_be_merged.items():
         for b in behaviors:
             e2_name = b.e2.name if b.e2 else ""
-            if b.e1.name not in value and e2_name not in value:
-                merged_behaviors.add(b)
+            b_copy = copy.deepcopy(b)
+            if b_copy.e1.name not in extra_ops:
+                if e2_name in extra_ops:
+                    b_copy.e2 = device.events.find_by_name(op_name)
+                try:
+                    merged_behaviors.add(b_copy)
+                except BehaviorsListDuplicatedError:
+                    pass
     device.behaviors = merged_behaviors
     logger.debug("After: ", behaviors.list_str())
 
@@ -122,5 +128,4 @@ def elements_that_share_e2(behaviors: Behaviors):
     for key, value in e2_dict.items():
         if len(value) > 1:
             e2_dict_final[key] = value
-
     return e2_dict_final

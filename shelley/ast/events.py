@@ -35,6 +35,15 @@ class Events(Node):
         self._events[elem.name] = elem
         self._data.append(elem)
 
+    def remove_by_name(self, name) -> Event:
+        """
+        Return event if successfully removed else None
+        """
+        event = self.find_by_name(name)
+        if event:
+            self._data.remove(event)
+        return event
+
     def contains(self, elem: Event) -> bool:
         return elem in self._data
 

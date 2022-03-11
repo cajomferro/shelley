@@ -78,6 +78,11 @@ class Triggers(Node):
         trigger: Optional[Trigger] = self.find_by_event(event_name)
         return trigger.trigger_rule if trigger is not None else None
 
+    def update_rule(self, event_name: str, new_rule: TriggerRule):
+        trigger: Optional[Trigger] = self.find_by_event(event_name)
+        if trigger:
+            trigger.trigger_rule = new_rule
+
     def find_by_event(self, event_name: str) -> Optional[Trigger]:
         return self._rules.get(event_name, None)
 

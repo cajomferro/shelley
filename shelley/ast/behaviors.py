@@ -71,7 +71,7 @@ class Behaviors(Node):
         )
 
     def add(self, elem: Behavior) -> None:
-        if elem not in self._data:
+        if not self.contains_events_pair(elem.e1.name, elem.e2.name):
             self._data.append(elem)
         else:
             raise BehaviorsListDuplicatedError()

@@ -49,6 +49,7 @@ from shelley.ast.rules import (
 )
 from shelley.ast.components import Components, Component
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
+from shelley.shelleypy.checker.optimize import optimize as fun_optimize
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("pyshelley")
@@ -624,25 +625,29 @@ class PyVisitor:
 #         self.current_rule = TriggerRuleFired()
 #
 #
-def process_visitor(tree, output_path: Path, external_only=False):
+def process_visitor(tree, output_path: Path, external_only=False, optimize=False):
     svis = PyVisitor(external_only)
     svis.find(tree)
-
+    device: Device = svis.device
     # visitor = PrettyPrintVisitor(components=svis.device.components)
     # svis.device.accept(visitor)
     # logger.info(visitor.result.strip())
 
-    visitor = Shelley2Lark(components=svis.device.components)
-    svis.device.accept(visitor)
+    if optimize:
+        fun_optimize(device)
+
+    visitor = Shelley2Lark(components=device.components)
+    device.accept(visitor)
 
     lark_code = visitor.result.strip()
     # print(lark_code)
 
+    logger.debug(f"Dumping {output_path}")
     with output_path.open("w") as f:
         f.write(lark_code)
 
 
-def check(src_path: Path, uses_path: Path, output_path: Path):
+def check(src_path: Path, uses_path: Path, output_path: Path, optimize=False):
     uses = parse_uses(uses_path)
     logger.debug(f"Uses: {uses}")
 
@@ -653,7 +658,7 @@ def check(src_path: Path, uses_path: Path, output_path: Path):
 
     try:
         process_visitor(
-            tree, Path(output_path.parent, f"integration_{output_path.name}")
+            tree, Path(output_path.parent, f"integration_{output_path.name}"), optimize=optimize
         )
         process_visitor(tree, output_path, external_only=True)
     except ShelleyPyError as err:

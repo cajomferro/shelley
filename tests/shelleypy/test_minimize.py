@@ -1,4 +1,3 @@
-
 import shelley.ast.triggers
 from shelley.shelleypy.checker.checker import PyVisitor
 from shelley.shelleypy.checker.checker import extract_node
@@ -13,11 +12,13 @@ from typing import Mapping, List
 from shelley.parsers.shelley_lark_parser import parser as lark_parser, ShelleyLanguage
 from shelley.shelleypy.checker.optimize import optimize
 
+
 def py2shelley_device(py_code: str) -> ShelleyDevice:
     svis = PyVisitor(external_only=False)
     svis.find(extract_node(py_code))
 
     return svis.device
+
 
 def test_v1() -> None:
     """
@@ -184,7 +185,136 @@ def test_v4() -> None:
 
 }"""
 
-    assert  new_device_lark == expected_device_shy
+    assert new_device_lark == expected_device_shy
+
+
+def test_v5() -> None:
+    """
+    try_open_1 and try_open_2 CANNOT be "merged", fail does not have next
+    """
+
+    original_device_shy = """Controller (a: Valve, b: Valve) {
+ try_open_1 -> fail, fail2 {
+  a.test; a.open; b.test; b.open; 
+ }
+ try_open_2 -> fail {
+  a.test; a.open; b.test; b.clean; a.close;
+ }
+ initial try_open -> try_open_1, try_open_2 {}
+ initial open -> try_open_2 {}
+ final fail -> {} # no next here!
+ final fail2 -> { # no next here!
+    a.test;
+ }
+}"""
+
+    device: ShelleyDevice = ShelleyLanguage().transform(lark_parser.parse(original_device_shy))
+
+    optimize(device)
+
+    new_device_lark = shelley2lark(device)
+
+    expected_device_shy = """Controller (a: Valve, b: Valve) {
+ try_open_1 -> fail, fail2 {
+  a.test; a.open; b.test; b.open; 
+ }
+ try_open_2 -> fail {
+  a.test; a.open; b.test; b.clean; a.close; 
+ }
+ initial try_open -> try_open_1, try_open_2 {}
+ initial open -> try_open_2 {}
+ final fail ->  {}
+ final fail2 ->  {
+  a.test; 
+ }
+
+}"""
+
+    assert new_device_lark == expected_device_shy
+
+
+def test_v6() -> None:
+    """
+    This test should not pass but at the moment I am not optimising cases where right side is empty
+    """
+
+    original_device_shy = """Controller (a: Valve, b: Valve) {
+ try_open_1 -> fail, fail2 {
+  a.test; a.open; b.test; b.open; 
+ }
+ try_open_2 -> fail {
+  a.test; a.open; b.test; b.clean; a.close;
+ }
+ final fail -> {a.test;} # no next here!
+ final fail2 -> {a.test;} # no next here!
+}"""
+
+    device: ShelleyDevice = ShelleyLanguage().transform(lark_parser.parse(original_device_shy))
+
+    optimize(device)
+
+    new_device_lark = shelley2lark(device)
+
+    expected_device_shy = """Controller (a: Valve, b: Valve) {
+ try_open_1 -> fail, fail2 {
+  a.test; a.open; b.test; b.open; 
+ }
+ try_open_2 -> fail {
+  a.test; a.open; b.test; b.clean; a.close; 
+ }
+ final fail ->  {
+  a.test; 
+ }
+ final fail2 ->  {
+  a.test; 
+ }
+
+}"""
+
+    assert new_device_lark == expected_device_shy
+
+
+def test_v7() -> None:
+    """
+    fail and fail2 can be "merged", fail does not have next
+    """
+
+    original_device_shy = """Controller (a: Valve, b: Valve) {
+ try_open_1 -> fail, fail2 {
+  a.test; a.open; b.test; b.open;
+ }
+ try_open_2 -> fail {
+  a.test; a.open; b.test; b.clean; a.close;
+ }
+ initial final test -> {}
+ final fail -> test {a.test;} # no next here!
+ final fail2 -> test {a.test;} # no next here!
+}"""
+
+    device: ShelleyDevice = ShelleyLanguage().transform(lark_parser.parse(original_device_shy))
+
+    optimize(device)
+
+    new_device_lark = shelley2lark(device)
+
+    expected_device_shy = """Controller (a: Valve, b: Valve) {
+ try_open_1 -> fail, fail2 {
+  a.test; a.open; b.test; b.open; 
+ }
+ try_open_2 -> fail {
+  a.test; a.open; b.test; b.clean; a.close; 
+ }
+ initial final test ->  {}
+ final fail -> test {
+  a.test; 
+ }
+ final fail2 -> test {
+  a.test; 
+ }
+
+}"""
+
+    assert new_device_lark == expected_device_shy
 
 
 def shelley2lark(device: ShelleyDevice):
@@ -192,4 +322,3 @@ def shelley2lark(device: ShelleyDevice):
     device.accept(visitor)
 
     return visitor.result.strip()
-

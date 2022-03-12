@@ -24,6 +24,9 @@ def get_command_args() -> argparse.Namespace:
     parser.add_argument(
         "-v", "--verbosity", help="increase output verbosity", action="store_true"
     )
+    parser.add_argument(
+        "--optimize", help="Try to merge operations that share the same next operations (BETA)", action="store_true"
+    )
     return parser.parse_args()
 
 
@@ -62,6 +65,7 @@ def main() -> None:
             # uses=parse_uses(args.uses),
             uses_path=args.uses,
             output_path=args.output,
+            optimize=args.optimize,
         )
         logger.debug("OK!")
     except CompilationError as error:

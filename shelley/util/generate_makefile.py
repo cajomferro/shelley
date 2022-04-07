@@ -144,7 +144,10 @@ def generate_makefile_content(
                 deps += f"	$(MAKE) integration_{use_basename}.scy\n"
             stats += f"	$(MAKE) {use_basename}-stats.json\n"
 
-    deps = deps[:-1]  # remove extra newline
+    if python_files:
+        deps += f"	$(MAKE) integration_{Path(main_source_filename).stem}.scy"
+    else:
+        deps = deps[:-1]  # remove extra newline
 
     stats += f"	$(MAKE) {Path(main_source_filename).stem}-stats.json\n"
 

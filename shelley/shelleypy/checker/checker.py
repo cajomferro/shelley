@@ -83,7 +83,7 @@ def parse_uses(uses_path: Optional[Path]) -> Dict[str, str]:
 
 
 class ShelleyPyError(Exception):
-    LIST_CASE = "Cases with several options are not supported!"
+    LIST_CASE = "Cases with lists are not supported!"
     MISSING_RETURN = "Missing return!"
     CASE_MISSING_RETURN = "Missing return for case!"
     IF_ELSE_MISSING_RETURN = "One of the if/else branches has return and the other not!"
@@ -658,7 +658,9 @@ def check(src_path: Path, uses_path: Path, output_path: Path, optimize=False):
 
     try:
         process_visitor(
-            tree, Path(output_path.parent, f"integration_{output_path.name}"), optimize=optimize
+            tree,
+            Path(output_path.parent, f"integration_{output_path.name}"),
+            optimize=optimize,
         )
         process_visitor(tree, output_path, external_only=True)
     except ShelleyPyError as err:

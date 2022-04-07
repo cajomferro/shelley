@@ -73,15 +73,19 @@ def update_events(events: Events, to_be_merged):
     logger.debug(f"After: {events.list_str()}")
 
 
-def elements_to_be_merged(device: ShelleyDevice, shared_e1: Mapping[str, List[str]], shared_e2: Mapping[str, List[str]]):
-    """
-
-    """
+def elements_to_be_merged(
+    device: ShelleyDevice,
+    shared_e1: Mapping[str, List[str]],
+    shared_e2: Mapping[str, List[str]],
+):
+    """ """
     result = dict()
     for key_e2, value_e2 in shared_e2.items():
         for e1, e1_list in shared_e1.items():
             if all(elem in e1_list for elem in value_e2):
-                if isinstance(device.triggers.get_rule(e1), TriggerRuleFired): # only care for empty body operations
+                if isinstance(
+                    device.triggers.get_rule(e1), TriggerRuleFired
+                ):  # only care for empty body operations
                     result[value_e2[0]] = value_e2[1:]
     logger.debug(f"Elements to be merged: {result}")
     return result
@@ -103,14 +107,16 @@ def elements_that_share_e1(behaviors: Behaviors):
     return result
 
 
-def elements_that_share_e2(share_e1: Mapping[str, List[str]]) -> Mapping[str, List[str]]:
+def elements_that_share_e2(
+    share_e1: Mapping[str, List[str]]
+) -> Mapping[str, List[str]]:
     """
     input: {'try_open_1': ['close'], 'try_open_2': ['fail'], 'try_open_3': ['fail'], 'try_open': ['try_open_1', 'try_open_2', 'try_open_3'], 'fail': ['try_open'], 'close': ['try_open']}
     output: {'fail': ['try_open_2', 'try_open_3'], 'try_open': ['fail', 'close']}
     """
     e2_dict = {}
     for e1, e2_list in share_e1.items():
-        if len(e2_list) == 1 and e2_list[0] != '':
+        if len(e2_list) == 1 and e2_list[0] != "":
             if not e2_list[0] in e2_dict.keys():
                 e2_dict[e2_list[0]] = [e1]
             else:
@@ -118,7 +124,9 @@ def elements_that_share_e2(share_e1: Mapping[str, List[str]]) -> Mapping[str, Li
 
     result = {}
     for key, value in e2_dict.items():
-        if len(value) > 1:  # here we only care operations that might have something to share (len(e2 operations) > 1)
+        if (
+            len(value) > 1
+        ):  # here we only care operations that might have something to share (len(e2 operations) > 1)
             result[key] = value
 
     logger.debug(f"Shared e2: {result}")

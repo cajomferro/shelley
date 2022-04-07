@@ -25,7 +25,9 @@ def get_command_args() -> argparse.Namespace:
         "-v", "--verbosity", help="increase output verbosity", action="store_true"
     )
     parser.add_argument(
-        "--optimize", help="Try to merge operations that share the same next operations (BETA)", action="store_true"
+        "--optimize",
+        help="Try to merge operations that share the same next operations (BETA)",
+        action="store_true",
     )
     return parser.parse_args()
 

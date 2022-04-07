@@ -16,6 +16,7 @@ MAKEFLAGS += --no-print-directory
 USES = -u $$USES_PATH$$
 #VALIDITY_CHECKS=--skip-direct
 #VALIDITY_CHECKS=--skip-mc
+SHELLEYPY_OPTS =$$PYTHON_OPTIMIZE$$
 
 all: $$ALL_TARGET$$
 
@@ -67,6 +68,11 @@ def create_parser() -> argparse.ArgumentParser:
         default=None,
         help="Path to uses.yml",
     )
+    parser.add_argument(
+        "--optimize",
+        help="Try to merge operations that share the same next operations in the Python code (BETA)",
+        action="store_true",
+    )
     # parser.add_argument(
     #     "--exclude",
     #     type=List[str],
@@ -87,6 +93,7 @@ def create_parser() -> argparse.ArgumentParser:
 def generate_makefile_content(
     example_path: Path,
     uses_path: Optional[Path] = None,
+    optimize: bool = False
 ):
     python_files: List[Path] = _collect_py_files(example_path)
     logger.debug("Found python files: {0}".format(python_files))
@@ -170,6 +177,7 @@ def generate_makefile_content(
         makefile_content = makefile_content.replace("$$ALL_TARGET$$", "scy")
         makefile_content = makefile_content.replace("$$PYTHON_TARGETS$$", "")
         makefile_content = makefile_content.replace("$$CLEAN_EXT$$", default_clean_ext)
+        makefile_content = makefile_content.replace("$$PYTHON_OPTIMIZE$$", "")
     else:
         makefile_content = makefile_content.replace("$$ALL_TARGET$$", "py")
         makefile_content = makefile_content.replace(
@@ -178,6 +186,11 @@ def generate_makefile_content(
         )
         default_clean_ext += " *.shy"
         makefile_content = makefile_content.replace("$$CLEAN_EXT$$", default_clean_ext)
+
+        if optimize:
+            makefile_content = makefile_content.replace("$$PYTHON_OPTIMIZE$$", "--optimize")
+        else:
+            makefile_content = makefile_content.replace("$$PYTHON_OPTIMIZE$$", "")
 
     # logger.debug(makefile_content)
 
@@ -328,8 +341,8 @@ Timer: timer.scy
 #     assert exclude_files_list == ["xx.shy", "yy.mk", "zz.shy", "kk.mk"]
 
 
-def run(example_path: str, uses_file_path: str):
-    makefile_content: str = generate_makefile_content(example_path, uses_file_path)
+def run(example_path: str, uses_file_path: str, optimize:bool = False):
+    makefile_content: str = generate_makefile_content(example_path, uses_file_path, optimize)
     makefile_path: Path = example_path / "Makefile"
 
     with makefile_path.open("w") as f:
@@ -356,7 +369,7 @@ def main() -> None:
     else:
         uses_file_path: Path = args.uses
 
-    run(example_path, uses_file_path)
+    run(example_path, uses_file_path, args.optimize)
 
 
 if __name__ == "__main__":

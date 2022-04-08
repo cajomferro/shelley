@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "shelley-checker"
+name = "shelley"
 version = "0.1.28"
 description = "Check system integration"
 authors = ["Carlos Mão de Ferro", "Tiago Cogumbreiro", "Francisco Martins"]

@@ -5,6 +5,7 @@ description = "Check system integration"
 authors = ["Carlos Mão de Ferro", "Tiago Cogumbreiro", "Francisco Martins"]
 license = "MIT"
 readme = 'README.rst'
+url = 'https://gitlab.com/safeiot/shelley-checker'
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"

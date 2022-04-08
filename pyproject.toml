@@ -8,7 +8,7 @@ readme = 'README.rst'
 
 [tool.poetry.source]
 name = 'shelley-checker'
-url  = 'https://gitlab.com/safeiot/shelley-checker.git/simple/'
+url  = 'https://gitlab.com/safeiot/shelley-checker/simple/'
 #secondary = true
 
 

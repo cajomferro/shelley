@@ -18,10 +18,14 @@ pull:
 	$(GIT) pull --recurse-submodules
 
 docker-build:
-	docker compose build
+	docker build -t shelleybench .
 
 docker-run:
-	docker compose run --rm main bash
+	docker run -it --rm \
+		-v $(PWD)/shelley:/app/shelley \
+		-v $(PWD)/shelley-examples:/app/shelley-examples \
+		-v $(PWD)/tests:/app/tests \
+		shelleybench bash
 
 deps:
 	$(PO) update

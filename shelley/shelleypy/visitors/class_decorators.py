@@ -15,7 +15,7 @@ from shelley.parsers import ltlf_lark_parser
 from shelley.parsers.ltlf_lark_parser import LTLParser
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("pyshelley")
+logger = logging.getLogger("shelleypy")
 
 
 class ClassDecoratorsVisitor(NodeNG):
@@ -28,12 +28,11 @@ class ClassDecoratorsVisitor(NodeNG):
         ).parse
 
     def visit_decorators(self, node: Decorators) -> Any:
-        logger.info(node)
         for node in node.nodes:
             node.accept(self)
 
     def visit_call(self, node: Call) -> Any:
-        logger.info(f"Call: {node.func.name}")
+        logger.info(f"Decorator Call: {node.func.name}")
         decorator_name = node.func.name
         match decorator_name:
             case "claim":

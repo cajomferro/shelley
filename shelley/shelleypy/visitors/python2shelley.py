@@ -29,6 +29,7 @@ from astroid import (
 )
 
 from shelley.shelleypy.visitors.class_decorators import ClassDecoratorsVisitor
+from shelley.shelleypy.visitors.method import MethodVisitor
 
 from shelley.ast.devices import Device, discover_uses
 from shelley.ast.actions import Action, Actions
@@ -45,8 +46,7 @@ from shelley.ast.rules import (
 )
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("pyshelley")
-
+logger = logging.getLogger("shelleypy")
 
 
 class Python2Shelley(NodeNG):
@@ -70,18 +70,17 @@ class Python2Shelley(NodeNG):
         decorators_visitor = ClassDecoratorsVisitor(self.device)
         node.decorators.accept(decorators_visitor)
 
-        for node in node.body:
-            node.accept(self)
+        for node in node.body:  # process methods
+            method_visitor = MethodVisitor(self.device)
+            node.accept(method_visitor)
 
-    def visit_functiondef(self, node: FunctionDef) -> Any:
-        logger.info(f"Method: {node.name}")
-
-    def visit_asyncfunctiondef(self, node: AsyncFunctionDef) -> Any:
-        logger.info(f"Async Method: {node.name}")
+    # def visit_asyncfunctiondef(self, node: AsyncFunctionDef) -> Any:
+    #     logger.info(f"Async Method: {node.name}")
 
 
 def main():
-    src_path = Path("/app/shelley-examples/micropython_paper_full_example/vhandler_full.py")
+    src_path = Path("/app/shelley-examples/micropython_paper_full_example/valve.py")
+    # src_path = Path("/app/shelley-examples/micropython_paper_full_example/vhandler_full.py")
 
     with src_path.open() as f:
         tree = extract_node(f.read())

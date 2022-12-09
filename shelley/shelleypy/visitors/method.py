@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Optional, List
 
 from astroid import (
+    Const,
     For,
     Await,
     Call,
@@ -61,18 +62,11 @@ logger = logging.getLogger("shelleypy")
 
 
 @dataclass
-class CaseNameVisitor(NodeNG):
-    def visit_matchsequence(self, node: MatchValue):
-        raise ShelleyPyError(node.lineno, ShelleyPyError.LIST_CASE)
-
-    def visit_matchvalue(self, node: MatchValue):
-        logger.debug(node)
-        return node.value.value
-
-
-@dataclass
 class ShelleyCall:
     node_call: Call
+
+    def get_exprself(self) -> str:
+        return self.node_call.func.expr.expr.name
 
     def get_subsystem_call(self) -> str:
         return self.node_call.func.attrname
@@ -81,8 +75,7 @@ class ShelleyCall:
         return self.node_call.func.expr.attrname
 
     def __str__(self):
-        exprself = self.node_call.func.expr.expr.name
-        return f"{exprself}.{self.get_subsystem_instance()}.{self.get_subsystem_call()}"
+        return f"{self.get_exprself()}.{self.get_subsystem_instance()}.{self.get_subsystem_call()}"
 
 
 @dataclass
@@ -92,7 +85,7 @@ class MethodVisitor(NodeNG):
     match_found: bool = False  # useful for verifying missing returns
     current_rule: TriggerRule = TriggerRuleFired()
     last_current_rule_saved: Optional[TriggerRule] = None
-    current_match_call: Optional[str] = None
+    current_match_call: Optional[ShelleyCall] = None
     saved_case_rules: List[TriggerRule] = field(default_factory=list)
     saved_operations = list()
     last_call: Optional[ShelleyCall] = None
@@ -111,9 +104,10 @@ class MethodVisitor(NodeNG):
         self.match_found = True
 
         node.subject.accept(self)
-
-        if not isinstance(self.last_call.node_call, Call):
+        if not isinstance(self.last_call.node_call, Call):  # check type of match call
             raise ShelleyPyError(node.subject.lineno, ShelleyPyError.MATCH_CALL_TYPE)
+
+        self.current_match_call = self.last_call
 
         for node_case in node.cases:
             node_case.accept(self)
@@ -123,17 +117,18 @@ class MethodVisitor(NodeNG):
     def visit_matchcase(self, match_case_node: MatchCase):
         logger.debug(match_case_node)
 
-        # retrieve case name
-        case_name: str = match_case_node.pattern.accept(CaseNameVisitor())  # -> visit_matchvalue
-
-        # match_exprself, match_subystem_instance, _ = self.current_match_call.split(".")
+        case_name: str = self._get_case_name(match_case_node)
 
         self.save_current_rule()
         self.returns_reset()  # start counting returns, we must have a return for each match case
 
         # inspect case body
+        first_node = True
         for matchcase_body_node in match_case_node.body:
             matchcase_body_node.accept(self)
+            if first_node:
+                first_node = False
+                self._check_case_first_node(case_name, matchcase_body_node)
 
         self.save_current_case_rule()
         self.restore_current_rule()
@@ -188,9 +183,29 @@ class MethodVisitor(NodeNG):
 
     def visit_expr(self, node: Expr):
         logger.debug(node)
+        node.value.accept(self)
 
     def visit_return(self, node: Return):
         logger.debug(node)
+
+    def _check_case_first_node(self, case_name: str, matchcase_body_node: NodeNG):
+        # inspect first expression inside case body
+        expected_call_name = f"{self.current_match_call.get_exprself()}.{self.current_match_call.get_subsystem_instance()}.{case_name}"
+        if not (self.last_call and str(self.last_call) == expected_call_name):
+            logger.warning(
+                f"Expecting {expected_call_name} but found {self.last_call}. The first subsystem call should match the case name! (l. {matchcase_body_node.lineno})")
+
+    def _get_case_name(self, match_case_node: MatchCase):
+        """
+        MatchCase -> pattern -> MatchValue -> value -> Const -> value => str
+        """
+        try:
+            case_name: str = match_case_node.pattern.value.value
+            if not isinstance(case_name, str):  # check type of match case value
+                raise ShelleyPyError(match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE)
+        except AttributeError:
+            raise ShelleyPyError(match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE)
+        return case_name
 
     def returns_reset(self):
         self.n_returns = 0

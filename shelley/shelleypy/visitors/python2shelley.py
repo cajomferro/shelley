@@ -1,12 +1,9 @@
-from __future__ import annotations
-
-import copy
 import logging
 import os
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Optional, List
+from typing import Any
 
 from astroid import (
     For,
@@ -17,17 +14,16 @@ from astroid import (
     If,
     Match,
     MatchCase,
+    Decorators,
     FunctionDef,
     ClassDef,
     NodeNG,
     extract_node
 )
+from lark import Lark
 
-from shelley.ast.behaviors import Behaviors
-from shelley.ast.components import Components, Component
-from shelley.ast.devices import Device
-from shelley.ast.events import Event
-from shelley.ast.events import Events
+from shelley.ast.components import Component
+from shelley.ast.devices import Device, discover_uses
 from shelley.ast.rules import (
     TriggerRuleSequence,
     TriggerRuleEvent,
@@ -35,56 +31,108 @@ from shelley.ast.rules import (
     TriggerRuleLoop,
 )
 from shelley.ast.triggers import TriggerRule
-from shelley.ast.triggers import Triggers
+from shelley.parsers import ltlf_lark_parser
+from shelley.parsers.ltlf_lark_parser import LTLParser
 from shelley.shelleypy.visitors import ShelleyPyError
-from shelley.shelleypy.visitors.class_decorators import ClassDecoratorsVisitor
-from shelley.shelleypy.visitors.method_decorators import MethodDecoratorsVisitor
+from shelley.shelleypy.visitors import VisitorHelper
+from shelley.shelleypy.visitors import ShelleyCall
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
 
 
-@dataclass
-class ShelleyCall:
-    node_call: Call
+class MethodDecoratorsVisitor(NodeNG):
+    def __init__(self):
+        super().__init__()
+        self.decorator = None
 
-    def get_exprself(self) -> str:
-        return self.node_call.func.expr.expr.name
+    def visit_decorators(self, node: Decorators) -> Any:
+        for node in node.nodes:
+            node.accept(self)
 
-    def get_subsystem_call(self) -> str:
-        return self.node_call.func.attrname
+    def visit_call(self, node: Call) -> Any:
+        logger.info(f"Method decorator: {node.func.name}")
+        decorator_name = node.func.name
+        match decorator_name:
+            case "operation":
+                decorator = {
+                    "type": "operation",
+                    "initial": False,
+                    "final": False,
+                    "next": [],
+                }
+                for kw in node.keywords:
+                    match kw.arg:
+                        case "initial":
+                            decorator["initial"] = True
+                        case "final":
+                            decorator["final"] = True
+                        case "next":
+                            decorator["next"] = [
+                                op.value for op in kw.value.elts
+                            ]
+                self.decorator = decorator
 
-    def get_subsystem_instance(self) -> str:
-        return self.node_call.func.expr.attrname
 
-    def __str__(self):
-        return f"{self.get_exprself()}.{self.get_subsystem_instance()}.{self.get_subsystem_call()}"
+class ClassDecoratorsVisitor(NodeNG):
+    def __init__(self, device: Device, external_only=False):
+        super().__init__()
+        self.device = device
+        self.external_only = external_only
+        self.ltlf_parser = Lark.open(
+            "ltlf_grammar.lark", rel_to=ltlf_lark_parser.__file__, start="formula"
+        ).parse
+
+    def visit_decorators(self, node: Decorators) -> Any:
+        for node in node.nodes:
+            node.accept(self)
+
+    def visit_call(self, node: Call) -> Any:
+        logger.info(f"Decorator Call: {node.func.name}")
+        decorator_name = node.func.name
+        match decorator_name:
+            case "claim":
+                claim: str = node.args[0].value
+                logger.debug(f"Claim: {claim}")
+                claim = claim.removesuffix(";")
+                if "system check" in claim and self.external_only:
+                    claim = claim.removeprefix("system check")
+                    formula = LTLParser().transform(self.ltlf_parser(claim))
+                    self.device.system_formulae.append(formula)
+                elif "integration check" in claim and not self.external_only:
+                    claim = claim.removeprefix("integration check")
+                    formula = LTLParser().transform(self.ltlf_parser(claim))
+                    self.device.integration_formulae.append(formula)
+                elif claim.startswith("subsystem") and not self.external_only:
+                    parts = claim.split(" ")  # separate by spaces
+                    name = parts[1]  # get subystem name from formula
+                    parts = parts[3:]  # remove 'subsystem XX check' from string
+                    claim = " ".join(parts)  # re-join by spaces
+                    formula = LTLParser().transform(self.ltlf_parser(claim))
+                    self.device.subsystem_formulae.append((name, formula))
+            case "system":
+                for kw in node.keywords:
+                    match kw.arg:
+                        case "uses":
+                            if not self.external_only:
+                                for name, type in kw.value.items:
+                                    self.device.components.create(
+                                        name.value, type.value
+                                    )
+                                    self.device.uses = discover_uses(
+                                        self.device.components
+                                    )  # TODO: melhorar isto?
 
 
 @dataclass
 class Python2ShelleyVisitor(NodeNG):
-    device: Device = Device(
-        name="",
-        events=Events(),
-        behaviors=Behaviors(),
-        triggers=Triggers(),
-        components=Components(),
-    )
-    external_only: bool = False
-    match_found: bool = False  # useful for verifying missing returns
-    current_rule: TriggerRule = TriggerRuleFired()
-    last_current_rule_saved: Optional[TriggerRule] = None
-    current_match_call: Optional[ShelleyCall] = None
-    saved_case_rules: List[TriggerRule] = field(default_factory=list)
-    saved_operations = list()
-    last_call: Optional[ShelleyCall] = None
-    n_returns: int = 0
+    visitor_helper: VisitorHelper
 
     def visit_classdef(self, node: ClassDef) -> Any:
-        self.device.name = node.name
-        logger.debug(f"System name: {self.device.name}")
+        self.visitor_helper.device.name = node.name
+        logger.debug(f"System name: {self.visitor_helper.device.name}")
 
-        decorators_visitor = ClassDecoratorsVisitor(self.device)
+        decorators_visitor = ClassDecoratorsVisitor(self.visitor_helper.device)
         node.decorators.accept(decorators_visitor)
 
         for node in node.body:  # process methods
@@ -93,33 +141,53 @@ class Python2ShelleyVisitor(NodeNG):
     def visit_functiondef(self, node: FunctionDef) -> Any:
         logger.info(f"Method: {node.name}")
         logger.debug(node)
-        decorator = self._get_decorator(node.decorators)
 
-        if decorator:
-            self._process_operation(node, decorator)
+        if node.decorators is None:
+            logger.debug(f"Skipping. This method is not annotated as an operation!")
+            return None
+
+        decorators_visitor = MethodDecoratorsVisitor()
+        node.decorators.accept(decorators_visitor)
+        decorator = decorators_visitor.decorator
+
+        if decorator and decorator["type"] == "operation":
+            if self.visitor_helper.is_base_system(): # base system, do not inspect body
+                self.visitor_helper.create_operation(
+                    node.name,
+                    decorator["initial"],
+                    decorator["final"],
+                    decorator["next"],
+                    TriggerRuleFired(),
+                )
+            else:  # system that contains subsystems, do inspect body
+                assert type(node) == FunctionDef  # this is just a safe check
+                for node in node.body:
+                    node.accept(self)
+        else:
+            logger.debug(f"Skipping. This method is not annotated as an operation!")
 
     def visit_match(self, node: Match):
         logger.debug(node)
-        self.match_found = True
+        self.visitor_helper.match_found = True
 
         node.subject.accept(self)
-        if not isinstance(self.last_call.node_call, Call):  # check type of match call
+        if not isinstance(self.visitor_helper.last_call.node_call, Call):  # check type of match call
             raise ShelleyPyError(node.subject.lineno, ShelleyPyError.MATCH_CALL_TYPE)
 
-        self.current_match_call = self.last_call
+        self.visitor_helper.current_match_call = self.visitor_helper.last_call
 
         for node_case in node.cases:
             node_case.accept(self)
 
-        self.reset_current_rule()
+        self.visitor_helper.reset_current_rule()
 
     def visit_matchcase(self, match_case_node: MatchCase):
         logger.debug(match_case_node)
 
-        case_name: str = self._get_case_name(match_case_node)
+        case_name: str = self.visitor_helper.get_case_name(match_case_node)
 
-        self.save_current_rule()
-        self.returns_reset()  # start counting returns, we must have a return for each match case
+        self.visitor_helper.save_current_rule()
+        self.visitor_helper.returns_reset()  # start counting returns, we must have a return for each match case
 
         # inspect case body
         first_node = True
@@ -127,12 +195,12 @@ class Python2ShelleyVisitor(NodeNG):
             matchcase_body_node.accept(self)
             if first_node:
                 first_node = False
-                self._check_case_first_node(case_name, matchcase_body_node)
+                self.visitor_helper.check_case_first_node(case_name, matchcase_body_node)
 
-        self.save_current_case_rule()
-        self.restore_current_rule()
+        self.visitor_helper.save_current_case_rule()
+        self.visitor_helper.restore_current_rule()
 
-        if not self.n_returns:
+        if not self.visitor_helper.n_returns:
             raise ShelleyPyError(match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN)
 
     def visit_await(self, node: Await):
@@ -143,24 +211,26 @@ class Python2ShelleyVisitor(NodeNG):
         logger.debug(node)
 
         try:
-            self.last_call = ShelleyCall(node)
+            self.visitor_helper.last_call = ShelleyCall(node)
         except AttributeError:
             logger.debug(f"    Ignoring Call: {node.func.repr_tree()}")
             return
 
         try:
-            component: Component = self.device.components[self.last_call.get_subsystem_instance()]
+            component: Component = self.visitor_helper.device.components[
+                self.visitor_helper.last_call.get_subsystem_instance()]
         except KeyError:
-            logger.debug(f"    Ignoring Call: {self.last_call}")
+            logger.debug(f"    Ignoring Call: {self.visitor_helper.last_call}")
             return
 
-        match self.current_rule:
+        match self.visitor_helper.current_rule:
             case TriggerRuleFired():
-                self.current_rule = TriggerRuleEvent(component, self.last_call.get_subsystem_call())
+                self.visitor_helper.current_rule = TriggerRuleEvent(component,
+                                                                    self.visitor_helper.last_call.get_subsystem_call())
             case TriggerRule():  # any other type of rule
-                self.current_rule = TriggerRuleSequence(
-                    self.current_rule,
-                    TriggerRuleEvent(component, self.last_call.get_subsystem_call()),
+                self.visitor_helper.current_rule = TriggerRuleSequence(
+                    self.visitor_helper.current_rule,
+                    TriggerRuleEvent(component, self.visitor_helper.last_call.get_subsystem_call()),
                 )
 
     def visit_if(self, node: If):
@@ -179,125 +249,61 @@ class Python2ShelleyVisitor(NodeNG):
 
     def visit_for(self, node: For):
         logger.debug(node)
-        self.save_current_rule()
+        self.visitor_helper.save_current_rule()
         for node_for_body in node.body:
             node_for_body.accept(self)
 
-        if self.n_returns:
+        if self.visitor_helper.n_returns:
             raise ShelleyPyError(
                 node.lineno, "Return statements are not allowed inside loops!"
             )
 
-        loop_rule = TriggerRuleLoop(self.current_rule)
-        self.current_rule = TriggerRuleSequence(self.last_current_rule_saved, loop_rule)
+        loop_rule = TriggerRuleLoop(self.visitor_helper.current_rule)
+        self.visitor_helper.current_rule = TriggerRuleSequence(self.visitor_helper.last_current_rule_saved, loop_rule)
 
     def visit_expr(self, node: Expr):
         logger.debug(node)
         node.value.accept(self)
 
     def visit_return(self, node: Return):
+        """
+        For now, let's create a Shelley operation for each return.
+        An alternative (smarter but more difficult to implement) approach would be to create a Shelley operation
+        for each "type" of return.
+        """
         logger.debug(node)
-
-    def _check_case_first_node(self, case_name: str, matchcase_body_node: NodeNG):
-        # inspect first expression inside case body
-        expected_call_name = f"{self.current_match_call.get_exprself()}.{self.current_match_call.get_subsystem_instance()}.{case_name}"
-        if not (self.last_call and str(self.last_call) == expected_call_name):
-            logger.warning(
-                f"Expecting {expected_call_name} but found {self.last_call}. The first subsystem call should match the case name! (l. {matchcase_body_node.lineno})")
-
-    def _get_case_name(self, match_case_node: MatchCase):
-        """
-        MatchCase -> pattern -> MatchValue -> value -> Const -> value => str
-        """
-        try:
-            case_name: str = match_case_node.pattern.value.value
-            if not isinstance(case_name, str):  # check type of match case value
-                raise ShelleyPyError(match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE)
-        except AttributeError:
-            raise ShelleyPyError(match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE)
-        return case_name
-
-    def returns_reset(self):
-        self.n_returns = 0
-
-    def returns_increment(self):
-        self.n_returns += 1
-
-    def returns_count(self):
-        return self.n_returns
-
-    def save_current_case_rule(self):
-        self.saved_case_rules.append(self.current_rule)
-
-    def save_current_rule(self):
-        self.last_current_rule_saved = copy.copy(self.current_rule)
-
-    def reset_current_rule(self):
-        self.current_rule = TriggerRuleFired()
-
-    def restore_current_rule(self):
-        self.current_rule = self.last_current_rule_saved
-        self.last_current_rule_saved = None
-
-    def _process_operation(self, node: FunctionDef, decorator: Dict):
-        if (
-                len(self.device.uses) == 0
-        ) or self.external_only:  # base system, do not inspect body
-            self._create_operation(
-                node.name,
-                decorator["initial"],
-                decorator["final"],
-                decorator["next"],
-                TriggerRuleFired(),
-            )
-        else:  # system that contains subsystems, do inspect body
-            assert type(node) == FunctionDef  # this is just a safe check
-            for node in node.body:
-                node.accept(self)
-
-    def _create_operation(self, name, is_initial, is_final, next_ops_list, rules):
-        current_operation: Event = self.device.events.create(
-            name,
-            is_start=is_initial,
-            is_final=is_final,
-        )
-
-        if len(next_ops_list) == 0:
-            self.device.behaviors.create(
-                copy.copy(current_operation)
-            )  # operation without next operations
-
-        for next_op in next_ops_list:
-            self.device.behaviors.create(
-                copy.copy(current_operation),
-                Event(
-                    name=next_op,
-                    is_start=False,
-                    is_final=True,
-                ),
-            )
-
-        self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))
-
-    @staticmethod
-    def _get_decorator(decorators):
-        if decorators is None:
-            logger.debug(f"Skipping. This method is not annotated as an operation!")
-            return None
-
-        decorators_visitor = MethodDecoratorsVisitor()
-        decorators.accept(decorators_visitor)
-        decorator = decorators_visitor.decorator
-
-        if decorator is None:
-            logger.debug(f"Skipping. This method is not annotated as an operation!")
-            return None
-
-        if not decorator["type"] == "operation":
-            logger.debug(f"Skipping. This method is not annotated as an operation!")
-            return None
-
-        return decorator
+        # if isinstance(node.value, Const):
+        #     return_next: List[str] = [(node.value.value)]
+        # else:
+        #     return_next: List[str] = [x.value for x in node.value.elts]
+        #
+        # self.visitor_helper._method_return_idx += 1
+        # operation_name: str = (
+        #     f"{self.visitor_helper._current_op_decorator['name']}_{self.visitor_helper._method_return_idx}"
+        # )
+        #
+        # logger.debug(f" Operation: {operation_name}")
+        #
+        # self.visitor_helper._current_operation = operation_name
+        # self.visitor_helper._saved_operations.append(self.visitor_helper._current_operation)
+        # self.visitor_helper._collect_extra_ops[operation_name] = {
+        #     "next": return_next,
+        #     "rules": self.visitor_helper._current_rule,
+        # }
+        #
+        # next_ops_list = self.visitor_helper._current_op_decorator["next"]
+        # if next_ops_list and not all(elem in next_ops_list for elem in return_next):
+        #     raise ShelleyPyError(
+        #         node.lineno,
+        #         f"Return names {return_next} do not match possible next operations {next_ops_list}!",
+        #     )
+        # if not next_ops_list and return_next != [""]:
+        #     raise ShelleyPyError(
+        #         node.lineno,
+        #         f"Return names {return_next} do not match possible next operations {next_ops_list}!",
+        #     )
+        #
+        # self.visitor_helper.n_returns += 1
 
 
 def main():
@@ -309,7 +315,8 @@ def main():
     with src_path.open() as f:
         tree = extract_node(f.read())
 
-    p2s_visitor = Python2ShelleyVisitor()
+    visitor_helper = VisitorHelper(external_only=False)
+    p2s_visitor = Python2ShelleyVisitor(visitor_helper)
 
     try:
         tree.accept(p2s_visitor)
@@ -317,7 +324,7 @@ def main():
         logger.error(f"{error.msg} (l. {error.lineno})")
         sys.exit(os.EX_SOFTWARE)
 
-    device = p2s_visitor.device
+    device = visitor_helper.device
 
     from shelley.ast.visitors.pprint import PrettyPrintVisitor
     visitor = PrettyPrintVisitor(components=device.components)

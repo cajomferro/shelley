@@ -9,7 +9,7 @@ from shelley.shelleypy.checker.exceptions import CompilationError
 from shelley.shelleypy.checker.checker import check
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("pyshelley")
+logger = logging.getLogger("shelleypy")
 
 
 def get_command_args() -> argparse.Namespace:

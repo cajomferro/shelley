@@ -1,49 +1,25 @@
 from __future__ import annotations
 
 import logging
-
-from typing import Optional, Tuple, Dict, Any, List
-
+import sys
+import os
 from pathlib import Path
+from typing import Any
 
 from astroid import (
-    parse,
     extract_node,
-    AsyncFunctionDef,
-    FunctionDef,
-    Expr,
-    Match,
-    Await,
-    Call,
-    If,
-    Return,
     ClassDef,
-    Decorators,
-    AnnAssign,
-    MatchSequence,
-    MatchCase,
-    MatchValue,
-    Const,
-    For,
     NodeNG
 )
 
+from shelley.ast.behaviors import Behaviors
+from shelley.ast.components import Components
+from shelley.ast.devices import Device
+from shelley.ast.events import Events
+from shelley.ast.triggers import Triggers
+from shelley.shelleypy.visitors import ShelleyPyError
 from shelley.shelleypy.visitors.class_decorators import ClassDecoratorsVisitor
 from shelley.shelleypy.visitors.method import MethodVisitor
-
-from shelley.ast.devices import Device, discover_uses
-from shelley.ast.actions import Action, Actions
-from shelley.ast.events import Event, Events
-from shelley.ast.behaviors import Behavior, Behaviors
-from shelley.ast.components import Component, Components
-from shelley.ast.triggers import Trigger, Triggers
-from shelley.ast.rules import (
-    TriggerRuleSequence,
-    TriggerRuleChoice,
-    TriggerRuleLoop,
-    TriggerRuleEvent,
-    TriggerRuleFired,
-)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
@@ -65,7 +41,7 @@ class Python2Shelley(NodeNG):
 
     def visit_classdef(self, node: ClassDef) -> Any:
         self.device.name = node.name
-        logger.info(f"System name: {self.device.name}")
+        logger.debug(f"System name: {self.device.name}")
 
         decorators_visitor = ClassDecoratorsVisitor(self.device)
         node.decorators.accept(decorators_visitor)
@@ -79,21 +55,28 @@ class Python2Shelley(NodeNG):
 
 
 def main():
-    src_path = Path("/app/shelley-examples/micropython_paper_full_example/valve.py")
-    # src_path = Path("/app/shelley-examples/micropython_paper_full_example/vhandler_full.py")
+    logger.setLevel(logging.DEBUG)
+
+    # src_path = Path("/app/shelley-examples/micropython_paper_full_example/valve.py")
+    src_path = Path("/app/shelley-examples/micropython_paper_full_example/vhandler_full.py")
 
     with src_path.open() as f:
         tree = extract_node(f.read())
 
     p2s_visitor = Python2Shelley()
-    tree.accept(p2s_visitor)
+
+    try:
+        tree.accept(p2s_visitor)
+    except ShelleyPyError as error:
+        logger.error(f"{error.msg} (l. {error.lineno})")
+        sys.exit(os.EX_SOFTWARE)
 
     device = p2s_visitor.device
 
     from shelley.ast.visitors.pprint import PrettyPrintVisitor
     visitor = PrettyPrintVisitor(components=device.components)
     device.accept(visitor)
-    logger.info(visitor.result.strip())
+    logger.debug(visitor.result.strip())
 
 
 if __name__ == '__main__':

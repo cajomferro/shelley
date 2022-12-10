@@ -35,6 +35,9 @@ class TriggerRuleFired(TriggerRule):
 
         return visitor.visit_trigger_rule_fired(self)
 
+    def __str__(self):
+        return "fired"
+
 
 @dataclass(order=True)
 class TriggerRuleEvent(TriggerRule):
@@ -51,7 +54,7 @@ class TriggerRuleEvent(TriggerRule):
         return visitor.visit_trigger_rule_event(self)
 
     def check_wf_syntax(
-        self, devices: Dict[str, Device], components: Components
+            self, devices: Dict[str, Device], components: Components
     ) -> None:
         """
         Concrete Components may have special methods that don't exist in their
@@ -91,6 +94,12 @@ class TriggerRuleEvent(TriggerRule):
 class TriggerRuleSequence(TriggerRule):
     left_trigger_rule: TriggerRule
     right_trigger_rule: TriggerRule
+
+    def __post_init__(self):
+        if self.left_trigger_rule is None:
+            raise Exception("TriggerRuleSequence left rule cannot be None!")
+        if self.right_trigger_rule is None:
+            raise Exception("TriggerRuleSequence right rule cannot be None!")
 
     def accept(self, visitor: Visitor) -> None:
         """

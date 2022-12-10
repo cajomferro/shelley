@@ -13,6 +13,7 @@ from shelley.ast.events import Events
 from shelley.ast.rules import (
     TriggerRuleEvent,
     TriggerRuleSequence,
+    TriggerRuleChoice,
     TriggerRuleFired,
     TriggerRuleLoop,
 )
@@ -29,6 +30,7 @@ class ShelleyPyError(Exception):
     MISSING_RETURN = "Missing return!"
     CASE_MISSING_RETURN = "Missing return for case!"
     IF_ELSE_MISSING_RETURN = "One of the if/else branches has return and the other not!"
+    ELSE_MISSING = "The else branch is missing!"
     MATCH_CALL_TYPE = "Match call type mismatch. Accepted types are: Call, Await!"
     MATCH_CASE_VALUE_TYPE = "Cases values must be strings!"
     RETURN_PARSE_ERROR = "Could not parse return. Expecting str|list[,*]"
@@ -70,14 +72,11 @@ class VisitorHelper:
     external_only: bool = False
     match_found: bool = False  # useful for verifying missing returns
     current_rule: TriggerRule = TriggerRuleFired()
-    last_current_rule_saved: Optional[TriggerRule] = None
     current_match_call: Optional[ShelleyCall] = None
     saved_case_rules: List[TriggerRule] = field(default_factory=list)
-    saved_operations = list()
     last_call: Optional[ShelleyCall] = None
     n_returns: int = 0
     current_op_decorator: ShelleyOpDecorator = None
-    method_return_idx: int = 0
     current_return_op_name: Optional[str] = None
     collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
 
@@ -113,9 +112,10 @@ class VisitorHelper:
             self.device.subsystem_formulae.append((name, formula))
 
     def context_operation_init(self, decorator: ShelleyOpDecorator):
+        self.update_current_rule()
+        self.collect_extra_ops = dict()
         self.current_op_decorator = decorator
         self.n_returns = 0
-        self.method_return_idx = 0
         self.match_found = False
         self.saved_case_rules = []
         self.current_return_op_name = None
@@ -125,11 +125,6 @@ class VisitorHelper:
         is_initial = self.current_op_decorator.is_initial
         is_final = self.current_op_decorator.is_final
         next_ops = self.current_op_decorator.next_ops
-
-        for case_rule in self.saved_case_rules:
-            self.collect_extra_ops[self.current_return_op_name].update(
-                {"rules": TriggerRuleSequence(self.current_rule, case_rule)}
-            )
 
         # for single-return methods, use the name of the method
         if len(self.collect_extra_ops) == 1:
@@ -149,28 +144,81 @@ class VisitorHelper:
         if not self.match_found and self.n_returns == 0:
             raise ShelleyPyError(lineno, ShelleyPyError.MISSING_RETURN)
 
-        self.collect_extra_ops = dict()
-        self.current_rule = TriggerRuleFired()
-        self.saved_operations = list()
+    def context_if_init(self):
+        save_rule = self.copy_current_rule()
+        self.update_current_rule()
+        return save_rule
+
+    def context_else_init(self):
+        save_rule = self.copy_current_rule()
+        self.if_left_rule = copy.copy(self.current_rule)
+        self.update_current_rule()
+        return save_rule
+
+    def context_if_end(self, save_rule, left_rule, lineno: int):
+        single_branch: bool = True
+
+        right_rule = self.copy_current_rule()
+        self.update_current_rule(save_rule)
+
+        if isinstance(left_rule, TriggerRuleFired):
+            next_rule = right_rule
+        elif isinstance(right_rule, TriggerRuleFired):
+            next_rule = left_rule
+        else:
+            single_branch = False
+            next_rule = TriggerRuleChoice()
+            next_rule.choices.extend([left_rule, right_rule])
+
+        # TODO: explain this
+        match self.current_rule:
+            case TriggerRuleFired():
+                self.update_current_rule(next_rule)
+            case TriggerRule():  # any other type of rule
+                self.update_current_rule(TriggerRuleSequence(self.current_rule, next_rule))
+
+        match self.n_returns:
+            case 2:  # assuming both if/else have return statements
+                for op_name in self.collect_extra_ops.keys():
+                    try:
+                        old_rule = self.collect_extra_ops[op_name]["rules"]
+                        new_rule = TriggerRuleSequence(save_rule, old_rule)
+                        self.collect_extra_ops[op_name].update({"rules": new_rule})
+                    except KeyError:
+                        pass
+            case 1:
+                if not single_branch:
+                    raise ShelleyPyError(lineno, ShelleyPyError.IF_ELSE_MISSING_RETURN)
+
+        logger.debug(f"Extra ops: {self.collect_extra_ops}")
+
 
     def context_match_init(self):
         # self.last_call = None
         self.match_found = True
 
     def context_match_end(self):
+        self.update_current_rule()
+        logger.debug(f"Extra ops: {self.collect_extra_ops}")
+        logger.debug("Prefixing case rules with current rule")
+        for case_rule in self.saved_case_rules:
+            self.collect_extra_ops[self.current_return_op_name].update(
+                {"rules": TriggerRuleSequence(self.current_rule, case_rule)}
+            )
+        logger.debug(f"Extra ops: {self.collect_extra_ops}")
         # self.match_found = False?
-        self.current_rule = TriggerRuleFired()
 
     def context_match_case_init(self):
-        self._save_current_rule()
         self.n_returns = 0  # start counting returns, we must have a return for each match case
+        return self.copy_current_rule()
 
-    def context_match_case_end(self):
+    def context_match_case_end(self, save_rule):
         self.saved_case_rules.append(self.current_rule)
-        self._restore_current_rule()
+        logger.debug(f"Saved case rules: {self.saved_case_rules}")
+        self.update_current_rule(save_rule)
 
     def context_for_init(self):
-        self._save_current_rule()
+        return self.copy_current_rule()
 
     def register_new_operation(self, op_name: str, is_initial=False, is_final=False,
                                next_ops: Optional[List[str]] = None, rules: Optional[TriggerRule] = None):
@@ -194,9 +242,9 @@ class VisitorHelper:
 
         self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))
 
-    def register_new_for(self):
+    def register_new_for(self, save_rule):
         loop_rule = TriggerRuleLoop(self.current_rule)
-        self.current_rule = TriggerRuleSequence(self.last_current_rule_saved, loop_rule)
+        self.update_current_rule(TriggerRuleSequence(save_rule, loop_rule))
 
     def register_new_call(self):
         try:
@@ -208,25 +256,27 @@ class VisitorHelper:
 
         match self.current_rule:
             case TriggerRuleFired():
-                self.current_rule = TriggerRuleEvent(component,
-                                                     self.last_call.subsystem_call)
+                self.update_current_rule(TriggerRuleEvent(component,
+                                                          self.last_call.subsystem_call))
             case TriggerRule():  # any other type of rule
-                self.current_rule = TriggerRuleSequence(
+                self.update_current_rule(TriggerRuleSequence(
                     self.current_rule,
                     TriggerRuleEvent(component, self.last_call.subsystem_call),
-                )
+                ))
 
     def register_new_return(self, return_next: List[str], lineno: int):
         # TODO: create a visitor to find the leftmost rule and then, if not None, use that name for the return, else use the index
         self.current_return_op_name: str = (
-            f"{self.current_op_decorator.op_name}_{self.method_return_idx}"
+            f"{self.current_op_decorator.op_name}_{len(self.collect_extra_ops)}"
         )
-        logger.debug(f" Registered new return operation name: {self.current_return_op_name}")
-        self.saved_operations.append(self.current_return_op_name)
+        logger.debug(f"Registered next operation name: {self.current_return_op_name}")
+
         self.collect_extra_ops[self.current_return_op_name] = {
             "next": return_next,
             "rules": self.current_rule,
         }
+        logger.debug(f"Collect extra ops: {self.collect_extra_ops}")
+        logger.debug(f"Current rule: {self.current_rule}")
 
         next_ops_list = self.current_op_decorator.next_ops
         if next_ops_list and not all(elem in next_ops_list for elem in return_next):
@@ -240,15 +290,17 @@ class VisitorHelper:
                 lineno,
                 f"Return names {return_next} do not match possible next operations {self.current_op_decorator.next_ops}!",
             )
-
         self.n_returns += 1
-
-    def _save_current_rule(self):
-        self.last_current_rule_saved = copy.copy(self.current_rule)
-
-    def _restore_current_rule(self):
-        self.current_rule = self.last_current_rule_saved
-        self.last_current_rule_saved = None
 
     def is_base_system(self):
         return len(self.device.uses) == 0 or self.external_only
+
+    def copy_current_rule(self):
+        logger.debug("Current rule saved")
+        return copy.copy(self.current_rule)
+
+    def update_current_rule(self, rule: Optional[TriggerRule] = None):
+        if rule is None:
+            rule = TriggerRuleFired()
+        self.current_rule = rule
+        logger.debug(f"Current rule: {self.current_rule}")

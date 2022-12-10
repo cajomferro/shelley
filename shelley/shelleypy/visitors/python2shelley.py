@@ -115,8 +115,12 @@ class Python2ShelleyVisitor(NodeNG):
             node.accept(self)
 
     def visit_functiondef(self, node: FunctionDef) -> Any:
-        logger.debug(f"Method: {node.name}")
-        logger.debug(node)
+        logger.debug(f"Entering method: {node.name}")
+        # logger.debug(node)
+
+        # TODO: improve this
+        if node.name in self.visitor_helper.device.events.list_str():
+            raise Exception("Duplicated method!")
 
         if node.decorators is None:
             logger.debug(f"Skipping. This method is not annotated as an operation!")
@@ -138,13 +142,16 @@ class Python2ShelleyVisitor(NodeNG):
 
             self.visitor_helper.context_operation_init(decorator)
 
-            for node in node.body:
-                node.accept(self)
+            for node_body in node.body:
+                node_body.accept(self)
 
             self.visitor_helper.context_operation_end(node.lineno)
 
+        logger.debug(f"Leaving method: {node.name}")
+
     def visit_match(self, node: Match):
-        logger.debug(node)
+        logger.debug("Entering match")
+        # logger.debug(node)
         self.visitor_helper.context_match_init()
 
         if not isinstance(node.subject, Call):  # check type of match call
@@ -158,12 +165,13 @@ class Python2ShelleyVisitor(NodeNG):
             node_case.accept(self)
 
         self.visitor_helper.context_match_end()
+        logger.debug("Leaving match")
 
     def visit_matchcase(self, match_case_node: MatchCase):
-        logger.debug(match_case_node)
+        logger.debug("Entering matchcase")
+        # logger.debug(match_case_node)
 
-        self.visitor_helper.context_match_case_init()
-
+        save_rule = self.visitor_helper.context_match_case_init()
         # inspect case body
         first_node = True
         for matchcase_body_node in match_case_node.body:
@@ -173,17 +181,20 @@ class Python2ShelleyVisitor(NodeNG):
                 self.visitor_helper.check_case_first_node(self._get_case_name(match_case_node),
                                                           matchcase_body_node.lineno)
 
-        self.visitor_helper.context_match_case_end()
+        self.visitor_helper.context_match_case_end(save_rule)
 
         if not self.visitor_helper.n_returns:
             raise ShelleyPyError(match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN)
+
+        logger.debug("Leaving matchcase")
 
     def visit_await(self, node: Await):
         logger.debug(node)
         node.value.accept(self)
 
     def visit_call(self, node: Call):
-        logger.debug(node)
+        logger.debug("Entering call")
+        # logger.debug(node)
 
         # TODO: improve this code?
         try:
@@ -197,24 +208,37 @@ class Python2ShelleyVisitor(NodeNG):
             return
 
         self.visitor_helper.register_new_call()
+        logger.debug(f"Found call: {str(self.visitor_helper.last_call)}")
 
     def visit_if(self, node: If):
         """
         # TODO: elif is currently not supported!
         """
-        logger.debug(node)
+        logger.debug("entering if")
+        # logger.debug(node)
+
+        save_rule = self.visitor_helper.context_if_init()
+        single_branch: bool = True
+
         for if_body_node in node.body:
             if_body_node.accept(self)
+        logger.debug("leaving if")
 
-        logger.debug(node)
+        logger.debug("entering else")
+        left_rule = self.visitor_helper.context_else_init()
+        if len(node.orelse) == 0:
+            raise ShelleyPyError(node.lineno, ShelleyPyError.ELSE_MISSING)
         for else_body_node in node.orelse:
             else_body_node.accept(self)
+        logger.debug("leaving else")
 
-        logger.debug(node)
+        logger.debug("leaving if/else")
+        self.visitor_helper.context_if_end(save_rule, left_rule, node.lineno)
 
     def visit_for(self, node: For):
+        logger.debug("entering for")
         logger.debug(node)
-        self.visitor_helper.context_for_init()
+        save_rule = self.visitor_helper.context_for_init()
         for node_for_body in node.body:
             node_for_body.accept(self)
 
@@ -223,10 +247,11 @@ class Python2ShelleyVisitor(NodeNG):
                 node.lineno, "Return statements are not allowed inside loops!"
             )
 
-        self.visitor_helper.register_new_for()
+        self.visitor_helper.register_new_for(save_rule)
+        logger.debug("leaving for")
 
     def visit_expr(self, node: Expr):
-        logger.debug(node)
+        # logger.debug(node)
         node.value.accept(self)
 
     def visit_return(self, node: Return):
@@ -235,9 +260,10 @@ class Python2ShelleyVisitor(NodeNG):
         An alternative (smarter but more difficult to implement) approach would be to create a Shelley operation
         for each "type" of return.
         """
-        logger.debug(node)
+        logger.debug("Entering return")
+        # logger.debug(node)
         return_next: List[str] = self._parse_return_value(node)
-        logger.debug(f"Parsed return: {return_next}")
+        logger.debug(f"Found return: {return_next}")
         self.visitor_helper.register_new_return(return_next, node.lineno)
 
     @staticmethod
@@ -272,7 +298,7 @@ class Python2ShelleyVisitor(NodeNG):
 
 
 def main():
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
 
     # src_path = Path("/app/shelley-examples/micropython_paper_full_example/valve.py")
     src_path = Path("/app/shelley-examples/micropython_paper_full_example/vhandler_full.py")

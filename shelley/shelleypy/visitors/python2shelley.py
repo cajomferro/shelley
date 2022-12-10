@@ -3,9 +3,12 @@ import os
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, List
 
+from astroid import List as ListNG
 from astroid import (
+    Tuple,
+    Const,
     For,
     Await,
     Call,
@@ -36,42 +39,33 @@ from shelley.parsers.ltlf_lark_parser import LTLParser
 from shelley.shelleypy.visitors import ShelleyPyError
 from shelley.shelleypy.visitors import VisitorHelper
 from shelley.shelleypy.visitors import ShelleyCall
+from shelley.shelleypy.visitors import ShelleyOpDecorator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
 
 
+@dataclass
 class MethodDecoratorsVisitor(NodeNG):
-    def __init__(self):
-        super().__init__()
-        self.decorator = None
+    method_name: str
+    decorator: ShelleyOpDecorator = None
 
     def visit_decorators(self, node: Decorators) -> Any:
         for node in node.nodes:
             node.accept(self)
 
     def visit_call(self, node: Call) -> Any:
-        logger.info(f"Method decorator: {node.func.name}")
-        decorator_name = node.func.name
-        match decorator_name:
-            case "operation":
-                decorator = {
-                    "type": "operation",
-                    "initial": False,
-                    "final": False,
-                    "next": [],
-                }
-                for kw in node.keywords:
-                    match kw.arg:
-                        case "initial":
-                            decorator["initial"] = True
-                        case "final":
-                            decorator["final"] = True
-                        case "next":
-                            decorator["next"] = [
-                                op.value for op in kw.value.elts
-                            ]
-                self.decorator = decorator
+        logger.debug(f"Method decorator: {node.func.name}")
+        if node.func.name == "operation":
+            self.decorator = ShelleyOpDecorator(self.method_name)
+            for kw in node.keywords:
+                match kw.arg:
+                    case "initial":
+                        self.decorator.is_initial = True
+                    case "final":
+                        self.decorator.is_final = True
+                    case "next":
+                        self.decorator.next = [op.value for op in kw.value.elts]
 
 
 class ClassDecoratorsVisitor(NodeNG):
@@ -146,29 +140,24 @@ class Python2ShelleyVisitor(NodeNG):
             logger.debug(f"Skipping. This method is not annotated as an operation!")
             return None
 
-        decorators_visitor = MethodDecoratorsVisitor()
+        decorators_visitor = MethodDecoratorsVisitor(node.name)
         node.decorators.accept(decorators_visitor)
-        decorator = decorators_visitor.decorator
 
-        if decorator and decorator["type"] == "operation":
-            if self.visitor_helper.is_base_system(): # base system, do not inspect body
-                self.visitor_helper.create_operation(
-                    node.name,
-                    decorator["initial"],
-                    decorator["final"],
-                    decorator["next"],
-                    TriggerRuleFired(),
-                )
-            else:  # system that contains subsystems, do inspect body
-                assert type(node) == FunctionDef  # this is just a safe check
-                for node in node.body:
-                    node.accept(self)
-        else:
-            logger.debug(f"Skipping. This method is not annotated as an operation!")
+        if not decorators_visitor.decorator:
+            raise ShelleyPyError(node.decorators.lineno, ShelleyPyError.DECORATOR_PARSE_ERROR)
+
+        self.visitor_helper.context_operation_init(decorators_visitor.decorator)
+
+        if self.visitor_helper.is_base_system():  # base system, do not inspect body
+            self.visitor_helper.create_operation(node.name, TriggerRuleFired())
+        else:  # system that contains subsystems, do inspect body
+            assert type(node) == FunctionDef  # this is just a safe check
+            for node in node.body:
+                node.accept(self)
 
     def visit_match(self, node: Match):
         logger.debug(node)
-        self.visitor_helper.match_found = True
+        self.visitor_helper.context_match_init()
 
         node.subject.accept(self)
         if not isinstance(self.visitor_helper.last_call.node_call, Call):  # check type of match call
@@ -179,15 +168,12 @@ class Python2ShelleyVisitor(NodeNG):
         for node_case in node.cases:
             node_case.accept(self)
 
-        self.visitor_helper.reset_current_rule()
+        self.visitor_helper.context_match_end()
 
     def visit_matchcase(self, match_case_node: MatchCase):
         logger.debug(match_case_node)
 
-        case_name: str = self.visitor_helper.get_case_name(match_case_node)
-
-        self.visitor_helper.save_current_rule()
-        self.visitor_helper.returns_reset()  # start counting returns, we must have a return for each match case
+        self.visitor_helper.context_match_case_init()
 
         # inspect case body
         first_node = True
@@ -195,10 +181,9 @@ class Python2ShelleyVisitor(NodeNG):
             matchcase_body_node.accept(self)
             if first_node:
                 first_node = False
-                self.visitor_helper.check_case_first_node(case_name, matchcase_body_node)
+                self.visitor_helper.check_case_first_node(self._get_case_name(match_case_node), matchcase_body_node)
 
-        self.visitor_helper.save_current_case_rule()
-        self.visitor_helper.restore_current_rule()
+        self.visitor_helper.context_match_case_end()
 
         if not self.visitor_helper.n_returns:
             raise ShelleyPyError(match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN)
@@ -249,7 +234,7 @@ class Python2ShelleyVisitor(NodeNG):
 
     def visit_for(self, node: For):
         logger.debug(node)
-        self.visitor_helper.save_current_rule()
+        self.visitor_helper.reset_for_context()
         for node_for_body in node.body:
             node_for_body.accept(self)
 
@@ -272,38 +257,43 @@ class Python2ShelleyVisitor(NodeNG):
         for each "type" of return.
         """
         logger.debug(node)
-        # if isinstance(node.value, Const):
-        #     return_next: List[str] = [(node.value.value)]
-        # else:
-        #     return_next: List[str] = [x.value for x in node.value.elts]
-        #
-        # self.visitor_helper._method_return_idx += 1
-        # operation_name: str = (
-        #     f"{self.visitor_helper._current_op_decorator['name']}_{self.visitor_helper._method_return_idx}"
-        # )
-        #
-        # logger.debug(f" Operation: {operation_name}")
-        #
-        # self.visitor_helper._current_operation = operation_name
-        # self.visitor_helper._saved_operations.append(self.visitor_helper._current_operation)
-        # self.visitor_helper._collect_extra_ops[operation_name] = {
-        #     "next": return_next,
-        #     "rules": self.visitor_helper._current_rule,
-        # }
-        #
-        # next_ops_list = self.visitor_helper._current_op_decorator["next"]
-        # if next_ops_list and not all(elem in next_ops_list for elem in return_next):
-        #     raise ShelleyPyError(
-        #         node.lineno,
-        #         f"Return names {return_next} do not match possible next operations {next_ops_list}!",
-        #     )
-        # if not next_ops_list and return_next != [""]:
-        #     raise ShelleyPyError(
-        #         node.lineno,
-        #         f"Return names {return_next} do not match possible next operations {next_ops_list}!",
-        #     )
-        #
-        # self.visitor_helper.n_returns += 1
+        return_next: List[str] = self._parse_return_value(node)
+        logger.debug(f"Parsed return: {return_next}")
+        if not self.visitor_helper.register_new_return(return_next):
+            raise ShelleyPyError(
+                node.lineno,
+                f"Return names {return_next} do not match possible next operations {self.visitor_helper.current_op_decorator.next}!",
+            )
+
+    @staticmethod
+    def _get_case_name(match_case_node: MatchCase):
+        """
+        MatchCase -> pattern -> MatchValue -> value -> Const -> value => str
+        """
+        try:
+            case_name: str = match_case_node.pattern.value.value
+            if not isinstance(case_name, str):  # check type of match case value
+                raise ShelleyPyError(match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE)
+        except AttributeError:
+            raise ShelleyPyError(match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE)
+        return case_name
+
+    @staticmethod
+    def _parse_return_value(node: Return):
+        node_value = node.value
+        if isinstance(node.value, Tuple):
+            next_op_node = node.value.elts[0]
+        else:
+            next_op_node = node_value
+
+        if isinstance(next_op_node, Const) and isinstance(next_op_node.value, str):
+            value: List[str] = [next_op_node.value]
+        elif isinstance(next_op_node, ListNG):
+            value: List[str] = [x.value for x in next_op_node.elts]
+        else:
+            raise ShelleyPyError(node_value.lineno, ShelleyPyError.RETURN_PARSE_ERROR)
+
+        return value
 
 
 def main():

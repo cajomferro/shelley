@@ -1,7 +1,7 @@
 import copy
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 
 from astroid import (
     Call,
@@ -31,6 +31,8 @@ class ShelleyPyError(Exception):
     IF_ELSE_MISSING_RETURN = "One of the if/else branches has return and the other not!"
     MATCH_CALL_TYPE = "Match call type mismatch. Accepted types are: Call, Await!"
     MATCH_CASE_VALUE_TYPE = "Cases values must be strings!"
+    RETURN_PARSE_ERROR = "Could not parse return. Expecting str|list[,*]"
+    DECORATOR_PARSE_ERROR = "Could not parse decorator!"
 
     def __init__(self, lineno: int, msg: str):
         self.lineno = lineno
@@ -56,6 +58,14 @@ class ShelleyCall:
 
 
 @dataclass
+class ShelleyOpDecorator:
+    op_name: str
+    is_initial: bool = False
+    is_final: bool = False
+    next: List[str] = field(default_factory=list)
+
+
+@dataclass
 class VisitorHelper:
     device: Device = Device(
         name="",
@@ -73,6 +83,10 @@ class VisitorHelper:
     saved_operations = list()
     last_call: Optional[ShelleyCall] = None
     n_returns: int = 0
+    current_op_decorator: ShelleyOpDecorator = None
+    method_return_idx: int = 0
+    current_return_op_name: str = None
+    collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
 
     def check_case_first_node(self, case_name: str, matchcase_body_node: NodeNG):
         # inspect first expression inside case body
@@ -81,63 +95,77 @@ class VisitorHelper:
             logger.warning(
                 f"Expecting {expected_call_name} but found {self.last_call}. The first subsystem call should match the case name! (l. {matchcase_body_node.lineno})")
 
-    def get_case_name(self, match_case_node: MatchCase):
-        """
-        MatchCase -> pattern -> MatchValue -> value -> Const -> value => str
-        """
-        try:
-            case_name: str = match_case_node.pattern.value.value
-            if not isinstance(case_name, str):  # check type of match case value
-                raise ShelleyPyError(match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE)
-        except AttributeError:
-            raise ShelleyPyError(match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE)
-        return case_name
-
-    def returns_reset(self):
+    def context_operation_init(self, decorator: ShelleyOpDecorator):
+        self.current_op_decorator = decorator
         self.n_returns = 0
+        self.method_return_idx = 0
+        self.match_found = False
+        self.saved_case_rules = []
+        self.curent_return_op_name = None
 
-    def returns_increment(self):
-        self.n_returns += 1
+    def context_match_init(self):
+        self.match_found = True
 
-    def returns_count(self):
-        return self.n_returns
-
-    def save_current_case_rule(self):
-        self.saved_case_rules.append(self.current_rule)
-
-    def save_current_rule(self):
-        self.last_current_rule_saved = copy.copy(self.current_rule)
-
-    def reset_current_rule(self):
+    def context_match_end(self):
+        #self.match_found = False?
         self.current_rule = TriggerRuleFired()
 
-    def restore_current_rule(self):
+    def context_match_case_init(self):
+        self._save_current_rule()
+        self.n_returns = 0  # start counting returns, we must have a return for each match case
+
+    def context_match_case_end(self):
+        self.saved_case_rules.append(self.current_rule)
+        self._restore_current_rule()
+
+    def reset_for_context(self):
+        self._save_current_rule()
+
+    def register_new_return(self, return_next: List[str]) -> bool:
+        # TODO: create a visitor to find the leftmost rule and then, if not None, use that name for the return, else use the index
+        self.current_return_op_name: str = (
+            f"{self.current_op_decorator.op_name}_{self.method_return_idx}"
+        )
+        logger.debug(f" Registered new return operation name: {self.current_return_op_name}")
+        self.saved_operations.append(self.curent_return_op_name)
+        self.collect_extra_ops[self.current_return_op_name] = {
+            "next": return_next,
+            "rules": self.current_rule,
+        }
+
+        next_ops_list = self.current_op_decorator.next
+        if next_ops_list and not all(elem in next_ops_list for elem in return_next):
+            return False
+        if not next_ops_list and return_next != [""]:
+            return False
+
+        self.n_returns += 1
+
+        return True
+
+    def _save_current_rule(self):
+        self.last_current_rule_saved = copy.copy(self.current_rule)
+
+    def _restore_current_rule(self):
         self.current_rule = self.last_current_rule_saved
         self.last_current_rule_saved = None
 
     def is_base_system(self):
         return len(self.device.uses) == 0 or self.external_only
 
-    def create_operation(self, name, is_initial, is_final, next_ops_list, rules):
-        current_operation: Event = self.device.events.create(
-            name,
-            is_start=is_initial,
-            is_final=is_final,
-        )
+    def create_operation(self, name, rules):
+        decorator = self.current_op_decorator
 
-        if len(next_ops_list) == 0:
-            self.device.behaviors.create(
-                copy.copy(current_operation)
-            )  # operation without next operations
+        current_operation: Event = self.device.events.create(name, is_start=decorator.is_initial,
+                                                             is_final=decorator.is_final)
 
-        for next_op in next_ops_list:
+        if len(decorator.next) == 0:
+            self.device.behaviors.create(copy.copy(current_operation))  # operation without next operations
+
+        for next_op in decorator.next:
             self.device.behaviors.create(
                 copy.copy(current_operation),
-                Event(
-                    name=next_op,
-                    is_start=False,
-                    is_final=True,
-                ),
+                Event(name=next_op, is_start=False, is_final=True, ),
             )
 
         self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))

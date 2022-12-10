@@ -129,26 +129,28 @@ class Python2ShelleyVisitor(NodeNG):
             raise ShelleyPyError(node.decorators.lineno, ShelleyPyError.DECORATOR_PARSE_ERROR)
 
         decorator = decorators_visitor.decorator
-        self.visitor_helper.context_operation_init(decorator)
 
         if self.visitor_helper.is_base_system():  # base system, do not inspect body
             self.visitor_helper.register_new_operation(op_name=decorator.op_name, is_initial=decorator.is_initial,
                                                        is_final=decorator.is_final, next_ops=decorator.next_ops)
         else:  # system that contains subsystems, do inspect body
             assert type(node) == FunctionDef  # this is just a safe check
+
+            self.visitor_helper.context_operation_init(decorator)
+
             for node in node.body:
                 node.accept(self)
 
-            if not self.visitor_helper.context_operation_end():
-                raise ShelleyPyError(node.lineno, ShelleyPyError.MISSING_RETURN)
+            self.visitor_helper.context_operation_end(node.lineno)
 
     def visit_match(self, node: Match):
         logger.debug(node)
         self.visitor_helper.context_match_init()
 
-        node.subject.accept(self)
-        if not isinstance(self.visitor_helper.last_call.node_call, Call):  # check type of match call
+        if not isinstance(node.subject, Call):  # check type of match call
             raise ShelleyPyError(node.subject.lineno, ShelleyPyError.MATCH_CALL_TYPE)
+
+        node.subject.accept(self)
 
         self.visitor_helper.current_match_call = self.visitor_helper.last_call
 
@@ -168,7 +170,8 @@ class Python2ShelleyVisitor(NodeNG):
             matchcase_body_node.accept(self)
             if first_node:
                 first_node = False
-                self.visitor_helper.check_case_first_node(self._get_case_name(match_case_node), matchcase_body_node.lineno)
+                self.visitor_helper.check_case_first_node(self._get_case_name(match_case_node),
+                                                          matchcase_body_node.lineno)
 
         self.visitor_helper.context_match_case_end()
 
@@ -184,7 +187,11 @@ class Python2ShelleyVisitor(NodeNG):
 
         # TODO: improve this code?
         try:
-            self.visitor_helper.last_call = ShelleyCall(node)
+            self.visitor_helper.last_call = ShelleyCall(
+                exprself=node.func.expr.expr.name,
+                subsystem_call=node.func.attrname,
+                subsystem_instance=node.func.expr.attrname
+            )
         except AttributeError:
             logger.debug(f"    Ignoring Call: {node.func.repr_tree()}")
             return
@@ -231,11 +238,7 @@ class Python2ShelleyVisitor(NodeNG):
         logger.debug(node)
         return_next: List[str] = self._parse_return_value(node)
         logger.debug(f"Parsed return: {return_next}")
-        if not self.visitor_helper.register_new_return(return_next):
-            raise ShelleyPyError(
-                node.lineno,
-                f"Return names {return_next} do not match possible next operations {self.visitor_helper.current_op_decorator.next_ops}!",
-            )
+        self.visitor_helper.register_new_return(return_next, node.lineno)
 
     @staticmethod
     def _get_case_name(match_case_node: MatchCase):

@@ -3,9 +3,6 @@ import logging
 from dataclasses import dataclass, field
 from typing import Dict, Optional, List, Any
 
-from astroid import (
-    Call
-)
 from lark import Lark
 
 from shelley.ast.behaviors import Behaviors
@@ -45,19 +42,12 @@ class ShelleyPyError(Exception):
 
 @dataclass
 class ShelleyCall:
-    node_call: Call
-
-    def get_exprself(self) -> str:
-        return self.node_call.func.expr.expr.name
-
-    def get_subsystem_call(self) -> str:
-        return self.node_call.func.attrname
-
-    def get_subsystem_instance(self) -> str:
-        return self.node_call.func.expr.attrname
+    exprself: str
+    subsystem_call: str
+    subsystem_instance: str
 
     def __str__(self):
-        return f"{self.get_exprself()}.{self.get_subsystem_instance()}.{self.get_subsystem_call()}"
+        return f"{self.exprself}.{self.subsystem_instance}.{self.subsystem_call}"
 
 
 @dataclass
@@ -93,7 +83,7 @@ class VisitorHelper:
 
     def check_case_first_node(self, case_name: str, lineno: int):
         # inspect first expression inside case body
-        expected_call_name = f"{self.current_match_call.get_exprself()}.{self.current_match_call.get_subsystem_instance()}.{case_name}"
+        expected_call_name = f"{self.current_match_call.exprself}.{self.current_match_call.subsystem_instance}.{case_name}"
         if not (self.last_call and str(self.last_call) == expected_call_name):
             logger.warning(
                 f"Expecting {expected_call_name} but found {self.last_call}. The first subsystem call should match the case name! (l. {lineno})")
@@ -130,7 +120,7 @@ class VisitorHelper:
         self.saved_case_rules = []
         self.current_return_op_name = None
 
-    def context_operation_end(self):
+    def context_operation_end(self, lineno: int):
         op_name = self.current_op_decorator.op_name
         is_initial = self.current_op_decorator.is_initial
         is_final = self.current_op_decorator.is_final
@@ -157,15 +147,14 @@ class VisitorHelper:
                                         next_ops=next_ops)
 
         if not self.match_found and self.n_returns == 0:
-            return False
+            raise ShelleyPyError(lineno, ShelleyPyError.MISSING_RETURN)
 
         self.collect_extra_ops = dict()
         self.current_rule = TriggerRuleFired()
         self.saved_operations = list()
 
-        return True
-
     def context_match_init(self):
+        # self.last_call = None
         self.match_found = True
 
     def context_match_end(self):
@@ -212,7 +201,7 @@ class VisitorHelper:
     def register_new_call(self):
         try:
             component: Component = self.device.components[
-                self.last_call.get_subsystem_instance()]
+                self.last_call.subsystem_instance]
         except KeyError:
             logger.debug(f"    Ignoring Call: {self.last_call}")
             return
@@ -220,14 +209,14 @@ class VisitorHelper:
         match self.current_rule:
             case TriggerRuleFired():
                 self.current_rule = TriggerRuleEvent(component,
-                                                     self.last_call.get_subsystem_call())
+                                                     self.last_call.subsystem_call)
             case TriggerRule():  # any other type of rule
                 self.current_rule = TriggerRuleSequence(
                     self.current_rule,
-                    TriggerRuleEvent(component, self.last_call.get_subsystem_call()),
+                    TriggerRuleEvent(component, self.last_call.subsystem_call),
                 )
 
-    def register_new_return(self, return_next: List[str]) -> bool:
+    def register_new_return(self, return_next: List[str], lineno: int):
         # TODO: create a visitor to find the leftmost rule and then, if not None, use that name for the return, else use the index
         self.current_return_op_name: str = (
             f"{self.current_op_decorator.op_name}_{self.method_return_idx}"
@@ -241,13 +230,18 @@ class VisitorHelper:
 
         next_ops_list = self.current_op_decorator.next_ops
         if next_ops_list and not all(elem in next_ops_list for elem in return_next):
-            return False
+            raise ShelleyPyError(
+                lineno,
+                f"Return names {return_next} do not match possible next operations {self.current_op_decorator.next_ops}!",
+            )
+
         if not next_ops_list and return_next != [""]:
-            return False
+            raise ShelleyPyError(
+                lineno,
+                f"Return names {return_next} do not match possible next operations {self.current_op_decorator.next_ops}!",
+            )
 
         self.n_returns += 1
-
-        return True
 
     def _save_current_rule(self):
         self.last_current_rule_saved = copy.copy(self.current_rule)

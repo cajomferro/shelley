@@ -52,7 +52,7 @@ class MethodDecoratorsVisitor(NodeNG):
                     case "final":
                         self.decorator.is_final = True
                     case "next":
-                        self.decorator.next = [op.value for op in kw.value.elts]
+                        self.decorator.next_ops = [op.value for op in kw.value.elts]
 
 
 @dataclass
@@ -64,7 +64,7 @@ class ClassDecoratorsVisitor(NodeNG):
             node.accept(self)
 
     def visit_call(self, node: Call) -> Any:
-        logger.info(f"Decorator Call: {node.func.name}")
+        logger.debug(f"Decorator Call: {node.func.name}")
         decorator_name = node.func.name
         self.uses = dict()
         self.system_claims = []
@@ -115,7 +115,7 @@ class Python2ShelleyVisitor(NodeNG):
             node.accept(self)
 
     def visit_functiondef(self, node: FunctionDef) -> Any:
-        logger.info(f"Method: {node.name}")
+        logger.debug(f"Method: {node.name}")
         logger.debug(node)
 
         if node.decorators is None:
@@ -128,14 +128,19 @@ class Python2ShelleyVisitor(NodeNG):
         if not decorators_visitor.decorator:
             raise ShelleyPyError(node.decorators.lineno, ShelleyPyError.DECORATOR_PARSE_ERROR)
 
-        self.visitor_helper.context_operation_init(decorators_visitor.decorator)
+        decorator = decorators_visitor.decorator
+        self.visitor_helper.context_operation_init(decorator)
 
         if self.visitor_helper.is_base_system():  # base system, do not inspect body
-            self.visitor_helper.register_new_operation(node.name)
+            self.visitor_helper.register_new_operation(op_name=decorator.op_name, is_initial=decorator.is_initial,
+                                                       is_final=decorator.is_final, next_ops=decorator.next_ops)
         else:  # system that contains subsystems, do inspect body
             assert type(node) == FunctionDef  # this is just a safe check
             for node in node.body:
                 node.accept(self)
+
+            if not self.visitor_helper.context_operation_end():
+                raise ShelleyPyError(node.lineno, ShelleyPyError.MISSING_RETURN)
 
     def visit_match(self, node: Match):
         logger.debug(node)
@@ -163,7 +168,7 @@ class Python2ShelleyVisitor(NodeNG):
             matchcase_body_node.accept(self)
             if first_node:
                 first_node = False
-                self.visitor_helper.check_case_first_node(self._get_case_name(match_case_node), matchcase_body_node)
+                self.visitor_helper.check_case_first_node(self._get_case_name(match_case_node), matchcase_body_node.lineno)
 
         self.visitor_helper.context_match_case_end()
 
@@ -229,7 +234,7 @@ class Python2ShelleyVisitor(NodeNG):
         if not self.visitor_helper.register_new_return(return_next):
             raise ShelleyPyError(
                 node.lineno,
-                f"Return names {return_next} do not match possible next operations {self.visitor_helper.current_op_decorator.next}!",
+                f"Return names {return_next} do not match possible next operations {self.visitor_helper.current_op_decorator.next_ops}!",
             )
 
     @staticmethod
@@ -264,7 +269,7 @@ class Python2ShelleyVisitor(NodeNG):
 
 
 def main():
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     # src_path = Path("/app/shelley-examples/micropython_paper_full_example/valve.py")
     src_path = Path("/app/shelley-examples/micropython_paper_full_example/vhandler_full.py")
@@ -286,7 +291,7 @@ def main():
     from shelley.ast.visitors.pprint import PrettyPrintVisitor
     visitor = PrettyPrintVisitor(components=device.components)
     device.accept(visitor)
-    logger.debug(visitor.result.strip())
+    logger.info(visitor.result.strip())
 
 
 if __name__ == '__main__':

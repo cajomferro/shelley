@@ -1,24 +1,19 @@
 import copy
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, Optional, List, Tuple, Any
+from typing import Dict, Optional, List, Any
 
 from astroid import (
-    Call,
-    MatchCase,
-    FunctionDef,
-    NodeNG
+    Call
 )
 from lark import Lark
-from shelley.parsers import ltlf_lark_parser
-from shelley.parsers.ltlf_lark_parser import LTLParser
+
 from shelley.ast.behaviors import Behaviors
 from shelley.ast.components import Components, Component
 from shelley.ast.devices import Device, discover_uses
 from shelley.ast.events import Event
 from shelley.ast.events import Events
 from shelley.ast.rules import (
-    TriggerRuleFired,
     TriggerRuleEvent,
     TriggerRuleSequence,
     TriggerRuleFired,
@@ -26,6 +21,8 @@ from shelley.ast.rules import (
 )
 from shelley.ast.triggers import TriggerRule
 from shelley.ast.triggers import Triggers
+from shelley.parsers import ltlf_lark_parser
+from shelley.parsers.ltlf_lark_parser import LTLParser
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
@@ -68,7 +65,7 @@ class ShelleyOpDecorator:
     op_name: str
     is_initial: bool = False
     is_final: bool = False
-    next: List[str] = field(default_factory=list)
+    next_ops: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -91,15 +88,15 @@ class VisitorHelper:
     n_returns: int = 0
     current_op_decorator: ShelleyOpDecorator = None
     method_return_idx: int = 0
-    current_return_op_name: str = None
+    current_return_op_name: Optional[str] = None
     collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
 
-    def check_case_first_node(self, case_name: str, matchcase_body_node: NodeNG):
+    def check_case_first_node(self, case_name: str, lineno: int):
         # inspect first expression inside case body
         expected_call_name = f"{self.current_match_call.get_exprself()}.{self.current_match_call.get_subsystem_instance()}.{case_name}"
         if not (self.last_call and str(self.last_call) == expected_call_name):
             logger.warning(
-                f"Expecting {expected_call_name} but found {self.last_call}. The first subsystem call should match the case name! (l. {matchcase_body_node.lineno})")
+                f"Expecting {expected_call_name} but found {self.last_call}. The first subsystem call should match the case name! (l. {lineno})")
 
     def context_system_init(self, name: str, uses: Dict[str, str], system_claims: List[str],
                             integration_claims: List[str], subsystem_claims: List[str]):
@@ -131,7 +128,42 @@ class VisitorHelper:
         self.method_return_idx = 0
         self.match_found = False
         self.saved_case_rules = []
-        self.curent_return_op_name = None
+        self.current_return_op_name = None
+
+    def context_operation_end(self):
+        op_name = self.current_op_decorator.op_name
+        is_initial = self.current_op_decorator.is_initial
+        is_final = self.current_op_decorator.is_final
+        next_ops = self.current_op_decorator.next_ops
+
+        for case_rule in self.saved_case_rules:
+            self.collect_extra_ops[self.current_return_op_name].update(
+                {"rules": TriggerRuleSequence(self.current_rule, case_rule)}
+            )
+
+        # for single-return methods, use the name of the method
+        if len(self.collect_extra_ops) == 1:
+            self.register_new_operation(op_name=op_name, is_initial=is_initial, is_final=is_final,
+                                        next_ops=next_ops,
+                                        rules=self.collect_extra_ops[self.current_return_op_name]["rules"])
+        else:  # for multiple-return methods, use the name of the extra operations...
+            for extra_op_name, extra_op_info in self.collect_extra_ops.items():
+                self.register_new_operation(op_name=extra_op_name, is_initial=False, is_final=is_final,
+                                            next_ops=extra_op_info["next"], rules=extra_op_info["rules"])
+
+            # ... and map the original operation with the extra operations
+            next_ops = [extra_op_name for extra_op_name in self.collect_extra_ops.keys()]
+            self.register_new_operation(op_name=op_name, is_initial=is_initial, is_final=False,
+                                        next_ops=next_ops)
+
+        if not self.match_found and self.n_returns == 0:
+            return False
+
+        self.collect_extra_ops = dict()
+        self.current_rule = TriggerRuleFired()
+        self.saved_operations = list()
+
+        return True
 
     def context_match_init(self):
         self.match_found = True
@@ -151,23 +183,25 @@ class VisitorHelper:
     def context_for_init(self):
         self._save_current_rule()
 
-    def register_new_operation(self, name: str, rules: Optional[TriggerRule] = None):
+    def register_new_operation(self, op_name: str, is_initial=False, is_final=False,
+                               next_ops: Optional[List[str]] = None, rules: Optional[TriggerRule] = None):
+
+        if next_ops is None:
+            next_ops = []
+
         if rules is None:
             rules = TriggerRuleFired()
 
-        decorator = self.current_op_decorator
+        current_operation: Event = self.device.events.create(op_name, is_start=is_initial, is_final=is_final)
 
-        current_operation: Event = self.device.events.create(name, is_start=decorator.is_initial,
-                                                             is_final=decorator.is_final)
-
-        if len(decorator.next) == 0:
+        if len(next_ops) == 0:
             self.device.behaviors.create(copy.copy(current_operation))  # operation without next operations
-
-        for next_op in decorator.next:
-            self.device.behaviors.create(
-                copy.copy(current_operation),
-                Event(name=next_op, is_start=False, is_final=True, ),
-            )
+        else:
+            for next_op in next_ops:
+                self.device.behaviors.create(
+                    copy.copy(current_operation),
+                    Event(name=next_op, is_start=False, is_final=True, ),
+                )
 
         self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))
 
@@ -199,13 +233,13 @@ class VisitorHelper:
             f"{self.current_op_decorator.op_name}_{self.method_return_idx}"
         )
         logger.debug(f" Registered new return operation name: {self.current_return_op_name}")
-        self.saved_operations.append(self.curent_return_op_name)
+        self.saved_operations.append(self.current_return_op_name)
         self.collect_extra_ops[self.current_return_op_name] = {
             "next": return_next,
             "rules": self.current_rule,
         }
 
-        next_ops_list = self.current_op_decorator.next
+        next_ops_list = self.current_op_decorator.next_ops
         if next_ops_list and not all(elem in next_ops_list for elem in return_next):
             return False
         if not next_ops_list and return_next != [""]:

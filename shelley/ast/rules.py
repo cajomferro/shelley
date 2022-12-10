@@ -19,6 +19,10 @@ class TriggerRuleEventNotDeclaredError(Exception):
     pass
 
 
+class TriggerRuleNotNoneError(Exception):
+    pass
+
+
 class TriggerRule(Node):
     @abstractmethod
     def accept(self, visitor: Visitor) -> None:
@@ -97,9 +101,9 @@ class TriggerRuleSequence(TriggerRule):
 
     def __post_init__(self):
         if self.left_trigger_rule is None:
-            raise Exception("TriggerRuleSequence left rule cannot be None!")
+            raise TriggerRuleNotNoneError("TriggerRuleSequence left rule cannot be None!")
         if self.right_trigger_rule is None:
-            raise Exception("TriggerRuleSequence right rule cannot be None!")
+            raise TriggerRuleNotNoneError("TriggerRuleSequence left rule cannot be None!")
 
     def accept(self, visitor: Visitor) -> None:
         """
@@ -113,10 +117,12 @@ class TriggerRuleSequence(TriggerRule):
 
 @dataclass(order=True)
 class TriggerRuleChoice(TriggerRule):
-    choices: List[TriggerRule]
+    choices: List[TriggerRule] = field(default_factory=list)
 
-    def __init__(self) -> None:
-        self.choices = []
+    def __post_init__(self):
+        for rule in self.choices:
+            if rule is None:
+                raise TriggerRuleNotNoneError("TriggerRuleChoice rule cannot be None!")
 
     def accept(self, visitor: Visitor) -> None:
         """
@@ -131,6 +137,10 @@ class TriggerRuleChoice(TriggerRule):
 @dataclass(order=True)
 class TriggerRuleLoop(TriggerRule):
     loop: TriggerRule
+
+    def __post_init__(self):
+        if self.loop is None:
+            raise TriggerRuleNotNoneError("TriggerRuleLoop rule cannot be None!")
 
     def accept(self, visitor: Visitor) -> None:
         """

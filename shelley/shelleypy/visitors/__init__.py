@@ -1,7 +1,7 @@
 import copy
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List, Tuple, Any
 
 from astroid import (
     Call,
@@ -9,14 +9,20 @@ from astroid import (
     FunctionDef,
     NodeNG
 )
-
+from lark import Lark
+from shelley.parsers import ltlf_lark_parser
+from shelley.parsers.ltlf_lark_parser import LTLParser
 from shelley.ast.behaviors import Behaviors
-from shelley.ast.components import Components
-from shelley.ast.devices import Device
+from shelley.ast.components import Components, Component
+from shelley.ast.devices import Device, discover_uses
 from shelley.ast.events import Event
 from shelley.ast.events import Events
 from shelley.ast.rules import (
     TriggerRuleFired,
+    TriggerRuleEvent,
+    TriggerRuleSequence,
+    TriggerRuleFired,
+    TriggerRuleLoop,
 )
 from shelley.ast.triggers import TriggerRule
 from shelley.ast.triggers import Triggers
@@ -95,6 +101,30 @@ class VisitorHelper:
             logger.warning(
                 f"Expecting {expected_call_name} but found {self.last_call}. The first subsystem call should match the case name! (l. {matchcase_body_node.lineno})")
 
+    def context_system_init(self, name: str, uses: Dict[str, str], system_claims: List[str],
+                            integration_claims: List[str], subsystem_claims: List[str]):
+        self.device.name = name
+
+        for c_name, c_type in uses.items():
+            self.device.components.create(c_name, c_type)
+        self.device.uses = discover_uses(self.device.components)
+
+        ltlf_parser = Lark.open(
+            "ltlf_grammar.lark", rel_to=ltlf_lark_parser.__file__, start="formula"
+        ).parse
+
+        for claim in system_claims:
+            formula = LTLParser().transform(ltlf_parser(claim))
+            self.device.system_formulae.append(formula)
+
+        for claim in integration_claims:
+            formula = LTLParser().transform(ltlf_parser(claim))
+            self.device.integration_formulae.append(formula)
+
+        for claim in subsystem_claims:
+            formula = LTLParser().transform(ltlf_parser(claim))
+            self.device.subsystem_formulae.append((name, formula))
+
     def context_operation_init(self, decorator: ShelleyOpDecorator):
         self.current_op_decorator = decorator
         self.n_returns = 0
@@ -107,7 +137,7 @@ class VisitorHelper:
         self.match_found = True
 
     def context_match_end(self):
-        #self.match_found = False?
+        # self.match_found = False?
         self.current_rule = TriggerRuleFired()
 
     def context_match_case_init(self):
@@ -118,8 +148,50 @@ class VisitorHelper:
         self.saved_case_rules.append(self.current_rule)
         self._restore_current_rule()
 
-    def reset_for_context(self):
+    def context_for_init(self):
         self._save_current_rule()
+
+    def register_new_operation(self, name: str, rules: Optional[TriggerRule] = None):
+        if rules is None:
+            rules = TriggerRuleFired()
+
+        decorator = self.current_op_decorator
+
+        current_operation: Event = self.device.events.create(name, is_start=decorator.is_initial,
+                                                             is_final=decorator.is_final)
+
+        if len(decorator.next) == 0:
+            self.device.behaviors.create(copy.copy(current_operation))  # operation without next operations
+
+        for next_op in decorator.next:
+            self.device.behaviors.create(
+                copy.copy(current_operation),
+                Event(name=next_op, is_start=False, is_final=True, ),
+            )
+
+        self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))
+
+    def register_new_for(self):
+        loop_rule = TriggerRuleLoop(self.current_rule)
+        self.current_rule = TriggerRuleSequence(self.last_current_rule_saved, loop_rule)
+
+    def register_new_call(self):
+        try:
+            component: Component = self.device.components[
+                self.last_call.get_subsystem_instance()]
+        except KeyError:
+            logger.debug(f"    Ignoring Call: {self.last_call}")
+            return
+
+        match self.current_rule:
+            case TriggerRuleFired():
+                self.current_rule = TriggerRuleEvent(component,
+                                                     self.last_call.get_subsystem_call())
+            case TriggerRule():  # any other type of rule
+                self.current_rule = TriggerRuleSequence(
+                    self.current_rule,
+                    TriggerRuleEvent(component, self.last_call.get_subsystem_call()),
+                )
 
     def register_new_return(self, return_next: List[str]) -> bool:
         # TODO: create a visitor to find the leftmost rule and then, if not None, use that name for the return, else use the index
@@ -152,20 +224,3 @@ class VisitorHelper:
 
     def is_base_system(self):
         return len(self.device.uses) == 0 or self.external_only
-
-    def create_operation(self, name, rules):
-        decorator = self.current_op_decorator
-
-        current_operation: Event = self.device.events.create(name, is_start=decorator.is_initial,
-                                                             is_final=decorator.is_final)
-
-        if len(decorator.next) == 0:
-            self.device.behaviors.create(copy.copy(current_operation))  # operation without next operations
-
-        for next_op in decorator.next:
-            self.device.behaviors.create(
-                copy.copy(current_operation),
-                Event(name=next_op, is_start=False, is_final=True, ),
-            )
-
-        self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))

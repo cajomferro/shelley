@@ -1,4 +1,6 @@
+import pytest
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
+from shelley.shelleypy.checker.exceptions import ShelleyPyError
 from shelley.shelleypy.checker.checker import extract_node
 from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
 from shelley.shelleypy.visitors import VisitorHelper
@@ -71,7 +73,6 @@ def test_app_v1() -> None:
 
     assert shy == expected_shy
 
-
 def test_app_v2() -> None:
     """
     Simple return inside if/else
@@ -108,6 +109,51 @@ def test_app_v2() -> None:
             return "main"
     """
 
+    with pytest.raises(ShelleyPyError) as exc_info:
+        py2shy(app)
+
+    assert str(exc_info.value.msg) == "The else branch is missing!"
+    assert exc_info.value.lineno == 12
+
+
+def test_app_v3() -> None:
+    """
+    Simple return inside if/else
+    """
+
+    app = """
+    @system(uses={"v1": "Valve", "v2": "Valve"})
+    class App:
+        def __init__(self):
+            self.v1 = Valve()
+            self.v2 = Valve()
+
+        @operation(initial=True, next=["main", "stop_v1", "stop_v2"])
+        def main(self):
+            if x:
+                if x:
+                    if x:
+                        self.v1.on()
+                        return "stop_v1" 
+                    else:
+                        return "main"    
+                else:
+                    return "main"
+            else:
+                self.v2.on()
+                return "stop_v2"
+
+        @operation(final=True, next=["main"])    
+        def stop_v1(self):
+            self.v1.off()
+            return "main"
+
+        @operation(final=True, next=["main"])
+        def stop_v2(self):
+            self.v2.off()
+            return "main"
+    """
+
     shy = py2shy(app)
 
     expected_shy = """App (v1: Valve, v2: Valve) {
@@ -115,10 +161,11 @@ def test_app_v2() -> None:
   v1.on; 
  }
  main_2 -> main {}
- main_3 -> stop_v2 {
+ main_3 -> main {}
+ main_4 -> stop_v2 {
   v2.on; 
  }
- initial main -> main_1, main_2, main_3 {}
+ initial main -> main_1, main_2, main_3, main_4 {}
  final stop_v1 -> main {
   v1.off; 
  }

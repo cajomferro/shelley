@@ -80,6 +80,8 @@ def test_missing_return_if() -> None:
             if x:
                 self.v.run()
                 # return "" --> this is missing!
+            else:
+                return ""            
     """
 
     with pytest.raises(ShelleyPyError) as exc_info:
@@ -88,29 +90,29 @@ def test_missing_return_if() -> None:
     assert str(exc_info.value.msg) == ShelleyPyError.MISSING_RETURN
     assert exc_info.value.lineno == 7
 
-def test_missing_return_if_v2() -> None:
-    """
-    Missing a return inside if
-    """
-
-    app = """
-    @system(uses={"v": "Valve"})
-    class App:
-        def __init__(self):
-            self.v = Valve()
-
-        @operation(initial=True, final=True, next=[])
-        def main(self):
-            if x:
-                self.v.run()
-            # return "" --> this is missing!
-    """
-
-    with pytest.raises(ShelleyPyError) as exc_info:
-        py2shy(app)
-
-    assert str(exc_info.value.msg) == ShelleyPyError.MISSING_RETURN
-    assert exc_info.value.lineno == 7
+# def test_missing_return_if_v2() -> None:
+#     """
+#     Missing a return inside if
+#     """
+#
+#     app = """
+#     @system(uses={"v": "Valve"})
+#     class App:
+#         def __init__(self):
+#             self.v = Valve()
+#
+#         @operation(initial=True, final=True, next=[])
+#         def main(self):
+#             if x:
+#                 self.v.run()
+#             # return "" --> this is missing!
+#     """
+#
+#     with pytest.raises(ShelleyPyError) as exc_info:
+#         py2shy(app)
+#
+#     assert str(exc_info.value.msg) == ShelleyPyError.MISSING_RETURN
+#     assert exc_info.value.lineno == 7
 
 
 def test_return_ok_if_v2() -> None:
@@ -124,15 +126,19 @@ def test_return_ok_if_v2() -> None:
         def main(self):
             if x:
                 self.v.run()
-            return "" # this is ok!
+                return "" # this is ok!
+            else:
+                return ""
     """
 
     shy = py2shy(app)
 
     expected_shy = """App (v: Valve) {
- initial final main ->  {
+ final main_1 ->  {
   v.run; 
  }
+ final main_2 ->  {}
+ initial main -> main_1, main_2 {}
 
 }
     """.strip()
@@ -160,7 +166,7 @@ def test_missing_return_else() -> None:
                 return ""
             else:
                 self.v.cancel()
-            # return "" --> this is missing!
+                # return "" --> this is missing!
     """
 
     with pytest.raises(ShelleyPyError) as exc_info:

@@ -50,8 +50,31 @@ App (v: Valve) {
 
     assert shy == expected_shy
 
+def test_loop_with_return_v1() -> None:
+    """
 
-def test_loop_with_return() -> None:
+    """
+
+    app = """
+    @claim("system check G (main -> F (main & END));")
+    @system(uses={"v": "Valve"})
+    class App:
+        def __init__(self):
+            self.v = Valve()
+
+        @operation(initial=True, final=True, next=[])
+        def main(self):
+            for i in range(10):
+                return ""
+    """
+
+    with pytest.raises(ShelleyPyError) as exc_info:
+        py2shy(app)
+
+    assert str(exc_info.value.msg) == "Return statements are not allowed inside loops!"
+    assert exc_info.value.lineno == 10
+
+def test_loop_with_return_v2() -> None:
     """
 
     """
@@ -69,10 +92,8 @@ def test_loop_with_return() -> None:
                 if i == 5:
                     self.v.on()
                     return ""
-                self.v.on()
-                wait()
-                self.v.off()
-            return ""
+                else:
+                    return ""
     """
 
     with pytest.raises(ShelleyPyError) as exc_info:

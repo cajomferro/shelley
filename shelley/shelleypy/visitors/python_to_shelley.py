@@ -4,6 +4,7 @@ from typing import Any, List
 
 from astroid import List as ListNG
 from astroid import (
+    Pass,
     Tuple,
     Const,
     For,
@@ -263,6 +264,9 @@ class Python2ShelleyVisitor(NodeNG):
         return_next: List[str] = self._parse_return_value(node)
         logger.debug(f"Found return: {return_next}")
         self.visitor_helper.register_new_return(return_next, node.lineno)
+
+    def visit_pass(self, node: Pass):
+        pass  # TODO: any consequences here??
 
     @staticmethod
     def _get_case_name(match_case_node: MatchCase):

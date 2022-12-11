@@ -1,4 +1,5 @@
 import logging
+import copy
 from dataclasses import dataclass
 from typing import Any, List
 
@@ -150,27 +151,38 @@ class Python2ShelleyVisitor(NodeNG):
     def visit_match(self, node: Match):
         logger.debug("Entering match")
         # logger.debug(node)
-        self.visitor_helper.context_match_init()
+
+        self.match_found = True
+        self.n_returns = 0  # start counting returns, we must have a return for each match case
 
         if not isinstance(node.subject, Call):  # check type of match call
             raise ShelleyPyError(node.subject.lineno, ShelleyPyError.MATCH_CALL_TYPE)
 
+        # match call
         node.subject.accept(self)
+
+        saved_case_rules = copy.copy(self.visitor_helper.saved_case_rules)
+        self.visitor_helper.saved_case_rules = []
+        saved_current_rule = self.visitor_helper.copy_current_rule()
 
         self.visitor_helper.current_match_call = self.visitor_helper.last_call
 
         for node_case in node.cases:
             node_case.accept(self)
+            self.visitor_helper.update_current_rule(saved_current_rule)  # reset
 
-        self.visitor_helper.context_match_end()
+        # after match call and all cases
+        #self.visitor_helper.update_current_rule(saved_current_rule)  # reset
+        self.visitor_helper.context_match_end(saved_case_rules)
         logger.debug("Leaving match")
 
     def visit_matchcase(self, match_case_node: MatchCase):
         logger.debug("Entering matchcase")
         # logger.debug(match_case_node)
 
-        save_rule = self.visitor_helper.context_match_case_init()
+        # before each case
         saved_match_call = self.visitor_helper.copy_match_call()
+
         # inspect case body
         first_node = True
         for matchcase_body_node in match_case_node.body:
@@ -180,7 +192,11 @@ class Python2ShelleyVisitor(NodeNG):
                 self.visitor_helper.check_case_first_node(self._get_case_name(match_case_node),
                                                           matchcase_body_node.lineno)
 
-        self.visitor_helper.context_match_case_end(save_rule, saved_match_call)
+        # after each case
+        self.visitor_helper.saved_case_rules.append(self.visitor_helper.current_rule)
+        logger.debug(f"Saved case rules: {self.visitor_helper.saved_case_rules}")
+        self.visitor_helper.current_match_call = saved_match_call
+        # self.visitor_helper.update_current_rule(saved_current_rule)
 
         if not self.visitor_helper.n_returns:
             raise ShelleyPyError(match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN)
@@ -216,7 +232,7 @@ class Python2ShelleyVisitor(NodeNG):
         logger.debug("entering if")
         # logger.debug(node)
 
-        save_rule = self.visitor_helper.context_if_init()
+        saved_current_rule = self.visitor_helper.copy_current_rule()
         single_branch: bool = True
 
         for if_body_node in node.body:
@@ -224,7 +240,9 @@ class Python2ShelleyVisitor(NodeNG):
         logger.debug("leaving if")
 
         logger.debug("entering else")
-        left_rule = self.visitor_helper.context_else_init()
+        left_rule = self.visitor_helper.copy_current_rule()
+        self.visitor_helper.update_current_rule(saved_current_rule)
+
         if len(node.orelse) == 0:
             raise ShelleyPyError(node.lineno, ShelleyPyError.ELSE_MISSING)
         for else_body_node in node.orelse:
@@ -232,7 +250,7 @@ class Python2ShelleyVisitor(NodeNG):
         logger.debug("leaving else")
 
         logger.debug("leaving if/else")
-        self.visitor_helper.context_if_end(save_rule, left_rule, node.lineno)
+        self.visitor_helper.context_if_end(saved_current_rule, left_rule, node.lineno)
 
     def visit_for(self, node: For):
         logger.debug("entering for")

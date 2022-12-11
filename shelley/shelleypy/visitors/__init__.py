@@ -132,17 +132,6 @@ class VisitorHelper:
         if not self.match_found and self.n_returns == 0:
             raise ShelleyPyError(lineno, ShelleyPyError.MISSING_RETURN)
 
-    def context_if_init(self):
-        save_rule = self.copy_current_rule()
-        self.update_current_rule()
-        return save_rule
-
-    def context_else_init(self):
-        save_rule = self.copy_current_rule()
-        self.if_left_rule = copy.copy(self.current_rule)
-        self.update_current_rule()
-        return save_rule
-
     def context_if_end(self, save_rule, left_rule, lineno: int):
         single_branch: bool = True
 
@@ -180,30 +169,21 @@ class VisitorHelper:
 
         logger.debug(f"Extra ops: {self.collect_extra_ops}")
 
-    def context_match_init(self):
-        # self.last_call = None
-        self.match_found = True
-
-    def context_match_end(self):
-        self.update_current_rule()
+    def context_match_end(self, saved_case_rules):
+        # self.update_current_rule()
         logger.debug(f"Extra ops: {self.collect_extra_ops}")
         logger.debug("Prefixing case rules with current rule")
-        for case_rule in self.saved_case_rules:
-            self.collect_extra_ops[self.current_return_op_name].update(
-                {"rules": TriggerRuleSequence(self.current_rule, case_rule)}
-            )
+        # print(self.current_rule)
+        # print(self.saved_case_rules)
+        # print(self.collect_extra_ops)
+        # for case_rule in self.saved_case_rules:
+        #     self.collect_extra_ops[self.current_return_op_name].update(
+        #         {"rules": TriggerRuleSequence(self.current_rule, case_rule)}
+        #     )
+        # print(self.collect_extra_ops)
         logger.debug(f"Extra ops: {self.collect_extra_ops}")
         # self.match_found = False?
-
-    def context_match_case_init(self):
-        self.n_returns = 0  # start counting returns, we must have a return for each match case
-        return self.copy_current_rule()
-
-    def context_match_case_end(self, save_rule, saved_match_call):
-        self.saved_case_rules.append(self.current_rule)
-        logger.debug(f"Saved case rules: {self.saved_case_rules}")
-        self.update_current_rule(save_rule)
-        self.current_match_call = saved_match_call
+        self.saved_case_rules = saved_case_rules
 
     def context_for_init(self):
         return self.copy_current_rule()

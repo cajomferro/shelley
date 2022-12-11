@@ -1,10 +1,9 @@
 import logging
-import sys
-import os
 from pathlib import Path
+
 from astroid import extract_node
+
 from shelley.ast.devices import Device
-from shelley.shelleypy.checker.exceptions import ShelleyPyError
 from shelley.shelleypy.visitors import VisitorHelper
 from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
 
@@ -25,10 +24,11 @@ def main():
     """
     Use only for debug purposes
     """
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     # src_path = Path("/app/shelley-examples/micropython_paper_full_example/valve.py")
-    src_path = Path("/app/shelley-examples/micropython_paper_full_example/vhandler_full.py")
+    # src_path = Path("/app/shelley-examples/micropython_paper_full_example/vhandler_full.py")
+    src_path = Path("test.py")
 
     device: Device = python2shelley(src_path)
 

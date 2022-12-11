@@ -1,7 +1,7 @@
 import pytest
 from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
-from shelley.shelleypy.checker.checker import ShelleyPyError
+from shelley.shelleypy.checker.exceptions import ShelleyPyError
 from shelley.shelleypy.checker.checker import extract_node
 from shelley.shelleypy.visitors import VisitorHelper
 

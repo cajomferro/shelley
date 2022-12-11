@@ -74,9 +74,11 @@ def test_code_outside_match() -> None:
         def main(self):
             match self.v1.test():
                 case "ok":
+                    self.v1.ok()
                     self.v1.on()
                     return "" 
                 case "error":
+                    self.v1.error()
                     self.v2.on()
                     return ""
             self.v1.on()
@@ -87,21 +89,20 @@ def test_code_outside_match() -> None:
 
     expected_shy = """App (v1: Valve, v2: Valve) {
  main_1 ->  {
-  v1.test; v1.on; 
+  v1.test; v1.ok; v1.on; 
  }
  main_2 ->  {
-  v1.test; v2.on; 
+  v1.test; v1.error; v2.on; 
  }
  main_3 ->  {
-  v1.on; v1.test; v2.on; 
+  v1.test; v1.on; 
  }
  initial main -> main_1, main_2, main_3 {}
 
 }
 """.strip()
 
-    # print(shy)
-
+    print(shy)
     assert shy == expected_shy
 
 
@@ -221,7 +222,7 @@ def test_nested_match_v2() -> None:
   a.test; a.clean; b.test; b.open; 
  }
  try_open_3 -> try_open {
-  a.test; a.clean; b.test; b.clean;
+  a.test; a.clean; b.test; b.clean; 
  }
  initial try_open -> try_open_1, try_open_2, try_open_3 {}
  final when_a -> try_open {

@@ -108,8 +108,8 @@ class Python2ShelleyVisitor(NodeNG):
                                                 decorators_visitor.integration_claims,
                                                 decorators_visitor.subsystem_claims)
 
-        for node in node.body:  # process methods
-            node.accept(self)
+        for node_body in node.body:  # process methods
+            node_body.accept(self)
 
     def visit_functiondef(self, node: FunctionDef) -> Any:
         logger.debug(f"Entering method: {node.name}")
@@ -169,6 +169,7 @@ class Python2ShelleyVisitor(NodeNG):
         # logger.debug(match_case_node)
 
         save_rule = self.visitor_helper.context_match_case_init()
+        saved_match_call = self.visitor_helper.copy_match_call()
         # inspect case body
         first_node = True
         for matchcase_body_node in match_case_node.body:
@@ -178,7 +179,7 @@ class Python2ShelleyVisitor(NodeNG):
                 self.visitor_helper.check_case_first_node(self._get_case_name(match_case_node),
                                                           matchcase_body_node.lineno)
 
-        self.visitor_helper.context_match_case_end(save_rule)
+        self.visitor_helper.context_match_case_end(save_rule, saved_match_call)
 
         if not self.visitor_helper.n_returns:
             raise ShelleyPyError(match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN)

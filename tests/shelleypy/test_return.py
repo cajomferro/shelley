@@ -1,16 +1,18 @@
 import pytest
-from shelley.shelleypy.checker.checker import PyVisitor
-from shelley.shelleypy.checker.checker import extract_node
-from shelley.shelleypy.checker.checker import ShelleyPyError
-from shelley.ast.visitors.shelley2lark import Shelley2Lark
 
+from shelley.ast.visitors.shelley2lark import Shelley2Lark
+from shelley.shelleypy.checker.checker import ShelleyPyError
+from shelley.shelleypy.checker.checker import extract_node
+from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
+from shelley.shelleypy.visitors import VisitorHelper
 
 def py2shy(py_code: str) -> str:
-    svis = PyVisitor(external_only=False)
-    svis.find(extract_node(py_code))
+    visitor_helper = VisitorHelper(external_only=False)
+    p2s_visitor = Python2ShelleyVisitor(visitor_helper)
+    extract_node(py_code).accept(p2s_visitor)
 
-    visitor = Shelley2Lark(components=svis.device.components)
-    svis.device.accept(visitor)
+    visitor = Shelley2Lark(components=visitor_helper.device.components)
+    visitor_helper.device.accept(visitor)
 
     return visitor.result.strip()
 

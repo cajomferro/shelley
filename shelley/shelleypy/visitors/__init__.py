@@ -5,6 +5,7 @@ from typing import Dict, Optional, List, Any
 
 from lark import Lark
 
+from shelley.shelleypy.checker.exceptions import ShelleyPyError
 from shelley.ast.behaviors import Behaviors
 from shelley.ast.components import Components, Component
 from shelley.ast.devices import Device, discover_uses
@@ -24,6 +25,7 @@ from shelley.parsers.ltlf_lark_parser import LTLParser
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
+
 
 @dataclass
 class ShelleyCall:
@@ -45,13 +47,7 @@ class ShelleyOpDecorator:
 
 @dataclass
 class VisitorHelper:
-    device: Device = Device(
-        name="",
-        events=Events(),
-        behaviors=Behaviors(),
-        triggers=Triggers(),
-        components=Components(),
-    )
+    device: Device = field(init=False)
     external_only: bool = False
     match_found: bool = False  # useful for verifying missing returns
     current_rule: TriggerRule = TriggerRuleFired()
@@ -62,6 +58,15 @@ class VisitorHelper:
     current_op_decorator: ShelleyOpDecorator = None
     current_return_op_name: Optional[str] = None
     collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        self.device = Device(
+            name="",
+            events=Events(),
+            behaviors=Behaviors(),
+            triggers=Triggers(),
+            components=Components(),
+        )
 
     def check_case_first_node(self, case_name: str, lineno: int):
         # inspect first expression inside case body
@@ -175,7 +180,6 @@ class VisitorHelper:
 
         logger.debug(f"Extra ops: {self.collect_extra_ops}")
 
-
     def context_match_init(self):
         # self.last_call = None
         self.match_found = True
@@ -195,10 +199,11 @@ class VisitorHelper:
         self.n_returns = 0  # start counting returns, we must have a return for each match case
         return self.copy_current_rule()
 
-    def context_match_case_end(self, save_rule):
+    def context_match_case_end(self, save_rule, saved_match_call):
         self.saved_case_rules.append(self.current_rule)
         logger.debug(f"Saved case rules: {self.saved_case_rules}")
         self.update_current_rule(save_rule)
+        self.current_match_call = saved_match_call
 
     def context_for_init(self):
         return self.copy_current_rule()
@@ -250,7 +255,7 @@ class VisitorHelper:
     def register_new_return(self, return_next: List[str], lineno: int):
         # TODO: create a visitor to find the leftmost rule and then, if not None, use that name for the return, else use the index
         self.current_return_op_name: str = (
-            f"{self.current_op_decorator.op_name}_{len(self.collect_extra_ops)}"
+            f"{self.current_op_decorator.op_name}_{len(self.collect_extra_ops) + 1}"
         )
         logger.debug(f"Registered next operation name: {self.current_return_op_name}")
 
@@ -281,6 +286,10 @@ class VisitorHelper:
     def copy_current_rule(self):
         logger.debug("Current rule saved")
         return copy.copy(self.current_rule)
+
+    def copy_match_call(self):
+        logger.debug("Current rule saved")
+        return copy.copy(self.current_match_call)
 
     def update_current_rule(self, rule: Optional[TriggerRule] = None):
         if rule is None:

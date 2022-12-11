@@ -15,16 +15,9 @@ logger = logging.getLogger("shelleypy")
 def python2shelley(src_path: Path, external_only=False) -> Device:
     with src_path.open() as f:
         tree = extract_node(f.read())
-
     visitor_helper = VisitorHelper(external_only=external_only)
     p2s_visitor = Python2ShelleyVisitor(visitor_helper)
-
-    try:
-        tree.accept(p2s_visitor)
-    except ShelleyPyError as error:
-        logger.error(f"{error.msg} (l. {error.lineno})")
-        sys.exit(os.EX_SOFTWARE)
-
+    tree.accept(p2s_visitor)
     return visitor_helper.device
 
 

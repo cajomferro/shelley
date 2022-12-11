@@ -1,12 +1,13 @@
-from shelley.shelleypy.checker.checker import PyVisitor
+from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
 from shelley.shelleypy.checker.checker import extract_node
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
+from shelley.shelleypy.visitors import VisitorHelper
 
 
 # TODO: right now we are not processing the value of initial and final, we just assume based on if it is there or not
 # omitting final=False or initial=False will make the test pass but we should support this instead
 def test_app_v1() -> None:
-    app_py = """
+    py_code = """
     @claim("system check G (main -> F (main & END));")
     @system(uses={"v1": "Valve", "v2": "Valve"})
     class App:
@@ -27,11 +28,12 @@ def test_app_v1() -> None:
             return "turn_on"
     """
 
-    svis = PyVisitor(external_only=False)
-    svis.find(extract_node(app_py))
+    visitor_helper = VisitorHelper(external_only=False)
+    p2s_visitor = Python2ShelleyVisitor(visitor_helper)
+    extract_node(py_code).accept(p2s_visitor)
 
-    visitor = Shelley2Lark(components=svis.device.components)
-    svis.device.accept(visitor)
+    visitor = Shelley2Lark(components=visitor_helper.device.components)
+    visitor_helper.device.accept(visitor)
 
     lark_code = visitor.result.strip()
 

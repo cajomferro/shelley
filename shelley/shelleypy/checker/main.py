@@ -81,7 +81,6 @@ def main() -> None:
 
     input_path: Path = args.input[0]
     logger.debug("Input python file: {0}".format(Path.absolute(input_path)))
-    logger.debug("Input uses file: {0}".format(Path.absolute(args.uses)))
 
     try:
         check(

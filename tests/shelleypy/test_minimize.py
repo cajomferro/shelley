@@ -1,23 +1,18 @@
-import shelley.ast.triggers
-from shelley.shelleypy.checker.checker import PyVisitor
-from shelley.shelleypy.checker.checker import extract_node
-from shelley.ast.visitors.shelley2lark import Shelley2Lark
 from shelley.ast.devices import Device as ShelleyDevice
-from shelley.ast.behaviors import Behaviors
-from shelley.ast.behaviors import Behavior
-from shelley.ast.events import Event, Events
-from shelley.ast.triggers import Triggers, Trigger
-from shelley.ast.rules import TriggerRuleChoice
-from typing import Mapping, List
+from shelley.ast.visitors.shelley2lark import Shelley2Lark
 from shelley.parsers.shelley_lark_parser import parser as lark_parser, ShelleyLanguage
+from shelley.shelleypy.checker.checker import extract_node
 from shelley.shelleypy.checker.optimize import optimize
+from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
+from shelley.shelleypy.visitors import VisitorHelper
 
 
 def py2shelley_device(py_code: str) -> ShelleyDevice:
-    svis = PyVisitor(external_only=False)
-    svis.find(extract_node(py_code))
+    visitor_helper = VisitorHelper(external_only=False)
+    p2s_visitor = Python2ShelleyVisitor(visitor_helper)
+    extract_node(py_code).accept(p2s_visitor)
 
-    return svis.device
+    return visitor_helper.device
 
 
 def test_v1() -> None:

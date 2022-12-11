@@ -161,8 +161,6 @@ class Python2ShelleyVisitor(NodeNG):
         # match call
         node.subject.accept(self)
 
-        saved_case_rules = copy.copy(self.visitor_helper.saved_case_rules)
-        self.visitor_helper.saved_case_rules = []
         saved_current_rule = self.visitor_helper.copy_current_rule()
 
         self.visitor_helper.current_match_call = self.visitor_helper.last_call
@@ -173,7 +171,6 @@ class Python2ShelleyVisitor(NodeNG):
 
         # after match call and all cases
         #self.visitor_helper.update_current_rule(saved_current_rule)  # reset
-        self.visitor_helper.context_match_end(saved_case_rules)
         logger.debug("Leaving match")
 
     def visit_matchcase(self, match_case_node: MatchCase):
@@ -193,10 +190,7 @@ class Python2ShelleyVisitor(NodeNG):
                                                           matchcase_body_node.lineno)
 
         # after each case
-        self.visitor_helper.saved_case_rules.append(self.visitor_helper.current_rule)
-        logger.debug(f"Saved case rules: {self.visitor_helper.saved_case_rules}")
         self.visitor_helper.current_match_call = saved_match_call
-        # self.visitor_helper.update_current_rule(saved_current_rule)
 
         if not self.visitor_helper.n_returns:
             raise ShelleyPyError(match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN)

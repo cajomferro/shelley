@@ -87,8 +87,8 @@ def test_missing_return_if() -> None:
     with pytest.raises(ShelleyPyError) as exc_info:
         py2shy(app)
 
-    assert str(exc_info.value.msg) == ShelleyPyError.MISSING_RETURN
-    assert exc_info.value.lineno == 7
+    assert str(exc_info.value.msg) == ShelleyPyError.IF_ELSE_MISSING_RETURN
+    assert exc_info.value.lineno == 9
 
 # def test_missing_return_if_v2() -> None:
 #     """

@@ -51,8 +51,8 @@ class VisitorHelper:
     external_only: bool = False
     match_found: bool = False  # useful for verifying missing returns
     current_rule: TriggerRule = TriggerRuleFired()
-    current_match_call: Optional[ShelleyCall] = None
-    saved_case_rules: List[TriggerRule] = field(default_factory=list)
+    current_match_call: Optional[
+        ShelleyCall] = None  # useful for checking that the first match case matches the subsystem of the match call
     last_call: Optional[ShelleyCall] = None
     n_returns: int = 0
     current_op_decorator: ShelleyOpDecorator = None
@@ -105,7 +105,6 @@ class VisitorHelper:
         self.current_op_decorator = decorator
         self.n_returns = 0
         self.match_found = False
-        self.saved_case_rules = []
         self.current_return_op_name = None
 
     def context_operation_end(self, lineno: int):
@@ -164,26 +163,9 @@ class VisitorHelper:
                     except KeyError:
                         pass
             case 1:
-                if not single_branch:
-                    raise ShelleyPyError(lineno, ShelleyPyError.IF_ELSE_MISSING_RETURN)
+                raise ShelleyPyError(lineno, ShelleyPyError.IF_ELSE_MISSING_RETURN)
 
         logger.debug(f"Extra ops: {self.collect_extra_ops}")
-
-    def context_match_end(self, saved_case_rules):
-        # self.update_current_rule()
-        logger.debug(f"Extra ops: {self.collect_extra_ops}")
-        logger.debug("Prefixing case rules with current rule")
-        # print(self.current_rule)
-        # print(self.saved_case_rules)
-        # print(self.collect_extra_ops)
-        # for case_rule in self.saved_case_rules:
-        #     self.collect_extra_ops[self.current_return_op_name].update(
-        #         {"rules": TriggerRuleSequence(self.current_rule, case_rule)}
-        #     )
-        # print(self.collect_extra_ops)
-        logger.debug(f"Extra ops: {self.collect_extra_ops}")
-        # self.match_found = False?
-        self.saved_case_rules = saved_case_rules
 
     def context_for_init(self):
         return self.copy_current_rule()
@@ -268,7 +250,7 @@ class VisitorHelper:
         return copy.copy(self.current_rule)
 
     def copy_match_call(self):
-        logger.debug("Current rule saved")
+        logger.debug("Match call saved")
         return copy.copy(self.current_match_call)
 
     def update_current_rule(self, rule: Optional[TriggerRule] = None):

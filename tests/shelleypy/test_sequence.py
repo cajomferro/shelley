@@ -1,7 +1,14 @@
-from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
-from shelley.shelleypy.checker.checker import extract_node
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
-from shelley.shelleypy.visitors import VisitorHelper
+from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
+
+
+def py2shy(py_code: str) -> str:
+    device = Python2ShelleyVisitor(external_only=False).py2shy(py_code)
+
+    shy2lark_visitor = Shelley2Lark(components=device.components)
+    device.accept(shy2lark_visitor)
+
+    return shy2lark_visitor.result.strip()
 
 
 # TODO: right now we are not processing the value of initial and final, we just assume based on if it is there or not
@@ -28,15 +35,6 @@ def test_app_v1() -> None:
             return "turn_on"
     """
 
-    visitor_helper = VisitorHelper(external_only=False)
-    p2s_visitor = Python2ShelleyVisitor(visitor_helper)
-    extract_node(py_code).accept(p2s_visitor)
-
-    visitor = Shelley2Lark(components=visitor_helper.device.components)
-    visitor_helper.device.accept(visitor)
-
-    lark_code = visitor.result.strip()
-
     expected_lark_code = """
 App (v1: Valve, v2: Valve) {
  initial turn_on -> turn_off {
@@ -49,4 +47,4 @@ App (v1: Valve, v2: Valve) {
 }
 """.strip()
 
-    assert not lark_code == expected_lark_code  # TODO: remove the 'not' when this is fixed
+    assert not py2shy(py_code) == expected_lark_code  # TODO: remove the 'not' when this is fixed

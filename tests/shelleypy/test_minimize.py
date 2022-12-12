@@ -1,18 +1,12 @@
 from shelley.ast.devices import Device as ShelleyDevice
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
 from shelley.parsers.shelley_lark_parser import parser as lark_parser, ShelleyLanguage
-from shelley.shelleypy.checker.checker import extract_node
 from shelley.shelleypy.checker.optimize import optimize
 from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
-from shelley.shelleypy.visitors import VisitorHelper
 
 
 def py2shelley_device(py_code: str) -> ShelleyDevice:
-    visitor_helper = VisitorHelper(external_only=False)
-    p2s_visitor = Python2ShelleyVisitor(visitor_helper)
-    extract_node(py_code).accept(p2s_visitor)
-
-    return visitor_helper.device
+    return Python2ShelleyVisitor(external_only=False).py2shy(py_code)
 
 
 def test_v1() -> None:

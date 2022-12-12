@@ -2,19 +2,16 @@ import pytest
 
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
 from shelley.shelleypy.checker.exceptions import ShelleyPyError
-from shelley.shelleypy.checker.checker import extract_node
 from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
-from shelley.shelleypy.visitors import VisitorHelper
+
 
 def py2shy(py_code: str) -> str:
-    visitor_helper = VisitorHelper(external_only=False)
-    p2s_visitor = Python2ShelleyVisitor(visitor_helper)
-    extract_node(py_code).accept(p2s_visitor)
+    device = Python2ShelleyVisitor(external_only=False).py2shy(py_code)
 
-    visitor = Shelley2Lark(components=visitor_helper.device.components)
-    visitor_helper.device.accept(visitor)
+    shy2lark_visitor = Shelley2Lark(components=device.components)
+    device.accept(shy2lark_visitor)
 
-    return visitor.result.strip()
+    return shy2lark_visitor.result.strip()
 
 
 def test_missing_return_v1() -> None:
@@ -64,6 +61,7 @@ def test_missing_return_v2() -> None:
     assert str(exc_info.value.msg) == ShelleyPyError.MISSING_RETURN
     assert exc_info.value.lineno == 7
 
+
 def test_missing_return_if() -> None:
     """
     Missing a return inside if
@@ -89,6 +87,7 @@ def test_missing_return_if() -> None:
 
     assert str(exc_info.value.msg) == ShelleyPyError.IF_ELSE_MISSING_RETURN
     assert exc_info.value.lineno == 9
+
 
 # def test_missing_return_if_v2() -> None:
 #     """
@@ -143,7 +142,7 @@ def test_return_ok_if_v2() -> None:
 }
     """.strip()
 
-    #print(shy)
+    # print(shy)
 
     assert shy == expected_shy
 
@@ -225,6 +224,7 @@ def test_return_does_not_match_next() -> None:
 
     assert str(exc_info.value.msg) == "Return names ['maixn'] do not match possible next operations ['main']!"
     assert exc_info.value.lineno == 9
+
 
 def test_return_does_not_match_next_v2() -> None:
     """

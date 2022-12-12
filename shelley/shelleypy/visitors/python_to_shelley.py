@@ -1,10 +1,12 @@
 import logging
-import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, List
+from pathlib import Path
+from shelley.ast.devices import Device
 
 from astroid import List as ListNG
 from astroid import (
+    extract_node,
     Pass,
     Tuple,
     Const,
@@ -96,7 +98,19 @@ class ClassDecoratorsVisitor(NodeNG):
 
 @dataclass
 class Python2ShelleyVisitor(NodeNG):
-    visitor_helper: VisitorHelper
+    visitor_helper: VisitorHelper = field(init=False)
+    external_only: bool = False
+
+    def __post_init__(self):
+        self.visitor_helper = VisitorHelper(external_only=self.external_only)
+
+    def py2shy(self, py_src) -> Device:
+        if isinstance(py_src, Path):
+            with py_src.open() as f:
+                py_src = f.read()
+        tree = extract_node(py_src)
+        tree.accept(self)
+        return self.visitor_helper.device
 
     def visit_classdef(self, node: ClassDef) -> Any:
 

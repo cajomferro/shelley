@@ -25,10 +25,11 @@ def main():
     device: Device = python2shelley(src_path)
 
     from shelley.ast.visitors.pprint import PrettyPrintVisitor
+
     visitor = PrettyPrintVisitor(components=device.components)
     device.accept(visitor)
     logger.info(visitor.result.strip())
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

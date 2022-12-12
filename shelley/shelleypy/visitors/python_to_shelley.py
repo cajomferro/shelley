@@ -21,7 +21,7 @@ from astroid import (
     Decorators,
     FunctionDef,
     ClassDef,
-    NodeNG
+    NodeNG,
 )
 
 from shelley.shelleypy.checker.exceptions import ShelleyPyError
@@ -79,7 +79,9 @@ class ClassDecoratorsVisitor(NodeNG):
                 if "system check" in claim and self.external_only:
                     self.system_claims.append(claim.removeprefix("system check"))
                 elif "integration check" in claim and not self.external_only:
-                    self.integration_claims.append(claim.removeprefix("integration check"))
+                    self.integration_claims.append(
+                        claim.removeprefix("integration check")
+                    )
                 elif claim.startswith("subsystem") and not self.external_only:
                     parts = claim.split(" ")  # separate by spaces
                     name = parts[1]  # get subystem name from formula
@@ -119,10 +121,13 @@ class Python2ShelleyVisitor(NodeNG):
         decorators_visitor = ClassDecoratorsVisitor(self.visitor_helper.external_only)
         node.decorators.accept(decorators_visitor)
 
-        self.visitor_helper.context_system_init(node.name, decorators_visitor.uses,
-                                                decorators_visitor.system_claims,
-                                                decorators_visitor.integration_claims,
-                                                decorators_visitor.subsystem_claims)
+        self.visitor_helper.context_system_init(
+            node.name,
+            decorators_visitor.uses,
+            decorators_visitor.system_claims,
+            decorators_visitor.integration_claims,
+            decorators_visitor.subsystem_claims,
+        )
 
         for node_body in node.body:  # process methods
             node_body.accept(self)
@@ -133,7 +138,7 @@ class Python2ShelleyVisitor(NodeNG):
 
         # TODO: improve this
         if node.name in self.visitor_helper.device.events.list_str():
-            raise Exception("Duplicated method!")
+            raise ShelleyPyError(node.lineno, ShelleyPyError.DUPLICATED_METHOD)
 
         if node.decorators is None:
             logger.debug(f"Skipping. This method is not annotated as an operation!")
@@ -143,13 +148,19 @@ class Python2ShelleyVisitor(NodeNG):
         node.decorators.accept(decorators_visitor)
 
         if not decorators_visitor.decorator:
-            raise ShelleyPyError(node.decorators.lineno, ShelleyPyError.DECORATOR_PARSE_ERROR)
+            raise ShelleyPyError(
+                node.decorators.lineno, ShelleyPyError.DECORATOR_PARSE_ERROR
+            )
 
         decorator = decorators_visitor.decorator
 
         if self.visitor_helper.is_base_system():  # base system, do not inspect body
-            self.visitor_helper.register_new_operation(op_name=decorator.op_name, is_initial=decorator.is_initial,
-                                                       is_final=decorator.is_final, next_ops=decorator.next_ops)
+            self.visitor_helper.register_new_operation(
+                op_name=decorator.op_name,
+                is_initial=decorator.is_initial,
+                is_final=decorator.is_final,
+                next_ops=decorator.next_ops,
+            )
         else:  # system that contains subsystems, do inspect body
             assert type(node) == FunctionDef  # this is just a safe check
 
@@ -167,7 +178,9 @@ class Python2ShelleyVisitor(NodeNG):
         # logger.debug(node)
 
         self.match_found = True
-        self.n_returns = 0  # start counting returns, we must have a return for each match case
+        self.n_returns = (
+            0  # start counting returns, we must have a return for each match case
+        )
 
         if not isinstance(node.subject, Call):  # check type of match call
             raise ShelleyPyError(node.subject.lineno, ShelleyPyError.MATCH_CALL_TYPE)
@@ -184,7 +197,7 @@ class Python2ShelleyVisitor(NodeNG):
             self.visitor_helper.update_current_rule(saved_current_rule)  # reset
 
         # after match call and all cases
-        #self.visitor_helper.update_current_rule(saved_current_rule)  # reset
+        # self.visitor_helper.update_current_rule(saved_current_rule)  # reset
         logger.debug("Leaving match")
 
     def visit_matchcase(self, match_case_node: MatchCase):
@@ -200,14 +213,17 @@ class Python2ShelleyVisitor(NodeNG):
             matchcase_body_node.accept(self)
             if first_node:
                 first_node = False
-                self.visitor_helper.check_case_first_node(self._get_case_name(match_case_node),
-                                                          matchcase_body_node.lineno)
+                self.visitor_helper.check_case_first_node(
+                    self._get_case_name(match_case_node), matchcase_body_node.lineno
+                )
 
         # after each case
         self.visitor_helper.current_match_call = saved_match_call
 
         if not self.visitor_helper.n_returns:
-            raise ShelleyPyError(match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN)
+            raise ShelleyPyError(
+                match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN
+            )
 
         logger.debug("Leaving matchcase")
 
@@ -224,7 +240,7 @@ class Python2ShelleyVisitor(NodeNG):
             self.visitor_helper.last_call = ShelleyCall(
                 exprself=node.func.expr.expr.name,
                 subsystem_call=node.func.attrname,
-                subsystem_instance=node.func.expr.attrname
+                subsystem_instance=node.func.expr.attrname,
             )
         except AttributeError:
             logger.debug(f"    Ignoring Call: {node.func.repr_tree()}")
@@ -302,9 +318,13 @@ class Python2ShelleyVisitor(NodeNG):
         try:
             case_name: str = match_case_node.pattern.value.value
             if not isinstance(case_name, str):  # check type of match case value
-                raise ShelleyPyError(match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE)
+                raise ShelleyPyError(
+                    match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE
+                )
         except AttributeError:
-            raise ShelleyPyError(match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE)
+            raise ShelleyPyError(
+                match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE
+            )
         return case_name
 
     @staticmethod

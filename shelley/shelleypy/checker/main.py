@@ -63,7 +63,9 @@ def check(src_path: Path, output_path: Path, optimize=False, use_old_checker=Fal
         device = python2shelley(src_path, external_only=False)
         if optimize:
             fun_optimize(device)
-        integration_output_path: Path = Path(output_path.parent, f"integration_{output_path.name}")
+        integration_output_path: Path = Path(
+            output_path.parent, f"integration_{output_path.name}"
+        )
         shelley2lark(device, output_path=integration_output_path)
 
         device = python2shelley(src_path, external_only=True)
@@ -87,7 +89,7 @@ def main() -> None:
             src_path=input_path,
             output_path=args.output,
             optimize=args.optimize,
-            use_old_checker=args.use_old_checker
+            use_old_checker=args.use_old_checker,
         )
         logger.debug("OK!")
     except CompilationError as error:

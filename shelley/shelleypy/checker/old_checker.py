@@ -99,7 +99,7 @@ class PyVisitor:
         self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))
 
     def _create_operations(
-            self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
+        self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
     ):
         # for single-return methods, use the name of the method
         if len(self._collect_extra_ops) == 1:
@@ -131,7 +131,7 @@ class PyVisitor:
         self._collect_extra_ops = dict()
 
     def _process_operation(
-            self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
+        self, node: Union[astroid.FunctionDef, astroid.AsyncFunctionDef]
     ):
         def show_error():
             logger.debug(f"Skipping. This method is not annotated as an operation!")
@@ -158,7 +158,7 @@ class PyVisitor:
         self._saved_case_rules = list()
 
         if (
-                len(self.device.uses) == 0
+            len(self.device.uses) == 0
         ) or self.external_only:  # base system, do not inspect body
             self._create_operation(
                 node.name,
@@ -373,7 +373,7 @@ class PyVisitor:
             raise ShelleyPyError(first_node.lineno, ShelleyPyError.LIST_CASE)
 
     def _process_match_cases(
-            self, match_call: str, node_cases: List[astroid.MatchCase]
+        self, match_call: str, node_cases: List[astroid.MatchCase]
     ):
         for case in node_cases:
             logger.debug(f"Match case: {case.pattern}")
@@ -441,7 +441,7 @@ class PyVisitor:
     def find(self, node, expects_node_type=None, **kwargs):
         if expects_node_type:
             assert (
-                    type(node) in expects_node_type
+                type(node) in expects_node_type
             ), f"Expecting node type {expects_node_type} but found {type(node)}"
 
         ret = None

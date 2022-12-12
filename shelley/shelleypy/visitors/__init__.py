@@ -1,11 +1,11 @@
 import copy
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, Optional, List, Any
+from typing import Dict, Optional, List, Any, Set
 
 from lark import Lark
 
-from shelley.shelleypy.checker.exceptions import ShelleyPyError
+from shelley.shelleypy.checker.exceptions import *
 from shelley.ast.behaviors import Behaviors
 from shelley.ast.components import Components, Component
 from shelley.ast.devices import Device, discover_uses
@@ -52,7 +52,8 @@ class VisitorHelper:
     match_found: bool = False  # useful for verifying missing returns
     current_rule: TriggerRule = TriggerRuleFired()
     current_match_call: Optional[
-        ShelleyCall] = None  # useful for checking that the first match case matches the subsystem of the match call
+        ShelleyCall
+    ] = None  # useful for checking that the first match case matches the subsystem of the match call
     last_call: Optional[ShelleyCall] = None
     n_returns: int = 0
     current_op_decorator: ShelleyOpDecorator = None
@@ -73,10 +74,17 @@ class VisitorHelper:
         expected_call_name = f"{self.current_match_call.exprself}.{self.current_match_call.subsystem_instance}.{case_name}"
         if not (self.last_call and str(self.last_call) == expected_call_name):
             logger.warning(
-                f"Expecting {expected_call_name} but found {self.last_call}. The first subsystem call should match the case name! (l. {lineno})")
+                f"Expecting {expected_call_name} but found {self.last_call}. The first subsystem call should match the case name! (l. {lineno})"
+            )
 
-    def context_system_init(self, name: str, uses: Dict[str, str], system_claims: List[str],
-                            integration_claims: List[str], subsystem_claims: List[str]):
+    def context_system_init(
+        self,
+        name: str,
+        uses: Dict[str, str],
+        system_claims: List[str],
+        integration_claims: List[str],
+        subsystem_claims: List[str],
+    ):
         self.device.name = name
 
         for c_name, c_type in uses.items():
@@ -113,23 +121,49 @@ class VisitorHelper:
         is_final = self.current_op_decorator.is_final
         next_ops = self.current_op_decorator.next_ops
 
+        missing_returns: Set[str] = set(next_ops) - self._original_return_names()
+        if missing_returns:
+            raise NextOpsNotInReturn(lineno, missing_returns)
+
         # for single-return methods, use the name of the method
         if len(self.collect_extra_ops) == 1:
-            self.register_new_operation(op_name=op_name, is_initial=is_initial, is_final=is_final,
-                                        next_ops=next_ops,
-                                        rules=self.collect_extra_ops[self.current_return_op_name]["rules"])
+            self.register_new_operation(
+                op_name=op_name,
+                is_initial=is_initial,
+                is_final=is_final,
+                next_ops=next_ops,
+                rules=self.collect_extra_ops[self.current_return_op_name]["rules"],
+            )
         else:  # for multiple-return methods, use the name of the extra operations...
             for extra_op_name, extra_op_info in self.collect_extra_ops.items():
-                self.register_new_operation(op_name=extra_op_name, is_initial=False, is_final=is_final,
-                                            next_ops=extra_op_info["next"], rules=extra_op_info["rules"])
+                self.register_new_operation(
+                    op_name=extra_op_name,
+                    is_initial=False,
+                    is_final=is_final,
+                    next_ops=extra_op_info["next"],
+                    rules=extra_op_info["rules"],
+                )
 
             # ... and map the original operation with the extra operations
-            next_ops = [extra_op_name for extra_op_name in self.collect_extra_ops.keys()]
-            self.register_new_operation(op_name=op_name, is_initial=is_initial, is_final=False,
-                                        next_ops=next_ops)
+            next_ops = [
+                extra_op_name for extra_op_name in self.collect_extra_ops.keys()
+            ]
+            self.register_new_operation(
+                op_name=op_name,
+                is_initial=is_initial,
+                is_final=False,
+                next_ops=next_ops,
+            )
 
         if not self.match_found and self.n_returns == 0:
             raise ShelleyPyError(lineno, ShelleyPyError.MISSING_RETURN)
+
+    def _original_return_names(self) -> Set[str]:
+        return_names_set = set()
+        for _, v in self.collect_extra_ops.items():
+            for return_name in v["original_return_names"]:
+                return_names_set.add(return_name)
+        return return_names_set
 
     def context_if_end(self, save_rule, left_rule, lineno: int):
         single_branch: bool = True
@@ -151,7 +185,9 @@ class VisitorHelper:
             case TriggerRuleFired():
                 self.update_current_rule(next_rule)
             case TriggerRule():  # any other type of rule
-                self.update_current_rule(TriggerRuleSequence(self.current_rule, next_rule))
+                self.update_current_rule(
+                    TriggerRuleSequence(self.current_rule, next_rule)
+                )
 
         match self.n_returns:
             case 2:  # assuming both if/else have return statements
@@ -170,8 +206,14 @@ class VisitorHelper:
     def context_for_init(self):
         return self.copy_current_rule()
 
-    def register_new_operation(self, op_name: str, is_initial=False, is_final=False,
-                               next_ops: Optional[List[str]] = None, rules: Optional[TriggerRule] = None):
+    def register_new_operation(
+        self,
+        op_name: str,
+        is_initial=False,
+        is_final=False,
+        next_ops: Optional[List[str]] = None,
+        rules: Optional[TriggerRule] = None,
+    ):
 
         if next_ops is None:
             next_ops = []
@@ -179,15 +221,23 @@ class VisitorHelper:
         if rules is None:
             rules = TriggerRuleFired()
 
-        current_operation: Event = self.device.events.create(op_name, is_start=is_initial, is_final=is_final)
+        current_operation: Event = self.device.events.create(
+            op_name, is_start=is_initial, is_final=is_final
+        )
 
         if len(next_ops) == 0:
-            self.device.behaviors.create(copy.copy(current_operation))  # operation without next operations
+            self.device.behaviors.create(
+                copy.copy(current_operation)
+            )  # operation without next operations
         else:
             for next_op in next_ops:
                 self.device.behaviors.create(
                     copy.copy(current_operation),
-                    Event(name=next_op, is_start=False, is_final=True, ),
+                    Event(
+                        name=next_op,
+                        is_start=False,
+                        is_final=True,
+                    ),
                 )
 
         self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))
@@ -199,20 +249,24 @@ class VisitorHelper:
     def register_new_call(self):
         try:
             component: Component = self.device.components[
-                self.last_call.subsystem_instance]
+                self.last_call.subsystem_instance
+            ]
         except KeyError:
             logger.debug(f"    Ignoring Call: {self.last_call}")
             return
 
         match self.current_rule:
             case TriggerRuleFired():
-                self.update_current_rule(TriggerRuleEvent(component,
-                                                          self.last_call.subsystem_call))
+                self.update_current_rule(
+                    TriggerRuleEvent(component, self.last_call.subsystem_call)
+                )
             case TriggerRule():  # any other type of rule
-                self.update_current_rule(TriggerRuleSequence(
-                    self.current_rule,
-                    TriggerRuleEvent(component, self.last_call.subsystem_call),
-                ))
+                self.update_current_rule(
+                    TriggerRuleSequence(
+                        self.current_rule,
+                        TriggerRuleEvent(component, self.last_call.subsystem_call),
+                    )
+                )
 
     def register_new_return(self, return_next: List[str], lineno: int):
         # TODO: create a visitor to find the leftmost rule and then, if not None, use that name for the return, else use the index
@@ -224,22 +278,17 @@ class VisitorHelper:
         self.collect_extra_ops[self.current_return_op_name] = {
             "next": return_next,
             "rules": self.current_rule,
+            "original_return_names": return_next,
         }
         logger.debug(f"Collect extra ops: {self.collect_extra_ops}")
         logger.debug(f"Current rule: {self.current_rule}")
 
         next_ops_list = self.current_op_decorator.next_ops
         if next_ops_list and not all(elem in next_ops_list for elem in return_next):
-            raise ShelleyPyError(
-                lineno,
-                f"Return names {return_next} do not match possible next operations {self.current_op_decorator.next_ops}!",
-            )
-
+            raise ReturnMatchesNext(lineno, return_next)
         if not next_ops_list and return_next != [""]:
-            raise ShelleyPyError(
-                lineno,
-                f"Return names {return_next} do not match possible next operations {self.current_op_decorator.next_ops}!",
-            )
+            raise ReturnMatchesNext(lineno, return_next)
+
         self.n_returns += 1
 
     def is_base_system(self):

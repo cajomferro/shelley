@@ -1,7 +1,7 @@
 import pytest
 
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
-from shelley.shelleypy.checker.exceptions import ShelleyPyError
+from shelley.shelleypy.checker.exceptions import ShelleyPyError, ReturnMatchesNext, NextOpsNotInReturn
 from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
 
 
@@ -219,10 +219,10 @@ def test_return_does_not_match_next() -> None:
             return "maixn" # this is a typo!
     """
 
-    with pytest.raises(ShelleyPyError) as exc_info:
+    with pytest.raises(ReturnMatchesNext) as exc_info:
         py2shy(app)
 
-    assert str(exc_info.value.msg) == "Return names ['maixn'] do not match possible next operations ['main']!"
+    assert str(exc_info.value.msg) == "Return names ['maixn'] are not listed in the next operations!"
     assert exc_info.value.lineno == 9
 
 
@@ -242,8 +242,65 @@ def test_return_does_not_match_next_v2() -> None:
             return "main"
     """
 
-    with pytest.raises(ShelleyPyError) as exc_info:
+    with pytest.raises(ReturnMatchesNext) as exc_info:
         py2shy(app)
 
-    assert str(exc_info.value.msg) == "Return names ['main'] do not match possible next operations []!"
+    assert str(exc_info.value.msg) == "Return names ['main'] are not listed in the next operations!"
     assert exc_info.value.lineno == 9
+
+
+def test_return_does_not_match_next_v3() -> None:
+    """
+    All return values must coincide with the @next annotation
+    """
+
+    py_src = """
+    @system(uses={"v1": "Valve"})
+    class App:
+        def __init__(self):
+            self.v1 = Valve()
+
+        @operation(initial=True, next=["stop"])
+        def start(self):
+            self.v1.on()
+            return "stop"
+
+        @operation(final=True, next=["stop"]) # ERROR HERE
+        def stop(self):
+            self.v1.on()                
+            return "start" # AND HERE
+    """
+
+    with pytest.raises(ReturnMatchesNext) as exc_info:
+        py2shy(py_src)
+
+    assert str(exc_info.value.msg) == "Return names ['start'] are not listed in the next operations!"
+    assert exc_info.value.lineno == 15
+
+def test_next_against_return() -> None:
+    """
+    Every value in the @next annotation must be used in at least one return
+    """
+
+    py_src = """
+    @system(uses={"v1": "Valve"})
+    class App:
+        def __init__(self):
+            self.v1 = Valve()
+
+        @operation(initial=True, next=["start", "stop"])
+        def start(self):
+            self.v1.on()
+            return "stop"
+
+        @operation(final=True, next=["start"]) # ERROR HERE
+        def stop(self):
+            self.v1.on()                
+            return "start" # AND HERE
+    """
+
+    with pytest.raises(NextOpsNotInReturn) as exc_info:
+        py2shy(py_src)
+
+    assert str(exc_info.value.msg) == "Next operations {'start'} do not have a corresponding return!"
+    assert exc_info.value.lineno == 7

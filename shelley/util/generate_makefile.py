@@ -91,9 +91,7 @@ def create_parser() -> argparse.ArgumentParser:
 
 
 def generate_makefile_content(
-    example_path: Path,
-    uses_path: Optional[Path] = None,
-    optimize: bool = False
+    example_path: Path, uses_path: Optional[Path] = None, optimize: bool = False
 ):
     python_files: List[Path] = _collect_py_files(example_path)
     logger.debug("Found python files: {0}".format(python_files))
@@ -188,7 +186,9 @@ def generate_makefile_content(
         makefile_content = makefile_content.replace("$$CLEAN_EXT$$", default_clean_ext)
 
         if optimize:
-            makefile_content = makefile_content.replace("$$PYTHON_OPTIMIZE$$", "--optimize")
+            makefile_content = makefile_content.replace(
+                "$$PYTHON_OPTIMIZE$$", "--optimize"
+            )
         else:
             makefile_content = makefile_content.replace("$$PYTHON_OPTIMIZE$$", "")
 
@@ -341,8 +341,10 @@ Timer: timer.scy
 #     assert exclude_files_list == ["xx.shy", "yy.mk", "zz.shy", "kk.mk"]
 
 
-def run(example_path: str, uses_file_path: str, optimize:bool = False):
-    makefile_content: str = generate_makefile_content(example_path, uses_file_path, optimize)
+def run(example_path: str, uses_file_path: str, optimize: bool = False):
+    makefile_content: str = generate_makefile_content(
+        example_path, uses_file_path, optimize
+    )
     makefile_path: Path = example_path / "Makefile"
 
     with makefile_path.open("w") as f:

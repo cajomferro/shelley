@@ -30,7 +30,7 @@ class App:
         self.c.boot()
         if TEST_MODE is False:
             match self.c.try_update():
-                case "c.update_ok":
+                case "update_ok":
                     self.c.update_ok()
                     self.c.follow_new_plan()
                     return "run"

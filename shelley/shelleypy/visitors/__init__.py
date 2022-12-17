@@ -78,12 +78,12 @@ class VisitorHelper:
             )
 
     def context_system_init(
-        self,
-        name: str,
-        uses: Dict[str, str],
-        system_claims: List[str],
-        integration_claims: List[str],
-        subsystem_claims: List[str],
+            self,
+            name: str,
+            uses: Dict[str, str],
+            system_claims: List[str],
+            integration_claims: List[str],
+            subsystem_claims: List[str],
     ):
         self.device.name = name
 
@@ -166,40 +166,40 @@ class VisitorHelper:
         return return_names_set
 
     def context_if_end(self, save_rule, left_rule, lineno: int):
-        single_branch: bool = True
+        # right_rule = self.copy_current_rule()
+        # # self.update_current_rule(save_rule)
+        #
+        # if isinstance(left_rule, TriggerRuleFired):
+        #     next_rule = right_rule
+        # elif isinstance(right_rule, TriggerRuleFired):
+        #     next_rule = left_rule
+        # else:
+        #     next_rule = TriggerRuleChoice()
+        #     next_rule.choices.extend([left_rule, right_rule])
+        #
+        # # TODO: explain this
+        # match self.current_rule:
+        #     case TriggerRuleFired():
+        #         self.update_current_rule(next_rule)
+        #     case TriggerRule():  # any other type of rule
+        #         self.update_current_rule(
+        #             TriggerRuleSequence(save_rule, next_rule)
+        #         )
+        #
+        # match self.n_returns:
+        #     case 2:  # assuming both if/else have return statements
+        #         for op_name in self.collect_extra_ops.keys():
+        #             try:
+        #                 old_rule = self.collect_extra_ops[op_name]["rules"]
+        #                 new_rule = TriggerRuleSequence(save_rule, old_rule)
+        #                 self.collect_extra_ops[op_name].update({"rules": new_rule})
+        #             except KeyError:
+        #                 pass
+        #     case 1:
+        #         raise ShelleyPyError(lineno, ShelleyPyError.IF_ELSE_MISSING_RETURN)
 
-        right_rule = self.copy_current_rule()
-        self.update_current_rule(save_rule)
-
-        if isinstance(left_rule, TriggerRuleFired):
-            next_rule = right_rule
-        elif isinstance(right_rule, TriggerRuleFired):
-            next_rule = left_rule
-        else:
-            single_branch = False
-            next_rule = TriggerRuleChoice()
-            next_rule.choices.extend([left_rule, right_rule])
-
-        # TODO: explain this
-        match self.current_rule:
-            case TriggerRuleFired():
-                self.update_current_rule(next_rule)
-            case TriggerRule():  # any other type of rule
-                self.update_current_rule(
-                    TriggerRuleSequence(self.current_rule, next_rule)
-                )
-
-        match self.n_returns:
-            case 2:  # assuming both if/else have return statements
-                for op_name in self.collect_extra_ops.keys():
-                    try:
-                        old_rule = self.collect_extra_ops[op_name]["rules"]
-                        new_rule = TriggerRuleSequence(save_rule, old_rule)
-                        self.collect_extra_ops[op_name].update({"rules": new_rule})
-                    except KeyError:
-                        pass
-            case 1:
-                raise ShelleyPyError(lineno, ShelleyPyError.IF_ELSE_MISSING_RETURN)
+        if self.n_returns < 2:
+            raise ShelleyPyError(lineno, ShelleyPyError.IF_ELSE_MISSING_RETURN)
 
         logger.debug(f"Extra ops: {self.collect_extra_ops}")
 
@@ -207,12 +207,12 @@ class VisitorHelper:
         return self.copy_current_rule()
 
     def register_new_operation(
-        self,
-        op_name: str,
-        is_initial=False,
-        is_final=False,
-        next_ops: Optional[List[str]] = None,
-        rules: Optional[TriggerRule] = None,
+            self,
+            op_name: str,
+            is_initial=False,
+            is_final=False,
+            next_ops: Optional[List[str]] = None,
+            rules: Optional[TriggerRule] = None,
     ):
 
         if next_ops is None:
@@ -303,6 +303,7 @@ class VisitorHelper:
         return copy.copy(self.current_match_call)
 
     def update_current_rule(self, rule: Optional[TriggerRule] = None):
+        logger.debug("Updating current rule...")
         if rule is None:
             rule = TriggerRuleFired()
         self.current_rule = rule

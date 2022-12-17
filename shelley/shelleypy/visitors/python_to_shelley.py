@@ -234,6 +234,7 @@ class Python2ShelleyVisitor(NodeNG):
     def visit_call(self, node: Call):
         logger.debug("Entering call")
         # logger.debug(node)
+        # logger.debug(node.func)
 
         # TODO: improve this code?
         try:
@@ -253,7 +254,7 @@ class Python2ShelleyVisitor(NodeNG):
         """
         # TODO: elif is currently not supported!
         """
-        logger.debug("entering if")
+        logger.debug("Entering if")
         # logger.debug(node)
 
         saved_current_rule = self.visitor_helper.copy_current_rule()
@@ -261,9 +262,9 @@ class Python2ShelleyVisitor(NodeNG):
 
         for if_body_node in node.body:
             if_body_node.accept(self)
-        logger.debug("leaving if")
+        logger.debug("Leaving if")
 
-        logger.debug("entering else")
+        logger.debug("Entering else")
         left_rule = self.visitor_helper.copy_current_rule()
         self.visitor_helper.update_current_rule(saved_current_rule)
 
@@ -271,9 +272,9 @@ class Python2ShelleyVisitor(NodeNG):
             raise ShelleyPyError(node.lineno, ShelleyPyError.ELSE_MISSING)
         for else_body_node in node.orelse:
             else_body_node.accept(self)
-        logger.debug("leaving else")
+        logger.debug("Leaving else")
 
-        logger.debug("leaving if/else")
+        logger.debug("Leaving if/else")
         self.visitor_helper.context_if_end(saved_current_rule, left_rule, node.lineno)
 
     def visit_for(self, node: For):

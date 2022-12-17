@@ -177,3 +177,75 @@ def test_app_v3() -> None:
     print(shy)
 
     assert shy == expected_shy
+
+
+def test_elif() -> None:
+    """
+    Simple return inside if/else
+    """
+
+    app_v1_py = """
+    @system(uses={"v1": "Valve", "v2": "Valve", "v3": "Valve"})
+    class App:
+        def __init__(self):
+            self.v1 = Valve()
+            self.v2 = Valve()
+            self.v3 = Valve()
+
+        @operation(initial=True, next=["stop_v1", "stop_v2", "stop_v3"])
+        def main(self, valve_name):
+            if valve_name == 'v1':
+                self.v1.on()
+                return "stop_v1" 
+            elif valve_name == 'v2':
+                self.v2.on()
+                return "stop_v2"
+            else:
+                self.v3.on()
+                return "stop_v3"
+
+        @operation(final=True, next=["main"])    
+        def stop_v1(self):
+            self.v1.off()
+            return "main"
+
+        @operation(final=True, next=["main"])
+        def stop_v2(self):
+            self.v2.off()
+            return "main"
+            
+        @operation(final=True, next=["main"])
+        def stop_v3(self):
+            self.v3.off()
+            return "main"            
+    """
+
+    shy = py2shy(app_v1_py)
+
+    expected_shy = """App (v1: Valve, v2: Valve, v3: Valve) {
+ main_1 -> stop_v1 {
+  v1.on; 
+ }
+ main_2 -> stop_v2 {
+  v2.on; 
+ }
+ main_3 -> stop_v3 {
+  v3.on; 
+ }
+ initial main -> main_1, main_2, main_3 {}
+ final stop_v1 -> main {
+  v1.off; 
+ }
+ final stop_v2 -> main {
+  v2.off; 
+ }
+ final stop_v3 -> main {
+  v3.off; 
+ }
+
+}
+""".strip()
+
+    print(shy)
+
+    assert shy == expected_shy

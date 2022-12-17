@@ -1,8 +1,7 @@
 import logging
 from dataclasses import dataclass, field
-from typing import Any, List
 from pathlib import Path
-from shelley.ast.devices import Device
+from typing import Any, List, Dict
 
 from astroid import List as ListNG
 from astroid import (
@@ -24,6 +23,7 @@ from astroid import (
     NodeNG,
 )
 
+from shelley.ast.devices import Device
 from shelley.shelleypy.checker.exceptions import ShelleyPyError
 from shelley.shelleypy.visitors import ShelleyCall
 from shelley.shelleypy.visitors import ShelleyOpDecorator
@@ -59,6 +59,10 @@ class MethodDecoratorsVisitor(NodeNG):
 @dataclass
 class ClassDecoratorsVisitor(NodeNG):
     external_only: bool
+    uses: Dict[str, str] = field(default_factory=dict)
+    system_claims: List[str] = field(default_factory=list)
+    integration_claims: List[str] = field(default_factory=list)
+    subsystem_claims: List[str] = field(default_factory=list)
 
     def visit_decorators(self, node: Decorators) -> Any:
         for node in node.nodes:
@@ -67,10 +71,6 @@ class ClassDecoratorsVisitor(NodeNG):
     def visit_call(self, node: Call) -> Any:
         logger.debug(f"Decorator Call: {node.func.name}")
         decorator_name = node.func.name
-        self.uses = dict()
-        self.system_claims = []
-        self.integration_claims = []
-        self.subsystem_claims = []
         match decorator_name:
             case "claim":
                 claim: str = node.args[0].value
@@ -87,7 +87,7 @@ class ClassDecoratorsVisitor(NodeNG):
                     name = parts[1]  # get subystem name from formula
                     parts = parts[3:]  # remove 'subsystem XX check' from string
                     claim = " ".join(parts)  # re-join by spaces
-                    self.subsystem_claims.append(claim)
+                    self.subsystem_claims.append((name, claim))
             case "system":
                 for kw in node.keywords:
                     match kw.arg:
@@ -251,8 +251,7 @@ class Python2ShelleyVisitor(NodeNG):
         logger.debug(f"Found call: {str(self.visitor_helper.last_call)}")
 
     def visit_if(self, node: If):
-        """
-        """
+        """ """
         logger.debug("Entering if")
         # logger.debug(node)
 

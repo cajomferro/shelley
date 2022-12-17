@@ -1,11 +1,10 @@
 import copy
 import logging
 from dataclasses import dataclass, field
-from typing import Dict, Optional, List, Any, Set
+from typing import Dict, Optional, Any
 
 from lark import Lark
 
-from shelley.shelleypy.checker.exceptions import *
 from shelley.ast.behaviors import Behaviors
 from shelley.ast.components import Components, Component
 from shelley.ast.devices import Device, discover_uses
@@ -14,7 +13,6 @@ from shelley.ast.events import Events
 from shelley.ast.rules import (
     TriggerRuleEvent,
     TriggerRuleSequence,
-    TriggerRuleChoice,
     TriggerRuleFired,
     TriggerRuleLoop,
 )
@@ -22,6 +20,7 @@ from shelley.ast.triggers import TriggerRule
 from shelley.ast.triggers import Triggers
 from shelley.parsers import ltlf_lark_parser
 from shelley.parsers.ltlf_lark_parser import LTLParser
+from shelley.shelleypy.checker.exceptions import *
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
@@ -78,12 +77,12 @@ class VisitorHelper:
             )
 
     def context_system_init(
-            self,
-            name: str,
-            uses: Dict[str, str],
-            system_claims: List[str],
-            integration_claims: List[str],
-            subsystem_claims: List[str],
+        self,
+        name: str,
+        uses: Dict[str, str],
+        system_claims: List[str],
+        integration_claims: List[str],
+        subsystem_claims: List[str],
     ):
         self.device.name = name
 
@@ -103,9 +102,9 @@ class VisitorHelper:
             formula = LTLParser().transform(ltlf_parser(claim))
             self.device.integration_formulae.append(formula)
 
-        for claim in subsystem_claims:
+        for subsystem_name, claim in subsystem_claims:
             formula = LTLParser().transform(ltlf_parser(claim))
-            self.device.subsystem_formulae.append((name, formula))
+            self.device.subsystem_formulae.append((subsystem_name, formula))
 
     def context_operation_init(self, decorator: ShelleyOpDecorator):
         self.update_current_rule()
@@ -169,12 +168,12 @@ class VisitorHelper:
         return self.copy_current_rule()
 
     def register_new_operation(
-            self,
-            op_name: str,
-            is_initial=False,
-            is_final=False,
-            next_ops: Optional[List[str]] = None,
-            rules: Optional[TriggerRule] = None,
+        self,
+        op_name: str,
+        is_initial=False,
+        is_final=False,
+        next_ops: Optional[List[str]] = None,
+        rules: Optional[TriggerRule] = None,
     ):
 
         if next_ops is None:

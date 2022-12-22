@@ -9,6 +9,8 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("generate_makefile")
 
+FULL_SYSTEM_SUFFIX = "extended"
+
 MAKEFILE_TEMPLATE = """include ../common.mk
 
 MAKEFLAGS += --no-print-directory
@@ -140,17 +142,17 @@ def generate_makefile_content(
             uses_parents.append(str(parent))
             deps += f"	$(MAKE) -C {parent} {use_basename}.scy\n"
             if python_files:
-                deps += f"	$(MAKE) -C {parent} integration_{use_basename}.scy\n"
+                deps += f"	$(MAKE) -C {parent} {use_basename}_{FULL_SYSTEM_SUFFIX}.scy\n"
             clean_deps += f"	$(MAKE) -C {parent} clean\n"
             stats += f"	$(MAKE) -C {parent} {use_basename}-stats.json\n"
         else:
             deps += f"	$(MAKE) {use_basename}.scy\n"
             if python_files:
-                deps += f"	$(MAKE) integration_{use_basename}.scy\n"
+                deps += f"	$(MAKE) {use_basename}_{FULL_SYSTEM_SUFFIX}.scy\n"
             stats += f"	$(MAKE) {use_basename}-stats.json\n"
 
     if python_files:
-        deps += f"	$(MAKE) integration_{Path(main_source_filename).stem}.scy"
+        deps += f"	$(MAKE) {Path(main_source_filename).stem}_{FULL_SYSTEM_SUFFIX}.scy"
     else:
         deps = deps[:-1]  # remove extra newline
 

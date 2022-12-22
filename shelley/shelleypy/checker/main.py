@@ -13,6 +13,8 @@ from shelley.shelleypy.checker.optimize import optimize as fun_optimize
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
 
+FULL_SYSTEM_SUFFIX = "extended"
+
 
 def get_command_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Compile shelley files")
@@ -64,7 +66,7 @@ def check(src_path: Path, output_path: Path, optimize=False, use_old_checker=Fal
         if optimize:
             fun_optimize(device)
         integration_output_path: Path = Path(
-            output_path.parent, f"integration_{output_path.name}"
+            output_path.parent, f"{output_path.stem}_{FULL_SYSTEM_SUFFIX}{output_path.suffix}"
         )
         shelley2lark(device, output_path=integration_output_path)
 

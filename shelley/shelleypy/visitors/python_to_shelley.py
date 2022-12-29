@@ -10,6 +10,9 @@ from astroid import (
     Tuple,
     Const,
     For,
+    While,
+    Assign,
+    AugAssign,
     Await,
     Call,
     Return,
@@ -278,8 +281,10 @@ class Python2ShelleyVisitor(NodeNG):
 
     def visit_for(self, node: For):
         logger.debug("entering for")
-        logger.debug(node)
-        save_rule = self.visitor_helper.context_for_init()
+        # logger.debug(node)
+        save_rule = self.visitor_helper.copy_current_rule()
+        self.visitor_helper.update_current_rule()  # clear
+
         for node_for_body in node.body:
             node_for_body.accept(self)
 
@@ -290,6 +295,29 @@ class Python2ShelleyVisitor(NodeNG):
 
         self.visitor_helper.register_new_for(save_rule)
         logger.debug("leaving for")
+
+    def visit_while(self, node: While):
+        logger.debug("entering while")
+        # logger.debug(node)
+        save_rule = self.visitor_helper.copy_current_rule()
+        self.visitor_helper.update_current_rule()  # clear
+
+        for node_while_body in node.body:
+            node_while_body.accept(self)
+
+        if self.visitor_helper.n_returns:
+            raise ShelleyPyError(
+                node.lineno, "Return statements are not allowed inside loops!"
+            )
+
+        self.visitor_helper.register_new_for(save_rule)
+        logger.debug("leaving while")
+
+    def visit_augassign(self, node: Assign):
+        pass
+
+    def visit_assign(self, node: Assign):
+        pass
 
     def visit_expr(self, node: Expr):
         # logger.debug(node)

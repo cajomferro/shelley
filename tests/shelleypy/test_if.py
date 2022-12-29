@@ -66,7 +66,7 @@ def test_app_v1() -> None:
 }
 """.strip()
 
-    print(shy)
+    # print(shy)
 
     assert shy == expected_shy
 
@@ -174,7 +174,7 @@ def test_app_v3() -> None:
 }
 """.strip()
 
-    print(shy)
+    # print(shy)
 
     assert shy == expected_shy
 
@@ -246,6 +246,6 @@ def test_elif() -> None:
 }
 """.strip()
 
-    print(shy)
+    # print(shy)
 
     assert shy == expected_shy

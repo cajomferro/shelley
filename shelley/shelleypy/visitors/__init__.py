@@ -164,9 +164,6 @@ class VisitorHelper:
                 return_names_set.add(return_name)
         return return_names_set
 
-    def context_for_init(self):
-        return self.copy_current_rule()
-
     def register_new_operation(
         self,
         op_name: str,

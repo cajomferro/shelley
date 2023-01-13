@@ -156,9 +156,11 @@ class Python2ShelleyVisitor(NodeNG):
         node.decorators.accept(decorators_visitor)
 
         if not decorators_visitor.decorator:
-            raise ShelleyPyError(
-                node.decorators.lineno, ShelleyPyError.DECORATOR_PARSE_ERROR
-            )
+            logger.debug(f"Skipping. This method is not annotated as an operation!")
+            return None
+            # raise ShelleyPyError(
+            #     node.decorators.lineno, ShelleyPyError.DECORATOR_PARSE_ERROR
+            # )
 
         decorator = decorators_visitor.decorator
 

@@ -6,7 +6,9 @@ from typing import Any, List, Dict
 from astroid import List as ListNG
 from astroid import (
     extract_node,
+    Compare,
     Pass,
+    Name,
     Tuple,
     Const,
     For,
@@ -258,6 +260,8 @@ class Python2ShelleyVisitor(NodeNG):
         logger.debug("Entering if")
         # logger.debug(node)
 
+        node.test.accept(self)  # test expression can be a subsys call
+
         saved_current_rule = self.visitor_helper.copy_current_rule()
 
         for if_body_node in node.body:
@@ -278,6 +282,12 @@ class Python2ShelleyVisitor(NodeNG):
             raise ShelleyPyError(node.lineno, ShelleyPyError.IF_ELSE_MISSING_RETURN)
 
         logger.debug("Leaving if/else")
+
+    def visit_name(self, node: Name):
+        pass
+
+    def visit_compare(self, node: Compare):
+        print(node)
 
     def visit_for(self, node: For):
         logger.debug("entering for")
@@ -317,7 +327,7 @@ class Python2ShelleyVisitor(NodeNG):
         pass
 
     def visit_assign(self, node: Assign):
-        pass
+        node.value.accept(self)
 
     def visit_expr(self, node: Expr):
         # logger.debug(node)

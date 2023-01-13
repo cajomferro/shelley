@@ -287,7 +287,7 @@ class Python2ShelleyVisitor(NodeNG):
         pass
 
     def visit_compare(self, node: Compare):
-        print(node)
+        pass
 
     def visit_for(self, node: For):
         logger.debug("entering for")

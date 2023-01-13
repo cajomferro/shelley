@@ -47,6 +47,9 @@ class MethodDecoratorsVisitor(NodeNG):
         for node in node.nodes:
             node.accept(self)
 
+    def visit_name(self, node: Name):
+        pass
+
     def visit_call(self, node: Call) -> Any:
         logger.debug(f"Method decorator: {node.func.name}")
         if node.func.name == "operation":

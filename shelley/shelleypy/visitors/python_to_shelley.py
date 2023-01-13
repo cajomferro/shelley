@@ -286,6 +286,9 @@ class Python2ShelleyVisitor(NodeNG):
     def visit_name(self, node: Name):
         pass
 
+    def visit_const(self, node: Const):
+        pass
+
     def visit_compare(self, node: Compare):
         pass
 

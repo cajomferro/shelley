@@ -303,13 +303,16 @@ class Python2ShelleyVisitor(NodeNG):
         save_rule = self.visitor_helper.copy_current_rule()
         self.visitor_helper.update_current_rule()  # clear
 
+        save_returns = self.visitor_helper.n_returns
+        self.visitor_helper.n_returns = 0
+
         for node_for_body in node.body:
             node_for_body.accept(self)
 
         if self.visitor_helper.n_returns:
-            raise ShelleyPyError(
-                node.lineno, "Return statements are not allowed inside loops!"
-            )
+            raise ShelleyPyError(node.lineno, ShelleyPyError.RETURN_INSIDE_LOOP)
+
+        self.visitor_helper.n_returns = save_returns
 
         self.visitor_helper.register_new_for(save_rule)
         logger.debug("leaving for")
@@ -320,13 +323,16 @@ class Python2ShelleyVisitor(NodeNG):
         save_rule = self.visitor_helper.copy_current_rule()
         self.visitor_helper.update_current_rule()  # clear
 
+        save_returns = self.visitor_helper.n_returns
+        self.visitor_helper.n_returns = 0
+
         for node_while_body in node.body:
             node_while_body.accept(self)
 
         if self.visitor_helper.n_returns:
-            raise ShelleyPyError(
-                node.lineno, "Return statements are not allowed inside loops!"
-            )
+            raise ShelleyPyError(node.lineno, ShelleyPyError.RETURN_INSIDE_LOOP)
+
+        self.visitor_helper.n_returns = save_returns
 
         self.visitor_helper.register_new_for(save_rule)
         logger.debug("leaving while")

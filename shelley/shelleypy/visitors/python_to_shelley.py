@@ -1,9 +1,10 @@
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, List, Dict
+from typing import Any, List, Dict, Union
 
 from astroid import List as ListNG
+from astroid.nodes.as_string import AsStringVisitor
 from astroid import (
     extract_node,
     Compare,
@@ -24,6 +25,7 @@ from astroid import (
     MatchCase,
     Decorators,
     FunctionDef,
+    AsyncFunctionDef,
     ClassDef,
     NodeNG,
 )
@@ -39,16 +41,13 @@ logger = logging.getLogger("shelleypy")
 
 
 @dataclass
-class MethodDecoratorsVisitor(NodeNG):
+class MethodDecoratorsVisitor(AsStringVisitor):
     method_name: str
     decorator: ShelleyOpDecorator = None
 
     def visit_decorators(self, node: Decorators) -> Any:
         for node in node.nodes:
             node.accept(self)
-
-    def visit_name(self, node: Name):
-        pass
 
     def visit_call(self, node: Call) -> Any:
         logger.debug(f"Method decorator: {node.func.name}")
@@ -65,7 +64,7 @@ class MethodDecoratorsVisitor(NodeNG):
 
 
 @dataclass
-class ClassDecoratorsVisitor(NodeNG):
+class ClassDecoratorsVisitor(AsStringVisitor):
     external_only: bool
     uses: Dict[str, str] = field(default_factory=dict)
     system_claims: List[str] = field(default_factory=list)
@@ -107,7 +106,7 @@ class ClassDecoratorsVisitor(NodeNG):
 
 
 @dataclass
-class Python2ShelleyVisitor(NodeNG):
+class Python2ShelleyVisitor(AsStringVisitor):
     visitor_helper: VisitorHelper = field(init=False)
     external_only: bool = False
 
@@ -140,7 +139,13 @@ class Python2ShelleyVisitor(NodeNG):
         for node_body in node.body:  # process methods
             node_body.accept(self)
 
+    def visit_asyncfunctiondef(self, node: AsyncFunctionDef) -> Any:
+        self._handle_functiondef(node)
+
     def visit_functiondef(self, node: FunctionDef) -> Any:
+        self._handle_functiondef(node)
+
+    def _handle_functiondef(self, node: Union[FunctionDef, AsyncFunctionDef]):
         logger.debug(f"Entering method: {node.name}")
         # logger.debug(node)
 
@@ -172,7 +177,7 @@ class Python2ShelleyVisitor(NodeNG):
                 next_ops=decorator.next_ops,
             )
         else:  # system that contains subsystems, do inspect body
-            assert type(node) == FunctionDef  # this is just a safe check
+            assert type(node) in [FunctionDef, AsyncFunctionDef]  # this is just a safe check
 
             self.visitor_helper.context_operation_init(decorator)
 
@@ -191,12 +196,15 @@ class Python2ShelleyVisitor(NodeNG):
         self.n_returns = (
             0  # start counting returns, we must have a return for each match case
         )
+        subject = node.subject
+        if isinstance(subject, Await):
+            subject = subject.value
 
-        if not isinstance(node.subject, Call):  # check type of match call
-            raise ShelleyPyError(node.subject.lineno, ShelleyPyError.MATCH_CALL_TYPE)
+        if not isinstance(subject, Call):  # check type of match call
+            raise ShelleyPyError(subject.lineno, ShelleyPyError.MATCH_CALL_TYPE)
 
         # match call
-        node.subject.accept(self)
+        subject.accept(self)
 
         saved_current_rule = self.visitor_helper.copy_current_rule()
 
@@ -288,15 +296,6 @@ class Python2ShelleyVisitor(NodeNG):
 
         logger.debug("Leaving if/else")
 
-    def visit_name(self, node: Name):
-        pass
-
-    def visit_const(self, node: Const):
-        pass
-
-    def visit_compare(self, node: Compare):
-        pass
-
     def visit_for(self, node: For):
         logger.debug("entering for")
         # logger.debug(node)
@@ -337,16 +336,6 @@ class Python2ShelleyVisitor(NodeNG):
         self.visitor_helper.register_new_for(save_rule)
         logger.debug("leaving while")
 
-    def visit_augassign(self, node: Assign):
-        pass
-
-    def visit_assign(self, node: Assign):
-        node.value.accept(self)
-
-    def visit_expr(self, node: Expr):
-        # logger.debug(node)
-        node.value.accept(self)
-
     def visit_return(self, node: Return):
         """
         For now, let's create a Shelley operation for each return.
@@ -358,9 +347,6 @@ class Python2ShelleyVisitor(NodeNG):
         return_next: List[str] = self._parse_return_value(node)
         logger.debug(f"Found return: {return_next}")
         self.visitor_helper.register_new_return(return_next, node.lineno)
-
-    def visit_pass(self, node: Pass):
-        pass  # TODO: any consequences here??
 
     @staticmethod
     def _get_case_name(match_case_node: MatchCase):

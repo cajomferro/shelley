@@ -70,8 +70,18 @@ def check(src_path: Path, output_path: Path, optimize=False, use_old_checker=Fal
         )
         shelley2lark(device, output_path=integration_output_path)
 
+        # from shelley.ast.visitors.pprint import PrettyPrintVisitor
+        # visitor = PrettyPrintVisitor(components=device.components)
+        # device.accept(visitor)
+        # logger.info(visitor.result.strip())
+
         device = python2shelley(src_path, external_only=True)
         shelley2lark(device, output_path=output_path)
+
+        # visitor = PrettyPrintVisitor(components=device.components)
+        # device.accept(visitor)
+        # logger.info(visitor.result.strip())
+
     except ShelleyPyError as err:
         exit_with_error(err.lineno, err.msg)
 

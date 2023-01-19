@@ -203,17 +203,20 @@ def create_fsm_system_model(
 def check_system(dev: Device, fsm: Path, smv: Path, system_validity: bool = True):
     mc = ModelChecker(smv)
     spec = Spec([], "SYSTEM CHECKS")
-    for f in dev.system_formulae:
-        # Since the model is CTL-compatible, then we need to prefix each
-        # LTL formula with a next, so we skip the dummy initial state.
-        spec.formulae.append(LTL(Next(LTL_F(f))))
     mc.add(spec)
+    for f in dev.system_formulae:
+        if system_validity:
+            # Since the model is CTL-compatible, then we need to prefix each
+            # LTL formula with a next, so we skip the dummy initial state.
+            spec.formulae.append(LTL(Next(LTL_F(f))))
+        else:
+            spec.formulae.append(LTL_F(f))
     if system_validity:
         logger.debug(f"Generating system specs: {fsm}")
         mc.add(ltlf.generate_system_spec(dev))
     if len(mc) > 0:
         logger.debug(f"Creating NuSMV system model: {smv}")
-        shelleyv.fsm2smv(fsm, smv, ctl_compatible=True)
+        shelleyv.fsm2smv(fsm, smv, ctl_compatible=system_validity)
         mc.run()
     else:
         logger.debug("No model checking needed for system.")

@@ -210,15 +210,17 @@ class Python2ShelleyVisitor(AsStringVisitor):
         subject.accept(self)
 
         saved_current_rule = self.vh.copy_current_rule()
-
         self.vh.current_match_call = self.vh.last_call
+        self.vh.update_temp_rule()  # reset
 
         for node_case in node.cases:
             node_case.accept(self)
             self.vh.update_current_rule(saved_current_rule)  # reset
+            self.vh.save_temp_rule()  # save and reset
 
         # after match call and all cases
         self.vh.update_current_rule(saved_current_rule)  # reset
+        self.vh.register_xor_call()
         logger.debug("Leaving match")
 
     def visit_matchcase(self, match_case_node: MatchCase):
@@ -349,6 +351,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # logger.debug(node)
         return_next: List[str] = self._parse_return_value(node)
         logger.debug(f"Found return: {return_next}")
+        self.vh.update_temp_rule()  # clear because a return was found
         self.vh.register_new_return(return_next, node.lineno)
 
     @staticmethod

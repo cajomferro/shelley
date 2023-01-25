@@ -13,6 +13,7 @@ from shelley.ast.events import Events
 from shelley.ast.rules import (
     TriggerRuleEvent,
     TriggerRuleSequence,
+    TriggerRuleChoice,
     TriggerRuleFired,
     TriggerRuleLoop,
 )
@@ -50,6 +51,8 @@ class VisitorHelper:
     external_only: bool = False
     match_found: bool = False  # useful for verifying missing returns
     current_rule: TriggerRule = TriggerRuleFired()
+    current_temp_rule: TriggerRule = TriggerRuleFired()
+    match_temp_rules: TriggerRuleChoice = TriggerRuleChoice()
     current_match_call: Optional[
         ShelleyCall
     ] = None  # useful for checking that the first match case matches the subsystem of the match call
@@ -226,6 +229,34 @@ class VisitorHelper:
                     )
                 )
 
+        match self.current_temp_rule:
+            case TriggerRuleFired():
+                self.update_temp_rule(
+                    TriggerRuleEvent(component, self.last_call.subsystem_call)
+                )
+            case TriggerRule():  # any other type of rule
+                self.update_temp_rule(
+                    TriggerRuleSequence(
+                        self.current_temp_rule,
+                        TriggerRuleEvent(component, self.last_call.subsystem_call),
+                    )
+                )
+
+    def register_xor_call(self):
+        if len(self.match_temp_rules.choices):
+            # print(self.match_temp_rules)
+            # print(self.current_rule)
+            match self.current_rule:
+                case TriggerRuleFired():
+                    self.update_current_rule(self.match_temp_rules)
+                case TriggerRule():  # any other type of rule
+                    self.update_current_rule(
+                        TriggerRuleSequence(self.current_rule, self.match_temp_rules)
+                    )
+            # print(self.current_rule)
+
+        self.clear_match_rules()
+
     def register_new_return(self, return_next: List[str], lineno: int):
         # TODO: create a visitor to find the leftmost rule and then, if not None, use that name for the return, else use the index
         self.current_return_op_name: str = (
@@ -265,4 +296,18 @@ class VisitorHelper:
         if rule is None:
             rule = TriggerRuleFired()
         self.current_rule = rule
-        logger.debug(f"Current rule: {self.current_rule}")
+
+    def update_temp_rule(self, temp_rule: Optional[TriggerRule] = None):
+        if temp_rule is None:
+            temp_rule = TriggerRuleFired()
+        self.current_temp_rule = temp_rule
+        logger.debug(f"Current temp rule: {self.current_rule}")
+
+    def save_temp_rule(self):
+        # print(self.current_temp_rule)
+        self.match_temp_rules.add_choice(self.current_temp_rule)
+        self.update_temp_rule()
+
+    def clear_match_rules(self):
+        self.match_temp_rules = TriggerRuleChoice()
+        self.update_temp_rule()

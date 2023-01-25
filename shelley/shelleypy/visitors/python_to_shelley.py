@@ -111,7 +111,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
     external_only: bool = False
 
     def __post_init__(self):
-        self.visitor_helper = VisitorHelper(external_only=self.external_only)
+        self.vh = VisitorHelper(external_only=self.external_only)
 
     def py2shy(self, py_src) -> Device:
         if isinstance(py_src, Path):
@@ -119,16 +119,16 @@ class Python2ShelleyVisitor(AsStringVisitor):
                 py_src = f.read()
         tree = extract_node(py_src)
         tree.accept(self)
-        return self.visitor_helper.device
+        return self.vh.device
 
     def visit_classdef(self, node: ClassDef) -> Any:
 
-        logger.debug(f"System name: {self.visitor_helper.device.name}")
+        logger.debug(f"System name: {self.vh.device.name}")
 
-        decorators_visitor = ClassDecoratorsVisitor(self.visitor_helper.external_only)
+        decorators_visitor = ClassDecoratorsVisitor(self.vh.external_only)
         node.decorators.accept(decorators_visitor)
 
-        self.visitor_helper.context_system_init(
+        self.vh.context_system_init(
             node.name,
             decorators_visitor.uses,
             decorators_visitor.system_claims,
@@ -150,7 +150,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # logger.debug(node)
 
         # TODO: improve this
-        if node.name in self.visitor_helper.device.events.list_str():
+        if node.name in self.vh.device.events.list_str():
             raise ShelleyPyError(node.lineno, ShelleyPyError.DUPLICATED_METHOD)
 
         if node.decorators is None:
@@ -169,22 +169,25 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
         decorator = decorators_visitor.decorator
 
-        if self.visitor_helper.is_base_system():  # base system, do not inspect body
-            self.visitor_helper.register_new_operation(
+        if self.vh.is_base_system():  # base system, do not inspect body
+            self.vh.register_new_operation(
                 op_name=decorator.op_name,
                 is_initial=decorator.is_initial,
                 is_final=decorator.is_final,
                 next_ops=decorator.next_ops,
             )
         else:  # system that contains subsystems, do inspect body
-            assert type(node) in [FunctionDef, AsyncFunctionDef]  # this is just a safe check
+            assert type(node) in [
+                FunctionDef,
+                AsyncFunctionDef,
+            ]  # this is just a safe check
 
-            self.visitor_helper.context_operation_init(decorator)
+            self.vh.context_operation_init(decorator)
 
             for node_body in node.body:
                 node_body.accept(self)
 
-            self.visitor_helper.context_operation_end(node.lineno)
+            self.vh.context_operation_end(node.lineno)
 
         logger.debug(f"Leaving method: {node.name}")
 
@@ -206,16 +209,16 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # match call
         subject.accept(self)
 
-        saved_current_rule = self.visitor_helper.copy_current_rule()
+        saved_current_rule = self.vh.copy_current_rule()
 
-        self.visitor_helper.current_match_call = self.visitor_helper.last_call
+        self.vh.current_match_call = self.vh.last_call
 
         for node_case in node.cases:
             node_case.accept(self)
-            self.visitor_helper.update_current_rule(saved_current_rule)  # reset
+            self.vh.update_current_rule(saved_current_rule)  # reset
 
         # after match call and all cases
-        # self.visitor_helper.update_current_rule(saved_current_rule)  # reset
+        self.vh.update_current_rule(saved_current_rule)  # reset
         logger.debug("Leaving match")
 
     def visit_matchcase(self, match_case_node: MatchCase):
@@ -223,7 +226,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # logger.debug(match_case_node)
 
         # before each case
-        saved_match_call = self.visitor_helper.copy_match_call()
+        saved_match_call = self.vh.copy_match_call()
 
         # inspect case body
         first_node = True
@@ -231,14 +234,14 @@ class Python2ShelleyVisitor(AsStringVisitor):
             matchcase_body_node.accept(self)
             if first_node:
                 first_node = False
-                self.visitor_helper.check_case_first_node(
+                self.vh.check_case_first_node(
                     self._get_case_name(match_case_node), matchcase_body_node.lineno
                 )
 
         # after each case
-        self.visitor_helper.current_match_call = saved_match_call
+        self.vh.current_match_call = saved_match_call
 
-        if not self.visitor_helper.n_returns:
+        if not self.vh.n_returns:
             raise ShelleyPyError(
                 match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN
             )
@@ -256,7 +259,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
         # TODO: improve this code?
         try:
-            self.visitor_helper.last_call = ShelleyCall(
+            self.vh.last_call = ShelleyCall(
                 exprself=node.func.expr.expr.name,
                 subsystem_call=node.func.attrname,
                 subsystem_instance=node.func.expr.attrname,
@@ -265,8 +268,8 @@ class Python2ShelleyVisitor(AsStringVisitor):
             logger.debug(f"    Ignoring Call: {node.func.repr_tree()}")
             return
 
-        self.visitor_helper.register_new_call()
-        logger.debug(f"Found call: {str(self.visitor_helper.last_call)}")
+        self.vh.register_new_call()
+        logger.debug(f"Found call: {str(self.vh.last_call)}")
 
     def visit_if(self, node: If):
         """ """
@@ -275,14 +278,14 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
         node.test.accept(self)  # test expression can be a subsys call
 
-        saved_current_rule = self.visitor_helper.copy_current_rule()
+        saved_current_rule = self.vh.copy_current_rule()
 
         for if_body_node in node.body:
             if_body_node.accept(self)
         logger.debug("Leaving if")
 
         logger.debug("Entering else")
-        self.visitor_helper.update_current_rule(saved_current_rule)
+        self.vh.update_current_rule(saved_current_rule)
 
         if len(node.orelse) == 0:
             raise ShelleyPyError(node.lineno, ShelleyPyError.ELSE_MISSING)
@@ -291,7 +294,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
             else_body_node.accept(self)
         logger.debug("Leaving else")
 
-        if self.visitor_helper.n_returns < 2:
+        if self.vh.n_returns < 2:
             raise ShelleyPyError(node.lineno, ShelleyPyError.IF_ELSE_MISSING_RETURN)
 
         logger.debug("Leaving if/else")
@@ -299,41 +302,41 @@ class Python2ShelleyVisitor(AsStringVisitor):
     def visit_for(self, node: For):
         logger.debug("entering for")
         # logger.debug(node)
-        save_rule = self.visitor_helper.copy_current_rule()
-        self.visitor_helper.update_current_rule()  # clear
+        save_rule = self.vh.copy_current_rule()
+        self.vh.update_current_rule()  # clear
 
-        save_returns = self.visitor_helper.n_returns
-        self.visitor_helper.n_returns = 0
+        save_returns = self.vh.n_returns
+        self.vh.n_returns = 0
 
         for node_for_body in node.body:
             node_for_body.accept(self)
 
-        if self.visitor_helper.n_returns:
+        if self.vh.n_returns:
             raise ShelleyPyError(node.lineno, ShelleyPyError.RETURN_INSIDE_LOOP)
 
-        self.visitor_helper.n_returns = save_returns
+        self.vh.n_returns = save_returns
 
-        self.visitor_helper.register_new_for(save_rule)
+        self.vh.register_new_for(save_rule)
         logger.debug("leaving for")
 
     def visit_while(self, node: While):
         logger.debug("entering while")
         # logger.debug(node)
-        save_rule = self.visitor_helper.copy_current_rule()
-        self.visitor_helper.update_current_rule()  # clear
+        save_rule = self.vh.copy_current_rule()
+        self.vh.update_current_rule()  # clear
 
-        save_returns = self.visitor_helper.n_returns
-        self.visitor_helper.n_returns = 0
+        save_returns = self.vh.n_returns
+        self.vh.n_returns = 0
 
         for node_while_body in node.body:
             node_while_body.accept(self)
 
-        if self.visitor_helper.n_returns:
+        if self.vh.n_returns:
             raise ShelleyPyError(node.lineno, ShelleyPyError.RETURN_INSIDE_LOOP)
 
-        self.visitor_helper.n_returns = save_returns
+        self.vh.n_returns = save_returns
 
-        self.visitor_helper.register_new_for(save_rule)
+        self.vh.register_new_for(save_rule)
         logger.debug("leaving while")
 
     def visit_return(self, node: Return):
@@ -346,7 +349,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # logger.debug(node)
         return_next: List[str] = self._parse_return_value(node)
         logger.debug(f"Found return: {return_next}")
-        self.visitor_helper.register_new_return(return_next, node.lineno)
+        self.vh.register_new_return(return_next, node.lineno)
 
     @staticmethod
     def _get_case_name(match_case_node: MatchCase):

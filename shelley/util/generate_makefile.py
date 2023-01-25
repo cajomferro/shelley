@@ -142,7 +142,9 @@ def generate_makefile_content(
             uses_parents.append(str(parent))
             deps += f"	$(MAKE) -C {parent} {use_basename}.scy\n"
             if python_files:
-                deps += f"	$(MAKE) -C {parent} {use_basename}_{FULL_SYSTEM_SUFFIX}.scy\n"
+                deps += (
+                    f"	$(MAKE) -C {parent} {use_basename}_{FULL_SYSTEM_SUFFIX}.scy\n"
+                )
             clean_deps += f"	$(MAKE) -C {parent} clean\n"
             stats += f"	$(MAKE) -C {parent} {use_basename}-stats.json\n"
         else:

@@ -66,7 +66,8 @@ def check(src_path: Path, output_path: Path, optimize=False, use_old_checker=Fal
         if optimize:
             fun_optimize(device)
         integration_output_path: Path = Path(
-            output_path.parent, f"{output_path.stem}_{FULL_SYSTEM_SUFFIX}{output_path.suffix}"
+            output_path.parent,
+            f"{output_path.stem}_{FULL_SYSTEM_SUFFIX}{output_path.suffix}",
         )
         shelley2lark(device, output_path=integration_output_path)
 

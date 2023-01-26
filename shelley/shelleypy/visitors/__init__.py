@@ -61,6 +61,7 @@ class VisitorHelper:
     current_op_decorator: ShelleyOpDecorator = None
     current_return_op_name: Optional[str] = None
     collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
+    track_matches: List[int] = field(default_factory=list)
 
     def __post_init__(self):
         self.device = Device(
@@ -287,10 +288,6 @@ class VisitorHelper:
         logger.debug("Current rule saved")
         return copy.copy(self.current_rule)
 
-    def copy_match_call(self):
-        logger.debug("Match call saved")
-        return copy.copy(self.current_match_call)
-
     def update_current_rule(self, rule: Optional[TriggerRule] = None):
         logger.debug("Updating current rule...")
         if rule is None:
@@ -301,13 +298,45 @@ class VisitorHelper:
         if temp_rule is None:
             temp_rule = TriggerRuleFired()
         self.current_temp_rule = temp_rule
-        logger.debug(f"Current temp rule: {self.current_rule}")
+        logger.debug(f"Current temp rule: {self.current_temp_rule}")
 
     def save_temp_rule(self):
-        # print(self.current_temp_rule)
         self.match_temp_rules.add_choice(self.current_temp_rule)
         self.update_temp_rule()
+
+    def restore_current_temp_rule(self, rule):
+        logger.debug("Match temp rule restored")
+        self.current_temp_rule = rule
+        self.update_temp_rule(
+            TriggerRuleSequence(self.current_temp_rule, self.match_temp_rules)
+        )  # append any found choice to temp rule
+        self.match_temp_rules = TriggerRuleChoice()
 
     def clear_match_rules(self):
         self.match_temp_rules = TriggerRuleChoice()
         self.update_temp_rule()
+
+    def set_match_call_to_last_call(self):
+        logger.debug("Match call copied")
+        self.current_match_call = self.last_call
+
+    def copy_current_temp_rule(self):
+        logger.debug("Current temp rule copied")
+        return copy.copy(self.current_temp_rule)
+
+    def copy_match_call(self):
+        logger.debug("Match call saved")
+        return copy.copy(self.current_match_call)
+
+    def restore_match_call(self, saved_match_call):
+        logger.debug("Match call restored")
+        self.current_match_call = saved_match_call
+
+    def match_put(self, match_line_nr):
+        self.track_matches.append(match_line_nr)
+
+    def match_pop(self):
+        return self.track_matches.pop()
+
+    def is_last_match(self):
+        return len(self.track_matches) == 1

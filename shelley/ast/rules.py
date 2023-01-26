@@ -118,6 +118,9 @@ class TriggerRuleSequence(TriggerRule):
 
         return visitor.visit_trigger_rule_sequence(self)
 
+    def __str__(self):
+        return f"{self.left_trigger_rule}; {self.right_trigger_rule}"
+
 
 @dataclass(order=True)
 class TriggerRuleChoice(TriggerRule):
@@ -140,6 +143,14 @@ class TriggerRuleChoice(TriggerRule):
         """
 
         return visitor.visit_trigger_rule_choice(self)
+
+    def __str__(self):
+        choices_str = [str(choice) for choice in self.choices]
+        final_str = ""
+        for choice_str in choices_str:
+            final_str += f" {{{choice_str}}} +"
+        final_str = final_str[:-2]
+        return str(final_str)
 
 
 @dataclass(order=True)

@@ -47,6 +47,8 @@ class BranchContext:
 
     def return_path_put(self, return_next: List[str], lineno: int):
         logger.debug(f"[{self.node.lineno}] Found return: {return_next}")
+        if not self.current_path:
+            self.current_path = TriggerRuleFired()
         return_path = ReturnPath(return_next, lineno, self.current_path)
         logger.debug(f"[{self.node.lineno}] Return paths put: {return_path.path}")
         self.return_paths.append(return_path)
@@ -57,11 +59,11 @@ class BranchContext:
         return self.return_paths.pop()
 
     def return_path_update(self, suffix_rpath: ReturnPath):
-        logger.debug(f"[{self.node.lineno}] Return paths update")
+        # logger.debug(f"[{self.node.lineno}] Return paths update:")
         if self.current_path is not None:
             suffix_rpath.path = TriggerRuleSequence(self.current_path, suffix_rpath.path)
         self.return_paths.append(suffix_rpath)
-        logger.debug(f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
+        #logger.debug(f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
 
     def update_return_paths(self):
         print(f"[{self.node.lineno}] updating return paths")
@@ -312,7 +314,7 @@ class VisitorHelper:
 
         self.clear_match_rules()
 
-    def register_new_return(self, return_next: List[str], lineno: int):
+    def register_new_return(self, return_path: ReturnPath):
         # TODO: create a visitor to find the leftmost rule and then, if not None, use that name for the return, else use the index
         self.current_return_op_name: str = (
             f"{self.current_op_decorator.op_name}_{len(self.collect_extra_ops) + 1}"
@@ -320,18 +322,18 @@ class VisitorHelper:
         logger.debug(f"Registered next operation name: {self.current_return_op_name}")
 
         self.collect_extra_ops[self.current_return_op_name] = {
-            "next": return_next,
-            "rules": self.current_path(),
-            "original_return_names": return_next,
+            "next": return_path.return_next,
+            "rules": return_path.path,
+            "original_return_names": return_path.return_next,
         }
         logger.debug(f"Collect extra ops: {self.collect_extra_ops}")
         logger.debug(f"Current rule: {self.current_path()}")
 
         next_ops_list = self.current_op_decorator.next_ops
-        if next_ops_list and not all(elem in next_ops_list for elem in return_next):
-            raise ReturnMatchesNext(lineno, return_next)
-        if not next_ops_list and return_next != [""]:
-            raise ReturnMatchesNext(lineno, return_next)
+        if next_ops_list and not all(elem in next_ops_list for elem in return_path.return_next):
+            raise ReturnMatchesNext(return_path.lineno, return_path.return_next)
+        if not next_ops_list and return_path.return_next != [""]:
+            raise ReturnMatchesNext(return_path.lineno, return_path.return_next)
 
         self.n_returns += 1
 
@@ -421,4 +423,4 @@ class VisitorHelper:
         logger.debug("Registering return paths")
         for return_path in self.current_context().return_paths:
             print(return_path.path)
-            self.register_new_return(return_path.return_next, return_path.lineno)
+            self.register_new_return(return_path)

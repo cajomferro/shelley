@@ -338,8 +338,8 @@ class VisitorHelper:
             "rules": return_path.path,
             "original_return_names": return_path.return_next,
         }
-        logger.debug(f"Collect extra ops: {self.collect_extra_ops}")
-        logger.debug(f"Current rule: {self.current_path()}")
+        #logger.debug(f"Collect extra ops: {self.collect_extra_ops}")
+        #logger.debug(f"Current rule: {self.current_path()}")
 
         next_ops_list = self.current_op_decorator.next_ops
         if next_ops_list and not all(

@@ -194,7 +194,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
         logger.debug("Entering match")
         # logger.debug(node)
 
-        my_context = self.vh.context_init(node)
+#        my_context = self.vh.context_init(node)
 
         self.match_found = True
         self.n_returns = (
@@ -230,16 +230,16 @@ class Python2ShelleyVisitor(AsStringVisitor):
         else:
             self.vh.restore_current_temp_rule(saved_current_temp_rule)
 
-        self.vh.context_end()  # remove current match context
+        #self.vh.context_end()  # remove current match context
 
-        for rpath in my_context.return_paths:
-            self.vh.current_context().return_path_update(
-                rpath
-            )  # update parent with my returns
+        # for rpath in my_context.return_paths:
+        #     self.vh.current_context().return_path_update(
+        #         rpath
+        #     )  # update parent with my returns
 
         # if len(my_context.return_paths) < len(node.cases):
         #     self.vh.register_xor_call(my_context.current_path)
-
+        print(self.vh.current_context().current_path)
         logger.debug("Leaving match")
 
     def visit_matchcase(self, match_case_node: MatchCase):

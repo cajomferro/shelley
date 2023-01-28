@@ -44,7 +44,7 @@ class MethodDecoratorsVisitor(AsStringVisitor):
             node.accept(self)
 
     def visit_call(self, node: Call) -> Any:
-        #logger.debug(f"Method decorator: {node.func.name}")
+        # logger.debug(f"Method decorator: {node.func.name}")
         if node.func.name == "operation":
             self.decorator = ShelleyOpDecorator(self.method_name)
             for kw in node.keywords:
@@ -183,6 +183,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
                 node_body.accept(self)
 
             self.vh.register_return_paths()
+            print(f"XOR path: {this_branch_context.branch_path}")
 
             self.vh.context_operation_end(node.lineno)
             self.vh.context_end()
@@ -195,7 +196,6 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
         my_context = self.vh.context_init(node)
 
-        self.vh.branch_put(node.lineno)
         self.match_found = True
         self.n_returns = (
             0  # start counting returns, we must have a return for each match case
@@ -223,19 +223,20 @@ class Python2ShelleyVisitor(AsStringVisitor):
         print(len(self.vh.branch_contexts))
         if self.vh.is_last_branch():
             print("last branch")
-            #self.vh.register_return_paths()
-            #self.vh.register_xor_call()
+            # self.vh.register_return_paths()
+            # self.vh.register_xor_call()
             self.vh.update_temp_rule()  # clear
             # self.vh.current_path_clear()
         else:
             self.vh.restore_current_temp_rule(saved_current_temp_rule)
 
-        self.vh.branch_pop()
+        self.vh.context_end()  # remove current match context
 
-        self.vh.context_end() # remove current match context
         for rpath in my_context.return_paths:
             self.vh.current_context().return_path_update(rpath)  # update parent with my returns
 
+        # if len(my_context.return_paths) < len(node.cases):
+        #     self.vh.register_xor_call(my_context.current_path)
 
         logger.debug("Leaving match")
 
@@ -261,11 +262,15 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # after each case
         self.vh.restore_match_call(saved_match_call)
 
-        self.vh.context_end() # remove current matchcase context
+        self.vh.context_end()  # remove current matchcase context
 
         for rpath in my_context.return_paths:
-            self.vh.current_context().return_path_update(rpath) # update parent with my returns
+            self.vh.current_context().return_path_update(rpath)  # update parent with my returns
 
+        # if len(my_context.return_paths) < len(match_case_node.body):
+        #     self.vh.register_xor_call(my_context.current_path)
+        # # TODO: RECUPERAR A IDEIA DE LIMPAR O CURRENT RETURN QUANDO VEJO UM RETURN
+        # # E DEPOIS ALGURES AQUI ADICIONO O CURRENT RETURN AO XOR
 
         # if not self.vh.n_returns:
         #     raise ShelleyPyError(
@@ -280,7 +285,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
         node.value.accept(self)
 
     def visit_call(self, node: Call):
-        #logger.debug("Entering call")
+        # logger.debug("Entering call")
         # logger.debug(node)
         # logger.debug(node.func)
 
@@ -296,7 +301,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
             return
 
         self.vh.register_new_call()
-        #logger.debug(f"Found call: {str(self.vh.last_call)}")
+        # logger.debug(f"Found call: {str(self.vh.last_call)}")
 
     def visit_if(self, node: If):
         """ """
@@ -329,8 +334,6 @@ class Python2ShelleyVisitor(AsStringVisitor):
     def visit_for(self, node: For):
         logger.debug("entering for")
 
-        self.vh.branch_put(node.lineno)
-
         # logger.debug(node)
         save_rule = self.vh.current_path_copy()
         self.vh.current_path_clear()
@@ -347,8 +350,6 @@ class Python2ShelleyVisitor(AsStringVisitor):
         self.vh.n_returns = save_returns
 
         self.vh.register_new_for(save_rule)
-
-        self.vh.branch_pop()
 
         logger.debug("leaving for")
 

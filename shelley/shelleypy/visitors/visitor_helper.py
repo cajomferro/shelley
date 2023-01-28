@@ -39,7 +39,7 @@ class ReturnPath:
 
 
 @dataclass
-class BranchContext:
+class BranchContext: # TODO: should I have different context types that inherit from a generic one?
     node: NodeNG
     current_path: Optional[TriggerRule] = None
     return_paths: List[ReturnPath] = field(default_factory=list)
@@ -112,11 +112,10 @@ class VisitorHelper:
         ShelleyCall
     ] = None  # useful for checking that the first match case matches the subsystem of the match call
     last_call: Optional[ShelleyCall] = None
-    n_returns: int = 0
+    n_returns: int = 0 # TODO: this is probably outdated
     current_op_decorator: ShelleyOpDecorator = None
     current_return_op_name: Optional[str] = None
     collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
-    track_branches: List[int] = field(default_factory=list)
     branch_path: TriggerRuleBranch = TriggerRuleChoice()  # TODO: should init as TriggerRuleFired or None
     branch_contexts: List[BranchContext] = field(default_factory=list)
 
@@ -299,20 +298,23 @@ class VisitorHelper:
                     )
                 )
 
-    def register_xor_call(self):
-        if len(self.branch_path.choices):
-            # print(self.branch_path)
-            # print(self.current_path)
-            match self.current_path():
-                case TriggerRuleFired():
-                    self.current_context().current_path_update(self.branch_path)
-                case TriggerRule():  # any other type of rule
-                    self.current_context().current_path_update(
-                        TriggerRuleSequence(self.current_path(), self.branch_path)
-                    )
-            # print(self.current_path)
-
-        self.clear_match_rules()
+    # def register_xor_call(self, path: TriggerRule):
+    #     #if len(self.current_context().branch_path.choices):
+    #         # print(self.branch_path)
+    #         # print(self.current_path)
+    #     match self.current_path():
+    #         case TriggerRuleFired():
+    #             self.current_context().branch_path.add_choice(path)
+    #             #self.current_context().current_path_update(self.branch_path)
+    #         case TriggerRule():  # any other type of rule
+    #             self.branch_path.add_choice(TriggerRuleSequence(self.current_path(), path))
+    #             #self.current_context().current_path_update(
+    #             #    TriggerRuleSequence(self.current_path(), self.branch_path)
+    #             #)
+    #         # print(self.current_path)
+    #     print(f"branch path: {self.branch_path}")
+    #
+    #     #self.clear_match_rules()
 
     def register_new_return(self, return_path: ReturnPath):
         # TODO: create a visitor to find the leftmost rule and then, if not None, use that name for the return, else use the index
@@ -340,25 +342,11 @@ class VisitorHelper:
     def is_base_system(self):
         return len(self.device.uses) == 0 or self.external_only
 
-    # def current_path_copy(self):
-    #     logger.debug(f"Current path copied: {self.current_path()}")
-    #     return copy.copy(self.current_path())
-
-    # def current_path_clear(self):
-    #     self.current_path = TriggerRuleFired()
-    #     logger.debug("Current path cleared")
-
-    # def current_path_update(self, rule: Optional[TriggerRule] = None):
-    #     current_ctx = self.branch_contexts.pop()
-    #     current_ctx.current_path = rule
-    #     self.branch_contexts.append(current_ctx)
-    #     logger.debug(f"Current path updated: {self.current_path}")
-
     def update_temp_rule(self, temp_rule: Optional[TriggerRule] = None):
         if temp_rule is None:
             temp_rule = TriggerRuleFired()
         self.current_temp_rule = temp_rule
-        # logger.debug(f"Current temp rule: {self.current_temp_rule}")
+        logger.debug(f"Current temp rule: {self.current_temp_rule}")
 
     def save_branch(self):
         self.branch_path.add_choice(self.current_temp_rule)
@@ -391,12 +379,6 @@ class VisitorHelper:
     def restore_match_call(self, saved_match_call):
         # logger.debug("Match call restored")
         self.current_match_call = saved_match_call
-
-    def branch_put(self, match_line_nr):
-        self.track_branches.append(match_line_nr)
-
-    def branch_pop(self):
-        return self.track_branches.pop()
 
     def is_last_branch(self):
         return len(self.branch_contexts) == 2  # first context is function

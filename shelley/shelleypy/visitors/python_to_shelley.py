@@ -233,7 +233,9 @@ class Python2ShelleyVisitor(AsStringVisitor):
         self.vh.context_end()  # remove current match context
 
         for rpath in my_context.return_paths:
-            self.vh.current_context().return_path_update(rpath)  # update parent with my returns
+            self.vh.current_context().return_path_update(
+                rpath
+            )  # update parent with my returns
 
         # if len(my_context.return_paths) < len(node.cases):
         #     self.vh.register_xor_call(my_context.current_path)
@@ -265,7 +267,9 @@ class Python2ShelleyVisitor(AsStringVisitor):
         self.vh.context_end()  # remove current matchcase context
 
         for rpath in my_context.return_paths:
-            self.vh.current_context().return_path_update(rpath)  # update parent with my returns
+            self.vh.current_context().return_path_update(
+                rpath
+            )  # update parent with my returns
 
         # if len(my_context.return_paths) < len(match_case_node.body):
         #     self.vh.register_xor_call(my_context.current_path)

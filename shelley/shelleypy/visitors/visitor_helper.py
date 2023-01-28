@@ -39,11 +39,13 @@ class ReturnPath:
 
 
 @dataclass
-class BranchContext: # TODO: should I have different context types that inherit from a generic one?
+class BranchContext:  # TODO: should I have different context types that inherit from a generic one?
     node: NodeNG
     current_path: Optional[TriggerRule] = None
     return_paths: List[ReturnPath] = field(default_factory=list)
-    branch_path: TriggerRuleBranch = TriggerRuleChoice()  # TODO: should init as TriggerRuleFired or None
+    branch_path: TriggerRuleBranch = (
+        TriggerRuleChoice()
+    )  # TODO: should init as TriggerRuleFired or None
 
     def return_path_put(self, return_next: List[str], lineno: int):
         logger.debug(f"[{self.node.lineno}] Found return: {return_next}")
@@ -52,7 +54,9 @@ class BranchContext: # TODO: should I have different context types that inherit 
         return_path = ReturnPath(return_next, lineno, self.current_path)
         logger.debug(f"[{self.node.lineno}] Return paths put: {return_path.path}")
         self.return_paths.append(return_path)
-        print(f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
+        print(
+            f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}"
+        )
 
     def return_path_pop(self) -> ReturnPath:
         logger.debug(f"[{self.node.lineno}] Return paths pop")
@@ -61,9 +65,11 @@ class BranchContext: # TODO: should I have different context types that inherit 
     def return_path_update(self, suffix_rpath: ReturnPath):
         # logger.debug(f"[{self.node.lineno}] Return paths update:")
         if self.current_path is not None:
-            suffix_rpath.path = TriggerRuleSequence(self.current_path, suffix_rpath.path)
+            suffix_rpath.path = TriggerRuleSequence(
+                self.current_path, suffix_rpath.path
+            )
         self.return_paths.append(suffix_rpath)
-        #logger.debug(f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
+        # logger.debug(f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
 
     def update_return_paths(self):
         print(f"[{self.node.lineno}] updating return paths")
@@ -112,11 +118,13 @@ class VisitorHelper:
         ShelleyCall
     ] = None  # useful for checking that the first match case matches the subsystem of the match call
     last_call: Optional[ShelleyCall] = None
-    n_returns: int = 0 # TODO: this is probably outdated
+    n_returns: int = 0  # TODO: this is probably outdated
     current_op_decorator: ShelleyOpDecorator = None
     current_return_op_name: Optional[str] = None
     collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
-    branch_path: TriggerRuleBranch = TriggerRuleChoice()  # TODO: should init as TriggerRuleFired or None
+    branch_path: TriggerRuleBranch = (
+        TriggerRuleChoice()
+    )  # TODO: should init as TriggerRuleFired or None
     branch_contexts: List[BranchContext] = field(default_factory=list)
 
     def __post_init__(self):
@@ -137,12 +145,12 @@ class VisitorHelper:
             )
 
     def context_system_init(
-            self,
-            name: str,
-            uses: Dict[str, str],
-            system_claims: List[str],
-            integration_claims: List[str],
-            subsystem_claims: List[str],
+        self,
+        name: str,
+        uses: Dict[str, str],
+        system_claims: List[str],
+        integration_claims: List[str],
+        subsystem_claims: List[str],
     ):
         self.device.name = name
 
@@ -225,12 +233,12 @@ class VisitorHelper:
         return return_names_set
 
     def register_new_operation(
-            self,
-            op_name: str,
-            is_initial=False,
-            is_final=False,
-            next_ops: Optional[List[str]] = None,
-            rules: Optional[TriggerRule] = None,
+        self,
+        op_name: str,
+        is_initial=False,
+        is_final=False,
+        next_ops: Optional[List[str]] = None,
+        rules: Optional[TriggerRule] = None,
     ):
 
         if next_ops is None:
@@ -262,7 +270,9 @@ class VisitorHelper:
 
     def register_new_for(self, save_rule):
         loop_rule = TriggerRuleLoop(self.current_path())
-        self.current_context().current_path_update(TriggerRuleSequence(save_rule, loop_rule))
+        self.current_context().current_path_update(
+            TriggerRuleSequence(save_rule, loop_rule)
+        )
 
     def register_new_call(self):
         try:
@@ -332,7 +342,9 @@ class VisitorHelper:
         logger.debug(f"Current rule: {self.current_path()}")
 
         next_ops_list = self.current_op_decorator.next_ops
-        if next_ops_list and not all(elem in next_ops_list for elem in return_path.return_next):
+        if next_ops_list and not all(
+            elem in next_ops_list for elem in return_path.return_next
+        ):
             raise ReturnMatchesNext(return_path.lineno, return_path.return_next)
         if not next_ops_list and return_path.return_next != [""]:
             raise ReturnMatchesNext(return_path.lineno, return_path.return_next)

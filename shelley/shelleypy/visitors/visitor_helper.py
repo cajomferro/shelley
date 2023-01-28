@@ -5,6 +5,8 @@ from typing import Dict, Optional, Any, Union
 
 from lark import Lark
 
+from astroid import NodeNG
+
 from shelley.ast.behaviors import Behaviors
 from shelley.ast.components import Components, Component
 from shelley.ast.devices import Device, discover_uses
@@ -27,6 +29,58 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
 
 TriggerRuleBranch = Union[TriggerRuleChoice, TriggerRuleLoop, TriggerRuleFired]
+
+
+@dataclass
+class ReturnPath:
+    return_next: List[str]
+    lineno: int
+    path: TriggerRule
+
+
+@dataclass
+class BranchContext:
+    node: NodeNG
+    current_path: Optional[TriggerRule] = None
+    return_paths: List[ReturnPath] = field(default_factory=list)
+    branch_path: TriggerRuleBranch = TriggerRuleChoice()  # TODO: should init as TriggerRuleFired or None
+
+    def return_path_put(self, return_next: List[str], lineno: int):
+        logger.debug(f"[{self.node.lineno}] Found return: {return_next}")
+        return_path = ReturnPath(return_next, lineno, self.current_path)
+        logger.debug(f"[{self.node.lineno}] Return paths put: {return_path.path}")
+        self.return_paths.append(return_path)
+        print(f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
+
+    def return_path_pop(self) -> ReturnPath:
+        logger.debug(f"[{self.node.lineno}] Return paths pop")
+        return self.return_paths.pop()
+
+    def return_path_update(self, suffix_rpath: ReturnPath):
+        logger.debug(f"[{self.node.lineno}] Return paths update")
+        if self.current_path is not None:
+            suffix_rpath.path = TriggerRuleSequence(self.current_path, suffix_rpath.path)
+        self.return_paths.append(suffix_rpath)
+        logger.debug(f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
+
+    def update_return_paths(self):
+        print(f"[{self.node.lineno}] updating return paths")
+        for return_path in self.return_paths:
+            return_path.path = TriggerRuleSequence(self.current_path, return_path.path)
+        print(f"Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
+
+    def current_path_copy(self):
+        logger.debug(f"[{self.node.lineno}] Current path copied: {self.current_path}")
+        return copy.copy(self.current_path)
+
+    def current_path_clear(self):
+        self.current_path = TriggerRuleFired()
+        logger.debug(f"[{self.node.lineno}] Current path cleared")
+
+    def current_path_update(self, rule: Optional[TriggerRule] = None):
+        self.current_path = rule
+        logger.debug(f"[{self.node.lineno}]Current path updated: {self.current_path}")
+
 
 @dataclass
 class ShelleyCall:
@@ -51,7 +105,6 @@ class VisitorHelper:
     device: Device = field(init=False)
     external_only: bool = False
     match_found: bool = False  # useful for verifying missing returns
-    current_rule: TriggerRule = TriggerRuleFired()
     current_temp_rule: TriggerRule = TriggerRuleFired()
     current_match_call: Optional[
         ShelleyCall
@@ -62,8 +115,8 @@ class VisitorHelper:
     current_return_op_name: Optional[str] = None
     collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
     track_branches: List[int] = field(default_factory=list)
-    return_paths: List[TriggerRule] = field(default_factory=list)
-    branch_path: TriggerRuleBranch = TriggerRuleChoice() # TODO: should init as TriggerRuleFired or None
+    branch_path: TriggerRuleBranch = TriggerRuleChoice()  # TODO: should init as TriggerRuleFired or None
+    branch_contexts: List[BranchContext] = field(default_factory=list)
 
     def __post_init__(self):
         self.device = Device(
@@ -83,12 +136,12 @@ class VisitorHelper:
             )
 
     def context_system_init(
-        self,
-        name: str,
-        uses: Dict[str, str],
-        system_claims: List[str],
-        integration_claims: List[str],
-        subsystem_claims: List[str],
+            self,
+            name: str,
+            uses: Dict[str, str],
+            system_claims: List[str],
+            integration_claims: List[str],
+            subsystem_claims: List[str],
     ):
         self.device.name = name
 
@@ -113,7 +166,7 @@ class VisitorHelper:
             self.device.subsystem_formulae.append((subsystem_name, formula))
 
     def context_operation_init(self, decorator: ShelleyOpDecorator):
-        self.update_current_rule()
+        # self.current_path_clear()
         self.collect_extra_ops = dict()
         self.current_op_decorator = decorator
         self.n_returns = 0
@@ -171,12 +224,12 @@ class VisitorHelper:
         return return_names_set
 
     def register_new_operation(
-        self,
-        op_name: str,
-        is_initial=False,
-        is_final=False,
-        next_ops: Optional[List[str]] = None,
-        rules: Optional[TriggerRule] = None,
+            self,
+            op_name: str,
+            is_initial=False,
+            is_final=False,
+            next_ops: Optional[List[str]] = None,
+            rules: Optional[TriggerRule] = None,
     ):
 
         if next_ops is None:
@@ -207,8 +260,8 @@ class VisitorHelper:
         self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))
 
     def register_new_for(self, save_rule):
-        loop_rule = TriggerRuleLoop(self.current_rule)
-        self.update_current_rule(TriggerRuleSequence(save_rule, loop_rule))
+        loop_rule = TriggerRuleLoop(self.current_path())
+        self.current_context().current_path_update(TriggerRuleSequence(save_rule, loop_rule))
 
     def register_new_call(self):
         try:
@@ -219,18 +272,17 @@ class VisitorHelper:
             logger.debug(f"    Ignoring Call: {self.last_call}")
             return
 
-        match self.current_rule:
-            case TriggerRuleFired():
-                self.update_current_rule(
-                    TriggerRuleEvent(component, self.last_call.subsystem_call)
+        if self.current_path() is None:
+            self.current_context().current_path_update(
+                TriggerRuleEvent(component, self.last_call.subsystem_call)
+            )
+        else:
+            self.current_context().current_path_update(
+                TriggerRuleSequence(
+                    self.current_path(),
+                    TriggerRuleEvent(component, self.last_call.subsystem_call),
                 )
-            case TriggerRule():  # any other type of rule
-                self.update_current_rule(
-                    TriggerRuleSequence(
-                        self.current_rule,
-                        TriggerRuleEvent(component, self.last_call.subsystem_call),
-                    )
-                )
+            )
 
         match self.current_temp_rule:
             case TriggerRuleFired():
@@ -248,15 +300,15 @@ class VisitorHelper:
     def register_xor_call(self):
         if len(self.branch_path.choices):
             # print(self.branch_path)
-            # print(self.current_rule)
-            match self.current_rule:
+            # print(self.current_path)
+            match self.current_path():
                 case TriggerRuleFired():
-                    self.update_current_rule(self.branch_path)
+                    self.current_context().current_path_update(self.branch_path)
                 case TriggerRule():  # any other type of rule
-                    self.update_current_rule(
-                        TriggerRuleSequence(self.current_rule, self.branch_path)
+                    self.current_context().current_path_update(
+                        TriggerRuleSequence(self.current_path(), self.branch_path)
                     )
-            # print(self.current_rule)
+            # print(self.current_path)
 
         self.clear_match_rules()
 
@@ -269,11 +321,11 @@ class VisitorHelper:
 
         self.collect_extra_ops[self.current_return_op_name] = {
             "next": return_next,
-            "rules": self.current_rule,
+            "rules": self.current_path(),
             "original_return_names": return_next,
         }
         logger.debug(f"Collect extra ops: {self.collect_extra_ops}")
-        logger.debug(f"Current rule: {self.current_rule}")
+        logger.debug(f"Current rule: {self.current_path()}")
 
         next_ops_list = self.current_op_decorator.next_ops
         if next_ops_list and not all(elem in next_ops_list for elem in return_next):
@@ -286,28 +338,32 @@ class VisitorHelper:
     def is_base_system(self):
         return len(self.device.uses) == 0 or self.external_only
 
-    def copy_current_rule(self):
-        logger.debug("Current rule saved")
-        return copy.copy(self.current_rule)
+    # def current_path_copy(self):
+    #     logger.debug(f"Current path copied: {self.current_path()}")
+    #     return copy.copy(self.current_path())
 
-    def update_current_rule(self, rule: Optional[TriggerRule] = None):
-        logger.debug("Updating current rule...")
-        if rule is None:
-            rule = TriggerRuleFired()
-        self.current_rule = rule
+    # def current_path_clear(self):
+    #     self.current_path = TriggerRuleFired()
+    #     logger.debug("Current path cleared")
+
+    # def current_path_update(self, rule: Optional[TriggerRule] = None):
+    #     current_ctx = self.branch_contexts.pop()
+    #     current_ctx.current_path = rule
+    #     self.branch_contexts.append(current_ctx)
+    #     logger.debug(f"Current path updated: {self.current_path}")
 
     def update_temp_rule(self, temp_rule: Optional[TriggerRule] = None):
         if temp_rule is None:
             temp_rule = TriggerRuleFired()
         self.current_temp_rule = temp_rule
-        logger.debug(f"Current temp rule: {self.current_temp_rule}")
+        # logger.debug(f"Current temp rule: {self.current_temp_rule}")
 
     def save_branch(self):
         self.branch_path.add_choice(self.current_temp_rule)
         self.update_temp_rule()
 
     def restore_current_temp_rule(self, rule):
-        logger.debug("Match temp rule restored")
+        # logger.debug("Match temp rule restored")
         self.current_temp_rule = rule
         self.update_temp_rule(
             TriggerRuleSequence(self.current_temp_rule, self.branch_path)
@@ -319,19 +375,19 @@ class VisitorHelper:
         self.update_temp_rule()
 
     def set_match_call_to_last_call(self):
-        logger.debug("Match call copied")
+        # logger.debug("Match call copied")
         self.current_match_call = self.last_call
 
     def copy_current_temp_rule(self):
-        logger.debug("Current temp rule copied")
+        # logger.debug("Current temp rule copied")
         return copy.copy(self.current_temp_rule)
 
     def copy_match_call(self):
-        logger.debug("Match call saved")
+        # logger.debug("Match call saved")
         return copy.copy(self.current_match_call)
 
     def restore_match_call(self, saved_match_call):
-        logger.debug("Match call restored")
+        # logger.debug("Match call restored")
         self.current_match_call = saved_match_call
 
     def branch_put(self, match_line_nr):
@@ -341,10 +397,28 @@ class VisitorHelper:
         return self.track_branches.pop()
 
     def is_last_branch(self):
-        return len(self.track_branches) == 1
-    
+        return len(self.branch_contexts) == 2  # first context is function
+
     def is_inside_branch(self):
         return len(self.track_branches)
 
-    def save_return_path(self):
-        self.return_paths.append(self.current_rule)
+    def context_init(self, node):
+        # logger.debug(f"New context: {node}")
+        ctx = BranchContext(node)
+        self.branch_contexts.append(ctx)
+        return ctx
+
+    def context_end(self):
+        return self.branch_contexts.pop()
+
+    def current_context(self):
+        return self.branch_contexts[-1] if len(self.branch_contexts) else None
+
+    def current_path(self) -> TriggerRule:
+        return self.current_context().current_path if self.current_context() else None
+
+    def register_return_paths(self):
+        logger.debug("Registering return paths")
+        for return_path in self.current_context().return_paths:
+            print(return_path.path)
+            self.register_new_return(return_path.return_next, return_path.lineno)

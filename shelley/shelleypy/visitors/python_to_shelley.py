@@ -28,6 +28,7 @@ from shelley.shelleypy.checker.exceptions import ShelleyPyError
 from shelley.shelleypy.visitors.visitor_helper import ShelleyCall
 from shelley.shelleypy.visitors.visitor_helper import ShelleyOpDecorator
 from shelley.shelleypy.visitors.visitor_helper import VisitorHelper
+from shelley.shelleypy.visitors.visitor_helper import BranchContext
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
@@ -43,7 +44,7 @@ class MethodDecoratorsVisitor(AsStringVisitor):
             node.accept(self)
 
     def visit_call(self, node: Call) -> Any:
-        logger.debug(f"Method decorator: {node.func.name}")
+        #logger.debug(f"Method decorator: {node.func.name}")
         if node.func.name == "operation":
             self.decorator = ShelleyOpDecorator(self.method_name)
             for kw in node.keywords:
@@ -139,7 +140,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
         self._handle_functiondef(node)
 
     def _handle_functiondef(self, node: Union[FunctionDef, AsyncFunctionDef]):
-        logger.debug(f"Entering method: {node.name}")
+        logger.debug(f"\n\n### Entering method: {node.name}")
         # logger.debug(node)
 
         # TODO: improve this
@@ -175,18 +176,24 @@ class Python2ShelleyVisitor(AsStringVisitor):
                 AsyncFunctionDef,
             ]  # this is just a safe check
 
+            this_branch_context = self.vh.context_init(node)
             self.vh.context_operation_init(decorator)
 
             for node_body in node.body:
                 node_body.accept(self)
 
+            self.vh.register_return_paths()
+
             self.vh.context_operation_end(node.lineno)
+            self.vh.context_end()
 
         logger.debug(f"Leaving method: {node.name}")
 
     def visit_match(self, node: Match):
         logger.debug("Entering match")
         # logger.debug(node)
+
+        my_context = self.vh.context_init(node)
 
         self.vh.branch_put(node.lineno)
         self.match_found = True
@@ -203,31 +210,40 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # match call
         subject.accept(self)
 
-        saved_current_rule = self.vh.copy_current_rule()
         self.vh.set_match_call_to_last_call()
         saved_current_temp_rule = self.vh.copy_current_temp_rule()
         self.vh.update_temp_rule()  # reset
 
         for node_case in node.cases:
             node_case.accept(self)
-            self.vh.update_current_rule(saved_current_rule)  # reset
             self.vh.save_branch()  # save and reset
 
         # after match call and all cases
-        self.vh.update_current_rule(saved_current_rule)  # reset
+        # self.vh.update_return_paths()
+        print(len(self.vh.branch_contexts))
         if self.vh.is_last_branch():
-            self.vh.register_xor_call()
+            print("last branch")
+            #self.vh.register_return_paths()
+            #self.vh.register_xor_call()
             self.vh.update_temp_rule()  # clear
+            # self.vh.current_path_clear()
         else:
             self.vh.restore_current_temp_rule(saved_current_temp_rule)
 
         self.vh.branch_pop()
+
+        self.vh.context_end() # remove current match context
+        for rpath in my_context.return_paths:
+            self.vh.current_context().return_path_update(rpath)  # update parent with my returns
+
 
         logger.debug("Leaving match")
 
     def visit_matchcase(self, match_case_node: MatchCase):
         logger.debug("Entering matchcase")
         # logger.debug(match_case_node)
+
+        my_context = self.vh.context_init(match_case_node.pattern)
 
         # before each case
         saved_match_call = self.vh.copy_match_call()
@@ -245,11 +261,18 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # after each case
         self.vh.restore_match_call(saved_match_call)
 
+        self.vh.context_end() # remove current matchcase context
+
+        for rpath in my_context.return_paths:
+            self.vh.current_context().return_path_update(rpath) # update parent with my returns
+
+
         # if not self.vh.n_returns:
         #     raise ShelleyPyError(
         #         match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN
         #     )
 
+        # self.vh.branch_contexts.pop()
         logger.debug("Leaving matchcase")
 
     def visit_await(self, node: Await):
@@ -257,7 +280,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
         node.value.accept(self)
 
     def visit_call(self, node: Call):
-        logger.debug("Entering call")
+        #logger.debug("Entering call")
         # logger.debug(node)
         # logger.debug(node.func)
 
@@ -273,7 +296,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
             return
 
         self.vh.register_new_call()
-        logger.debug(f"Found call: {str(self.vh.last_call)}")
+        #logger.debug(f"Found call: {str(self.vh.last_call)}")
 
     def visit_if(self, node: If):
         """ """
@@ -282,14 +305,14 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
         node.test.accept(self)  # test expression can be a subsys call
 
-        saved_current_rule = self.vh.copy_current_rule()
+        saved_current_path = self.vh.current_path_copy()
 
         for if_body_node in node.body:
             if_body_node.accept(self)
         logger.debug("Leaving if")
 
         logger.debug("Entering else")
-        self.vh.update_current_rule(saved_current_rule)
+        self.vh.current_path_update(saved_current_path)
 
         if len(node.orelse) == 0:
             raise ShelleyPyError(node.lineno, ShelleyPyError.ELSE_MISSING)
@@ -309,8 +332,8 @@ class Python2ShelleyVisitor(AsStringVisitor):
         self.vh.branch_put(node.lineno)
 
         # logger.debug(node)
-        save_rule = self.vh.copy_current_rule()
-        self.vh.update_current_rule()  # clear
+        save_rule = self.vh.current_path_copy()
+        self.vh.current_path_clear()
 
         save_returns = self.vh.n_returns
         self.vh.n_returns = 0
@@ -332,8 +355,8 @@ class Python2ShelleyVisitor(AsStringVisitor):
     def visit_while(self, node: While):
         logger.debug("entering while")
         # logger.debug(node)
-        save_rule = self.vh.copy_current_rule()
-        self.vh.update_current_rule()  # clear
+        save_rule = self.vh.current_path_copy()
+        self.vh.current_path_clear()
 
         save_returns = self.vh.n_returns
         self.vh.n_returns = 0
@@ -355,15 +378,10 @@ class Python2ShelleyVisitor(AsStringVisitor):
         An alternative (smarter but more difficult to implement) approach would be to create a Shelley operation
         for each "type" of return.
         """
-        logger.debug("Entering return")
         # logger.debug(node)
         return_next: List[str] = self._parse_return_value(node)
-        logger.debug(f"Found return: {return_next}")
         self.vh.update_temp_rule()  # clear because a return was found
-        if self.vh.is_inside_branch():
-            self.vh.save_return_path()
-        else:
-            self.vh.register_new_return(return_next, node.lineno)
+        self.vh.current_context().return_path_put(return_next, node.lineno)
 
     @staticmethod
     def _get_case_name(match_case_node: MatchCase):

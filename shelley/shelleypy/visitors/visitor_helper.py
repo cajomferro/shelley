@@ -41,11 +41,12 @@ class ReturnPath:
 @dataclass
 class BranchContext:  # TODO: should I have different context types that inherit from a generic one?
     node: NodeNG
+    branch_path: TriggerRuleBranch = None
     current_path: Optional[TriggerRule] = None
     return_paths: List[ReturnPath] = field(default_factory=list)
-    branch_path: TriggerRuleBranch = (
-        TriggerRuleChoice()
-    )  # TODO: should init as TriggerRuleFired or None
+
+    def __post_init__(self):
+        self.branch_path = TriggerRuleChoice()
 
     def return_path_put(self, return_next: List[str], lineno: int):
         logger.debug(f"[{self.node.lineno}] Found return: {return_next}")
@@ -54,9 +55,10 @@ class BranchContext:  # TODO: should I have different context types that inherit
         return_path = ReturnPath(return_next, lineno, self.current_path)
         logger.debug(f"[{self.node.lineno}] Return paths put: {return_path.path}")
         self.return_paths.append(return_path)
-        print(
-            f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}"
-        )
+        # print(
+        #     f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}"
+        # )
+        self.current_path = None
 
     def return_path_pop(self) -> ReturnPath:
         logger.debug(f"[{self.node.lineno}] Return paths pop")
@@ -71,19 +73,19 @@ class BranchContext:  # TODO: should I have different context types that inherit
         self.return_paths.append(suffix_rpath)
         # logger.debug(f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
 
-    def update_return_paths(self):
-        print(f"[{self.node.lineno}] updating return paths")
-        for return_path in self.return_paths:
-            return_path.path = TriggerRuleSequence(self.current_path, return_path.path)
-        print(f"Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
+    # def update_return_paths(self):
+    #     print(f"[{self.node.lineno}] updating return paths")
+    #     for return_path in self.return_paths:
+    #         return_path.path = TriggerRuleSequence(self.current_path, return_path.path)
+    #     print(f"Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
 
-    def current_path_copy(self):
-        logger.debug(f"[{self.node.lineno}] Current path copied: {self.current_path}")
-        return copy.copy(self.current_path)
+    # def current_path_copy(self):
+    #     logger.debug(f"[{self.node.lineno}] Current path copied: {self.current_path}")
+    #     return copy.copy(self.current_path)
 
-    def current_path_clear(self):
-        self.current_path = TriggerRuleFired()
-        logger.debug(f"[{self.node.lineno}] Current path cleared")
+    # def current_path_clear(self):
+    #     self.current_path = TriggerRuleFired()
+    #     logger.debug(f"[{self.node.lineno}] Current path cleared")
 
     def current_path_update(self, rule: Optional[TriggerRule] = None):
         self.current_path = rule
@@ -122,9 +124,6 @@ class VisitorHelper:
     current_op_decorator: ShelleyOpDecorator = None
     current_return_op_name: Optional[str] = None
     collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
-    branch_path: TriggerRuleBranch = (
-        TriggerRuleChoice()
-    )  # TODO: should init as TriggerRuleFired or None
     branch_contexts: List[BranchContext] = field(default_factory=list)
 
     def __post_init__(self):
@@ -338,8 +337,8 @@ class VisitorHelper:
             "rules": return_path.path,
             "original_return_names": return_path.return_next,
         }
-        #logger.debug(f"Collect extra ops: {self.collect_extra_ops}")
-        #logger.debug(f"Current rule: {self.current_path()}")
+        # logger.debug(f"Collect extra ops: {self.collect_extra_ops}")
+        # logger.debug(f"Current rule: {self.current_path()}")
 
         next_ops_list = self.current_op_decorator.next_ops
         if next_ops_list and not all(
@@ -360,21 +359,29 @@ class VisitorHelper:
         self.current_temp_rule = temp_rule
         logger.debug(f"Current temp rule: {self.current_temp_rule}")
 
-    def save_branch(self):
-        self.branch_path.add_choice(self.current_temp_rule)
-        self.update_temp_rule()
+    def branch_save(self, path):
+        # logger.info("Saving branch")
+        # print(path)
+        if path:
+            self.current_context().branch_path.add_choice(path)
+            # print(self.current_context().branch_path)
 
-    def restore_current_temp_rule(self, rule):
-        # logger.debug("Match temp rule restored")
-        self.current_temp_rule = rule
-        self.update_temp_rule(
-            TriggerRuleSequence(self.current_temp_rule, self.branch_path)
-        )  # append any found choice to temp rule
-        self.branch_path = TriggerRuleChoice()
+    def branch_add(self):
+        # logger.info("Adding branch")
+        # print(self.current_path())
+        # print(self.current_context().branch_path)
+        rule = TriggerRuleSequence(
+            self.current_path(), self.current_context().branch_path
+        )
+        # print(id(self.current_path()))
+        # print(id(self.current_context().branch_path))
+        # print(f"Rule: {rule}")
+        self.current_context().current_path_update(rule)
+        # print(self.current_path())
 
-    def clear_match_rules(self):
-        self.branch_path = TriggerRuleChoice()
-        self.update_temp_rule()
+    # def clear_match_rules(self):
+    #     self.branch_path = TriggerRuleChoice()
+    #     self.update_temp_rule()
 
     def set_match_call_to_last_call(self):
         # logger.debug("Match call copied")
@@ -393,7 +400,7 @@ class VisitorHelper:
         self.current_match_call = saved_match_call
 
     def is_last_branch(self):
-        return len(self.branch_contexts) == 2  # first context is function
+        return len(self.branch_contexts) == 1  # first context is function
 
     def is_inside_branch(self):
         return len(self.track_branches)
@@ -416,5 +423,5 @@ class VisitorHelper:
     def register_return_paths(self):
         logger.debug("Registering return paths")
         for return_path in self.current_context().return_paths:
-            print(return_path.path)
+            # print(return_path.path)
             self.register_new_return(return_path)

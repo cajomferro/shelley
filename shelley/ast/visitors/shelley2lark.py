@@ -46,12 +46,14 @@ class Shelley2Lark(Visitor):
         return result
 
     def visit_trigger_rule_choice(self, element: TriggerRuleChoice) -> Any:
-        result = "{"
-        for rule in element.choices[0:-1]:
-            result += rule.accept(self)
-            result += "} + {"
-        result += element.choices[-1].accept(self)
-        result += "}"
+        result = ""
+        if len(element.choices):
+            result += "{"
+            for rule in element.choices[0:-1]:
+                result += rule.accept(self)
+                result += "} + {"
+            result += element.choices[-1].accept(self)
+            result += "}"
 
         return result
 

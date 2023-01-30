@@ -363,9 +363,6 @@ class VisitorHelper:
     def current_context(self):
         return self.branch_contexts[-1] if len(self.branch_contexts) else None
 
-    def parent_context(self):
-        return self.branch_contexts[-2] if len(self.branch_contexts) >= 2 else None
-
     def current_path(self) -> TriggerRule:
         return self.current_context().current_path if self.current_context() else None
 

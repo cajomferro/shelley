@@ -53,7 +53,6 @@ def test_match_ok() -> None:
     assert shy == expected_shy
 
 
-# TODO: currently is not possible to detect code outside a match so it will generate as if it was another case branch
 def test_code_outside_match() -> None:
     """
     self.v1.on() is outside case and should be ignored

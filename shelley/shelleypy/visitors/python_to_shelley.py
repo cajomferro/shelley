@@ -176,16 +176,13 @@ class Python2ShelleyVisitor(AsStringVisitor):
                 AsyncFunctionDef,
             ]  # this is just a safe check
 
-            this_branch_context = self.vh.context_init(node)
+            self.vh.context_init(node)
             self.vh.context_operation_init(decorator)
 
             for node_body in node.body:
                 node_body.accept(self)
 
             self.vh.register_return_paths()
-            # print(len(self.vh.branch_contexts))
-            # print(f"Current path: {self.vh.current_path()}")
-            # print(f"XOR path: {this_branch_context.branch_path}")
 
             self.vh.context_operation_end(node.lineno)
             self.vh.context_end()

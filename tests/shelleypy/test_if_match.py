@@ -2,7 +2,6 @@ from shelley.ast.devices import Device
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
 from shelley.shelleypy.checker.optimize import optimize as fun_optimize
 from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
-from shelley.shelleypy.visitors import VisitorHelper
 
 
 def py2shy(py_code: str) -> str:

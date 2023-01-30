@@ -91,11 +91,8 @@ class Context:
     def end(self):
         pass
 
-
 @dataclass
-class BranchContext(
-    Context
-):  # TODO: should I have different context types that inherit from a generic one?
+class BranchContext(Context):
     def end(self):
         """
         order matters!
@@ -110,9 +107,7 @@ class BranchContext(
 
 
 @dataclass
-class LoopContext(
-    Context
-):  # TODO: should I have different context types that inherit from a generic one?
+class LoopContext(Context):
     def end(self):
         # update parent branch path with my current path
         if self.current_path:
@@ -150,12 +145,9 @@ class VisitorHelper:
     device: Device = field(init=False)
     external_only: bool = False
     branch_contexts: List[Context] = field(default_factory=list)
-    match_found: bool = False  # useful for verifying missing returns
-    current_match_call: Optional[
-        ShelleyCall
-    ] = None  # useful for checking that the first match case matches the subsystem of the match call
+    # useful for checking that the first match case matches the subsystem of the match call
+    current_match_call: Optional[ShelleyCall] = None
     last_call: Optional[ShelleyCall] = None
-    n_returns: int = 0  # TODO: this is probably outdated
     current_op_decorator: ShelleyOpDecorator = None
     current_return_op_name: Optional[str] = None
     collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
@@ -211,8 +203,6 @@ class VisitorHelper:
         # self.current_path_clear()
         self.collect_extra_ops = dict()
         self.current_op_decorator = decorator
-        self.n_returns = 0
-        self.match_found = False
         self.current_return_op_name = None
 
     def context_operation_end(self, lineno: int):
@@ -255,7 +245,7 @@ class VisitorHelper:
                 next_ops=next_ops,
             )
 
-        if not self.match_found and self.n_returns == 0:
+        if not len(self.current_context().return_paths):
             raise ShelleyPyError(lineno, ShelleyPyError.MISSING_RETURN)
 
     def _original_return_names(self) -> Set[str]:
@@ -344,8 +334,6 @@ class VisitorHelper:
             raise ReturnMatchesNext(return_path.lineno, return_path.return_next)
         if not next_ops_list and return_path.return_next != [""]:
             raise ReturnMatchesNext(return_path.lineno, return_path.return_next)
-
-        self.n_returns += 1
 
     def is_base_system(self):
         return len(self.device.uses) == 0 or self.external_only

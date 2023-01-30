@@ -195,10 +195,6 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
         #        my_context = self.vh.context_init(node)
 
-        self.match_found = True
-        self.n_returns = (
-            0  # start counting returns, we must have a return for each match case
-        )
         subject = node.subject
         if isinstance(subject, Await):
             subject = subject.value
@@ -301,17 +297,12 @@ class Python2ShelleyVisitor(AsStringVisitor):
     def _handle_loop(self, node: Union[For, While]):
         # logger.debug(node)
 
-        save_returns = self.vh.n_returns
-        self.vh.n_returns = 0
-
         self.vh.context_init(node, type=ContextTypes.LOOP)
         for node_for_body in node.body:
             node_for_body.accept(self)
         self.vh.context_end()
 
         self.vh.current_context().current_path_merge()  # TODO: new context for this?!
-
-        self.vh.n_returns = save_returns
 
     def visit_return(self, node: Return):
         """

@@ -219,7 +219,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
             node_case.accept(self)
             self.vh.context_end()
 
-        self.vh.current_context().branch_add() # TODO: new context for this?!
+        self.vh.current_context().current_path_merge()  # TODO: new context for this?!
 
         logger.debug("Leaving match")
 
@@ -294,7 +294,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
         logger.debug("Leaving else")
 
-        self.vh.current_context().branch_add() # TODO: new context for this?!
+        self.vh.current_context().current_path_merge()  # TODO: new context for this?!
 
         logger.debug("Leaving if/else")
 

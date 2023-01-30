@@ -79,12 +79,10 @@ class Context:
         self.current_path = rule
         logger.debug(f"[{self.node.lineno}]Current path updated: {self.current_path}")
 
-    def branch_add(self):
+    def current_path_merge(self):
         # logger.info("Adding branch")
         if self.current_path:
-            rule = TriggerRuleSequence(
-                self.current_path, self.branch_path
-            )
+            rule = TriggerRuleSequence(self.current_path, self.branch_path)
         else:
             rule = self.branch_path
         self.current_path_update(rule)
@@ -100,9 +98,7 @@ class BranchContext(
     def end(self):
         # update parent with all my returns
         for rpath in self.return_paths:
-            self.parent_context.return_path_update(
-                rpath
-            )
+            self.parent_context.return_path_update(rpath)
 
         # update parent branch path with my current path
         if self.current_path:
@@ -160,12 +156,12 @@ class VisitorHelper:
             )
 
     def context_system_init(
-            self,
-            name: str,
-            uses: Dict[str, str],
-            system_claims: List[str],
-            integration_claims: List[str],
-            subsystem_claims: List[str],
+        self,
+        name: str,
+        uses: Dict[str, str],
+        system_claims: List[str],
+        integration_claims: List[str],
+        subsystem_claims: List[str],
     ):
         self.device.name = name
 
@@ -248,12 +244,12 @@ class VisitorHelper:
         return return_names_set
 
     def register_new_operation(
-            self,
-            op_name: str,
-            is_initial=False,
-            is_final=False,
-            next_ops: Optional[List[str]] = None,
-            rules: Optional[TriggerRule] = None,
+        self,
+        op_name: str,
+        is_initial=False,
+        is_final=False,
+        next_ops: Optional[List[str]] = None,
+        rules: Optional[TriggerRule] = None,
     ):
 
         if next_ops is None:
@@ -327,7 +323,7 @@ class VisitorHelper:
 
         next_ops_list = self.current_op_decorator.next_ops
         if next_ops_list and not all(
-                elem in next_ops_list for elem in return_path.return_next
+            elem in next_ops_list for elem in return_path.return_next
         ):
             raise ReturnMatchesNext(return_path.lineno, return_path.return_next)
         if not next_ops_list and return_path.return_next != [""]:

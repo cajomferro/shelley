@@ -91,6 +91,7 @@ class Context:
     def end(self):
         pass
 
+
 @dataclass
 class BranchContext(Context):
     def end(self):

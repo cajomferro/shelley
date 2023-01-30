@@ -157,9 +157,6 @@ class Python2ShelleyVisitor(AsStringVisitor):
         if not decorators_visitor.decorator:
             logger.debug(f"Skipping. This method is not annotated as an operation!")
             return None
-            # raise ShelleyPyError(
-            #     node.decorators.lineno, ShelleyPyError.DECORATOR_PARSE_ERROR
-            # )
 
         decorator = decorators_visitor.decorator
 
@@ -177,13 +174,14 @@ class Python2ShelleyVisitor(AsStringVisitor):
             ]  # this is just a safe check
 
             self.vh.context_init(node)
+            # TODO: move this inside operation context
             self.vh.context_operation_init(decorator)
 
             for node_body in node.body:
                 node_body.accept(self)
 
+            # TODO: move this inside operation context
             self.vh.register_return_paths()
-
             self.vh.context_operation_end(node.lineno)
             self.vh.context_end()
 

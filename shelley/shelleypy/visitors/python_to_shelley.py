@@ -297,23 +297,19 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
     def visit_for(self, node: For):
         logger.debug("entering for")
-
         # logger.debug(node)
-        save_rule = self.vh.current_path_copy()
-        self.vh.current_path_clear()
 
         save_returns = self.vh.n_returns
         self.vh.n_returns = 0
 
+        self.vh.context_init(node, type=ContextTypes.LOOP)
         for node_for_body in node.body:
             node_for_body.accept(self)
+        self.vh.context_end()
 
-        if self.vh.n_returns:
-            raise ShelleyPyError(node.lineno, ShelleyPyError.RETURN_INSIDE_LOOP)
+        self.vh.current_context().current_path_merge()  # TODO: new context for this?!
 
         self.vh.n_returns = save_returns
-
-        self.vh.register_new_for(save_rule)
 
         logger.debug("leaving for")
 

@@ -34,6 +34,7 @@ TriggerRuleBranch = Union[TriggerRuleChoice, TriggerRuleLoop, TriggerRuleFired]
 class ContextTypes:
     DEFAULT = 0
     BRANCH = 1
+    LOOP = 2
 
 
 @dataclass
@@ -96,6 +97,9 @@ class BranchContext(
     Context
 ):  # TODO: should I have different context types that inherit from a generic one?
     def end(self):
+        """
+        order matters!
+        """
         # update parent with all my returns
         for rpath in self.return_paths:
             self.parent_context.return_path_update(rpath)
@@ -103,6 +107,23 @@ class BranchContext(
         # update parent branch path with my current path
         if self.current_path:
             self.parent_context.branch_path.add_choice(self.current_path)
+
+@dataclass
+class LoopContext(
+    Context
+):  # TODO: should I have different context types that inherit from a generic one?
+    def end(self):
+        # update parent branch path with my current path
+        if self.current_path:
+            loop_rule = TriggerRuleLoop(self.current_path)
+            self.current_path_update(loop_rule)
+            self.parent_context.branch_path.add_choice(self.current_path)
+
+        # update parent with all my returns
+        for rpath in self.return_paths:
+            if self.current_path:
+                rpath.path = TriggerRuleSequence(self.current_path, rpath.path)
+            self.parent_context.return_path_update(rpath)
 
 
 @dataclass
@@ -279,12 +300,6 @@ class VisitorHelper:
 
         self.device.triggers.create(copy.copy(current_operation), copy.copy(rules))
 
-    def register_new_for(self, save_rule):
-        loop_rule = TriggerRuleLoop(self.current_path())
-        self.current_context().current_path_update(
-            TriggerRuleSequence(save_rule, loop_rule)
-        )
-
     def register_new_call(self):
         try:
             component: Component = self.device.components[
@@ -351,6 +366,8 @@ class VisitorHelper:
         match type:
             case ContextTypes.BRANCH:
                 ctx = BranchContext(parent_context=self.current_context(), node=node)
+            case ContextTypes.LOOP:
+                ctx = LoopContext(parent_context=self.current_context(), node=node)
             case _:
                 ctx = Context(parent_context=self.current_context(), node=node)
         self.branch_contexts.append(ctx)

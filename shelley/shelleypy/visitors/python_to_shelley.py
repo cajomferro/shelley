@@ -267,29 +267,22 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
     def visit_if(self, node: If):
         """ """
-        logger.debug("Entering if")
         # logger.debug(node)
-
+        logger.debug("Entering if")
         node.test.accept(self)  # test expression can be a subsys call
-
         self.vh.context_init(node, type=ContextTypes.BRANCH)
         for if_body_node in node.body:
             if_body_node.accept(self)
         self.vh.context_end()
-
         logger.debug("Leaving if")
 
-        logger.debug("Entering else")
-
-        if len(node.orelse) == 0:
-            raise ShelleyPyError(node.lineno, ShelleyPyError.ELSE_MISSING)
-
-        self.vh.context_init(node, type=ContextTypes.BRANCH)
-        for else_body_node in node.orelse:
-            else_body_node.accept(self)
-        self.vh.context_end()
-
-        logger.debug("Leaving else")
+        if len(node.orelse) != 0:
+            logger.debug("Entering else")
+            self.vh.context_init(node, type=ContextTypes.BRANCH)
+            for else_body_node in node.orelse:
+                else_body_node.accept(self)
+            self.vh.context_end()
+            logger.debug("Leaving else")
 
         self.vh.current_context().current_path_merge()  # TODO: new context for this?!
 

@@ -28,7 +28,7 @@ from shelley.shelleypy.checker.exceptions import ShelleyPyError
 from shelley.shelleypy.visitors.visitor_helper import ShelleyCall
 from shelley.shelleypy.visitors.visitor_helper import ShelleyOpDecorator
 from shelley.shelleypy.visitors.visitor_helper import VisitorHelper
-from shelley.shelleypy.visitors.visitor_helper import BranchContext
+from shelley.shelleypy.visitors.visitor_helper import ContextTypes
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
@@ -213,41 +213,19 @@ class Python2ShelleyVisitor(AsStringVisitor):
         subject.accept(self)
 
         self.vh.set_match_call_to_last_call()
-        saved_current_temp_rule = self.vh.copy_current_temp_rule()
-        self.vh.update_temp_rule()  # reset
 
         for node_case in node.cases:
+            self.vh.context_init(node, type=ContextTypes.BRANCH)
             node_case.accept(self)
+            self.vh.context_end()
 
-        # after match call and all cases
-        # self.vh.update_return_paths()
-        # print(len(self.vh.branch_contexts))
-        # if self.vh.is_last_branch():
-        #     print("last branch")
-        #     # self.vh.register_return_paths()
-        #     # self.vh.register_xor_call()
-        #     # self.vh.update_temp_rule()  # clear
-        #     # self.vh.current_path_clear()
-        # else:
-        self.vh.branch_add()
+        self.vh.current_context().branch_add() # TODO: new context for this?!
 
-        # self.vh.context_end()  # remove current match context
-
-        # for rpath in my_context.return_paths:
-        #     self.vh.current_context().return_path_update(
-        #         rpath
-        #     )  # update parent with my returns
-
-        # if len(my_context.return_paths) < len(node.cases):
-        #     self.vh.register_xor_call(my_context.current_path)
-        # print(self.vh.current_context().current_path)
         logger.debug("Leaving match")
 
     def visit_matchcase(self, match_case_node: MatchCase):
         logger.debug("Entering matchcase")
         # logger.debug(match_case_node)
-
-        my_context = self.vh.context_init(match_case_node.pattern)
 
         # before each case
         saved_match_call = self.vh.copy_match_call()
@@ -265,26 +243,6 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # after each case
         self.vh.restore_match_call(saved_match_call)
 
-        self.vh.context_end()  # remove current matchcase context
-
-        for rpath in my_context.return_paths:
-            self.vh.current_context().return_path_update(
-                rpath
-            )  # update parent with my returns
-
-        self.vh.branch_save(my_context.current_path)  # save and reset
-
-        # if len(my_context.return_paths) < len(match_case_node.body):
-        #     self.vh.register_xor_call(my_context.current_path)
-        # # TODO: RECUPERAR A IDEIA DE LIMPAR O CURRENT RETURN QUANDO VEJO UM RETURN
-        # # E DEPOIS ALGURES AQUI ADICIONO O CURRENT RETURN AO XOR
-
-        # if not self.vh.n_returns:
-        #     raise ShelleyPyError(
-        #         match_case_node.lineno, ShelleyPyError.CASE_MISSING_RETURN
-        #     )
-
-        # self.vh.branch_contexts.pop()
         logger.debug("Leaving matchcase")
 
     def visit_await(self, node: Await):
@@ -317,24 +275,26 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
         node.test.accept(self)  # test expression can be a subsys call
 
-        saved_current_path = self.vh.current_path_copy()
-
+        self.vh.context_init(node, type=ContextTypes.BRANCH)
         for if_body_node in node.body:
             if_body_node.accept(self)
+        self.vh.context_end()
+
         logger.debug("Leaving if")
 
         logger.debug("Entering else")
-        self.vh.current_path_update(saved_current_path)
 
         if len(node.orelse) == 0:
             raise ShelleyPyError(node.lineno, ShelleyPyError.ELSE_MISSING)
 
+        self.vh.context_init(node, type=ContextTypes.BRANCH)
         for else_body_node in node.orelse:
             else_body_node.accept(self)
+        self.vh.context_end()
+
         logger.debug("Leaving else")
 
-        if self.vh.n_returns < 2:
-            raise ShelleyPyError(node.lineno, ShelleyPyError.IF_ELSE_MISSING_RETURN)
+        self.vh.current_context().branch_add() # TODO: new context for this?!
 
         logger.debug("Leaving if/else")
 
@@ -388,7 +348,6 @@ class Python2ShelleyVisitor(AsStringVisitor):
         """
         # logger.debug(node)
         return_next: List[str] = self._parse_return_value(node)
-        self.vh.update_temp_rule()  # clear because a return was found
         self.vh.current_context().return_path_put(return_next, node.lineno)
 
     @staticmethod

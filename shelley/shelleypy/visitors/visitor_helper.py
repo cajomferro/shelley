@@ -31,6 +31,11 @@ logger = logging.getLogger("shelleypy")
 TriggerRuleBranch = Union[TriggerRuleChoice, TriggerRuleLoop, TriggerRuleFired]
 
 
+class ContextTypes:
+    DEFAULT = 0
+    BRANCH = 1
+
+
 @dataclass
 class ReturnPath:
     return_next: List[str]
@@ -39,11 +44,12 @@ class ReturnPath:
 
 
 @dataclass
-class BranchContext:  # TODO: should I have different context types that inherit from a generic one?
+class Context:
+    parent_context: Any
     node: NodeNG
-    branch_path: TriggerRuleBranch = None
     current_path: Optional[TriggerRule] = None
     return_paths: List[ReturnPath] = field(default_factory=list)
+    branch_path: TriggerRuleBranch = None
 
     def __post_init__(self):
         self.branch_path = TriggerRuleChoice()
@@ -60,10 +66,6 @@ class BranchContext:  # TODO: should I have different context types that inherit
         # )
         self.current_path = None
 
-    def return_path_pop(self) -> ReturnPath:
-        logger.debug(f"[{self.node.lineno}] Return paths pop")
-        return self.return_paths.pop()
-
     def return_path_update(self, suffix_rpath: ReturnPath):
         # logger.debug(f"[{self.node.lineno}] Return paths update:")
         if self.current_path is not None:
@@ -73,23 +75,38 @@ class BranchContext:  # TODO: should I have different context types that inherit
         self.return_paths.append(suffix_rpath)
         # logger.debug(f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
 
-    # def update_return_paths(self):
-    #     print(f"[{self.node.lineno}] updating return paths")
-    #     for return_path in self.return_paths:
-    #         return_path.path = TriggerRuleSequence(self.current_path, return_path.path)
-    #     print(f"Return paths: {[str(returnp.path) for returnp in self.return_paths]}")
-
-    # def current_path_copy(self):
-    #     logger.debug(f"[{self.node.lineno}] Current path copied: {self.current_path}")
-    #     return copy.copy(self.current_path)
-
-    # def current_path_clear(self):
-    #     self.current_path = TriggerRuleFired()
-    #     logger.debug(f"[{self.node.lineno}] Current path cleared")
-
     def current_path_update(self, rule: Optional[TriggerRule] = None):
         self.current_path = rule
         logger.debug(f"[{self.node.lineno}]Current path updated: {self.current_path}")
+
+    def branch_add(self):
+        # logger.info("Adding branch")
+        if self.current_path:
+            rule = TriggerRuleSequence(
+                self.current_path, self.branch_path
+            )
+        else:
+            rule = self.branch_path
+        self.current_path_update(rule)
+
+    def end(self):
+        pass
+
+
+@dataclass
+class BranchContext(
+    Context
+):  # TODO: should I have different context types that inherit from a generic one?
+    def end(self):
+        # update parent with all my returns
+        for rpath in self.return_paths:
+            self.parent_context.return_path_update(
+                rpath
+            )
+
+        # update parent branch path with my current path
+        if self.current_path:
+            self.parent_context.branch_path.add_choice(self.current_path)
 
 
 @dataclass
@@ -114,8 +131,8 @@ class ShelleyOpDecorator:
 class VisitorHelper:
     device: Device = field(init=False)
     external_only: bool = False
+    branch_contexts: List[Context] = field(default_factory=list)
     match_found: bool = False  # useful for verifying missing returns
-    current_temp_rule: TriggerRule = TriggerRuleFired()
     current_match_call: Optional[
         ShelleyCall
     ] = None  # useful for checking that the first match case matches the subsystem of the match call
@@ -124,7 +141,6 @@ class VisitorHelper:
     current_op_decorator: ShelleyOpDecorator = None
     current_return_op_name: Optional[str] = None
     collect_extra_ops: Dict[str, Any] = field(default_factory=dict)
-    branch_contexts: List[BranchContext] = field(default_factory=list)
 
     def __post_init__(self):
         self.device = Device(
@@ -144,12 +160,12 @@ class VisitorHelper:
             )
 
     def context_system_init(
-        self,
-        name: str,
-        uses: Dict[str, str],
-        system_claims: List[str],
-        integration_claims: List[str],
-        subsystem_claims: List[str],
+            self,
+            name: str,
+            uses: Dict[str, str],
+            system_claims: List[str],
+            integration_claims: List[str],
+            subsystem_claims: List[str],
     ):
         self.device.name = name
 
@@ -232,12 +248,12 @@ class VisitorHelper:
         return return_names_set
 
     def register_new_operation(
-        self,
-        op_name: str,
-        is_initial=False,
-        is_final=False,
-        next_ops: Optional[List[str]] = None,
-        rules: Optional[TriggerRule] = None,
+            self,
+            op_name: str,
+            is_initial=False,
+            is_final=False,
+            next_ops: Optional[List[str]] = None,
+            rules: Optional[TriggerRule] = None,
     ):
 
         if next_ops is None:
@@ -294,37 +310,6 @@ class VisitorHelper:
                 )
             )
 
-        match self.current_temp_rule:
-            case TriggerRuleFired():
-                self.update_temp_rule(
-                    TriggerRuleEvent(component, self.last_call.subsystem_call)
-                )
-            case TriggerRule():  # any other type of rule
-                self.update_temp_rule(
-                    TriggerRuleSequence(
-                        self.current_temp_rule,
-                        TriggerRuleEvent(component, self.last_call.subsystem_call),
-                    )
-                )
-
-    # def register_xor_call(self, path: TriggerRule):
-    #     #if len(self.current_context().branch_path.choices):
-    #         # print(self.branch_path)
-    #         # print(self.current_path)
-    #     match self.current_path():
-    #         case TriggerRuleFired():
-    #             self.current_context().branch_path.add_choice(path)
-    #             #self.current_context().current_path_update(self.branch_path)
-    #         case TriggerRule():  # any other type of rule
-    #             self.branch_path.add_choice(TriggerRuleSequence(self.current_path(), path))
-    #             #self.current_context().current_path_update(
-    #             #    TriggerRuleSequence(self.current_path(), self.branch_path)
-    #             #)
-    #         # print(self.current_path)
-    #     print(f"branch path: {self.branch_path}")
-    #
-    #     #self.clear_match_rules()
-
     def register_new_return(self, return_path: ReturnPath):
         # TODO: create a visitor to find the leftmost rule and then, if not None, use that name for the return, else use the index
         self.current_return_op_name: str = (
@@ -342,7 +327,7 @@ class VisitorHelper:
 
         next_ops_list = self.current_op_decorator.next_ops
         if next_ops_list and not all(
-            elem in next_ops_list for elem in return_path.return_next
+                elem in next_ops_list for elem in return_path.return_next
         ):
             raise ReturnMatchesNext(return_path.lineno, return_path.return_next)
         if not next_ops_list and return_path.return_next != [""]:
@@ -353,43 +338,9 @@ class VisitorHelper:
     def is_base_system(self):
         return len(self.device.uses) == 0 or self.external_only
 
-    def update_temp_rule(self, temp_rule: Optional[TriggerRule] = None):
-        if temp_rule is None:
-            temp_rule = TriggerRuleFired()
-        self.current_temp_rule = temp_rule
-        logger.debug(f"Current temp rule: {self.current_temp_rule}")
-
-    def branch_save(self, path):
-        # logger.info("Saving branch")
-        # print(path)
-        if path:
-            self.current_context().branch_path.add_choice(path)
-            # print(self.current_context().branch_path)
-
-    def branch_add(self):
-        # logger.info("Adding branch")
-        # print(self.current_path())
-        # print(self.current_context().branch_path)
-        rule = TriggerRuleSequence(
-            self.current_path(), self.current_context().branch_path
-        )
-        # print(id(self.current_path()))
-        # print(id(self.current_context().branch_path))
-        # print(f"Rule: {rule}")
-        self.current_context().current_path_update(rule)
-        # print(self.current_path())
-
-    # def clear_match_rules(self):
-    #     self.branch_path = TriggerRuleChoice()
-    #     self.update_temp_rule()
-
     def set_match_call_to_last_call(self):
         # logger.debug("Match call copied")
         self.current_match_call = self.last_call
-
-    def copy_current_temp_rule(self):
-        # logger.debug("Current temp rule copied")
-        return copy.copy(self.current_temp_rule)
 
     def copy_match_call(self):
         # logger.debug("Match call saved")
@@ -399,23 +350,25 @@ class VisitorHelper:
         # logger.debug("Match call restored")
         self.current_match_call = saved_match_call
 
-    def is_last_branch(self):
-        return len(self.branch_contexts) == 1  # first context is function
-
-    def is_inside_branch(self):
-        return len(self.track_branches)
-
-    def context_init(self, node):
+    def context_init(self, node, type=ContextTypes.DEFAULT):
         # logger.debug(f"New context: {node}")
-        ctx = BranchContext(node)
+        match type:
+            case ContextTypes.BRANCH:
+                ctx = BranchContext(parent_context=self.current_context(), node=node)
+            case _:
+                ctx = Context(parent_context=self.current_context(), node=node)
         self.branch_contexts.append(ctx)
         return ctx
 
     def context_end(self):
+        self.current_context().end()
         return self.branch_contexts.pop()
 
     def current_context(self):
         return self.branch_contexts[-1] if len(self.branch_contexts) else None
+
+    def parent_context(self):
+        return self.branch_contexts[-2] if len(self.branch_contexts) >= 2 else None
 
     def current_path(self) -> TriggerRule:
         return self.current_context().current_path if self.current_context() else None

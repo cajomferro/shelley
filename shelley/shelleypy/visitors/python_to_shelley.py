@@ -297,6 +297,15 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
     def visit_for(self, node: For):
         logger.debug("entering for")
+        self._handle_loop(node)
+        logger.debug("leaving for")
+
+    def visit_while(self, node: While):
+        logger.debug("entering while")
+        self._handle_loop(node)
+        logger.debug("leaving while")
+
+    def _handle_loop(self, node: Union[For, While]):
         # logger.debug(node)
 
         save_returns = self.vh.n_returns
@@ -310,28 +319,6 @@ class Python2ShelleyVisitor(AsStringVisitor):
         self.vh.current_context().current_path_merge()  # TODO: new context for this?!
 
         self.vh.n_returns = save_returns
-
-        logger.debug("leaving for")
-
-    def visit_while(self, node: While):
-        logger.debug("entering while")
-        # logger.debug(node)
-        save_rule = self.vh.current_path_copy()
-        self.vh.current_path_clear()
-
-        save_returns = self.vh.n_returns
-        self.vh.n_returns = 0
-
-        for node_while_body in node.body:
-            node_while_body.accept(self)
-
-        if self.vh.n_returns:
-            raise ShelleyPyError(node.lineno, ShelleyPyError.RETURN_INSIDE_LOOP)
-
-        self.vh.n_returns = save_returns
-
-        self.vh.register_new_for(save_rule)
-        logger.debug("leaving while")
 
     def visit_return(self, node: Return):
         """

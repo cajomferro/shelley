@@ -108,6 +108,7 @@ class BranchContext(
         if self.current_path:
             self.parent_context.branch_path.add_choice(self.current_path)
 
+
 @dataclass
 class LoopContext(
     Context

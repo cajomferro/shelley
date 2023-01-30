@@ -51,6 +51,7 @@ class Context:
     current_path: Optional[TriggerRule] = None
     return_paths: List[ReturnPath] = field(default_factory=list)
     branch_path: TriggerRuleBranch = None
+    has_return: bool = False
 
     def __post_init__(self):
         self.branch_path = TriggerRuleChoice()
@@ -65,6 +66,7 @@ class Context:
         # print(
         #     f"[{self.node.lineno}] Return paths: {[str(returnp.path) for returnp in self.return_paths]}"
         # )
+        self.has_return = True
         self.current_path = None
 
     def return_path_update(self, suffix_rpath: ReturnPath):
@@ -246,7 +248,9 @@ class VisitorHelper:
                 next_ops=next_ops,
             )
 
-        if not len(self.current_context().return_paths):
+        if not self.current_context().has_return and len(
+            self.current_context().branch_path.choices
+        ):
             raise ShelleyPyError(lineno, ShelleyPyError.MISSING_RETURN)
 
     def _original_return_names(self) -> Set[str]:

@@ -64,7 +64,7 @@ def test_missing_return_v2() -> None:
 
 def test_missing_return_if() -> None:
     """
-    Missing a return inside if
+    Missing a return inside if or in the end of the function
     """
 
     app = """
@@ -77,16 +77,17 @@ def test_missing_return_if() -> None:
         def main(self):
             if x:
                 self.v.run()
-                # return "" --> this is missing!
+                # return "" --> return is missing here...
             else:
-                return ""            
+                return ""  
+            # ... or here
     """
 
     with pytest.raises(ShelleyPyError) as exc_info:
         py2shy(app)
 
-    assert str(exc_info.value.msg) == ShelleyPyError.IF_ELSE_MISSING_RETURN
-    assert exc_info.value.lineno == 9
+    assert str(exc_info.value.msg) == ShelleyPyError.MISSING_RETURN
+    assert exc_info.value.lineno == 7
 
 
 # def test_missing_return_if_v2() -> None:
@@ -149,7 +150,7 @@ def test_return_ok_if_v2() -> None:
 
 def test_missing_return_else() -> None:
     """
-    Missing a return inside else
+    Missing a return inside else or in the end of the function
     """
 
     app = """
@@ -165,17 +166,18 @@ def test_missing_return_else() -> None:
                 return ""
             else:
                 self.v.cancel()
-                # return "" --> this is missing!
+                # return "" -->  return is missing here...
+            # ... or here
     """
 
     with pytest.raises(ShelleyPyError) as exc_info:
         py2shy(app)
 
-    assert str(exc_info.value.msg) == ShelleyPyError.IF_ELSE_MISSING_RETURN
-    assert exc_info.value.lineno == 9
+    assert str(exc_info.value.msg) == ShelleyPyError.MISSING_RETURN
+    assert exc_info.value.lineno == 7
 
 
-def test_missing_return_else_v2() -> None:
+def test_missing_return_else_ok() -> None:
     """
     For now, if one branch has return the other has to have too!
     """
@@ -193,14 +195,26 @@ def test_missing_return_else_v2() -> None:
                 return ""
             else:
                 self.v.cancel()
-            return "" # For now we don't accept this because the else is still missing a return
+            return "" # this is ok!
     """
 
-    with pytest.raises(ShelleyPyError) as exc_info:
-        py2shy(app)
+    shy = py2shy(app)
 
-    assert str(exc_info.value.msg) == ShelleyPyError.IF_ELSE_MISSING_RETURN
-    assert exc_info.value.lineno == 9
+    expected_shy = """App (v: Valve) {
+ final main_1 ->  {
+  v.run; 
+ }
+ final main_2 ->  {
+  {v.cancel;} 
+ }
+ initial main -> main_1, main_2 {}
+
+}
+        """.strip()
+
+    # print(shy)
+
+    assert shy == expected_shy
 
 
 def test_return_does_not_match_next() -> None:

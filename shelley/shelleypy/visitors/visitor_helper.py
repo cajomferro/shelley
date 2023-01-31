@@ -51,6 +51,7 @@ class Context:
     current_path: Optional[TriggerRule] = None
     return_paths: List[ReturnPath] = field(default_factory=list)
     branch_path: TriggerRuleBranch = None
+    # TODO: might not need this, just use "if current_path is None" at the end of the context?
     has_return: bool = False
 
     def __post_init__(self):
@@ -252,9 +253,7 @@ class VisitorHelper:
                 next_ops=next_ops,
             )
 
-        if not self.current_context().has_return and len(
-            self.current_context().branch_path.choices
-        ):
+        if not self.current_context().has_return:
             raise ShelleyPyError(lineno, ShelleyPyError.MISSING_RETURN)
 
     def _original_return_names(self) -> Set[str]:

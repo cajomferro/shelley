@@ -206,14 +206,16 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
         self.vh.set_match_call_to_last_call()
 
+        all_branch_return = True
         for node_case in node.cases:
-            self.vh.context_init(node, type=ContextTypes.BRANCH)
+            case_ctx = self.vh.context_init(node, type=ContextTypes.BRANCH)
             node_case.accept(self)
+            all_branch_return &= case_ctx.has_return
             self.vh.context_end()
 
-        self.vh.current_context().current_path_merge(
-            force_branch=self._extra_options_force_branch()
-        )  # TODO: new context for this?!
+        my_ctx = self.vh.current_context()  # TODO: new context for this?!
+        my_ctx.current_path_merge(force_branch=self._extra_options_force_branch())
+        my_ctx.has_return |= all_branch_return
 
         logger.debug("Leaving match")
 
@@ -230,6 +232,8 @@ class Python2ShelleyVisitor(AsStringVisitor):
     def visit_matchcase(self, match_case_node: MatchCase):
         logger.debug("Entering matchcase")
         # logger.debug(match_case_node)
+
+        my_ctx = self.vh.current_context()
 
         # before each case
         saved_match_call = self.vh.copy_match_call()
@@ -275,23 +279,30 @@ class Python2ShelleyVisitor(AsStringVisitor):
     def visit_if(self, node: If):
         """ """
         # logger.debug(node)
+        all_branch_return = True
+
         logger.debug("Entering if")
         node.test.accept(self)  # test expression can be a subsys call
-        self.vh.context_init(node, type=ContextTypes.BRANCH)
+        if_ctx = self.vh.context_init(node, type=ContextTypes.BRANCH)
         for if_body_node in node.body:
             if_body_node.accept(self)
+        all_branch_return &= if_ctx.has_return
         self.vh.context_end()
         logger.debug("Leaving if")
 
         if len(node.orelse) != 0:
             logger.debug("Entering else")
-            self.vh.context_init(node, type=ContextTypes.BRANCH)
+            else_ctx = self.vh.context_init(node, type=ContextTypes.BRANCH)
             for else_body_node in node.orelse:
                 else_body_node.accept(self)
+            all_branch_return &= else_ctx.has_return
             self.vh.context_end()
             logger.debug("Leaving else")
 
-        self.vh.current_context().current_path_merge()  # TODO: new context for this?!
+        my_ctx = self.vh.current_context()
+        my_ctx.current_path_merge()  # TODO: new context for this?!
+
+        my_ctx.has_return |= all_branch_return
 
         logger.debug("Leaving if/else")
 
@@ -307,11 +318,14 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
     def _handle_loop(self, node: Union[For, While]):
         # logger.debug(node)
+        my_ctx = self.vh.current_context()
 
-        self.vh.context_init(node, type=ContextTypes.LOOP)
+        loop_ctx = self.vh.context_init(node, type=ContextTypes.LOOP)
         for node_for_body in node.body:
             node_for_body.accept(self)
         self.vh.context_end()
+
+        my_ctx.has_return |= loop_ctx.has_return
 
         self.vh.current_context().current_path_merge()  # TODO: new context for this?!
 

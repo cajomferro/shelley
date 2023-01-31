@@ -220,7 +220,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
     def _extra_options_force_branch(self):
         """
         If relax_match_force_case=True, then if there is a match with a single case, the case itself will be optional (xor branch).
-        By default, this is False for match statements, since we want to enforce at least one branch.
+        By default, force_branch is True (i.e., relax_match_force_case=False) for match statements, since we want to enforce at least one branch.
         """
         try:
             return not self.extra_options["relax_match_force_case"]

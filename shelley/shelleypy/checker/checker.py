@@ -8,8 +8,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleypy")
 
 
-def python2shelley(src_path: Path, external_only=False) -> Device:
-    return Python2ShelleyVisitor(external_only=external_only).py2shy(src_path)
+def python2shelley(src_path: Path, external_only=False, extra_options=None) -> Device:
+    return Python2ShelleyVisitor(
+        external_only=external_only, extra_options=extra_options
+    ).py2shy(src_path)
 
 
 def main():

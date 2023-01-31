@@ -82,12 +82,16 @@ class Context:
         self.current_path = rule
         logger.debug(f"[{self.node.lineno}]Current path updated: {self.current_path}")
 
-    def current_path_merge(self):
+    def current_path_merge(self, force_branch=False):
         # logger.info("Adding branch")
+        branch: TriggerRule = self.branch_path
+        if force_branch and len(self.branch_path.choices) == 1:
+            branch = self.branch_path.choices[0]
+
         if self.current_path:
-            rule = TriggerRuleSequence(self.current_path, self.branch_path)
+            rule = TriggerRuleSequence(self.current_path, branch)
         else:
-            rule = self.branch_path
+            rule = branch
         self.current_path_update(rule)
 
     def end(self):

@@ -579,7 +579,7 @@ class PyVisitor:
 #         self.current_rule = TriggerRuleFired()
 #
 #
-def python2shelley(src_path: Path, external_only=False) -> Device:
+def python2shelley(src_path: Path, external_only=False, extra_options=None) -> Device:
     with src_path.open() as f:
         tree = extract_node(f.read())
 

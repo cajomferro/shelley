@@ -35,6 +35,11 @@ def get_command_args() -> argparse.Namespace:
         help="Uses the old checker algorithm instead of the new one (which uses the visitor pattern)",
         action="store_true",
     )
+    parser.add_argument(
+        "--relax-match-force-case",
+        help="If there is a match with a single case, the case itself will be optional (xor branch)",
+        action="store_true",
+    )
     return parser.parse_args()
 
 
@@ -55,14 +60,22 @@ def shelley2lark(device: Device, output_path: Path):
         f.write(lark_code)
 
 
-def check(src_path: Path, output_path: Path, optimize=False, use_old_checker=False):
+def check(
+    src_path: Path,
+    output_path: Path,
+    optimize=False,
+    use_old_checker=False,
+    extra_options=None,
+):
     if use_old_checker:
         from shelley.shelleypy.checker.old_checker import python2shelley
     else:
         from shelley.shelleypy.checker.checker import python2shelley
 
     try:
-        device = python2shelley(src_path, external_only=False)
+        device = python2shelley(
+            src_path, external_only=False, extra_options=extra_options
+        )
         if optimize:
             fun_optimize(device)
         integration_output_path: Path = Path(
@@ -103,6 +116,7 @@ def main() -> None:
             output_path=args.output,
             optimize=args.optimize,
             use_old_checker=args.use_old_checker,
+            extra_options={"relax_match_force_case": args.relax_match_force_case},
         )
         logger.debug("OK!")
     except CompilationError as error:

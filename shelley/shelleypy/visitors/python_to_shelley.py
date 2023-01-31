@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, List, Dict, Union
+from typing import Any, List, Dict, Union, Optional
 
 from astroid import List as ListNG
 from astroid import (
@@ -103,6 +103,7 @@ class ClassDecoratorsVisitor(AsStringVisitor):
 class Python2ShelleyVisitor(AsStringVisitor):
     visitor_helper: VisitorHelper = field(init=False)
     external_only: bool = False
+    extra_options: Dict = field(default_factory=dict)
 
     def __post_init__(self):
         self.vh = VisitorHelper(external_only=self.external_only)
@@ -210,9 +211,21 @@ class Python2ShelleyVisitor(AsStringVisitor):
             node_case.accept(self)
             self.vh.context_end()
 
-        self.vh.current_context().current_path_merge()  # TODO: new context for this?!
+        self.vh.current_context().current_path_merge(
+            force_branch=self._extra_options_force_branch()
+        )  # TODO: new context for this?!
 
         logger.debug("Leaving match")
+
+    def _extra_options_force_branch(self):
+        """
+        If relax_match_force_case=True, then if there is a match with a single case, the case itself will be optional (xor branch).
+        By default, this is False for match statements, since we want to enforce at least one branch.
+        """
+        try:
+            return not self.extra_options["relax_match_force_case"]
+        except:
+            return False
 
     def visit_matchcase(self, match_case_node: MatchCase):
         logger.debug("Entering matchcase")

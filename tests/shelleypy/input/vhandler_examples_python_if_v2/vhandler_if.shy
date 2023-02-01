@@ -1,0 +1,4 @@
+base App {
+ initial final main -> main ;
+
+}

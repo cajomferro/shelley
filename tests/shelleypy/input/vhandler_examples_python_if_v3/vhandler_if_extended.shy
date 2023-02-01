@@ -1,0 +1,16 @@
+App (a: Valve, b: Valve) {
+ open_all_1 -> close_b {
+  b.open; 
+ }
+ open_all_2 -> close_a {
+  {a.open;} 
+ }
+ initial open_all -> open_all_1, open_all_2 {}
+ final close_a -> open_all {
+  a.close; 
+ }
+ final close_b -> open_all {
+  b.close; 
+ }
+
+}

@@ -1,0 +1,10 @@
+AppV2 (vh: ValveHandler) {
+ final main_1 ->  {
+  vh.try_open; vh.close; 
+ }
+ final main_2 ->  {
+  vh.try_open; vh.fail; 
+ }
+ initial main -> main_1, main_2 {}
+
+}

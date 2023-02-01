@@ -1,0 +1,11 @@
+base Valve {
+ initial test -> open, clean ;
+ open -> close ;
+ final close -> test ;
+ final clean -> test ;
+
+ system check G (open -> (F close));
+ system check G ((test -> ((X (open | clean)) & (X (! close)))) | END);
+ system check G ((clean & (! END)) -> (X (! open)));
+
+}

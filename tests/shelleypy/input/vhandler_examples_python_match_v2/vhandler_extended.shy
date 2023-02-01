@@ -1,0 +1,22 @@
+App (a: Valve, b: Valve) {
+ try_open_1 -> when_a {
+  a.test; a.open; 
+ }
+ try_open_2 -> when_b {
+  a.test; a.clean; b.test; b.open; 
+ }
+ try_open_3 -> try_open {
+  a.test; a.clean; b.test; b.clean; 
+ }
+ try_open_4 -> try_open {
+  a.test; {a.clean; b.test; b.mamas; a.cenas; } + {a.omg;} 
+ }
+ initial try_open -> try_open_1, try_open_2, try_open_3, try_open_4 {}
+ final when_a -> try_open {
+  a.close; 
+ }
+ final when_b -> try_open {
+  b.close; 
+ }
+
+}

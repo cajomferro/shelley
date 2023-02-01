@@ -1,0 +1,19 @@
+ App (c: Controller) {
+  final run_1 -> {
+     c.boot;
+     {c.sleep;} +
+     {
+	     c.try_update;
+	     loop {c.try_update;}
+	     {c.follow_plan_online; } + {c.follow_plan_offline;}
+	     c.sleep;
+	 }
+  }
+
+  initial run -> run_1 {}
+
+  integration check G (c.boot -> (F (c.sleep & END)));
+
+ }
+
+ 

@@ -1,0 +1,14 @@
+VHandler (v1: Valve) {
+ main_1 -> close {
+  v1.init; loop{v1.test; v1.error;} v1.test; v1.ok; {v1.on;} 
+ }
+ main_2 -> all_tries_failed {
+  v1.init; loop{v1.test; v1.error;} v1.clean; 
+ }
+ initial main -> main_1, main_2 {}
+ final all_tries_failed ->  {}
+ final close ->  {
+  v1.off; 
+ }
+
+}

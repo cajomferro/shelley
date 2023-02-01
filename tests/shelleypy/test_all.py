@@ -71,7 +71,7 @@ def test_all_v1() -> None:
     expected_shy = """
 App (a: Valve, b: Valve, led: LED) {
  try_open_1 -> close_a {
-  a.test; a.open; {loop{led.on; led.off;}} 
+  a.test; a.open; loop{led.on; led.off;} 
  }
  try_open_2 -> close_a {
   a.test; a.open; 

@@ -43,7 +43,7 @@ def test_while() -> None:
     expected_shy = """
 App (v: Valve) {
  initial final main ->  {
-  {loop{v.on; v.off;}} 
+  loop{v.on; v.off;} 
  }
 
 }
@@ -79,7 +79,7 @@ def test_for() -> None:
     expected_shy = """
 App (v: Valve) {
  initial final main ->  {
-  {loop{v.on; v.off;}} 
+  loop{v.on; v.off;} 
  }
 
 }
@@ -118,7 +118,7 @@ def test_nested_for() -> None:
     expected_shy = """
 App (v1: Valve, v2: Valve) {
  initial final main ->  {
-  {loop{v1.on; {loop{v2.on; v2.off;}} v1.off;}} 
+  loop{v1.on; loop{v2.on; v2.off;} v1.off;} 
  }
 
 }

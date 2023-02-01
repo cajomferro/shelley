@@ -107,11 +107,30 @@ def test_app_v2() -> None:
             return "main"
     """
 
-    with pytest.raises(ShelleyPyError) as exc_info:
-        py2shy(app)
+    shy = py2shy(app)
 
-    assert str(exc_info.value.msg) == "The else branch is missing!"
-    assert exc_info.value.lineno == 12
+    expected_shy = """App (v1: Valve, v2: Valve) {
+ main_1 -> stop_v1 {
+  v1.on; 
+ }
+ main_2 -> main {}
+ main_3 -> stop_v2 {
+  v2.on; 
+ }
+ initial main -> main_1, main_2, main_3 {}
+ final stop_v1 -> main {
+  v1.off; 
+ }
+ final stop_v2 -> main {
+  v2.off; 
+ }
+
+}
+    """.strip()
+
+    print(shy)
+
+    assert shy == expected_shy
 
 
 def test_app_v3() -> None:

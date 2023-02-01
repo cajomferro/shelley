@@ -46,7 +46,7 @@ class App:
 
     expected_shy = """App (c: Controller) {
  final run_1 -> run {
-  {{c.boot; c.try_update; c.update_ok; c.follow_new_plan; } + {c.boot; c.try_update; c.update_error; c.follow_default_plan; }} + {c.boot; c.sleep; }
+  {{c.boot; c.try_update; c.update_ok; c.follow_new_plan; } + {c.boot; c.try_update; c.update_error; c.follow_default_plan;} } + {c.boot; c.sleep;} 
  }
  initial run -> run_1 {}
 

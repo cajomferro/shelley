@@ -43,7 +43,7 @@ def test_while() -> None:
     expected_shy = """
 App (v: Valve) {
  initial final main ->  {
-  loop {v.on; v.off; }
+  {loop{v.on; v.off;}} 
  }
 
 }
@@ -79,7 +79,7 @@ def test_for() -> None:
     expected_shy = """
 App (v: Valve) {
  initial final main ->  {
-  loop {v.on; v.off; }
+  {loop{v.on; v.off;}} 
  }
 
 }
@@ -118,7 +118,7 @@ def test_nested_for() -> None:
     expected_shy = """
 App (v1: Valve, v2: Valve) {
  initial final main ->  {
-  loop {v1.on; loop {v2.on; v2.off; }v1.off; }
+  {loop{v1.on; {loop{v2.on; v2.off;}} v1.off;}} 
  }
 
 }
@@ -145,11 +145,16 @@ def test_loop_with_return_v1() -> None:
                 return ""
     """
 
-    with pytest.raises(ShelleyPyError) as exc_info:
-        py2shy(app)
+    shy = py2shy(app)
 
-    assert str(exc_info.value.msg) == "Return statements are not allowed inside loops!"
-    assert exc_info.value.lineno == 10
+    expected_shy = """
+App (v: Valve) {
+ initial final main ->  {}
+
+}
+""".strip()
+    # print(shy)
+    assert shy == expected_shy
 
 
 def test_loop_with_return_v2() -> None:
@@ -174,8 +179,18 @@ def test_loop_with_return_v2() -> None:
                     return ""
     """
 
-    with pytest.raises(ShelleyPyError) as exc_info:
-        py2shy(app)
+    shy = py2shy(app)
 
-    assert str(exc_info.value.msg) == "Return statements are not allowed inside loops!"
-    assert exc_info.value.lineno == 10
+    expected_shy = """
+App (v: Valve) {
+ final main_1 ->  {
+  loop{} v.on; 
+ }
+ final main_2 ->  {
+  loop{} 
+ }
+ initial main -> main_1, main_2 {}
+
+}
+    """.strip()
+    assert shy == expected_shy

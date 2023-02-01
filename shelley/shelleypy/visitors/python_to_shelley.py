@@ -319,13 +319,22 @@ class Python2ShelleyVisitor(AsStringVisitor):
     def _handle_loop(self, node: Union[For, While]):
         # logger.debug(node)
         my_ctx = self.vh.current_context()
+        all_branch_return = True
 
-        loop_ctx = self.vh.context_init(node, type=ContextTypes.LOOP)
+        for_body_ctx = self.vh.context_init(node, type=ContextTypes.LOOP)
         for node_for_body in node.body:
             node_for_body.accept(self)
+        all_branch_return &= for_body_ctx.has_return
         self.vh.context_end()
 
-        my_ctx.has_return |= loop_ctx.has_return
+        if node.orelse:
+            for_else_ctx = self.vh.context_init(node, type=ContextTypes.LOOP_ELSE)
+            for node_for_else in node.orelse:
+                node_for_else.accept(self)
+            all_branch_return &= for_else_ctx.has_return
+            self.vh.context_end()
+
+        my_ctx.has_return |= all_branch_return
 
         self.vh.current_context().current_path_merge()  # TODO: new context for this?!
 

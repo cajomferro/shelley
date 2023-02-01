@@ -35,6 +35,7 @@ class ContextTypes:
     DEFAULT = 0
     BRANCH = 1
     LOOP = 2
+    LOOP_ELSE = 3
 
 
 @dataclass
@@ -50,12 +51,12 @@ class Context:
     node: NodeNG
     current_path: Optional[TriggerRule] = None
     return_paths: List[ReturnPath] = field(default_factory=list)
-    branch_path: TriggerRuleBranch = None
+    branch_path: Optional[TriggerRuleBranch] = None
     # TODO: might not need this, just use "if current_path is None" at the end of the context?
     has_return: bool = False
 
     def __post_init__(self):
-        self.branch_path = TriggerRuleChoice()
+        self.branch_path = TriggerRuleChoice() # TODO: do we want this initialization here?
 
     def return_path_put(self, return_next: List[str], lineno: int):
         logger.debug(f"[{self.node.lineno}] Found return: {return_next}")
@@ -121,7 +122,7 @@ class LoopContext(Context):
         if self.current_path:
             loop_rule = TriggerRuleLoop(self.current_path)
             self.current_path_update(loop_rule)
-            self.parent_context.branch_path.add_choice(self.current_path)
+            self.parent_context.branch_path = self.current_path
 
         # update parent with all my returns
         for rpath in self.return_paths:
@@ -129,6 +130,25 @@ class LoopContext(Context):
                 rpath.path = TriggerRuleSequence(self.current_path, rpath.path)
             self.parent_context.return_path_update(rpath)
 
+@dataclass
+class LoopElseContext(Context):
+    def end(self):
+        """
+        order matters!
+        """
+        # update parent with all my returns
+        # TODO: TEST THIS
+        for rpath in self.return_paths:
+            self.parent_context.return_path_update(rpath)
+
+        # update parent branch path with my current path
+        if self.current_path:
+            loop_rule: TriggerRuleLoop = self.parent_context.branch_path
+            loop_body_rule: TriggerRule = loop_rule.loop
+            rule = TriggerRuleSequence(loop_body_rule, self.parent_context.branch_path)
+            rule = TriggerRuleSequence(rule, self.current_path)
+            self.current_path_update(rule)
+            self.parent_context.branch_path = rule
 
 @dataclass
 class ShelleyCall:
@@ -365,6 +385,8 @@ class VisitorHelper:
                 ctx = BranchContext(parent_context=self.current_context(), node=node)
             case ContextTypes.LOOP:
                 ctx = LoopContext(parent_context=self.current_context(), node=node)
+            case ContextTypes.LOOP_ELSE:
+                ctx = LoopElseContext(parent_context=self.current_context(), node=node)
             case _:
                 ctx = Context(parent_context=self.current_context(), node=node)
         self.branch_contexts.append(ctx)

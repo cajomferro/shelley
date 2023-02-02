@@ -55,6 +55,8 @@ class Shelley2Lark(Visitor):
             result += element.choices[-1].accept(self)
             if result[-1] == " ":
                 result = result[:-1]  # remove extra space if applicable
+            if len(element.choices) == 1:
+                result += "} + {"
             result += "} "
 
         return result

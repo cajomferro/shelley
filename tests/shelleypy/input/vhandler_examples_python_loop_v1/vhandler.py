@@ -8,13 +8,13 @@ class VHandler:
         self.v1 = Valve()
 
     @operation(initial=True, next=["all_tries_failed", "close"])
-    def main(self):
+    def main(self, allow_open=False):
         self.v1.vinit()
         for _ in range(10):
             match self.v1.test():
                 case "ok":
                     self.v1.ok()
-                    if something:
+                    if allow_open:
                         self.v1.open()
                     return "close"
                 case "error":

@@ -205,7 +205,7 @@ def test_missing_return_else_ok() -> None:
   v.run; 
  }
  final main_2 ->  {
-  {v.cancel;} 
+  {v.cancel;} + {} 
  }
  initial main -> main_1, main_2 {}
 

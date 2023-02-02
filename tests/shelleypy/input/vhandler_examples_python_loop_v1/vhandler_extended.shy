@@ -1,6 +1,6 @@
 VHandler (v1: Valve) {
  main_1 -> close {
-  v1.vinit; loop{v1.test; v1.error;} v1.test; v1.ok; {v1.open;} 
+  v1.vinit; loop{v1.test; v1.error;} v1.test; v1.ok; {v1.open; } + {} 
  }
  main_2 -> all_tries_failed {
   v1.vinit; loop{v1.test; v1.error;} v1.clean; 

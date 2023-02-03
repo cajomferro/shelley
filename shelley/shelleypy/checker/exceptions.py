@@ -9,7 +9,9 @@ class ShelleyPyError(Exception):
     MATCH_CALL_TYPE = "Match call type mismatch. Accepted types are: Call, Await!"
     MATCH_CASE_VALUE_TYPE = "Cases values must be strings!"
     RETURN_PARSE_ERROR = "Could not parse return. Expecting str|list[,*]"
-    ALL_BRANCH_RETURN_INSIDE_LOOP = "All branches return which makes loop useless. Please remove the loop."
+    ALL_BRANCH_RETURN_INSIDE_LOOP = (
+        "All branches return which makes loop useless. Please remove the loop."
+    )
 
     # DECORATOR_PARSE_ERROR = "Could not parse decorator!"
 

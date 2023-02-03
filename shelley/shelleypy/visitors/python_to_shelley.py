@@ -293,7 +293,6 @@ class Python2ShelleyVisitor(AsStringVisitor):
         else:
             my_ctx.branch_path.add_choice(TriggerRuleFired())
 
-
         my_ctx.current_path_merge()  # TODO: new context for this?!
 
         my_ctx.has_return |= all_branch_return
@@ -329,7 +328,9 @@ class Python2ShelleyVisitor(AsStringVisitor):
             self.vh.context_end()
 
         if all_branch_return:
-            raise ShelleyPyError(node.lineno, ShelleyPyError.ALL_BRANCH_RETURN_INSIDE_LOOP)
+            raise ShelleyPyError(
+                node.lineno, ShelleyPyError.ALL_BRANCH_RETURN_INSIDE_LOOP
+            )
 
         my_ctx.has_return |= all_branch_return
 

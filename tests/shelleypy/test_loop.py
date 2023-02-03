@@ -210,7 +210,7 @@ def test_loop_with_return_v3() -> None:
     """
 
     shy = py2shy(app)
-    print(shy)
+    # print(shy)
     expected_shy = """
 App (v1: Valve, v2: Valve) {
  final main_1 ->  {
@@ -244,7 +244,7 @@ def test_loop_with_return_v4() -> None:
             self.v2.on()
             for i in range(10):
                 if (i % 2) == 0:
-                    if handle_v1:
+                    if handle_v1: # extra branch here
                         self.v1.on()
                         self.v1.off()
                     self.v2.off()
@@ -273,6 +273,46 @@ App (v1: Valve, v2: Valve) {
     assert shy == expected_shy
 
 def test_loop_with_return_v5() -> None:
+    """
+
+    """
+
+    app = """
+    @claim("system check G (main -> F (main & END));")
+    @system(uses={"v1": "Valve", "v2": "Valve"})
+    class App:
+        def __init__(self):
+            self.v1 = Valve()
+            self.v2 = Valve()
+
+        @operation(initial=True, final=True, next=[])
+        def main(self, handle_v1=True):
+            self.v2.on()
+            for i in range(10):
+                if (i % 2) == 0:
+                    self.v1.on()
+                    self.v1.off()
+                    self.v2.off()
+                else:
+                    self.v2.off()
+                    self.v2.on()
+            self.v2.off()                    
+            return "" # this is te only return
+    """
+
+    shy = py2shy(app)
+
+    expected_shy = """App (v1: Valve, v2: Valve) {
+ initial final main ->  {
+  v2.on; loop{{v1.on; v1.off; v2.off;} + {v2.off; v2.on;}} v2.off; 
+ }
+
+}
+    """.strip()
+    print(shy)
+    assert shy == expected_shy
+
+def test_loop_with_return_v6() -> None:
     """
 
     """
@@ -379,16 +419,16 @@ class App:
 
     expected_shy = """App (a: Valve, b: Valve) {
  try_open_1 -> when_a {
-  a.test; a.open; 
+  loop{a.test; {a.clean; b.test; b.xalala; a.cenas;} + {a.omg;}} a.test; a.open; 
  }
  try_open_2 -> when_b {
-  a.test; a.clean; b.test; b.open; 
+  loop{a.test; {a.clean; b.test; b.xalala; a.cenas;} + {a.omg;}} a.test; a.clean; b.test; b.open; 
  }
  try_open_3 -> try_open {
-  a.test; a.clean; b.test; b.clean; 
+  loop{a.test; {a.clean; b.test; b.xalala; a.cenas;} + {a.omg;}} a.test; a.clean; b.test; b.clean; 
  }
  try_open_4 -> try_open {
-  a.test; {a.clean; b.test; b.xalala; a.cenas;} + {a.omg;} 
+  loop{a.test; {a.clean; b.test; b.xalala; a.cenas;} + {a.omg;}} 
  }
  initial try_open -> try_open_1, try_open_2, try_open_3, try_open_4 {}
  final when_a -> try_open {
@@ -400,7 +440,7 @@ class App:
 
 }
 """.strip()
-
+    # print(shy)
     assert shy == expected_shy
 
 def test_loop_nested_match_v2() -> None:
@@ -433,9 +473,9 @@ class App:
                             self.b.clean()
                             return "try_open"
                     self.a.cenas()
-                    return "try_open"
+                    return "try_open" # --> new return here
                 case "omg":
-                    self.a.omg()
+                    self.a.omg() # this is the only XOR branch now
         return "try_open"
 
     @operation(final=True, next=["try_open"])
@@ -453,19 +493,19 @@ class App:
 
     expected_shy = """App (a: Valve, b: Valve) {
  try_open_1 -> when_a {
-  a.test; a.open; 
+  loop{a.test; a.omg;} a.test; a.open; 
  }
  try_open_2 -> when_b {
-  a.test; a.clean; b.test; b.open; 
+  loop{a.test; a.omg;} a.test; a.clean; b.test; b.open; 
  }
  try_open_3 -> try_open {
-  a.test; a.clean; b.test; b.clean; 
+  loop{a.test; a.omg;} a.test; a.clean; b.test; b.clean; 
  }
  try_open_4 -> try_open {
-  a.test; a.clean; b.test; b.xalala; a.cenas; 
+  loop{a.test; a.omg;} a.test; a.clean; b.test; b.xalala; a.cenas; 
  }
  try_open_5 -> try_open {
-  a.test; a.omg; 
+  loop{a.test; a.omg;} 
  }
  initial try_open -> try_open_1, try_open_2, try_open_3, try_open_4, try_open_5 {}
  final when_a -> try_open {
@@ -477,5 +517,59 @@ class App:
 
 }
 """.strip()
-
+    # print(shy)
     assert shy == expected_shy
+
+def test_loop_nested_match_all_branches_return() -> None:
+    """
+    If all branches return, the loop is useless
+    """
+
+    py_code = """
+@system(uses={"a": "Valve", "b": "Valve"})
+class App:
+    def __init__(self):
+        self.a = Valve()
+        self.b = Valve()
+
+    @operation(initial=True, next=["try_open", "when_a", "when_b"])
+    def try_open(self):
+        for _ in range(10):
+            match self.a.test():
+                case "open":
+                    self.a.open()
+                    return "when_a"
+                case "clean":
+                    self.a.clean()
+                    match self.b.test():
+                        case "xalala":
+                            self.b.xalala()
+                        case "open":
+                            self.b.open()
+                            return "when_b"
+                        case "clean":
+                            self.b.clean()
+                            return "try_open"
+                    self.a.cenas()
+                    return "try_open" # --> new return here
+                case "omg":
+                    self.a.omg() #
+                    return "try_open" # --> new return here (all branches inside loop now return)
+        return "try_open"
+
+    @operation(final=True, next=["try_open"])
+    def when_a(self):
+        self.a.close()
+        return "try_open"
+
+    @operation(final=True, next=["try_open"])
+    def when_b(self):
+        self.b.close()
+        return "try_open"
+    """
+
+    with pytest.raises(ShelleyPyError) as exc_info:
+        py2shy(py_code)
+
+    assert str(exc_info.value.msg) == ShelleyPyError.ALL_BRANCH_RETURN_INSIDE_LOOP
+    assert exc_info.value.lineno == 10

@@ -1,6 +1,0 @@
-base VHandler {
- initial main -> all_tries_failed, close ;
- final all_tries_failed ->  ;
- final close ->  ;
-
-}

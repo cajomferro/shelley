@@ -56,7 +56,9 @@ class Context:
     has_return: bool = False
 
     def __post_init__(self):
-        self.branch_path = TriggerRuleChoice() # TODO: do we want this initialization here?
+        self.branch_path = (
+            TriggerRuleChoice()
+        )  # TODO: do we want this initialization here?
 
     def return_path_put(self, return_next: List[str], lineno: int):
         logger.debug(f"[{self.node.lineno}] Found return: {return_next}")
@@ -97,7 +99,10 @@ class Context:
         branch: TriggerRule = self.branch_path
 
         # this will force match/case not to be optional and also avoids choices with a single path
-        if isinstance(self.branch_path, TriggerRuleChoice) and len(self.branch_path.choices) == 1:
+        if (
+            isinstance(self.branch_path, TriggerRuleChoice)
+            and len(self.branch_path.choices) == 1
+        ):
             branch = self.branch_path.choices[0]
 
         if self.current_path:
@@ -140,6 +145,7 @@ class LoopContext(Context):
                 rpath.path = TriggerRuleSequence(self.current_path, rpath.path)
             self.parent_context.return_path_update(rpath)
 
+
 @dataclass
 class LoopElseContext(Context):
     def end(self):
@@ -159,6 +165,7 @@ class LoopElseContext(Context):
             rule = TriggerRuleSequence(rule, self.current_path)
             self.current_path_update(rule)
             self.parent_context.branch_path = rule
+
 
 @dataclass
 class ShelleyCall:

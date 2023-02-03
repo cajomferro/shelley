@@ -24,6 +24,7 @@ from astroid import (
 from astroid.nodes.as_string import AsStringVisitor
 
 from shelley.ast.devices import Device
+from shelley.ast.rules import TriggerRuleFired
 from shelley.shelleypy.checker.exceptions import ShelleyPyError
 from shelley.shelleypy.visitors.visitor_helper import ShelleyCall
 from shelley.shelleypy.visitors.visitor_helper import ShelleyOpDecorator
@@ -279,6 +280,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
     def visit_if(self, node: If):
         """ """
         # logger.debug(node)
+        my_ctx = self.vh.current_context()
         all_branch_return = True
 
         logger.debug("Entering if")
@@ -298,8 +300,10 @@ class Python2ShelleyVisitor(AsStringVisitor):
             all_branch_return &= else_ctx.has_return
             self.vh.context_end()
             logger.debug("Leaving else")
+        else:
+            my_ctx.branch_path.add_choice(TriggerRuleFired())
 
-        my_ctx = self.vh.current_context()
+
         my_ctx.current_path_merge()  # TODO: new context for this?!
 
         my_ctx.has_return |= all_branch_return

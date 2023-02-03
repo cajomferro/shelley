@@ -43,7 +43,7 @@ def test_v1() -> None:
   a.test; a.open; b.test; b.open; 
  }
  try_open_2 -> fail {
-  {a.test; a.open; b.test; b.clean; a.close; } + {a.test; a.clean;} 
+  {a.test; a.open; b.test; b.clean; a.close;} + {a.test; a.clean;} 
  }
  initial try_open -> try_open_1, try_open_2 {}
  final fail -> try_open {}
@@ -90,7 +90,7 @@ def test_v2() -> None:
   a.test; a.open; b.test; b.open; 
  }
  try_open_2 -> fail {
-  {a.test; a.open; b.test; b.clean; a.close; } + {a.test; a.clean;} 
+  {a.test; a.open; b.test; b.clean; a.close;} + {a.test; a.clean;} 
  }
  initial try_open -> try_open_1, try_open_2 {}
  final fail ->  {}
@@ -131,7 +131,7 @@ def test_v3() -> None:
 
     expected_device_shy = """Controller (a: Valve, b: Valve) {
  try_open_1 -> fail {
-  {{a.test; a.open; b.test; b.open; } + {a.test; a.open; b.test; b.clean; a.close;} } + {a.test; a.clean;} 
+  {{a.test; a.open; b.test; b.open;} + {a.test; a.open; b.test; b.clean; a.close;}} + {a.test; a.clean;} 
  }
  initial try_open -> try_open_1 {}
  final fail ->  {}
@@ -166,7 +166,7 @@ def test_v4() -> None:
 
     expected_device_shy = """Controller (a: Valve, b: Valve) {
  try_open_1 -> fail {
-  {a.test; a.open; b.test; b.open; } + {a.test; a.open; b.test; b.clean; a.close;} 
+  {a.test; a.open; b.test; b.open;} + {a.test; a.open; b.test; b.clean; a.close;} 
  }
  initial try_open -> try_open_1 {}
  initial open -> try_open_1 {}

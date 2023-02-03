@@ -132,7 +132,7 @@ class TriggerRuleChoice(TriggerRule):
                 raise TriggerRuleNotNoneError("TriggerRuleChoice rule cannot be None!")
 
     def add_choice(self, choice: TriggerRule):
-        if not isinstance(choice, TriggerRuleFired) and choice not in self.choices:
+        if choice not in self.choices:
             self.choices.append(choice)
 
     def accept(self, visitor: Visitor) -> None:

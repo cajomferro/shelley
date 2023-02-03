@@ -51,12 +51,16 @@ class Shelley2Lark(Visitor):
             result += "{"
             for rule in element.choices[0:-1]:
                 result += rule.accept(self)
+                if result[-1] == " ":
+                    result = result[:-1]
                 result += "} + {"
             result += element.choices[-1].accept(self)
             if result[-1] == " ":
                 result = result[:-1]  # remove extra space if applicable
-            if len(element.choices) == 1:
-                result += "} + {"
+            # if len(element.choices) == 1:
+            #     raise Exception(
+            #         "Found trigger rule choice with only one option. If this is an if without else, please add an extra empty option!"
+            #     )
             result += "} "
 
         return result

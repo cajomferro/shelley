@@ -145,16 +145,11 @@ def test_loop_with_return_v1() -> None:
                 return ""
     """
 
-    shy = py2shy(app)
+    with pytest.raises(ShelleyPyError) as exc_info:
+        py2shy(app)
 
-    expected_shy = """
-App (v: Valve) {
- initial final main ->  {}
-
-}
-""".strip()
-    # print(shy)
-    assert shy == expected_shy
+    assert str(exc_info.value.msg) == ShelleyPyError.ALL_BRANCH_RETURN_INSIDE_LOOP
+    assert exc_info.value.lineno == 10
 
 
 def test_loop_with_return_v2() -> None:
@@ -179,15 +174,97 @@ def test_loop_with_return_v2() -> None:
                     return ""
     """
 
-    shy = py2shy(app)
+    with pytest.raises(ShelleyPyError) as exc_info:
+        py2shy(app)
 
+    assert str(exc_info.value.msg) == ShelleyPyError.ALL_BRANCH_RETURN_INSIDE_LOOP
+    assert exc_info.value.lineno == 10
+
+def test_loop_with_return_v3() -> None:
+    """
+
+    """
+
+    app = """
+    @claim("system check G (main -> F (main & END));")
+    @system(uses={"v1": "Valve", "v2": "Valve"})
+    class App:
+        def __init__(self):
+            self.v1 = Valve()
+            self.v2 = Valve()
+
+        @operation(initial=True, final=True, next=[])
+        def main(self):
+            self.v2.on()
+            for i in range(10):
+                if (i % 2) == 0:
+                    self.v1.on()
+                    self.v1.off()
+                    self.v2.off()
+                    return ""
+                else:
+                    self.v2.off()
+                    self.v2.on()
+            self.v2.off()
+            return ""
+    """
+
+    shy = py2shy(app)
+    print(shy)
     expected_shy = """
-App (v: Valve) {
+App (v1: Valve, v2: Valve) {
  final main_1 ->  {
-  loop{} v.on; 
+  v2.on; loop{v2.off; v2.on;} v1.on; v1.off; v2.off; 
  }
  final main_2 ->  {
-  loop{} 
+  v2.on; loop{v2.off; v2.on;} v2.off; 
+ }
+ initial main -> main_1, main_2 {}
+
+}
+    """.strip()
+    assert shy == expected_shy
+
+
+def test_loop_with_return_v4() -> None:
+    """
+
+    """
+
+    app = """
+    @claim("system check G (main -> F (main & END));")
+    @system(uses={"v1": "Valve", "v2": "Valve"})
+    class App:
+        def __init__(self):
+            self.v1 = Valve()
+            self.v2 = Valve()
+
+        @operation(initial=True, final=True, next=[])
+        def main(self, handle_v1=True):
+            self.v2.on()
+            for i in range(10):
+                if (i % 2) == 0:
+                    if handle_v1:
+                        self.v1.on()
+                        self.v1.off()
+                    self.v2.off()
+                    return ""
+                else:
+                    self.v2.off()
+                    self.v2.on()
+            self.v2.off()                    
+            return ""
+    """
+
+    shy = py2shy(app)
+    print(shy)
+    expected_shy = """
+App (v1: Valve, v2: Valve) {
+ final main_1 ->  {
+  v2.on; loop{v2.off; v2.on;} {v1.on; v1.off;} + {} v2.off; 
+ }
+ final main_2 ->  {
+  v2.on; loop{v2.off; v2.on;} v2.off; 
  }
  initial main -> main_1, main_2 {}
 

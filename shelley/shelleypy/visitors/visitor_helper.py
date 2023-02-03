@@ -87,7 +87,8 @@ class Context:
     def current_path_merge(self, force_branch=False):
         # logger.info("Adding branch")
         branch: TriggerRule = self.branch_path
-        if force_branch and len(self.branch_path.choices) == 1:
+
+        if isinstance(self.branch_path, TriggerRuleChoice) and len(self.branch_path.choices) == 1:
             branch = self.branch_path.choices[0]
 
         if self.current_path:

@@ -334,6 +334,9 @@ class Python2ShelleyVisitor(AsStringVisitor):
             all_branch_return &= for_else_ctx.has_return
             self.vh.context_end()
 
+        if all_branch_return:
+            raise ShelleyPyError(node.lineno, ShelleyPyError.ALL_BRANCH_RETURN_INSIDE_LOOP)
+
         my_ctx.has_return |= all_branch_return
 
         self.vh.current_context().current_path_merge()  # TODO: new context for this?!

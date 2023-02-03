@@ -1,6 +1,0 @@
-base App {
- initial try_open -> try_open, when_a, when_b ;
- final when_a -> try_open ;
- final when_b -> try_open ;
-
-}

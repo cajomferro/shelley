@@ -1,12 +1,13 @@
-from shelley.ast.devices import Device
 from shelley.ast.visitors.shelley2lark import Shelley2Lark
 from shelley.shelleypy.checker.optimize import optimize as fun_optimize
 from shelley.shelleypy.visitors.python_to_shelley import Python2ShelleyVisitor
 
 
-def py2shy(py_code: str) -> str:
+def py2shy(py_code: str, optimize=False) -> str:
     device = Python2ShelleyVisitor(external_only=False).py2shy(py_code)
-    fun_optimize(device)
+
+    if optimize:
+        fun_optimize(device)
 
     shy2lark_visitor = Shelley2Lark(components=device.components)
     device.accept(shy2lark_visitor)
@@ -14,7 +15,7 @@ def py2shy(py_code: str) -> str:
     return shy2lark_visitor.result.strip()
 
 
-def test_app_v1() -> None:
+def test_if_match_v1() -> None:
     """
     Simple return inside if/else
     """
@@ -42,13 +43,170 @@ class App:
             return "run"
     """
 
-    shy = py2shy(app_py)
+    shy = py2shy(app_py, optimize=True)
 
     expected_shy = """App (c: Controller) {
  final run_1 -> run {
   {{c.boot; c.try_update; c.update_ok; c.follow_new_plan;} + {c.boot; c.try_update; c.update_error; c.follow_default_plan;}} + {c.boot; c.sleep;} 
  }
  initial run -> run_1 {}
+
+}
+""".strip()
+
+    print(shy)
+
+    assert shy == expected_shy
+
+def test_if_match_v2() -> None:
+    """
+    """
+
+    app_py = """@system(uses={"a": "Valve", "b": "Valve", "led": "LED"})
+class App:
+    def __init__(self):
+        self.a = Valve()
+        self.b = Valve()
+        self.led = LED()
+
+    @operation(initial=True, next=["try_open", "close_a", "close_b"])
+    def try_open(self, use_a=True, blink_led=True):
+        if use_a:
+            match self.a.test():
+                case "open":
+                    self.a.open()
+                    if blink_led:
+                        for i in range(10):
+                            self.led.on()
+                            self.led.off()
+                        return "close_a"
+                    else:
+                        return "close_a"
+                case "clean":
+                    self.a.clean()
+                    return "try_open"
+        else:
+            match self.b.test():
+                case "open":
+                    self.b.open()
+                    return "close_b"
+                case "clean":
+                    self.b.clean()
+                    return "try_open"
+
+    @operation(final=True, next=["try_open"])
+    def close_a(self):
+        self.a.close()
+        return "try_open"
+
+    @operation(final=True, next=["try_open"])
+    def close_b(self):
+        self.b.close()
+        return "try_open"
+    """
+
+    shy = py2shy(app_py)
+
+    expected_shy = """App (a: Valve, b: Valve, led: LED) {
+ try_open_1 -> close_a {
+  a.test; a.open; loop{led.on; led.off;} 
+ }
+ try_open_2 -> close_a {
+  a.test; a.open; 
+ }
+ try_open_3 -> try_open {
+  a.test; a.clean; 
+ }
+ try_open_4 -> close_b {
+  b.test; b.open; 
+ }
+ try_open_5 -> try_open {
+  b.test; b.clean; 
+ }
+ initial try_open -> try_open_1, try_open_2, try_open_3, try_open_4, try_open_5 {}
+ final close_a -> try_open {
+  a.close; 
+ }
+ final close_b -> try_open {
+  b.close; 
+ }
+
+}
+""".strip()
+
+    print(shy)
+
+    assert shy == expected_shy
+
+def test_if_match_v2_optimized() -> None:
+    """
+    """
+
+    app_py = """@system(uses={"a": "Valve", "b": "Valve", "led": "LED"})
+class App:
+    def __init__(self):
+        self.a = Valve()
+        self.b = Valve()
+        self.led = LED()
+
+    @operation(initial=True, next=["try_open", "close_a", "close_b"])
+    def try_open(self, use_a=True, blink_led=True):
+        if use_a:
+            match self.a.test():
+                case "open":
+                    self.a.open()
+                    if blink_led:
+                        for i in range(10):
+                            self.led.on()
+                            self.led.off()
+                        return "close_a"
+                    else:
+                        return "close_a"
+                case "clean":
+                    self.a.clean()
+                    return "try_open"
+        else:
+            match self.b.test():
+                case "open":
+                    self.b.open()
+                    return "close_b"
+                case "clean":
+                    self.b.clean()
+                    return "try_open"
+
+    @operation(final=True, next=["try_open"])
+    def close_a(self):
+        self.a.close()
+        return "try_open"
+
+    @operation(final=True, next=["try_open"])
+    def close_b(self):
+        self.b.close()
+        return "try_open"
+    """
+
+    shy = py2shy(app_py, optimize=True)
+
+    expected_shy = """App (a: Valve, b: Valve, led: LED) {
+ try_open_1 -> close_a {
+  {a.test; a.open; loop{led.on; led.off;}} + {a.test; a.open;} 
+ }
+ try_open_3 -> try_open {
+  a.test; a.clean; 
+ }
+ try_open_4 -> close_b {
+  b.test; b.open; 
+ }
+ try_open_5 -> try_open {
+  b.test; b.clean; 
+ }
+ initial try_open -> try_open_1, try_open_3, try_open_4, try_open_5 {}
+ final close_a -> try_open {
+  a.close; 
+ }
+ final close_b -> try_open {
+  b.close; 
+ }
 
 }
 """.strip()

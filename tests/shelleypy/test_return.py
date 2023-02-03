@@ -61,7 +61,7 @@ def test_missing_return_v2() -> None:
     assert str(exc_info.value.msg) == ShelleyPyError.MISSING_RETURN
     assert exc_info.value.lineno == 7
 
-def test_unreachable_code() -> None:
+def test_unreachable_code_v1() -> None:
     """
     TODO: this test is not passing since both of the cases return, hence
     it's not supposed that there is anything running after the match
@@ -96,6 +96,40 @@ def test_unreachable_code() -> None:
         @operation(final=True, next=[""])
         def close(self):
             self.v1.off()
+            return ""
+    """
+
+    with pytest.raises(ShelleyPyError) as exc_info:
+        py2shy(app)
+
+    assert str(exc_info.value.msg) == ShelleyPyError.MISSING_RETURN
+    assert exc_info.value.lineno == 7
+
+def test_unreachable_code_v2() -> None:
+    """
+    TODO: this test is not passing since both of the cases return, hence
+    it's not supposed that there is anything running after the match
+    how to detect this?
+    """
+
+    app = """
+    @system(uses={"v1": "Valve"})
+    class App:
+        def __init__(self):
+            self.v1 = Valve()
+    
+        @operation(initial=True, final=True, next=[])
+        def main(self):
+            match self.v1.test():
+                case "open":
+                    self.v1.open()
+                    self.v1.close()
+                    return ""
+                case "clean":
+                    self.v1.clean()
+                    return ""
+            self.v1.open() # THIS SHOULD BE UNREACHABLE
+            self.v1.close()
             return ""
     """
 

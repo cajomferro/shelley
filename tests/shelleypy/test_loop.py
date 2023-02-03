@@ -271,3 +271,211 @@ App (v1: Valve, v2: Valve) {
 }
     """.strip()
     assert shy == expected_shy
+
+def test_loop_with_return_v5() -> None:
+    """
+
+    """
+
+    app = """
+    @system(uses={"v1": "Valve"})
+    class VHandler:
+        def __init__(self):
+            self.v1 = Valve()
+    
+        @operation(initial=True, next=["all_tries_failed", "close"])
+        def main(self, allow_open=False):
+            self.v1.vinit()
+            for _ in range(10):
+                match self.v1.test():
+                    case "ok":
+                        self.v1.ok()
+                        if allow_open:
+                            self.v1.open()
+                        return "close"
+                    case "error":
+                        self.v1.error()
+            self.v1.clean()
+            return "all_tries_failed"
+    
+        @operation(final=True, next=[""])
+        def all_tries_failed(self):
+            return ""
+    
+    
+        @operation(final=True, next=[""])
+        def close(self):
+            self.v1.close()
+            return ""
+    """
+
+    shy = py2shy(app)
+    print(shy)
+    expected_shy = """
+VHandler (v1: Valve) {
+ main_1 -> close {
+  v1.vinit; loop{v1.test; v1.error;} v1.test; v1.ok; {v1.open;} + {} 
+ }
+ main_2 -> all_tries_failed {
+  v1.vinit; loop{v1.test; v1.error;} v1.clean; 
+ }
+ initial main -> main_1, main_2 {}
+ final all_tries_failed ->  {}
+ final close ->  {
+  v1.close; 
+ }
+
+}
+    """.strip()
+    assert shy == expected_shy
+
+def test_loop_nested_match_v1() -> None:
+    """
+    """
+
+    py_code = """
+@system(uses={"a": "Valve", "b": "Valve"})
+class App:
+    def __init__(self):
+        self.a = Valve()
+        self.b = Valve()
+
+    @operation(initial=True, next=["try_open", "when_a", "when_b"])
+    def try_open(self):
+        for _ in range(10):
+            match self.a.test():
+                case "open":
+                    self.a.open()
+                    return "when_a"
+                case "clean":
+                    self.a.clean()
+                    match self.b.test():
+                        case "xalala":
+                            self.b.xalala()
+                        case "open":
+                            self.b.open()
+                            return "when_b"
+                        case "clean":
+                            self.b.clean()
+                            return "try_open"
+                    self.a.cenas()
+                    #return "try_open"
+                case "omg":
+                    self.a.omg()
+        return "try_open"
+
+    @operation(final=True, next=["try_open"])
+    def when_a(self):
+        self.a.close()
+        return "try_open"
+
+    @operation(final=True, next=["try_open"])
+    def when_b(self):
+        self.b.close()
+        return "try_open"
+    """
+
+    shy = py2shy(py_code)
+
+    expected_shy = """App (a: Valve, b: Valve) {
+ try_open_1 -> when_a {
+  a.test; a.open; 
+ }
+ try_open_2 -> when_b {
+  a.test; a.clean; b.test; b.open; 
+ }
+ try_open_3 -> try_open {
+  a.test; a.clean; b.test; b.clean; 
+ }
+ try_open_4 -> try_open {
+  a.test; {a.clean; b.test; b.xalala; a.cenas;} + {a.omg;} 
+ }
+ initial try_open -> try_open_1, try_open_2, try_open_3, try_open_4 {}
+ final when_a -> try_open {
+  a.close; 
+ }
+ final when_b -> try_open {
+  b.close; 
+ }
+
+}
+""".strip()
+
+    assert shy == expected_shy
+
+def test_loop_nested_match_v2() -> None:
+    """
+    """
+
+    py_code = """
+@system(uses={"a": "Valve", "b": "Valve"})
+class App:
+    def __init__(self):
+        self.a = Valve()
+        self.b = Valve()
+
+    @operation(initial=True, next=["try_open", "when_a", "when_b"])
+    def try_open(self):
+        for _ in range(10):
+            match self.a.test():
+                case "open":
+                    self.a.open()
+                    return "when_a"
+                case "clean":
+                    self.a.clean()
+                    match self.b.test():
+                        case "xalala":
+                            self.b.xalala()
+                        case "open":
+                            self.b.open()
+                            return "when_b"
+                        case "clean":
+                            self.b.clean()
+                            return "try_open"
+                    self.a.cenas()
+                    return "try_open"
+                case "omg":
+                    self.a.omg()
+        return "try_open"
+
+    @operation(final=True, next=["try_open"])
+    def when_a(self):
+        self.a.close()
+        return "try_open"
+
+    @operation(final=True, next=["try_open"])
+    def when_b(self):
+        self.b.close()
+        return "try_open"
+    """
+
+    shy = py2shy(py_code)
+
+    expected_shy = """App (a: Valve, b: Valve) {
+ try_open_1 -> when_a {
+  a.test; a.open; 
+ }
+ try_open_2 -> when_b {
+  a.test; a.clean; b.test; b.open; 
+ }
+ try_open_3 -> try_open {
+  a.test; a.clean; b.test; b.clean; 
+ }
+ try_open_4 -> try_open {
+  a.test; a.clean; b.test; b.xalala; a.cenas; 
+ }
+ try_open_5 -> try_open {
+  a.test; a.omg; 
+ }
+ initial try_open -> try_open_1, try_open_2, try_open_3, try_open_4, try_open_5 {}
+ final when_a -> try_open {
+  a.close; 
+ }
+ final when_b -> try_open {
+  b.close; 
+ }
+
+}
+""".strip()
+
+    assert shy == expected_shy

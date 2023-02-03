@@ -13,6 +13,99 @@ def py2shy(py_code: str) -> str:
 
     return shy2lark_visitor.result.strip()
 
+def test_if_v1() -> None:
+    """
+    Simple return inside if and else
+    """
+
+    py_code = """
+    @system(uses={"a": "Valve", "b": "Valve"})
+    class App:
+        def __init__(self):
+            self.a = Valve()
+            self.b = Valve()
+    
+        @operation(initial=True, final=True, next=["main"])
+        def main(self, use_a=True):
+            if use_a:
+                self.a.on()
+                self.a.off()
+                return "main"
+            else:
+                self.b.on()
+                self.b.off()
+                return "main"
+    """
+
+    shy = py2shy(py_code)
+
+    expected_shy = """App (a: Valve, b: Valve) {
+ final main_1 -> main {
+  a.on; a.off; 
+ }
+ final main_2 -> main {
+  b.on; b.off; 
+ }
+ initial main -> main_1, main_2 {}
+
+}
+""".strip()
+
+    assert shy == expected_shy
+
+
+def test_if_v2() -> None:
+    """
+    """
+
+    py_code = """
+    @system(uses={"a": "Valve", "b": "Valve"})
+    class App:
+        def __init__(self):
+            self.a = Valve()
+            self.b = Valve()
+    
+        @operation(initial=True, next=["close_a", "close_b"])
+        def open_all(self, use_a=True):
+            if use_a:
+                self.a.open()
+            else:
+                self.b.open()
+                return "close_b"
+    
+            return "close_a"
+        @operation(final=True, next=["open_all"])
+        def close_a(self):
+            self.a.close()
+            return "open_all"
+    
+        @operation(final=True, next=["open_all"])
+        def close_b(self):
+            self.b.close()
+            return "open_all"
+    """
+
+    shy = py2shy(py_code)
+
+    expected_shy = """App (a: Valve, b: Valve) {
+ open_all_1 -> close_b {
+  b.open; 
+ }
+ open_all_2 -> close_a {
+  a.open; 
+ }
+ initial open_all -> open_all_1, open_all_2 {}
+ final close_a -> open_all {
+  a.close; 
+ }
+ final close_b -> open_all {
+  b.close; 
+ }
+
+}
+""".strip()
+
+    assert shy == expected_shy
 
 def test_app_v1() -> None:
     """
@@ -261,6 +354,51 @@ def test_elif() -> None:
  final stop_v3 -> main {
   v3.off; 
  }
+
+}
+""".strip()
+
+    # print(shy)
+
+    assert shy == expected_shy
+
+
+def test_if_without_else_and_else_without_if() -> None:
+    """
+    Simple return inside if/else
+    """
+
+    py_code = """
+    @system(uses={"v1": "Valve", "v2": "Valve"})
+    class App:
+        def __init__(self):
+            self.v1 = Valve()
+            self.v2 = Valve()
+    
+        @operation(initial=True, final=True, next=[])
+        def main(self, handle_v1=True, val=0):
+            self.v2.on()
+            if (val % 2) == 0:
+                if handle_v1:
+                    self.v1.on()
+                    self.v1.off()
+                self.v2.off()
+                return ""
+            else:
+                self.v2.off()
+            return ""      
+    """
+
+    shy = py2shy(py_code)
+
+    expected_shy = """App (v1: Valve, v2: Valve) {
+ final main_1 ->  {
+  v2.on; {v1.on; v1.off;} + {} v2.off; 
+ }
+ final main_2 ->  {
+  v2.on; v2.off; 
+ }
+ initial main -> main_1, main_2 {}
 
 }
 """.strip()

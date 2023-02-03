@@ -84,10 +84,19 @@ class Context:
         self.current_path = rule
         logger.debug(f"[{self.node.lineno}]Current path updated: {self.current_path}")
 
-    def current_path_merge(self, force_branch=False):
+    def current_path_merge(self):
+        """
+        Note that in "normal" python the match cases are optional
+        in the sense that if none of the case happens, the match call
+        is invoked but none of the cases is invoked.
+        For ShelleyPy this doesn't make sense. If there is a match
+        it is because we are covering all the possible returns from the subsystem call,
+        hence one of the cases will be executed for sure.
+        """
         # logger.info("Adding branch")
         branch: TriggerRule = self.branch_path
 
+        # this will force match/case not to be optional and also avoids choices with a single path
         if isinstance(self.branch_path, TriggerRuleChoice) and len(self.branch_path.choices) == 1:
             branch = self.branch_path.choices[0]
 

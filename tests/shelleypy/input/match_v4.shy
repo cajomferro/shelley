@@ -1,6 +1,0 @@
-base VHandler {
- initial main -> close, error ;
- final error ->  ;
- final close ->  ;
-
-}

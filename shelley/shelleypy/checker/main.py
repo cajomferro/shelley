@@ -35,11 +35,6 @@ def get_command_args() -> argparse.Namespace:
         help="Uses the old checker algorithm instead of the new one (which uses the visitor pattern)",
         action="store_true",
     )
-    parser.add_argument(
-        "--relax-match-force-case",
-        help="If there is a match with a single case, the case itself will be optional (xor branch)",
-        action="store_true",
-    )
     return parser.parse_args()
 
 
@@ -116,7 +111,7 @@ def main() -> None:
             output_path=args.output,
             optimize=args.optimize,
             use_old_checker=args.use_old_checker,
-            extra_options={"relax_match_force_case": args.relax_match_force_case},
+            extra_options={},
         )
         logger.debug("OK!")
     except CompilationError as error:

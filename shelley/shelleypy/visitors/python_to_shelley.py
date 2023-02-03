@@ -215,20 +215,10 @@ class Python2ShelleyVisitor(AsStringVisitor):
             self.vh.context_end()
 
         my_ctx = self.vh.current_context()  # TODO: new context for this?!
-        my_ctx.current_path_merge(force_branch=self._extra_options_force_branch())
+        my_ctx.current_path_merge()
         my_ctx.has_return |= all_branch_return
 
         logger.debug("Leaving match")
-
-    def _extra_options_force_branch(self):
-        """
-        If relax_match_force_case=True, then if there is a match with a single case, the case itself will be optional (xor branch).
-        By default, force_branch is True (i.e., relax_match_force_case=False) for match statements, since we want to enforce at least one branch.
-        """
-        try:
-            return not self.extra_options["relax_match_force_case"]
-        except:
-            return False
 
     def visit_matchcase(self, match_case_node: MatchCase):
         logger.debug("Entering matchcase")

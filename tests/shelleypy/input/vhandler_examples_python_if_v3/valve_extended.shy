@@ -1,5 +1,0 @@
-base Valve {
- initial open -> close ;
- final close -> open ;
-
-}

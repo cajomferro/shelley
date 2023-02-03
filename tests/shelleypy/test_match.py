@@ -11,7 +11,7 @@ def py2shy(py_code: str) -> str:
     return shy2lark_visitor.result.strip()
 
 
-def test_match_ok() -> None:
+def test_match_v1() -> None:
     """
 
     """
@@ -52,6 +52,223 @@ def test_match_ok() -> None:
 
     assert shy == expected_shy
 
+def test_match_v2() -> None:
+    """
+
+    """
+
+    app_py = """
+    @system(uses={"v1": "Valve", "v2": "Valve"})
+    class App:
+        def __init__(self):
+            self.v1 = Valve()
+            self.v2 = Valve()
+
+        @operation(initial=True, next=["main"])
+        def main(self):
+            match self.v1.test():
+                case "ok":
+                    self.v1.on()
+                    return "main" 
+                case "error":
+                    self.v2.on()
+                    return "main"
+    """
+
+    shy = py2shy(app_py)
+
+    expected_shy = """App (v1: Valve, v2: Valve) {
+ main_1 -> main {
+  v1.test; v1.on; 
+ }
+ main_2 -> main {
+  v1.test; v2.on; 
+ }
+ initial main -> main_1, main_2 {}
+
+}
+""".strip()
+
+    # print(shy)
+
+    assert shy == expected_shy
+
+def test_match_v3() -> None:
+    """
+
+    """
+
+    app_py = """
+    @system(uses={"v1": "Valve"})
+    class VHandler:
+        def __init__(self):
+            self.v1 = Valve()
+    
+        @operation(initial=True, next=["all_tries_failed", "close"])
+        def main(self, mytest=False):
+            self.v1.init()
+            match self.v1.test():
+                case "ok":
+                    self.v1.ok()
+                    if mytest:
+                        self.v1.on()
+                    return "close"
+                case "error1":
+                    self.v1.error1()
+                case "error2":
+                    self.v1.error2()
+            self.v1.clean()
+            return "all_tries_failed"
+    
+        @operation(final=True, next=[""])
+        def all_tries_failed(self):
+            return ""
+    
+    
+        @operation(final=True, next=[""])
+        def close(self):
+            self.v1.off()
+            return ""
+    """
+
+    shy = py2shy(app_py)
+
+    expected_shy = """VHandler (v1: Valve) {
+ main_1 -> close {
+  v1.init; v1.test; v1.ok; {v1.on;} + {} 
+ }
+ main_2 -> all_tries_failed {
+  v1.init; v1.test; {v1.error1;} + {v1.error2;} v1.clean; 
+ }
+ initial main -> main_1, main_2 {}
+ final all_tries_failed ->  {}
+ final close ->  {
+  v1.off; 
+ }
+
+}
+""".strip()
+
+    # print(shy)
+
+    assert shy == expected_shy
+
+
+def test_match_v4() -> None:
+    """
+
+    """
+
+    app_py = """
+    @system(uses={"v1": "Valve"})
+    class VHandler:
+        def __init__(self):
+            self.v1 = Valve()
+    
+        @operation(initial=True, next=["all_tries_failed", "close"])
+        def main(self, mytest=False):
+            self.v1.init()
+            match self.v1.test():
+                case "ok":
+                    self.v1.ok()
+                    self.v1.on()
+                case "error":
+                    self.v1.error()
+                    return "close"
+            self.v1.clean()
+            return "all_tries_failed"
+    
+        @operation(final=True, next=[""])
+        def all_tries_failed(self):
+            return ""
+    
+    
+        @operation(final=True, next=[""])
+        def close(self):
+            self.v1.off()
+            return ""
+    """
+
+    shy = py2shy(app_py)
+
+    expected_shy = """VHandler (v1: Valve) {
+ main_1 -> close {
+  v1.init; v1.test; v1.error; 
+ }
+ main_2 -> all_tries_failed {
+  v1.init; v1.test; v1.ok; v1.on; v1.clean; 
+ }
+ initial main -> main_1, main_2 {}
+ final all_tries_failed ->  {}
+ final close ->  {
+  v1.off; 
+ }
+
+}
+""".strip()
+
+    # print(shy)
+
+    assert shy == expected_shy
+
+
+def test_match_v5() -> None:
+    """
+
+    """
+
+    app_py = """
+    @system(uses={"v1": "Valve"})
+    class VHandler:
+        def __init__(self):
+            self.v1 = Valve()
+    
+        @operation(initial=True, next=["close", "error"])
+        def main(self):
+            self.v1.init()
+            match self.v1.test():
+                case "ok":
+                    self.v1.ok()
+                    self.v1.on()
+                    return "close"
+                case "error":
+                    self.v1.error()
+                    return "error"
+    
+        @operation(final=True, next=[""])
+        def error(self):
+            self.v1.clean()
+            return ""
+            
+        @operation(final=True, next=[""])
+        def close(self):
+            self.v1.off()
+            return ""            
+    """
+
+    shy = py2shy(app_py)
+
+    expected_shy = """VHandler (v1: Valve) {
+ main_1 -> close {
+  v1.init; v1.test; v1.ok; v1.on; 
+ }
+ main_2 -> error {
+  v1.init; v1.test; v1.error; 
+ }
+ initial main -> main_1, main_2 {}
+ final error ->  {
+  v1.clean; 
+ }
+ final close ->  {
+  v1.off; 
+ }
+
+}
+""".strip()
+
+    # print(shy)
+
+    assert shy == expected_shy
 
 def test_code_outside_match() -> None:
     """

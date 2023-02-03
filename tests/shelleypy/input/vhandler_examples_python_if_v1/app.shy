@@ -1,4 +1,0 @@
-base AppV2 {
- initial final main ->  ;
-
-}

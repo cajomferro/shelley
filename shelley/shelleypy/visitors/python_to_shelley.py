@@ -131,7 +131,10 @@ class Python2ShelleyVisitor(AsStringVisitor):
         decorators_visitor = ClassDecoratorsVisitor(self.vh.external_only)
         node.decorators.accept(decorators_visitor)
 
-        if not (len(decorators_visitor.uses) == 0 or self.external_only) and self._include_include_iface_ops():
+        if (
+            not (len(decorators_visitor.uses) == 0 or self.external_only)
+            and self._include_include_iface_ops()
+        ):
             decorators_visitor.uses["this"] = system_name
 
         self.vh.context_system_init(
@@ -266,9 +269,11 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # logger.debug(node.func)
 
         try:
-            self._add_call(exprself=node.func.expr.expr.name,
-                           subsystem_call=node.func.attrname,
-                           subsystem_instance=node.func.expr.attrname, )
+            self._add_call(
+                exprself=node.func.expr.expr.name,
+                subsystem_call=node.func.attrname,
+                subsystem_instance=node.func.expr.attrname,
+            )
         except AttributeError:
             logger.debug(f"    Ignoring Call: {node.func.repr_tree()}")
 

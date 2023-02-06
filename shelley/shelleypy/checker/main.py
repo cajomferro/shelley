@@ -31,6 +31,11 @@ def get_command_args() -> argparse.Namespace:
         action="store_true",
     )
     parser.add_argument(
+        "--include-iface-ops",
+        help="Include interface operations in the implementation behavior (BETA)",
+        action="store_true",
+    )
+    parser.add_argument(
         "--use-old-checker",
         help="Uses the old checker algorithm instead of the new one (which uses the visitor pattern)",
         action="store_true",
@@ -111,7 +116,7 @@ def main() -> None:
             output_path=args.output,
             optimize=args.optimize,
             use_old_checker=args.use_old_checker,
-            extra_options={},
+            extra_options={"include_iface_ops": args.include_iface_ops},
         )
         logger.debug("OK!")
     except CompilationError as error:

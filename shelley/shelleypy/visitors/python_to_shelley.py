@@ -117,15 +117,25 @@ class Python2ShelleyVisitor(AsStringVisitor):
         tree.accept(self)
         return self.vh.device
 
+    def _include_include_iface_ops(self):
+        try:
+            return self.extra_options["include_iface_ops"]
+        except KeyError:
+            return False
+
     def visit_classdef(self, node: ClassDef) -> Any:
 
-        logger.debug(f"System name: {self.vh.device.name}")
+        system_name = node.name
+        logger.debug(f"System name: {system_name}")
 
         decorators_visitor = ClassDecoratorsVisitor(self.vh.external_only)
         node.decorators.accept(decorators_visitor)
 
+        if not (len(decorators_visitor.uses) == 0 or self.external_only) and self._include_include_iface_ops():
+            decorators_visitor.uses["this"] = system_name
+
         self.vh.context_system_init(
-            node.name,
+            system_name,
             decorators_visitor.uses,
             decorators_visitor.system_claims,
             decorators_visitor.integration_claims,
@@ -177,6 +187,8 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
             self.vh.context_init(node)
             # TODO: move this inside operation context
+            if self._include_include_iface_ops():
+                self._add_call("self", decorator.op_name, "this")
             self.vh.context_operation_init(decorator)
 
             for node_body in node.body:
@@ -253,19 +265,22 @@ class Python2ShelleyVisitor(AsStringVisitor):
         # logger.debug(node)
         # logger.debug(node.func)
 
-        # TODO: improve this code?
         try:
-            self.vh.last_call = ShelleyCall(
-                exprself=node.func.expr.expr.name,
-                subsystem_call=node.func.attrname,
-                subsystem_instance=node.func.expr.attrname,
-            )
+            self._add_call(exprself=node.func.expr.expr.name,
+                           subsystem_call=node.func.attrname,
+                           subsystem_instance=node.func.expr.attrname, )
         except AttributeError:
             logger.debug(f"    Ignoring Call: {node.func.repr_tree()}")
-            return
 
-        self.vh.register_new_call()
         # logger.debug(f"Found call: {str(self.vh.last_call)}")
+
+    def _add_call(self, exprself, subsystem_call, subsystem_instance):
+        self.vh.last_call = ShelleyCall(
+            exprself=exprself,
+            subsystem_call=subsystem_call,
+            subsystem_instance=subsystem_instance,
+        )
+        self.vh.register_new_call()
 
     def visit_if(self, node: If):
         """ """

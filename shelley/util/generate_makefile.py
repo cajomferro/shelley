@@ -18,7 +18,7 @@ MAKEFLAGS += --no-print-directory
 USES = -u $$USES_PATH$$
 #VALIDITY_CHECKS=--skip-direct
 #VALIDITY_CHECKS=--skip-mc
-SHELLEYPY_OPTS =$$PYTHON_OPTIMIZE$$
+SHELLEYPY_OPTS =$$PYTHON_OPTIMIZE$$ # --optimize --include-iface-ops
 
 all: $$ALL_TARGET$$
 
@@ -26,7 +26,8 @@ pdf: $$MAIN_SYSTEM$$.pdf
 
 png: $$MAIN_SYSTEM$$.png
 
-scy: $$MAIN_SYSTEM$$.scy
+scy: deps
+	$(MAKE) $$MAIN_SYSTEM$$.scy$$MAKE_MAIN_SYSTEM_EXTENDED$$
 
 USES = -u uses.yml
 
@@ -34,9 +35,6 @@ $$PYTHON_TARGETS$$
 
 deps:
 $$DEPS$$
-
-$$MAIN_SYSTEM$$.scy: deps $$MAIN_SYSTEM$$.shy
-
 $$EXAMPLE_FOLDER$$-stats.json:
 $$STATS$$
 stats: $$EXAMPLE_FOLDER$$-stats.json
@@ -109,9 +107,12 @@ def generate_makefile_content(
     logger.debug("Found uses: {0}".format(uses))
 
     if uses is not None:
-        main_source_set = set(scy_files) - set(uses.values())
-        if len(main_source_set) > 1:
-            logger.warning(f"Found too many main files: {main_source_set}")
+        uses_values_set = set(uses.values())
+        main_source_set = set(scy_files) - uses_values_set
+        if len(main_source_set) != 1:
+            logger.warning(f"Expecting one main file but found this: {main_source_set}")
+            main_source_set = {list(uses.values()).pop()}
+            logger.warning(f"Assuming last entry in uses: {main_source_set}")
     else:
         uses = {}
         main_source_set = set(scy_files)
@@ -134,29 +135,26 @@ def generate_makefile_content(
     clean_deps = ""
     stats = ""
 
-    uses_parents: List[str] = []
     for use_path in uses.values():  # order of uses matters!
         use_basename = Path(use_path).stem  # basename without extension
         parent = Path(use_path).parent  # relative parent path
-        if parent.name != Path(main_source_filename).parent.name:
-            uses_parents.append(str(parent))
-            deps += f"	$(MAKE) -C {parent} {use_basename}.scy\n"
-            if python_files:
-                deps += (
-                    f"	$(MAKE) -C {parent} {use_basename}_{FULL_SYSTEM_SUFFIX}.scy\n"
-                )
-            clean_deps += f"	$(MAKE) -C {parent} clean\n"
-            stats += f"	$(MAKE) -C {parent} {use_basename}-stats.json\n"
-        else:
-            deps += f"	$(MAKE) {use_basename}.scy\n"
-            if python_files:
-                deps += f"	$(MAKE) {use_basename}_{FULL_SYSTEM_SUFFIX}.scy\n"
-            stats += f"	$(MAKE) {use_basename}-stats.json\n"
+        if use_path != main_source_filename:
+            if parent.name != Path(main_source_filename).parent.name:
+                make_parent_path = f" -C {parent}"
+            else:
+                make_parent_path = f""
 
-    if python_files:
-        deps += f"	$(MAKE) {Path(main_source_filename).stem}_{FULL_SYSTEM_SUFFIX}.scy"
-    else:
-        deps = deps[:-1]  # remove extra newline
+            deps += f"	$(MAKE){make_parent_path} {use_basename}.scy\n"
+            if python_files:
+                deps += f"	$(MAKE){make_parent_path} {use_basename}_{FULL_SYSTEM_SUFFIX}.scy\n"
+            if parent.name != Path(main_source_filename).parent.name:
+                clean_deps += f"	$(MAKE){make_parent_path} clean\n"
+            stats += f"	$(MAKE){make_parent_path} {use_basename}-stats.json\n"
+
+    # if python_files:
+    #     deps += f"	$(MAKE) {Path(main_source_filename).stem}_{FULL_SYSTEM_SUFFIX}.scy"
+    # else:
+    #     deps = deps[:-1]  # remove extra newline
 
     stats += f"	$(MAKE) {Path(main_source_filename).stem}-stats.json\n"
 
@@ -170,6 +168,15 @@ def generate_makefile_content(
     makefile_content = makefile_content.replace(
         "$$MAIN_SYSTEM$$", Path(main_source_filename).stem
     )
+    if python_files:
+        makefile_content = makefile_content.replace(
+            "$$MAKE_MAIN_SYSTEM_EXTENDED$$",
+            f"\n	$(MAKE) {Path(main_source_filename).stem}_{FULL_SYSTEM_SUFFIX}.scy",
+        )
+    else:
+        makefile_content = makefile_content.replace(
+            "$$MAKE_MAIN_SYSTEM_EXTENDED$$", f""
+        )
     makefile_content = makefile_content.replace(
         "$$EXAMPLE_FOLDER$$", Path(example_path).absolute().name
     )
@@ -191,7 +198,7 @@ def generate_makefile_content(
 
         if optimize:
             makefile_content = makefile_content.replace(
-                "$$PYTHON_OPTIMIZE$$", "--optimize"
+                "$$PYTHON_OPTIMIZE$$", "--optimize --include-iface-ops"
             )
         else:
             makefile_content = makefile_content.replace("$$PYTHON_OPTIMIZE$$", "")

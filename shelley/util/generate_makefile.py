@@ -146,9 +146,7 @@ def generate_makefile_content(
 
             deps += f"	$(MAKE){make_parent_path} {use_basename}.scy\n"
             if python_files:
-                deps += (
-                    f"	$(MAKE){make_parent_path} {use_basename}_{FULL_SYSTEM_SUFFIX}.scy\n"
-                )
+                deps += f"	$(MAKE){make_parent_path} {use_basename}_{FULL_SYSTEM_SUFFIX}.scy\n"
             if parent.name != Path(main_source_filename).parent.name:
                 clean_deps += f"	$(MAKE){make_parent_path} clean\n"
             stats += f"	$(MAKE){make_parent_path} {use_basename}-stats.json\n"
@@ -172,7 +170,8 @@ def generate_makefile_content(
     )
     if python_files:
         makefile_content = makefile_content.replace(
-            "$$MAKE_MAIN_SYSTEM_EXTENDED$$", f"\n	$(MAKE) {Path(main_source_filename).stem}_{FULL_SYSTEM_SUFFIX}.scy"
+            "$$MAKE_MAIN_SYSTEM_EXTENDED$$",
+            f"\n	$(MAKE) {Path(main_source_filename).stem}_{FULL_SYSTEM_SUFFIX}.scy",
         )
     else:
         makefile_content = makefile_content.replace(

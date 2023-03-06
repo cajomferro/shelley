@@ -110,9 +110,9 @@ def generate_makefile_content(
         uses_values_set = set(uses.values())
         main_source_set = set(scy_files) - uses_values_set
         if len(main_source_set) != 1:
-            logger.warning(f"Expecting one main file but found this: {main_source_set}")
+            logger.debug(f"Expecting one main file but found this: {main_source_set}")
             main_source_set = {list(uses.values()).pop()}
-            logger.warning(f"Assuming last entry in uses: {main_source_set}")
+            logger.debug(f"Assuming last entry in uses: {main_source_set}")
     else:
         uses = {}
         main_source_set = set(scy_files)

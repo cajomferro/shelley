@@ -3,12 +3,6 @@
 
 Shelley is a framework for model checking call ordering on hierarchical systems.
 
-
-![mary-shelley-avatar](mary-shelley-avatar.png)
-
-Image author: http://www.zenpencils.com/comic/maryshelley/
-
-
 ### Try it
 
 The easiest way to use Shelley is by using Docker.
@@ -20,8 +14,9 @@ make docker-run # this gets you inside a full-prepared environment
 
 ### Demo
 
-<iframe width="560" height="315" src="https://www.youtube.com/embed/87h8fP2C_zc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+[![Everything Is AWESOME](https://img.youtube.com/vi/87h8fP2C_zc/0.jpg)](https://www.youtube.com/watch?v=87h8fP2C_zc "Everything Is AWESOME")
 
 
 ### Examples
 
+Work in progress.

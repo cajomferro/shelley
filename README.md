@@ -14,7 +14,7 @@ make docker-run # this gets you inside a full-prepared environment
 
 ### Demo
 
-[![Everything Is AWESOME](https://img.youtube.com/vi/87h8fP2C_zc/0.jpg)](https://www.youtube.com/watch?v=87h8fP2C_zc "Everything Is AWESOME")
+[![Everything Is AWESOME](https://img.youtube.com/vi/ZiGPZRQHTWc/0.jpg)](https://www.youtube.com/watch?v=ZiGPZRQHTWc "Everything Is AWESOME")
 
 
 ### Examples

@@ -1,6 +1,13 @@
-# Shelley, a framework for model checking call ordering on hierarchical systems
-
+# Shelley
 ![https://github.com/psf/black](https://img.shields.io/badge/code%20style-black-000000.svg)
+
+Shelley is a framework for model checking call ordering on hierarchical systems.
+
+
+![mary-shelley-avatar](mary-shelley-avatar.png)
+
+Image author: http://www.zenpencils.com/comic/maryshelley/
+
 
 ### Try it
 
@@ -13,30 +20,8 @@ make docker-run # this gets you inside a full-prepared environment
 
 ### Demo
 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/87h8fP2C_zc" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+
 
 ### Examples
-
-
-### Available tools
-
-```shell
-# show all options
-shelleyc -h
-
-# compile a device without dependencies (uses)
-shelleyc -d examples/button.yml
-
-# compile a device with dependencies (uses)
-shelleyc -u examples/button.scy:Button examples/led.scy:Led examples/timer.scy:Timer -d examples/desklamp.yml
-
-# visualize a compiled device using xdot
-shelleyv -o examples/desklamp/desklamp.gv examples/desklamp/desklamp.scy
-dot -Tpdf -o examples/desklamp/desklamp.pdf examples/desklamp/desklamp.gv
-
-# Verify integration using the NuSMV model checker
-shelleymc -s examples/desklamp/desklamp.shy -u examples/desklamp/uses.yml --integration-check
-
-# Generate the integration model examples/desklamp/desklamp/controller.smv and adding an LTLf formula on the end
-shelleymc -s examples/desklamp/desklamp.shy -u examples/desklamp/uses.yml --formula a.on "X t.begin"
-```
 

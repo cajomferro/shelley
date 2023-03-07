@@ -13,7 +13,6 @@ _local
 *.sc*
 *.gv*
 *.pdf
-*.png
 *.svg
 *.int
 *.smv

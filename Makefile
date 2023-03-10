@@ -23,6 +23,7 @@ docker-build:
 docker-run:
 	docker run -it --rm \
 		-v $(PWD)/shelley:/app/shelley \
+		-v $(PWD)/examples:/app/examples \
 		-v $(PWD)/shelley-examples:/app/shelley-examples \
 		-v $(PWD)/tests:/app/tests \
 		shelleychecker bash

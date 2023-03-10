@@ -19,3 +19,6 @@ _local
 shelley.egg-info
 dist
 *.int
+examples/**/*.scy
+examples/**/*.shy
+examples/**/*.smv

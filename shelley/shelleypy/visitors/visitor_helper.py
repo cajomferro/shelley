@@ -182,7 +182,7 @@ class ShelleyOpDecorator:
     op_name: str
     is_initial: bool = False
     is_final: bool = False
-    next_ops: List[str] = field(default_factory=list)
+    next_ops: Set[str] = field(default_factory=set)
 
 
 @dataclass
@@ -243,6 +243,16 @@ class VisitorHelper:
         for subsystem_name, claim in subsystem_claims:
             formula = LTLParser().transform(ltlf_parser(claim))
             self.device.subsystem_formulae.append((subsystem_name, formula))
+
+    # load subsystems
+    # 1. usesyml = _parse_uses
+    # 2. for each subsystype in uses.values():
+    # 2.1. filename = usesyml[subsystype]
+    # 2.2. with open(filename) as f:
+    #           shy = f.read()
+    # 2.3 tree = lark_parser.parse(shy)
+    # 2.4 dev = ShelleyLanguage().transform(tree)
+    # 2.5 [(b.e1.name, b.e2.name) for b in dev.behaviors]
 
     def context_operation_init(self, decorator: ShelleyOpDecorator):
         # self.current_path_clear()
@@ -305,12 +315,12 @@ class VisitorHelper:
         op_name: str,
         is_initial=False,
         is_final=False,
-        next_ops: Optional[List[str]] = None,
+        next_ops: Optional[Set[str]] = None,
         rules: Optional[TriggerRule] = None,
     ):
 
         if next_ops is None:
-            next_ops = []
+            next_ops = {}
 
         if rules is None:
             rules = TriggerRuleFired()

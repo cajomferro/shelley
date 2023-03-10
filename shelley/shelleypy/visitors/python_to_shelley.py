@@ -1,7 +1,7 @@
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, List, Dict, Union, Optional
+from typing import Any, List, Dict, Union, Set
 
 from astroid import List as ListNG
 from astroid import (
@@ -15,6 +15,7 @@ from astroid import (
     Return,
     If,
     Match,
+    Name,
     MatchCase,
     Decorators,
     FunctionDef,
@@ -36,6 +37,18 @@ logger = logging.getLogger("shelleypy")
 
 
 @dataclass
+class BaseSystemVisitor(AsStringVisitor):
+    next_ops: Set[str] = field(default_factory=set)
+
+    def __post_init__(self):
+        super().__init__()
+
+    def visit_return(self, node: Return) -> Any:
+        for op in Python2ShelleyVisitor.parse_return_value(node):
+            self.next_ops.add(op)
+
+
+@dataclass
 class MethodDecoratorsVisitor(AsStringVisitor):
     method_name: str
     decorator: ShelleyOpDecorator = None
@@ -44,6 +57,21 @@ class MethodDecoratorsVisitor(AsStringVisitor):
         for node in node.nodes:
             node.accept(self)
 
+    def visit_name(self, node: Name):
+        # logger.debug(node)
+        match node.name:
+            case "op":
+                self.decorator = ShelleyOpDecorator(self.method_name)
+            case "op_initial":
+                self.decorator = ShelleyOpDecorator(self.method_name, is_initial=True)
+            case "op_final":
+                self.decorator = ShelleyOpDecorator(self.method_name, is_final=True)
+            case "op_initial_final":
+                self.decorator = ShelleyOpDecorator(
+                    self.method_name, is_initial=True, is_final=True
+                )
+
+    # TODO: deprecated! this should be removed in the future
     def visit_call(self, node: Call) -> Any:
         # logger.debug(f"Method decorator: {node.func.name}")
         if node.func.name == "operation":
@@ -55,7 +83,8 @@ class MethodDecoratorsVisitor(AsStringVisitor):
                     case "final":
                         self.decorator.is_final = True
                     case "next":
-                        self.decorator.next_ops = [op.value for op in kw.value.elts]
+                        for op in kw.value.elts:
+                            self.decorator.next_ops.add(op.value)
 
 
 @dataclass
@@ -175,7 +204,13 @@ class Python2ShelleyVisitor(AsStringVisitor):
 
         decorator = decorators_visitor.decorator
 
-        if self.vh.is_base_system():  # base system, do not inspect body
+        if self.vh.is_base_system():  # base system, only look for return values
+            base_system_vs = BaseSystemVisitor()
+            for node_body in node.body:
+                node_body.accept(base_system_vs)
+                for op in base_system_vs.next_ops:
+                    decorator.next_ops.add(op)
+
             self.vh.register_new_operation(
                 op_name=decorator.op_name,
                 is_initial=decorator.is_initial,
@@ -363,7 +398,9 @@ class Python2ShelleyVisitor(AsStringVisitor):
         for each "type" of return.
         """
         # logger.debug(node)
-        return_next: List[str] = self._parse_return_value(node)
+        return_next: List[str] = self.parse_return_value(node)
+        for next_op in return_next:
+            self.vh.current_op_decorator.next_ops.add(next_op)
         self.vh.current_context().return_path_put(return_next, node.lineno)
 
     @staticmethod
@@ -384,7 +421,7 @@ class Python2ShelleyVisitor(AsStringVisitor):
         return case_name
 
     @staticmethod
-    def _parse_return_value(node: Return):
+    def parse_return_value(node: Return):
         node_value = node.value
         if isinstance(node.value, Tuple):
             next_op_node = node.value.elts[0]

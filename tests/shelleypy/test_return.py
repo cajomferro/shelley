@@ -294,79 +294,82 @@ def test_missing_return_else_ok() -> None:
     assert shy == expected_shy
 
 
-def test_return_does_not_match_next() -> None:
-    """
-    Testing that the value of the return matches what is annotated in the next=[...]
-    """
-
-    app = """
-    @system(uses={"v": "Valve"})
-    class App:
-        def __init__(self):
-            self.v = Valve()
-
-        @operation(initial=True, final=True, next=["main"])
-        def main(self):
-            return "maixn" # this is a typo!
-    """
-
-    with pytest.raises(ReturnMatchesNext) as exc_info:
-        py2shy(app)
-
-    assert str(exc_info.value.msg) == "Return names ['maixn'] are not listed in the next operations!"
-    assert exc_info.value.lineno == 9
-
-
-def test_return_does_not_match_next_v2() -> None:
-    """
-    Testing that the value of the return matches what is annotated in the next=[...]
-    """
-
-    app = """
-    @system(uses={"v": "Valve"})
-    class App:
-        def __init__(self):
-            self.v = Valve()
-
-        @operation(initial=True, final=True, next=[])
-        def main(self):
-            return "main"
-    """
-
-    with pytest.raises(ReturnMatchesNext) as exc_info:
-        py2shy(app)
-
-    assert str(exc_info.value.msg) == "Return names ['main'] are not listed in the next operations!"
-    assert exc_info.value.lineno == 9
-
-
-def test_return_does_not_match_next_v3() -> None:
-    """
-    All return values must coincide with the @next annotation
-    """
-
-    py_src = """
-    @system(uses={"v1": "Valve"})
-    class App:
-        def __init__(self):
-            self.v1 = Valve()
-
-        @operation(initial=True, next=["stop"])
-        def start(self):
-            self.v1.on()
-            return "stop"
-
-        @operation(final=True, next=["stop"]) # ERROR HERE
-        def stop(self):
-            self.v1.on()                
-            return "start" # AND HERE
-    """
-
-    with pytest.raises(ReturnMatchesNext) as exc_info:
-        py2shy(py_src)
-
-    assert str(exc_info.value.msg) == "Return names ['start'] are not listed in the next operations!"
-    assert exc_info.value.lineno == 15
+# DEPRECATED: the new syntax does not have the next annotation
+# and infers the next ops from the return statements, thus no need to check this anymore
+#
+# def test_return_does_not_match_next() -> None:
+#     """
+#     Testing that the value of the return matches what is annotated in the next=[...]
+#     """
+#
+#     app = """
+#     @system(uses={"v": "Valve"})
+#     class App:
+#         def __init__(self):
+#             self.v = Valve()
+#
+#         @operation(initial=True, final=True, next=["main"])
+#         def main(self):
+#             return "maixn" # this is a typo!
+#     """
+#
+#     with pytest.raises(NextOpsNotInReturn) as exc_info:
+#         py2shy(app)
+#
+#     assert str(exc_info.value.msg) == "Return names ['maixn'] are not listed in the next operations!"
+#     assert exc_info.value.lineno == 9
+#
+#
+# def test_return_does_not_match_next_v2() -> None:
+#     """
+#     Testing that the value of the return matches what is annotated in the next=[...]
+#     """
+#
+#     app = """
+#     @system(uses={"v": "Valve"})
+#     class App:
+#         def __init__(self):
+#             self.v = Valve()
+#
+#         @operation(initial=True, final=True, next=[])
+#         def main(self):
+#             return "main"
+#     """
+#
+#     with pytest.raises(ReturnMatchesNext) as exc_info:
+#         py2shy(app)
+#
+#     assert str(exc_info.value.msg) == "Return names ['main'] are not listed in the next operations!"
+#     assert exc_info.value.lineno == 9
+#
+#
+# def test_return_does_not_match_next_v3() -> None:
+#     """
+#     All return values must coincide with the @next annotation
+#     """
+#
+#     py_src = """
+#     @system(uses={"v1": "Valve"})
+#     class App:
+#         def __init__(self):
+#             self.v1 = Valve()
+#
+#         @operation(initial=True, next=["stop"])
+#         def start(self):
+#             self.v1.on()
+#             return "stop"
+#
+#         @operation(final=True, next=["stop"]) # ERROR HERE
+#         def stop(self):
+#             self.v1.on()
+#             return "start" # AND HERE
+#     """
+#
+#     with pytest.raises(ReturnMatchesNext) as exc_info:
+#         py2shy(py_src)
+#
+#     assert str(exc_info.value.msg) == "Return names ['start'] are not listed in the next operations!"
+#     assert exc_info.value.lineno == 15
 
 def test_next_against_return() -> None:
     """

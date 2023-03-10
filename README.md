@@ -10,13 +10,9 @@ The easiest way to use Shelley is by using Docker.
 ```
 make docker-build
 make docker-run # this gets you inside a full-prepared environment
+cd examples/
 ```
 
 ### Demo
 
 [![Shelley demo on YouTube](https://img.youtube.com/vi/ZiGPZRQHTWc/0.jpg)](https://www.youtube.com/watch?v=ZiGPZRQHTWc "Shelley demo on YouTube")
-
-
-### Examples
-
-Work in progress.

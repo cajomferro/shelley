@@ -19,6 +19,8 @@ _local
 shelley.egg-info
 dist
 *.int
+examples/**/Makefile
 examples/**/*.scy
 examples/**/*.shy
 examples/**/*.smv
+examples/**/*.pdf

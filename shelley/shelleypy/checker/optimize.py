@@ -116,7 +116,7 @@ def elements_that_share_e2(
     """
     e2_dict = {}
     for e1, e2_list in share_e1.items():
-        if len(e2_list) == 1 and e2_list[0] != "":
+        if len(e2_list) == 1:
             if not e2_list[0] in e2_dict.keys():
                 e2_dict[e2_list[0]] = [e1]
             else:

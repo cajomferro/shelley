@@ -81,7 +81,7 @@ def fsm2dot(
     nodes, edges = fsm.as_graph()
 
     for node in sorted(nodes):
-        kwargs = {"shape": "circle"}
+        kwargs = {"shape": "circle", "label": "", "width": ".3"}
         if node == fsm.start_state:
             start_node_lbl: str = str(node)
         if fsm.accepted_states(node):

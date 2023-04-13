@@ -573,3 +573,77 @@ class App:
 
     assert str(exc_info.value.msg) == ShelleyPyError.ALL_BRANCH_RETURN_INSIDE_LOOP
     assert exc_info.value.lineno == 10
+
+
+def test_if_before_match_loop_match() -> None:
+    """
+    """
+
+    app_py = """
+    @system(uses={"c": "Controller"})
+    class App:
+        def __init__(self):
+            self.c = Controller()
+    
+        @op_initial_final
+        def run(self, dry_run=False, max_tries=3):
+            self.c.boot()
+    
+            if dry_run:
+                match self.c.try_update():
+                    case "follow_plan_online":
+                        self.c.follow_plan_online()
+                        self.c.sleep()  # Omit this for integration error
+                        return ["run"]
+                    case "follow_plan_offline":
+                        self.c.follow_plan_offline()
+                        self.c.sleep()
+                        return ["run"]
+                    case "try_update_error":
+                        self.c.try_update_error()
+    
+                for _ in range(max_tries):
+                    match self.c.try_update():
+                        case "follow_plan_online":
+                            self.c.follow_plan_online()
+                            self.c.sleep()  # Omit this for integration error
+                            return ["run"]
+                        case "follow_plan_offline":
+                            self.c.follow_plan_offline()
+                            self.c.sleep()
+                            return ["run"]
+                        case "try_update_error":
+                            self.c.try_update_error()
+                else: # omit this for integration error
+                    self.c.follow_plan_offline()
+    
+            self.c.sleep()
+            return ["run"]
+    """
+
+    shy = py2shy(app_py)
+
+    expected_shy = """App (c: Controller) {
+ final run_1 -> run {
+  c.boot; c.try_update; c.follow_plan_online; c.sleep; 
+ }
+ final run_2 -> run {
+  c.boot; c.try_update; c.follow_plan_offline; c.sleep; 
+ }
+ final run_3 -> run {
+  c.boot; c.try_update; c.try_update_error; loop{c.try_update; c.try_update_error;} c.try_update; c.follow_plan_online; c.sleep; 
+ }
+ final run_4 -> run {
+  c.boot; c.try_update; c.try_update_error; loop{c.try_update; c.try_update_error;} c.try_update; c.follow_plan_offline; c.sleep; 
+ }
+ final run_5 -> run {
+  c.boot; {c.try_update; c.try_update_error; c.try_update; c.try_update_error; loop{c.try_update; c.try_update_error;} c.follow_plan_offline;} + {} c.sleep; 
+ }
+ initial run -> run_1, run_2, run_3, run_4, run_5 {}
+
+}
+""".strip()
+
+    # print(shy)
+
+    assert shy == expected_shy

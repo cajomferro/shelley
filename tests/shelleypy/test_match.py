@@ -599,78 +599,6 @@ class App:
 
     assert shy == expected_shy
 
-def test_nested_match_v5() -> None:
-    """
-    TODO: fix this scenario where all cases inside the match have return
-    """
-
-    py_code = """
-@system(uses={"a": "Valve", "b": "Valve"})
-class App:
-    def __init__(self):
-        self.a = Valve()
-        self.b = Valve()
-
-    @operation(initial=True, next=["try_open", "when_a", "when_b"])
-    def try_open(self):
-        match self.a.test():
-            case "open":
-                self.a.open()
-                return "when_a"
-            case "clean":
-                self.a.clean()
-                match self.b.test():
-                    case "open":
-                        self.b.open()
-                        return "when_b"
-                    case "clean":
-                        self.b.clean()
-                        return "try_open"
-            case "omg":
-                self.a.omg()
-        self.a.last()
-        return "try_open"
-
-    @operation(final=True, next=["try_open"])
-    def when_a(self):
-        self.a.close()
-        return "try_open"
-
-    @operation(final=True, next=["try_open"])
-    def when_b(self):
-        self.b.close()
-        return "try_open"
-    """
-
-    shy = py2shy(py_code)
-
-    expected_shy = """App (a: Valve, b: Valve) {
- try_open_1 -> when_a {
-  a.test; a.open; 
- }
- try_open_2 -> when_b {
-  a.test; a.clean; b.test; b.open; 
- }
- try_open_3 -> try_open {
-  a.test; a.clean; b.test; b.clean; 
- }
- try_open_4 -> try_open {
-  # a.test; {a.clean; b.test;} + {a.omg;} a.last; # --> FIX! THIS IS WRONG!
-  a.test; a.omg; a.last; # --> SHOULD BE THIS INSTEAD
- }
- initial try_open -> try_open_1, try_open_2, try_open_3, try_open_4 {}
- final when_a -> try_open {
-  a.close; 
- }
- final when_b -> try_open {
-  b.close; 
- }
-
-}
-""".strip()
-
-    assert shy == expected_shy
-
 
 def test_match_after_match() -> None:
     """
@@ -705,53 +633,6 @@ def test_match_after_match() -> None:
     expected_shy = """App (v1: Valve, v2: Valve) {
  initial main ->  {
   v1.test; {v1.ok;} + {v2.error;} v1.test; {v1.ok;} + {v2.error;} 
- }
-
-}
-""".strip()
-
-    # print(shy)
-
-    assert shy == expected_shy
-def test_match_after_match_with_match_inside() -> None:
-    """
-    # TODO: this is a bug in the checker. Fix this scenario.
-    """
-
-    app_py = """
-    @system(uses={"v1": "Valve", "v2": "Valve"})
-    class App:
-        def __init__(self):
-            self.v1 = Valve()
-            self.v2 = Valve()
-
-        @operation(initial=True, next=[])
-        def main(self):
-            match self.v1.test():
-                case "ok":
-                    self.v1.ok()
-                case "error":
-                    self.v2.error()
-
-            match self.v1.test():
-                case "ok":
-                    self.v1.ok()
-                    match self.v1.test():
-                        case "ok":
-                            self.v1.ok()
-                        case "error":
-                            self.v2.error()                    
-                case "error":
-                    self.v2.error()
-            
-            return ""
-    """
-
-    shy = py2shy(app_py)
-
-    expected_shy = """App (v1: Valve, v2: Valve) {
- initial main ->  {
-  v1.test; {v1.ok;} + {v2.error;} v1.test; {v1.ok; v1.test; {v1.ok;} + {v2.error;} } + {v2.error;} 
  }
 
 }

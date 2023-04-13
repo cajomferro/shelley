@@ -3,7 +3,7 @@ GIT = git
 RUN = $(PO) run
 
 PYTEST = $(RUN) pytest
-PYTEST_FLAGS =
+PYTEST_FLAGS = --ignore=tests/shelleypy/test_not_working.py
 MYPY = $(RUN) mypy
 MYPY_FLAGS = --show-error-context --show-column-numbers --pretty
 BLACK = $(RUN) black

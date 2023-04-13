@@ -15,6 +15,8 @@ from astroid import (
     Return,
     If,
     Match,
+    MatchSequence,
+    MatchValue,
     Name,
     MatchCase,
     Decorators,
@@ -408,16 +410,42 @@ class Python2ShelleyVisitor(AsStringVisitor):
         """
         MatchCase -> pattern -> MatchValue -> value -> Const -> value => str
         """
-        try:
-            case_name: str = match_case_node.pattern.value.value
-            if not isinstance(case_name, str):  # check type of match case value
+        case_name: List[str] = []
+        match match_case_node.pattern:
+            case MatchSequence():
+                case_name = [x.value.value for x in match_case_node.pattern.patterns]
+            case MatchValue():
+                case_name = [match_case_node.pattern.value.value]
+            case _:
                 raise ShelleyPyError(
                     match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE
                 )
-        except AttributeError:
+        #
+        # print(match_case_node.pattern.patterns)
+        # try:
+        #     match match_case_node.pattern.value.value:
+        #         case str():
+        #             case_name: str = match_case_node.pattern.value.value
+        #         case _:
+        #             print("cenas")
+        #             raise ShelleyPyError(
+        #                 match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE
+        #             )
+        # except AttributeError:
+        #     raise ShelleyPyError(
+        #         match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE
+        #     )
+
+        if not len(case_name):
             raise ShelleyPyError(
                 match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE
             )
+
+        for n in case_name:
+            if not isinstance(n, str):
+                raise ShelleyPyError(
+                    match_case_node.pattern.lineno, ShelleyPyError.MATCH_CASE_VALUE_TYPE
+                )
         return case_name
 
     @staticmethod

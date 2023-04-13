@@ -206,12 +206,19 @@ class VisitorHelper:
             components=Components(),
         )
 
-    def check_case_first_node(self, case_name: str, lineno: int):
+    def check_case_first_node(self, case_name_list: List[str], lineno: int):
         # inspect first expression inside case body
-        expected_call_name = f"{self.current_match_call.exprself}.{self.current_match_call.subsystem_instance}.{case_name}"
-        if not (self.last_call and str(self.last_call) == expected_call_name):
+        found_match = False
+        actual_match = ""
+        for n in case_name_list:
+            expected_call_name = f"{self.current_match_call.exprself}.{self.current_match_call.subsystem_instance}.{n}"
+            if self.last_call and str(self.last_call) == expected_call_name:
+                found_match = True
+                actual_match = expected_call_name
+
+        if not found_match:
             logger.warning(
-                f"Expecting {expected_call_name} but found {self.last_call}. The first subsystem call should match the case name! (l. {lineno})"
+                f"Expecting {case_name_list} but found {self.last_call}. The first subsystem call should match the case name! (l. {lineno})"
             )
 
     def context_system_init(

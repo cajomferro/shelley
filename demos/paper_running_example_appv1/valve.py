@@ -1,13 +1,7 @@
-from shelley.shelleypy import system, claim, op, op_initial, op_initial_final, op_final
+from shelley.shelleypy import system, claim, op_initial, op, op_final
 from machine import Pin
 
 
-# we always close (note: this is overlap by the behavior itself)
-@claim("system check G(open -> F ((close)));")
-# we cannot close immediately after testing (next=["open", "clean", "test", "close"] to see the error)
-@claim("system check G ((test -> ((X (open | clean)) & (X (! close)))) | END);")
-# R2 # we cannot open immediately after cleaning (change next=["test", "open"] to see the error)
-@claim("system check G ((clean & (! END)) -> (X (! open)));")
 @system(uses={})
 class Valve:
     def __init__(self):

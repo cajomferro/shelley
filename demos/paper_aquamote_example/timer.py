@@ -1,4 +1,4 @@
-from shelley.shelleypy import system, claim, op, op_initial, op_initial_final, op_final
+from shelley.shelleypy import op_initial_final, system
 import machine
 
 @system(uses={})
@@ -9,4 +9,4 @@ class Timer:
     @op_initial_final
     def wait(self):
         machine.sleep_ms(self.period_ms)
-        return "wait"
+        return ["wait"]

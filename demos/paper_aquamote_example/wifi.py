@@ -1,8 +1,9 @@
 import settings as setts
+import umachine as machine
 import network
 import machine
 
-from shelley.shelleypy import system, claim, op, op_initial, op_initial_final, op_final
+from shelley.shelleypy import operation, system, claim, op_initial_final, op_initial, op_final, op
 
 
 class UnstableWifiError(Exception):
@@ -19,17 +20,18 @@ class WiFi:
     @op_initial
     def enable(self):
         self._wlan.active(True)
-        return "connect"
+        return ["connect"]
 
     @op_final
     def disable(self):
         if self._wlan.isconnected():
             self._wlan.disconnect()
         self._wlan.active(False)
-        return "enable"
+        return ["enable"]
 
     @op
     def connect(self):
+        error = False
         def _wait_for_connection():
             print("Waiting for router...")
             while self._wlan.status() == network.STAT_CONNECTING:
@@ -42,14 +44,17 @@ class WiFi:
                 _wait_for_connection(), setts.get("wifi-join-timeout-sec")
             )
         except machine.TimeoutError:
-            return "connect_error"
+            error = True
+
+        if error:
+            return ["connect_error"]
 
         for _ in range(3):  # wait a bit to check if wifi is stable
             if not self._wlan.isconnected():
-                return "connect_error"
+                return ["connect_error"]
             machine.sleep_ms(500)
 
-        return "connect_ok"
+        return ["connect_ok"]
 
     @op
     def connect_ok(self):
@@ -63,5 +68,4 @@ class WiFi:
 
     @op
     def get_rssi(self):
-        #return self._wlan.status("rssi") # TODO: issue #67
         return ["get_rssi", "disable"]

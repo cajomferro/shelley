@@ -1,6 +1,6 @@
 import machine
 import socket as usocket
-from shelley.shelleypy import system, claim, op, op_initial, op_initial_final, op_final
+from shelley.shelleypy import operation, system, claim, op_final, op, op_initial
 
 class RequestError(Exception):
     pass
@@ -111,29 +111,32 @@ class HTTP:
     def connect(self, url):
         match self._connect(url):
             case True:
-                return "connect_ok"
+                return ["connect_ok"]
             case False:
-                return "connect_failed"
+                return ["connect_failed"]
 
     @op
     def connect_ok(self):
-        # print('Connected to {} on port {}'.format(host, port))
         print("Connected to socket!")
         return ["get", "post", "disconnect"]
 
     @op
     def connect_failed(self):
         print(f"Connecting to socket failed: {self.last_error}")
-        return "disconnect"
+        return ["disconnect"]
 
     @op
     def get(self, url, **kw):
+        error = False
         try:
             self.res = self._request("GET", url, **kw)
-            return "get_ok"
         except RequestError as err:
             self.last_error = err
-            return "get_error"
+            error = True
+        if error:
+            return ["get_error"]
+        else:
+            return ["get_ok"]
 
     @op
     def get_ok(self):
@@ -147,12 +150,16 @@ class HTTP:
 
     @op
     def post(self, url, **kw):
+        error = False
         try:
             self.res = self._request("POST", url, **kw)
-            return "post_ok"
         except RequestError as err:
             self.last_error = err
-            return "post_error"
+            error = True
+        if error:
+            return ["post_error"]
+        else:
+            return ["post_ok"]
 
     @op
     def post_ok(self):
@@ -167,4 +174,4 @@ class HTTP:
     @op_final
     def disconnect(self):
         self.socket.close()
-        return "connect"
+        return ["connect"]

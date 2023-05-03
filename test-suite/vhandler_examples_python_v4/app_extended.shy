@@ -1,0 +1,13 @@
+App (c: Controller) {
+ final run_1 ->  {
+  c.sector1_try; c.run1; c.sector2; 
+ }
+ final run_2 ->  {
+  c.sector1_try; c.run1; c.close1; 
+ }
+ final run_3 ->  {
+  c.sector1_try; c.error1; 
+ }
+ initial run -> run_1, run_2, run_3 {}
+
+}

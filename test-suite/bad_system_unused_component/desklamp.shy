@@ -1,0 +1,6 @@
+DeskLamp (b: Button, l: Led) {
+ initial final level1 -> level1 {
+  l.on; l.off; 
+ }
+
+}

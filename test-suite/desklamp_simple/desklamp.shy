@@ -1,0 +1,12 @@
+DeskLamp (ledA: LedStrict, ledB: LedStrict, b: SimpleButton) {
+ initial final level1 -> level2 {
+  b.press; ledA.on; 
+ }
+ final level2 -> off {
+  b.press; ledB.on; 
+ }
+ final off -> level1 {
+  b.press; {ledB.off; ledA.off; } + {ledA.off; ledB.off; }
+ }
+
+}

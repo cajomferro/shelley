@@ -1,0 +1,7 @@
+base Valve {
+ initial final test -> clean, test, open ;
+ open -> close ;
+ final clean -> test ;
+ final close -> test ;
+
+}

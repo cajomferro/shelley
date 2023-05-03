@@ -1,0 +1,5 @@
+base Timer {
+
+  initial final wait -> wait;
+
+}

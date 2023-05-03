@@ -1,0 +1,5 @@
+base Controller {
+ initial click1 -> click2 ;
+ final click2 -> click1 ;
+
+}

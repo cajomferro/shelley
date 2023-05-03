@@ -1,0 +1,311 @@
+name: Valves61_1
+start_with:
+- go1
+end_with: $ANY
+subsystems:
+  v: Valve61
+operations:
+  go1:
+    next: $ANY
+    integration:
+    - v.x1
+  go2:
+    next:
+    - go1
+    integration:
+    - v.x2
+  go3:
+    next:
+    - go1
+    integration:
+    - v.x3
+  go4:
+    next:
+    - go1
+    integration:
+    - v.x4
+  go5:
+    next:
+    - go1
+    integration:
+    - v.x5
+  go6:
+    next:
+    - go1
+    integration:
+    - v.x6
+  go7:
+    next:
+    - go1
+    integration:
+    - v.x7
+  go8:
+    next:
+    - go1
+    integration:
+    - v.x8
+  go9:
+    next:
+    - go1
+    integration:
+    - v.x9
+  go10:
+    next:
+    - go1
+    integration:
+    - v.x10
+  go11:
+    next:
+    - go1
+    integration:
+    - v.x11
+  go12:
+    next:
+    - go1
+    integration:
+    - v.x12
+  go13:
+    next:
+    - go1
+    integration:
+    - v.x13
+  go14:
+    next:
+    - go1
+    integration:
+    - v.x14
+  go15:
+    next:
+    - go1
+    integration:
+    - v.x15
+  go16:
+    next:
+    - go1
+    integration:
+    - v.x16
+  go17:
+    next:
+    - go1
+    integration:
+    - v.x17
+  go18:
+    next:
+    - go1
+    integration:
+    - v.x18
+  go19:
+    next:
+    - go1
+    integration:
+    - v.x19
+  go20:
+    next:
+    - go1
+    integration:
+    - v.x20
+  go21:
+    next:
+    - go1
+    integration:
+    - v.x21
+  go22:
+    next:
+    - go1
+    integration:
+    - v.x22
+  go23:
+    next:
+    - go1
+    integration:
+    - v.x23
+  go24:
+    next:
+    - go1
+    integration:
+    - v.x24
+  go25:
+    next:
+    - go1
+    integration:
+    - v.x25
+  go26:
+    next:
+    - go1
+    integration:
+    - v.x26
+  go27:
+    next:
+    - go1
+    integration:
+    - v.x27
+  go28:
+    next:
+    - go1
+    integration:
+    - v.x28
+  go29:
+    next:
+    - go1
+    integration:
+    - v.x29
+  go30:
+    next:
+    - go1
+    integration:
+    - v.x30
+  go31:
+    next:
+    - go1
+    integration:
+    - v.x31
+  go32:
+    next:
+    - go1
+    integration:
+    - v.x32
+  go33:
+    next:
+    - go1
+    integration:
+    - v.x33
+  go34:
+    next:
+    - go1
+    integration:
+    - v.x34
+  go35:
+    next:
+    - go1
+    integration:
+    - v.x35
+  go36:
+    next:
+    - go1
+    integration:
+    - v.x36
+  go37:
+    next:
+    - go1
+    integration:
+    - v.x37
+  go38:
+    next:
+    - go1
+    integration:
+    - v.x38
+  go39:
+    next:
+    - go1
+    integration:
+    - v.x39
+  go40:
+    next:
+    - go1
+    integration:
+    - v.x40
+  go41:
+    next:
+    - go1
+    integration:
+    - v.x41
+  go42:
+    next:
+    - go1
+    integration:
+    - v.x42
+  go43:
+    next:
+    - go1
+    integration:
+    - v.x43
+  go44:
+    next:
+    - go1
+    integration:
+    - v.x44
+  go45:
+    next:
+    - go1
+    integration:
+    - v.x45
+  go46:
+    next:
+    - go1
+    integration:
+    - v.x46
+  go47:
+    next:
+    - go1
+    integration:
+    - v.x47
+  go48:
+    next:
+    - go1
+    integration:
+    - v.x48
+  go49:
+    next:
+    - go1
+    integration:
+    - v.x49
+  go50:
+    next:
+    - go1
+    integration:
+    - v.x50
+  go51:
+    next:
+    - go1
+    integration:
+    - v.x51
+  go52:
+    next:
+    - go1
+    integration:
+    - v.x52
+  go53:
+    next:
+    - go1
+    integration:
+    - v.x53
+  go54:
+    next:
+    - go1
+    integration:
+    - v.x54
+  go55:
+    next:
+    - go1
+    integration:
+    - v.x55
+  go56:
+    next:
+    - go1
+    integration:
+    - v.x56
+  go57:
+    next:
+    - go1
+    integration:
+    - v.x57
+  go58:
+    next:
+    - go1
+    integration:
+    - v.x58
+  go59:
+    next:
+    - go1
+    integration:
+    - v.x59
+  go60:
+    next:
+    - go1
+    integration:
+    - v.x60
+  go61:
+    next:
+    - go1
+    integration:
+    - v.x61

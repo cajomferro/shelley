@@ -1,0 +1,19 @@
+TwoControllers(
+    c1_a: Valve,
+    c1_b: Valve,
+    c1_t: Timer,
+    c2_a: Valve,
+    c2_b: Valve,
+    c2_t: Timer) {
+
+    initial final level1 -> level1, level2 {
+        { c1_a.on; c1_t.wait; c1_a.off; c2_a.on; c2_t.wait; c2_a.off; }
+        +
+        { c2_a.on; c2_t.wait; c2_a.off; c1_a.on; c1_t.wait; c1_a.off; }
+    }
+
+    final level2 -> level1 {
+        c1_b.on; c1_t.wait; c1_b.off; c2_b.on; c2_t.wait; c2_b.off;
+    }
+
+}

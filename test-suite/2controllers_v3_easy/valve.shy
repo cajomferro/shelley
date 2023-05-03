@@ -1,0 +1,11 @@
+base Valve {
+
+  initial on -> ready, error;
+
+  final error -> on;
+
+  final ready -> off;
+
+  final off -> on;
+
+}

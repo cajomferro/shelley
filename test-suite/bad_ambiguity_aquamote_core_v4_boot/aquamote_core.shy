@@ -1,0 +1,29 @@
+Controller (v: ValveHandler, m: MagneticButton, p: PowerHandler, w: Wireless) {
+ initial boot -> start_http_ok, start_http_err {
+  {m.locked; m.unlocked; p.cancel;}
+ }
+ initial wake_up -> start_http_ok, start_http_err {
+  {m.locked; m.unlocked; p.cancel;} + {p.wakeup;}
+ }
+ start_http_ok -> hello {
+  w.begin;
+ }
+ start_http_err -> start_http_ok, start_http_err, follow_plan {
+  w.begin_err;
+ }
+ hello -> handle_request {
+  w.connect; w.send; {w.send_ok; } + {w.send_err_401; } + {w.send_err_500; } + {w.send_err_timeout; }
+ }
+ handle_request -> handle_request, stop_http {
+  w.send; {w.send_ok; } + {w.send_err_401; } + {w.send_err_500; } + {w.send_err_timeout; }
+ }
+ stop_http -> follow_plan {
+  w.disconnect; w.stop;
+ }
+ follow_plan -> sleep {
+  v.v1_execute; v.v2_execute; v.v3_execute; v.v4_execute;
+ }
+ final sleep -> wake_up {
+  p.sleep;
+ }
+}

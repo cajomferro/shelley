@@ -1,0 +1,25 @@
+base Controller {
+ initial final xinit -> toggle_init ;
+ final toggle_init -> InitTimeout5, police_on ;
+ final InitTimeout5 -> priority_prepares ;
+ final priority_prepares -> toggle_priority_prepares ;
+ final toggle_priority_prepares -> PriorityPreparesTimeout6, police_on ;
+ final PriorityPreparesTimeout6 -> secondary ;
+ final secondary -> toggle_secondary ;
+ final toggle_secondary -> SecondaryTimeout2, police_on ;
+ final SecondaryTimeout2 -> secondary_prepares ;
+ final secondary_prepares -> toggle_secondary_prepares ;
+ final toggle_secondary_prepares -> SecondaryPreparesTimeout3, police_on ;
+ final SecondaryPreparesTimeout3 -> priority ;
+ final priority -> toggle_priority ;
+ final toggle_priority -> PriorityTimeout4, police_on ;
+ final PriorityTimeout4 -> priority_prepares ;
+ final police_on -> priority_police_on ;
+ final priority_police_on -> secondary_police_on ;
+ final secondary_police_on -> interrupted ;
+ final police_off -> priority_police_off ;
+ final priority_police_off -> secondary_police_off ;
+ final secondary_police_off -> xinit ;
+ final interrupted -> police_off ;
+
+}

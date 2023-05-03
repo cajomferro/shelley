@@ -1,0 +1,30 @@
+Task (center_poke: Poke, left_poke: Poke, right_poke: Poke, event_handler: EventHandler, timer: Timer) {
+ init_trial_1 -> choice_state {
+  center_poke.led_on; event_handler.next; event_handler.center_poke; center_poke.led_off; 
+ }
+ init_trial_2 -> stop_trial {
+  center_poke.led_on; event_handler.next; event_handler.session_timer; center_poke.led_off; 
+ }
+ initial init_trial -> init_trial_1, init_trial_2 {}
+ choice_state_1 -> left_reward {
+  left_poke.led_on; right_poke.led_on; event_handler.next; event_handler.left_poke; left_poke.led_off; right_poke.led_off; 
+ }
+ choice_state_2 -> right_reward {
+  left_poke.led_on; right_poke.led_on; event_handler.next; event_handler.right_poke; left_poke.led_off; right_poke.led_off; 
+ }
+ choice_state_3 -> inter_trial_interval {
+  left_poke.led_on; right_poke.led_on; event_handler.next; {event_handler.left_poke;} + {event_handler.right_poke;} left_poke.led_off; right_poke.led_off; 
+ }
+ choice_state -> choice_state_1, choice_state_2, choice_state_3 {}
+ left_reward -> inter_trial_interval {
+  left_poke.sol_on; timer.wait; left_poke.sol_off; 
+ }
+ right_reward -> inter_trial_interval {
+  right_poke.sol_on; timer.wait; right_poke.sol_off; 
+ }
+ inter_trial_interval -> init_trial {
+  timer.wait; 
+ }
+ final stop_trial ->  {}
+
+}

@@ -1,0 +1,15 @@
+App (led: LED) {
+ start_1 -> blink {
+  led.set_brightness; 
+ }
+ start_2 -> blink {}
+ initial start -> start_1, start_2 {}
+ final blink ->  {
+  led.on; led.off; loop{led.on; led.off;} 
+ }
+
+ integration check G (led.set_brightness -> (F (led.off | END)));
+ integration check G (led.on -> (X led.off));
+ integration check F (led.on & (X led.off));
+
+}

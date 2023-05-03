@@ -1,0 +1,6 @@
+base LED {
+ initial on -> off ;
+ final off -> on ;
+ initial final set_brightness -> on ;
+
+}

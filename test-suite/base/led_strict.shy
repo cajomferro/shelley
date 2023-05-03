@@ -1,0 +1,5 @@
+base LedStrict {
+ initial final on -> off ;
+ final off -> on ;
+
+}

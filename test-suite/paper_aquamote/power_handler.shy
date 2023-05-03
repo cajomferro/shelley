@@ -1,0 +1,7 @@
+base PowerHandler {
+ initial final cancel -> sleep ; # this must be initial because manual wake up can occur in between
+ initial final sleep -> wakeup, cancel ;
+ final wakeup -> sleep ;
+
+  system check (cancel | sleep);
+}

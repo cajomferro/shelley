@@ -1,0 +1,15 @@
+TwoControllers(
+	c1: Controller,
+    c2: Controller) {
+
+    initial final level1 -> level1, level2 {
+        { c1.level1; c2.level1; }
+        +
+        { c2.level1; c1.level1; }
+    }
+
+    final level2 -> level1 {
+        c1.level2; c2.level2;
+    }
+
+}

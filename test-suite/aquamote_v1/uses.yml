@@ -1,0 +1,8 @@
+Magnetic: magnetic.scy
+Valve: valve.scy
+Timer: ../base/timer.scy
+LowPowerStrict: lowpower-strict.scy
+ValveHandlerTimer: valvehandlertimer.scy
+GPRSClient: gprsclient.scy
+HTTPClientV2: httpclient.scy
+RadioClientV2: radioclient.scy

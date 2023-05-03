@@ -1,0 +1,37 @@
+Wireless (wifi: WiFi, http: HTTP, this: Wireless) {
+ start_1 -> start_ok {
+  this.start; wifi.enable; wifi.connect; wifi.connect_ok; 
+ }
+ start_2 -> start_failed {
+  this.start; wifi.enable; wifi.connect; wifi.connect_error; 
+ }
+ initial start -> start_1, start_2 {}
+ start_ok -> request {
+  this.start_ok; wifi.get_rssi; 
+ }
+ start_failed -> stop {
+  this.start_failed; 
+ }
+ request_1 -> request_ok {
+  this.request; http.connect; http.connect_ok; http.post; http.post_ok; 
+ }
+ request_2 -> request_error {
+  this.request; http.connect; {http.connect_ok; http.post; http.post_error;} + {http.connect_failed;} http.disconnect; 
+ }
+ request -> request_1, request_2 {}
+ request_error -> request, stop {
+  this.request_error; 
+ }
+ request_ok -> request, stop {
+  this.request_ok; http.disconnect; 
+ }
+ final stop -> start {
+  this.stop; wifi.disable; 
+ }
+
+ integration check ((! http.connect) U wifi.connect_ok) | (G (! http.connect));
+ integration check G (wifi.connect_ok -> (F this.request));
+ integration check G (this.request -> ((((! this.request_error) & (! this.request_ok)) U http.connect) | (G ((! this.request_error) & (! this.request_ok)))));
+ integration check G (http.connect_ok -> (X http.post));
+
+}

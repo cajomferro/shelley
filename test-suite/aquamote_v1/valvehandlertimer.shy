@@ -1,0 +1,15 @@
+ValveHandlerTimer (v1: Valve, v2: Valve, v3: Valve, v4: Valve, t: Timer) {
+ initial final v1 -> v2 {
+  v1.on; t.start; t.timeout; v1.off;
+ }
+ initial final v2 -> v3 {
+  v2.on; t.start; t.timeout; v2.off;
+ }
+ initial final v3 -> v4 {
+  v3.on; t.start; t.timeout; v3.off;
+ }
+ initial final v4 -> v1 {
+  v4.on; t.start; t.timeout; v4.off;
+ }
+
+}

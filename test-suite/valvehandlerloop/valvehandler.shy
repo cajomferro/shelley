@@ -1,0 +1,27 @@
+ValveHandler (v1: Valve, v2: Valve, t: Timer) { # these could be 2 examples but i'm merging both in a single spec for avoiding creating yet another example
+ initial final op1 ->  { # a case where after v1.on we cannot perform t.done
+  v2.on; t.start;
+  {v1.on; t.done; v1.off;}
+  +
+  {v1.on; v1.off; {loop {v1.on; v1.off;} t.done;}} # problem is here
+  +
+  {t.done;}
+   v2.off;
+ }
+
+ initial final op2 ->  { # a case where after v1.on we can always perform t.done
+  v2.on; t.start;
+  {v1.on;
+    {loop{v1.off; v1.on;} t.done; v1.off;}
+    +
+    {v1.off; loop{v1.on; v1.off;} t.done;}
+  }
+  +
+  {t.done;}
+   v2.off;
+ }
+
+
+ #integration check G ((v1.on -> ( (X (v1.off -> X t.done) ) ) & ((v1.on -> (X (t.done -> X v1.off) ) ))));
+ #integration check G (v1.on -> X (t.done));
+}

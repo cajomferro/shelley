@@ -1,0 +1,21 @@
+SmartLed2 (lred: Led, lyellow: Led, lgreen: Led, t: Timer) {
+ initial active -> active_restart, standby {
+  lgreen.on; t.start; 
+ }
+ standby -> standby_restart, off {
+  t.timeout; lgreen.off; lyellow.on; t.start; 
+ }
+ final off -> off_restart {
+  t.timeout; lyellow.off; lred.on; 
+ }
+ active_restart -> active {
+  t.cancel; lgreen.off; 
+ }
+ standby_restart -> active {
+  t.cancel; lyellow.off; 
+ }
+ off_restart -> active {
+  lred.off; 
+ }
+
+}

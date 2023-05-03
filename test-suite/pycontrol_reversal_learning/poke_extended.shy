@@ -1,0 +1,15 @@
+Poke (led: LED, sol: SOL) {
+ initial led_on -> led_off {
+  led.on; 
+ }
+ final led_off -> sol_on, led_on {
+  led.off; 
+ }
+ initial sol_on -> sol_off {
+  sol.on; 
+ }
+ final sol_off -> sol_on, led_on {
+  sol.off; 
+ }
+
+}

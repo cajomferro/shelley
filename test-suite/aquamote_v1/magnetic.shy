@@ -1,0 +1,5 @@
+base Magnetic {
+ initial final unlocked -> locked ;
+ initial final locked -> unlocked ;
+
+}

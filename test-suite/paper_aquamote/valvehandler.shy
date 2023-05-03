@@ -1,0 +1,30 @@
+ValveHandler (v1: Valve, v2: Valve, v3: Valve, v4: Valve, t: Timer) {
+ initial final v1_execute -> v1_execute, v2_execute, v3_execute, v4_execute {
+  v1.on; t.start; t.done; v1.off; 
+ }
+ initial final v2_execute -> v1_execute, v2_execute, v3_execute, v4_execute {
+  v2.on; t.start; t.done; v2.off; 
+ }
+ initial final v3_execute -> v1_execute, v2_execute, v3_execute, v4_execute {
+  v3.on; t.start; t.done; v3.off; 
+ }
+ initial final v4_execute -> v1_execute, v2_execute, v3_execute, v4_execute {
+  v4.on; t.start; t.done; v4.off; 
+ }
+
+ system check F v1_execute | F v2_execute | F v3_execute | F v4_execute ; # at least one of the valves is executed
+ integration check G (t.start -> (X (t.done & (X (v1.off | v2.off | v3.off | v4.off)))));
+ integration check G ((v1.on | v2.on | v3.on | v4.on) -> X (t.start & (X (t.done & (X (v1.off | v2.off | v3.off | v4.off))))));
+ integration check G (t.start ->  X (t.done & (X (v1.off | v2.off | v3.off | v4.off))));
+ integration check G (v1.on -> ((! v2.on) & (! v3.on) & (! v4.on) ) U v1.off);
+ integration check G (v2.on -> ((! v1.on) & (! v3.on) & (! v4.on) ) U v2.off);
+ integration check G (v3.on -> ((! v1.on) & (! v2.on) & (! v4.on) ) U v3.off);
+ integration check G (v4.on -> ((! v1.on) & (! v2.on) & (! v3.on) ) U v4.off);
+ integration check G (v1.on -> F (v1.off));
+ integration check G (v2.on -> F (v2.off));
+ integration check G (v3.on -> F (v3.off));
+ integration check G (v4.on -> F (v4.off));
+
+}
+
+

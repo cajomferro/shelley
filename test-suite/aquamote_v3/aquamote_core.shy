@@ -1,0 +1,30 @@
+AquamoteCore (c: Controller) {
+ initial wake_up_manual -> start_http_ok, start_http_err {
+  c.wakeup; 
+ }
+ wake_up_timeout -> start_http_ok, start_http_err {
+  c.sleep_timeout; 
+ }
+ start_http_ok -> hello {
+  c.radio_init; 
+ }
+ start_http_err -> start_http_ok, start_http_err, follow_plan {
+  c.radio_err; 
+ }
+ hello -> handle_request {
+  c.server_connect; 
+ }
+ handle_request -> handle_request, stop_http {
+  {c.send_ok; } + {c.send_err; }
+ }
+ stop_http -> follow_plan, start_http_ok {
+  c.server_disconnect; c.radio_stop; 
+ }
+ follow_plan -> sleep {
+  c.run_valves; 
+ }
+ final sleep -> wake_up_manual, wake_up_timeout {
+  c.sleep; 
+ }
+
+}

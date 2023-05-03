@@ -1,0 +1,6 @@
+SmartButton (b: Button) {
+ initial final on -> on {
+  b.press; 
+ }
+
+}

@@ -1,0 +1,6 @@
+AppTwoValves (t: TwoValves) {
+ initial final main ->  {
+  t.run; 
+ }
+
+}

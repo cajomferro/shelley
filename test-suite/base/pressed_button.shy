@@ -1,0 +1,5 @@
+base PressedButton {
+ initial final but_in -> but_out ;
+ final but_out -> but_in ;
+
+}

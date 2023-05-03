@@ -1,0 +1,52 @@
+name: Controller
+start_with: [ operating_init ]
+end_with: [ interrupted ]
+subsystems:
+  SecondaryTimeout2: Timer
+  SecondaryPreparesTimeout3: Timer
+  PriorityTimeout4: Timer
+  InitTimeout5: Timer
+  PriorityPreparesTimeout6: Timer
+  PriorityControl: Control
+  SecondaryControl: Control
+  PoliceInterrupt: PoliceInterrupt # input
+  PriorityPolice: PoliceInterrupt # output
+  SecondaryPolice: PoliceInterrupt # output
+operations:
+  operating_init:
+    next: [ operating_priority_prepares, interrupted ]
+    integration:
+      xor:
+        - seq: [ PriorityControl.toggle, InitTimeout5.begin ]
+        - seq: [ PoliceInterrupt.police, PriorityPolice.police, SecondaryPolice.police ] # THIS IS AMBIGUOUS
+  operating_priority_prepares:
+    next: [ operating_secondary, interrupted ]
+    integration:
+      seq:
+        - xor:
+            - seq: [ InitTimeout5.timeout, PriorityControl.toggle ]
+            - seq: [ PriorityTimeout4.timeout, PriorityControl.toggle ]
+        - PriorityPreparesTimeout6.begin
+  operating_secondary:
+    next: [ operating_secondary_prepares, interrupted ]
+    integration:
+      seq: [ PriorityPreparesTimeout6.timeout, SecondaryControl.toggle, PriorityControl.toggle, SecondaryTimeout2.begin ]
+  operating_secondary_prepares:
+    next: [ operating_priority ]
+    integration:
+      seq: [ SecondaryTimeout2.timeout, SecondaryControl.toggle, SecondaryPreparesTimeout3.begin ]
+  operating_priority:
+    next: [ operating_priority_prepares ]
+    integration:
+      seq: [ SecondaryPreparesTimeout3.timeout, SecondaryControl.toggle, PriorityControl.toggle, PriorityTimeout4.begin ]
+  interrupted:
+    next: [ operating_init ]
+    integration:
+      seq:
+        - SecondaryTimeout2.end
+        - SecondaryPreparesTimeout3.end
+        - PriorityTimeout4.end
+        - InitTimeout5.end
+        - PoliceInterrupt.police
+        - PriorityPolice.police
+        - SecondaryPolice.police

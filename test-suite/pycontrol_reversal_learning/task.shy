@@ -1,0 +1,9 @@
+base Task {
+ initial init_trial -> choice_state, stop_trial ;
+ choice_state -> right_reward, inter_trial_interval, left_reward ;
+ left_reward -> inter_trial_interval ;
+ right_reward -> inter_trial_interval ;
+ inter_trial_interval -> init_trial ;
+ final stop_trial ->  ;
+
+}

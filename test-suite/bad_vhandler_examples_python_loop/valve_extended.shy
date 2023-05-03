@@ -1,0 +1,10 @@
+base Valve {
+ initial vinit -> test, clean ;
+ initial test -> ok, error ;
+ error -> test, clean ;
+ ok -> open ;
+ open -> close ;
+ final close -> test ;
+ final clean -> test ;
+
+}

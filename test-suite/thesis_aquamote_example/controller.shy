@@ -1,0 +1,13 @@
+base Controller {
+ initial try_update -> update_failed, update_ok ;
+ update_failed -> try_update, update_failed_last_try ;
+ update_failed_last_try -> sequential_plan ;
+ update_ok -> parallel_plan, sequential_plan ;
+ initial sequential_plan -> sleep ;
+ parallel_plan -> sleep ;
+ initial final sleep -> try_update, sequential_plan ;
+
+ system check G (update_failed_last_try -> (F sequential_plan));
+ system check G (update_failed_last_try -> ((! parallel_plan) U sleep));
+
+}

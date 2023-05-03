@@ -1,0 +1,6 @@
+base LowPowerStrictFinalStates {
+ initial final setup -> sleep, setup ;
+ sleep -> wakeup, setup ;
+ final wakeup -> setup ;
+
+}

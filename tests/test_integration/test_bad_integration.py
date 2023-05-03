@@ -8,7 +8,7 @@ from shelley.ast.devices import Device as ShelleyDevice
 from shelley.parsers import shelley_lark_parser
 from shelley.shelleyc import shelleyc
 
-EXAMPLES_PATH = Path() / Path(__file__).parent.parent.parent / "shelley-examples"
+EXAMPLES_PATH = Path() / Path(__file__).parent.parent.parent / "test-suite"
 
 # bad_integration_v1
 BUTTON_PATH = EXAMPLES_PATH / "base" / "button.shy"

@@ -1,0 +1,5 @@
+Button (b: Button) {
+ initial final on ->  {
+  b.press; b.release;
+ }
+}

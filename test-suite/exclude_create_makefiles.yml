@@ -1,0 +1,17 @@
+- __pycache__
+- .pytest_cache
+- base # This folder doesn't have a main source therefore the generate_makefile script doesn't work
+- bad_ambiguity_v1 # manually generated
+- bad_ambiguity_v2 # manually generated
+- bad_ambiguity_v3 # manually generated
+- bad_ambiguity_v4 # manually generated
+- bad_ambiguity_v6 # manually generated
+- bad_ambiguity_v7 # manually generated
+- bad_system_unused_component # manually generated
+- bad_ambiguity_aquamote_core_v4_boot # manually generated
+- bad_empty_body_all # manually generated
+- bad_vhandler_examples_python_loop # currently the script doesn't generate "bad" Makefiles for python. Update the generate_makefile_bad.py script!
+- bad_vhandler_examples_python_match # currently the script doesn't generate "bad" Makefiles for python. Update the generate_makefile_bad.py script!
+- bad_nusmv_empty_string # currently the script doesn't generate "bad" Makefiles for python. Update the generate_makefile_bad.py script!
+- bad_verdi_running_example_bad_sector # currently the script doesn't generate "bad" Makefiles for python. Update the generate_makefile_bad.py script!
+- thesis_aquamote_example # all good but we want to use the '--optimize --include-iface-ops' by default

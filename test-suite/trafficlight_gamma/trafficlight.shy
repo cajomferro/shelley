@@ -1,0 +1,15 @@
+TrafficLight (lred: Led, lgreen: Led, lyellow: Led) {
+ initial green -> yellow, off {
+  lred.off; lgreen.on; 
+ }
+ initial yellow -> red, off {
+  lgreen.off; lyellow.on; 
+ }
+ initial red -> green, off {
+  lyellow.off; lred.on; 
+ }
+ final off -> red, yellow, green, off {
+  lred.off; lgreen.off; lyellow.off; 
+ }
+
+}

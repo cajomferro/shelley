@@ -1,0 +1,21 @@
+Crossroad (main_rd: TrafficLight, sec_rd: TrafficLight, t: Timer) {
+ initial main_go -> main_slow, off {
+  main_rd.green; sec_rd.red; t.begin; t.timeout; 
+ }
+ main_slow -> sec_go, off {
+  main_rd.yellow; t.begin; t.timeout; 
+ }
+ sec_go -> sec_slow, off {
+  main_rd.red; sec_rd.green; t.begin; t.timeout; 
+ }
+ sec_slow -> main_go, off {
+  sec_rd.yellow; t.begin; t.timeout; 
+ }
+ initial final blink -> blink, main_go {
+  main_rd.yellow; sec_rd.yellow; t.begin; t.timeout; main_rd.off; sec_rd.off; t.begin; t.timeout; 
+ }
+ final off -> blink, main_go {
+  main_rd.off; sec_rd.off; 
+ }
+
+}

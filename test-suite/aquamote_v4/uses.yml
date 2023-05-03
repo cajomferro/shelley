@@ -1,0 +1,4 @@
+Magnetic: ../aquamote_v1/magnetic.scy
+Valve: ../aquamote_v1/valve.scy
+LowPowerStrictFinalStates: lowpower-strict-finalstates.scy
+RadioFinalStates: radio_finalstates.scy

@@ -1,0 +1,9 @@
+RadioV3 (rs: RadioV2) {
+ initial final send -> ok {
+  rs.start; rs.send; 
+ }
+ final ok -> send {
+  rs.receive; rs.stop; 
+ }
+
+}

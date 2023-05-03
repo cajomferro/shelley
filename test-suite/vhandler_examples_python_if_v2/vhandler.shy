@@ -1,0 +1,6 @@
+base App {
+ initial open_all -> close_b, close_a ;
+ final close_a -> open_all ;
+ final close_b -> open_all ;
+
+}

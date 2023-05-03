@@ -1,0 +1,10 @@
+base HTTPClient {
+ initial final get -> get, post, response200, response404, response401, response500 ;
+ initial final post -> get, post, response200, response404, response401, response500 ;
+ final response200 -> get, post ;
+ final response401 -> get, post ;
+ final response404 -> get, post ;
+ final response500 -> get, post ;
+
+ system check (get | post);
+}

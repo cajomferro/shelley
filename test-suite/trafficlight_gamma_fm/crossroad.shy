@@ -1,0 +1,27 @@
+Crossroad (c: Controller, p: TrafficLightCtrl, s: TrafficLightCtrl) {
+ initial final init_lcp_yellow_lcs_red_first -> police_interrupt_on, lcp_red_lcs_green {
+  p.display_red; s.display_red; c.xinit; c.toggle_init; p.toggle_green; p.display_green; c.InitTimeout5; c.priority_prepares; c.toggle_priority_prepares; p.toggle_yellow; p.display_yellow; 
+ }
+ final lcp_yellow_lcs_red -> police_interrupt_on, lcp_red_lcs_green {
+  c.PriorityTimeout4; c.priority_prepares; c.toggle_priority_prepares; p.toggle_yellow; p.display_yellow; 
+ }
+ final lcp_red_lcs_green -> police_interrupt_on, lcp_red_lcs_yellow {
+  c.PriorityPreparesTimeout6; c.secondary; c.toggle_secondary; p.toggle_red; p.display_red; s.toggle_green; s.display_green; 
+ }
+ final lcp_red_lcs_yellow -> police_interrupt_on, lcp_green_lcs_red {
+  c.SecondaryTimeout2; c.secondary_prepares; c.toggle_secondary_prepares; s.toggle_yellow; s.display_yellow; 
+ }
+ final lcp_green_lcs_red -> police_interrupt_on, lcp_yellow_lcs_red {
+  c.SecondaryPreparesTimeout3; c.priority; c.toggle_priority; p.toggle_green; p.display_green; s.toggle_red; s.display_red; 
+ }
+ final police_interrupt_on -> blink {
+  c.police_on; c.priority_police_on; p.police_on; c.secondary_police_on; s.police_on; c.interrupted; 
+ }
+ final blink -> police_interrupt_off, blink {
+  p.display_byellow; s.display_byellow; p.BlackTimeout4; s.BlackTimeout4; p.display_black; s.display_black; p.BlinkingYellowTimeout3; s.BlinkingYellowTimeout3; 
+ }
+ final police_interrupt_off -> lcp_red_lcs_green {
+  c.police_off; c.priority_police_off; p.police_off; c.secondary_police_off; s.police_off; p.display_red; s.display_red; c.xinit; c.toggle_init; p.toggle_green; p.display_green; c.InitTimeout5; c.priority_prepares; c.toggle_priority_prepares; p.toggle_yellow; p.display_yellow; 
+ }
+
+}

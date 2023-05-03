@@ -1,0 +1,6 @@
+base Led {
+ initial on -> ok, error ;
+ ok -> off;
+ final error -> ;
+ final off -> off, on ;
+}

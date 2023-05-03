@@ -1,0 +1,15 @@
+DeskLamp (ledA: Led, ledB: Led, t: Timer) {
+ initial level1 -> standby1, level2 {
+  ledA.on; t.start; 
+ }
+ level2 -> standby2 {
+  t.cancel; ledB.on; t.start; 
+ }
+ final standby1 -> level1 {
+  t.timeout; ledA.off; 
+ }
+ final standby2 -> level1 {
+  t.timeout; {ledB.off; ledA.off; } + {ledA.off; ledB.off; }
+ }
+
+}

@@ -1,0 +1,21 @@
+ValveHandler (a: Valve, b: Valve) {
+ try_open_1 -> close {
+  a.test; a.open; b.test; b.open; 
+ }
+ try_open_2 -> fail {
+  a.test; a.open; b.test; b.clean; a.close; 
+ }
+ try_open_3 -> fail {
+  a.test; a.clean; 
+ }
+ initial try_open -> try_open_1, try_open_2, try_open_3 {}
+ final fail -> try_open {}
+ final close -> try_open {
+  a.close; b.close; 
+ }
+
+ integration check ((! b.open) U a.open) | (G (! b.open));
+
+ subsystem b check G (open -> (X close));
+
+}

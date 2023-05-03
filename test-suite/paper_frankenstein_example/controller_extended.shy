@@ -1,0 +1,29 @@
+Controller (a: Valve, b: Valve, t: Timer) {
+ level1_1 -> standby1 {
+  a.on; t.start; 
+ }
+ level1_2 -> level2 {
+  a.on; t.start; 
+ }
+ initial level1 -> level1_1, level1_2 {}
+ level2_1 -> standby2 {
+  t.cancel; b.on; t.start; 
+ }
+ level2_2 -> standby2 {
+  t.cancel; b.on; t.start; 
+ }
+ level2 -> level2_1, level2_2 {}
+ final standby1 -> level1 {
+  t.done; a.off; 
+ }
+ final standby2_1 -> level1 {
+  t.done; a.off; b.off; 
+ }
+ final standby2_2 -> level1 {
+  t.done; b.off; a.off; 
+ }
+ standby2 -> standby2_1, standby2_2 {}
+
+ integration check G (a.on -> ((X t.start) & (F (t.done & (F a.off)))));
+
+}

@@ -1,0 +1,6 @@
+base App {
+ initial final run ->  ;
+
+ system check G (run -> (F (run & END)));
+
+}

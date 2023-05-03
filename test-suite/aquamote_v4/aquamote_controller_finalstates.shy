@@ -1,0 +1,18 @@
+Controller (v1: Valve, v2: Valve, v3: Valve, v4: Valve, m: Magnetic, r: RadioFinalStates, lp: LowPowerStrictFinalStates) {
+ initial final update -> activateAllValves {
+  r.start; r.HTTPsetup; r.HTTPconnect; r.HTTPsend; r.HTTPreceive; r.HTTPdisconnect; r.HTTPdisable; 
+ }
+ final wakeup -> update {
+  {lp.wakeup; } + {m.locked; m.unlocked; lp.setup; }
+ }
+ final activateAllValves -> deactivateAllValves {
+  v1.on; v2.on; v3.on; v4.on; 
+ }
+ final deactivateAllValves -> sleep {
+  v1.off; v2.off; v3.off; v4.off; 
+ }
+ sleep -> wakeup {
+  lp.setup; lp.sleep; 
+ }
+
+}

@@ -1,0 +1,5 @@
+base Button {
+ initial final press -> release ;
+ final release -> press ;
+
+}

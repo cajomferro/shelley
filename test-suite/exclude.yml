@@ -1,0 +1,4 @@
+- __pycache__
+- .pytest_cache
+- verdi_running_example_app_v1 # will be supported in v1.1 (Cases values must be strings! (l. 18))
+- verdi_running_example_app_v2 # will be supported in v1.1 (Cases values must be strings! (l. 18))

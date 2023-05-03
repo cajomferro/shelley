@@ -1,0 +1,41 @@
+TwoControllers(
+    c1_a: Valve,
+    c1_b: Valve,
+    c1_t: Timer,
+    c2_a: Valve,
+    c2_b: Valve,
+    c2_t: Timer) {
+
+    initial level1 -> level2, level2_error {
+        { c1_a.on; c1_a.ready; c1_t.wait; c1_a.off; c2_a.on; c2_a.ready; c2_t.wait; c2_a.off; }
+        +
+        { c2_a.on; c2_a.ready; c2_t.wait; c2_a.off; c1_a.on; c1_a.ready; c1_t.wait; c1_a.off; }
+    }
+
+    initial final level1_error -> level1 {
+        { c1_a.on;  c1_a.error; }
+        +
+        { c1_a.on; c1_a.ready; c1_t.wait; c1_a.off; c2_a.on; c2_a.error; }
+        +
+        { c2_a.on; c2_a.error; }
+        +
+        { c2_a.on; c2_a.ready; c2_t.wait; c2_a.off; c1_a.on; c1_a.error; }
+    }
+
+    final level2 -> level1 {
+        { c1_b.on; c1_b.ready; c1_t.wait; c1_b.off; c2_b.on; c2_b.ready; c2_t.wait; c2_b.off; }
+        +
+        { c2_b.on; c2_b.ready; c2_t.wait; c2_b.off; c1_b.on; c1_b.ready; c1_t.wait; c1_b.off; }
+    }
+
+    final level2_error -> level1 {
+        { c1_b.on; c1_b.error; }
+        +
+        { c2_b.on; c2_b.error; }
+        +
+        { c1_b.on; c1_b.ready; c1_t.wait; c1_b.off; c2_b.on; c2_b.error; }
+        +
+        { c2_b.on; c2_b.ready; c2_t.wait; c2_b.off; c1_b.on; c1_b.error; }
+    }
+    
+}

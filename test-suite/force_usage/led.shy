@@ -1,0 +1,5 @@
+base Led {
+ initial final on -> off;
+ initial final off -> on;
+ initial final switch -> switch;
+}

@@ -1,0 +1,27 @@
+# equivalent to op1 in valvehandlerloop
+ValveHandler (v1: Valve, v2: Valve, t: Timer) {
+ initial start -> middle_a1, middle_a2, middle_b  {
+  v2.on; t.start;
+ }
+
+ middle_a1 -> middle_a1, middle_a2{
+    v1.on; v1.off;
+ }
+
+ middle_a2 -> end {
+    {v1.on; v1.off; t.done;}
+    +
+    {v1.on; t.done; v1.off; }
+ }
+
+ middle_b -> end {
+    t.done;
+ }
+
+ final end -> {
+    v2.off;
+ }
+
+}
+
+

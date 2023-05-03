@@ -1,0 +1,10 @@
+base RadioV1 {
+ initial final start -> HTTPsetup ;
+ final HTTPsetup -> HTTPconnect ;
+ final HTTPconnect -> HTTPsend ;
+ final HTTPreceive -> HTTPsend, HTTPdisconnect ;
+ final HTTPdisconnect -> HTTPdisable ;
+ final HTTPdisable -> start ;
+ final HTTPsend -> HTTPsend, HTTPreceive, HTTPdisconnect ;
+
+}

@@ -1,0 +1,5 @@
+base LedFree {
+ initial final on -> off, on ;
+ initial final off -> on, off ;
+
+}

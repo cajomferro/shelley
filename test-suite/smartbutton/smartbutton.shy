@@ -1,0 +1,6 @@
+SmartButton (b: PressedButton) {
+ initial final click -> click {
+  b.but_in; b.but_out;
+ }
+
+}

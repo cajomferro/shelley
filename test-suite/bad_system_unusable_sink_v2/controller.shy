@@ -1,0 +1,9 @@
+base ThreeLevelsController {
+ initial final level1 -> level2, levelsink1 ;
+ level2 -> level3 ;
+ level3 -> level1 ;
+ levelsink1 -> levelsink2 ;
+ levelsink2 -> levelsink3 ;
+ levelsink3 -> levelsink1 ;
+
+}

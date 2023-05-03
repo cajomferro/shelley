@@ -1,0 +1,9 @@
+LedButton (led1: Led, led2: Led, b1: SimpleButton, b2: SimpleButton) {
+ initial final led1 -> led1, led2 {
+  b1.press; led1.on; 
+ }
+ initial final led2 -> led1, led2 {
+  b2.press; led2.on; 
+ }
+
+}

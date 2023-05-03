@@ -1,0 +1,21 @@
+Controller (b: Button, white: Led, red: Led, t: Timer) { # these could be 2 examples but i'm merging both in a single spec for avoiding creating yet another example
+ initial white_on -> timeout_white_off, white_off_red_on{
+  b.click; white.on; t.start;
+ }
+
+ timeout_white_off -> white_on {
+    t.timeout; white.off;
+ }
+
+ white_off_red_on ->  red_off {
+  b.click; {t.cancel;} + {t.timeout;} white.off; red.on;
+ }
+
+ final red_off -> white_on {
+  b.click; red.off;
+ }
+
+
+ #integration check G ((v1.on -> ( (X (v1.off -> X t.timeout) ) ) & ((v1.on -> (X (t.timeout -> X v1.off) ) ))));
+ #integration check G (v1.on -> X (t.timeout));
+}

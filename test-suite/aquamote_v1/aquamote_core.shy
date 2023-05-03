@@ -1,0 +1,21 @@
+AquamoteCore (v: ValveHandlerTimer, m: Magnetic, lp: LowPowerStrict, r: RadioClientV2) {
+ initial start_http_ok -> hello {
+  m.locked; m.unlocked; lp.cancel; r.begin; 
+ }
+ hello -> handle_request {
+  r.connect; r.send; {r.send_ok; }
+ }
+ handle_request -> handle_request, stop_http {
+  r.send; {r.send_ok; } + {r.send_err_401; } + {r.send_err_404; } + {r.send_err_500; } + {r.send_err_timeout; }
+ }
+ stop_http -> follow_plan, start_http_ok {
+  r.disconnect; r.stop; 
+ }
+ follow_plan -> sleep {
+  v.v1; v.v2; v.v3; v.v4; 
+ }
+ final sleep -> start_http_ok {
+  lp.setup; lp.sleep; 
+ }
+
+}

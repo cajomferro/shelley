@@ -1,0 +1,5 @@
+base SingleClickButton {
+ initial final pressed -> released ;
+ final released -> pressed ;
+
+}

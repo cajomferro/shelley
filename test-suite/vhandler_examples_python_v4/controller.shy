@@ -1,0 +1,8 @@
+base Controller {
+ initial sector1_try -> error1, run1 ;
+ run1 -> close1, sector2 ;
+ final error1 -> sector1_try ;
+ final close1 -> sector1_try ;
+ final sector2 -> sector1_try ;
+
+}

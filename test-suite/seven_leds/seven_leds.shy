@@ -1,0 +1,36 @@
+seven_leds (a: Led, b: Led, c: Led, d: Led, e: Led, f: Led, g: Led) {
+ initial zero -> one {
+  a.on; b.on; c.on; d.on; e.on; f.on; 
+ }
+ one -> two {
+  a.off; d.off; e.off; f.off; 
+ }
+ two -> three {
+  a.on; c.off; d.on; e.on; g.on; 
+ }
+ three -> four {
+  c.on; e.off; 
+ }
+ four -> five {
+  a.off; d.off; f.on; 
+ }
+ five -> six {
+  a.on; b.off; d.on; 
+ }
+ six -> seven {
+  e.on; 
+ }
+ seven -> eight {
+  b.on; d.off; e.off; f.off; g.off; 
+ }
+ eight -> nine {
+  d.on; e.on; f.on; g.on; 
+ }
+ nine -> loop {
+  e.off; 
+ }
+ final loop -> zero {
+  a.off; b.off; c.off; d.off; f.off; g.off; 
+ }
+
+}

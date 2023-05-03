@@ -1,0 +1,39 @@
+Controller (v: ValveHandlerTimer, m: Magnetic, r: RadioClientV2, lp: LowPowerStrict) {
+ initial wakeup -> radio_init, radio_err {
+  m.locked; m.unlocked; lp.cancel; 
+ }
+ sleep_timeout -> radio_init, radio_err {
+  lp.wakeup; 
+ }
+ radio_init -> server_connect, server_err {
+  r.begin; 
+ }
+ radio_err -> radio_init, radio_err, run_valves {
+  r.begin_err; 
+ }
+ radio_stop -> run_valves, sleep, radio_init, radio_err {
+  r.stop; 
+ }
+ server_connect -> send_ok, send_err, server_disconnect {
+  r.connect; 
+ }
+ server_err -> server_connect, server_err, radio_stop {
+  r.connect_err; 
+ }
+ server_disconnect -> radio_stop, server_connect, server_err {
+  r.disconnect; 
+ }
+ send_ok -> send_ok, send_err, server_disconnect {
+  r.send; r.send_ok; 
+ }
+ send_err -> send_ok, send_err, server_disconnect {
+  r.send; {r.send_err_401; } + {r.send_err_404; } + {r.send_err_500; } + {r.send_err_timeout; }
+ }
+ run_valves -> sleep {
+  v.v1; v.v2; v.v3; v.v4; 
+ }
+ final sleep -> wakeup, sleep_timeout {
+  lp.setup; lp.sleep; 
+ }
+
+}

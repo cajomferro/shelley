@@ -1,0 +1,15 @@
+RadioV2 (r: RadioV1) {
+ initial final start -> send {
+  r.start; r.HTTPsetup; r.HTTPconnect; 
+ }
+ final send -> receive, stop {
+  r.HTTPsend; 
+ }
+ final receive -> send, stop {
+  r.HTTPreceive; 
+ }
+ final stop -> start {
+  r.HTTPdisconnect; r.HTTPdisable; 
+ }
+
+}

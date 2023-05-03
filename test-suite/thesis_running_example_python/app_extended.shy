@@ -1,0 +1,15 @@
+App (vh: ValveHandler) {
+ final main_1 ->  {
+  vh.try_open; vh.close; 
+ }
+ final main_2 ->  {
+  vh.try_open; vh.fail; loop{vh.try_open; vh.fail;} vh.try_open; vh.close; 
+ }
+ final main_3 ->  {
+  vh.try_open; vh.fail; loop{vh.try_open; vh.fail;} 
+ }
+ initial main -> main_1, main_2, main_3 {}
+
+ subsystem vh check F try_open;
+
+}

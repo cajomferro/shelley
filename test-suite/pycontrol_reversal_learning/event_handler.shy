@@ -1,0 +1,10 @@
+base EventHandler {
+ initial next -> error, center_poke, left_poke, session_timer, nop, right_poke ;
+ final center_poke -> next ;
+ final left_poke -> next ;
+ final right_poke -> next ;
+ final session_timer -> next ;
+ final error -> next ;
+ final nop -> next ;
+
+}

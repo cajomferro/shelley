@@ -1,0 +1,12 @@
+base GPRSClient {
+ initial network_join -> connect, connect_timeout, network_leave ;
+ initial final network_error -> network_error, network_join ;
+ final network_leave -> network_join, network_error ;
+ write_timeout -> write, disconnect ;
+ write_data_ready -> write, disconnect ;
+ connect -> disconnect, write ;
+ write -> disconnect, write_timeout, write_data_ready ;
+ disconnect -> connect, connect_timeout, network_leave ;
+ connect_timeout -> connect, connect_timeout, network_leave ;
+
+}

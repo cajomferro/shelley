@@ -1,0 +1,9 @@
+Controller (c: Counter, l: LED) {
+ initial click1 -> click2 {
+  l.on; c.inc; 
+ }
+ final click2 -> click1 {
+  l.off; c.inc; 
+ }
+
+}

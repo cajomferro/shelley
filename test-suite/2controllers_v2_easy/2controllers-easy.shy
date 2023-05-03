@@ -1,0 +1,29 @@
+TwoControllers(
+	c1: Controller,
+    c2: Controller) {
+
+    initial level1 -> standby1, level2 {
+        { c1.level1; c2.level1; }
+        +
+        { c2.level1; c1.level1; }
+    }
+
+    level2 -> standby2 {
+        { c1.level2; c2.level2; }
+        +
+        { c2.level2; c1.level2; }
+    }
+
+    final standby1 -> level1 {
+        { c1.standby1; c2.standby1; }
+        +
+        { c2.standby1; c1.standby1; }
+    }
+
+    final standby2 -> level1 {
+        { c1.standby2; c2.standby2; }
+        +
+        { c2.standby2; c1.standby2; }
+    }
+
+}

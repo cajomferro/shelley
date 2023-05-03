@@ -1,0 +1,6 @@
+base Magnetic {
+ initial final unlocked -> locked ;
+ initial final locked -> unlocked ;
+
+ system check (unlocked | locked);
+}

@@ -1,0 +1,7 @@
+base LightCommands {
+ initial final displayRed -> displayGreen, displayYellow, displayNone ;
+ final displayGreen -> displayYellow, displayNone ;
+ final displayYellow -> displayRed, displayNone, displayYellow ;
+ final displayNone -> displayYellow, displayRed ;
+
+}

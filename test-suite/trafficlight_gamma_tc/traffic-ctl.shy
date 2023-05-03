@@ -1,0 +1,12 @@
+TrafficCtrl (l: TrafficLight) {
+ final run -> halt, police {
+  l.green; 
+ }
+ initial final halt -> run, police {
+  l.yellow; l.red; 
+ }
+ initial final police -> run, halt, police {
+  l.yellow; l.none; 
+ }
+
+}

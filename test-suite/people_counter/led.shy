@@ -1,0 +1,7 @@
+base LED {
+ initial on -> off ;
+ final off -> on ;
+
+ system check F (off & END);
+
+}

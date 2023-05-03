@@ -1,0 +1,6 @@
+base App {
+ initial try_open -> close_a, close_b, try_open ;
+ final close_a -> try_open ;
+ final close_b -> try_open ;
+
+}

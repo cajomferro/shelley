@@ -1,0 +1,6 @@
+App (c1: Controller) {
+ initial final main ->  {
+  c1.click1; c1.click2; 
+ }
+
+}

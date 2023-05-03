@@ -1,0 +1,6 @@
+base LowPower {
+ initial final setup -> sleep ;
+ initial final wakeup -> sleep, setup ;
+ initial final sleep -> setup, wakeup, sleep ;
+
+}

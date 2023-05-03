@@ -1,0 +1,1 @@
+A base spec where one of the operations has not a next operation.

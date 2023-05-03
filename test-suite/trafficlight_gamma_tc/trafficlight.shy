@@ -1,0 +1,7 @@
+base TrafficLight {
+ initial final red -> yellow, green ;
+ initial final green -> yellow, none ;
+ initial final yellow -> none, red, green ;
+ final none -> yellow, red, green, none ;
+
+}

@@ -1,0 +1,42 @@
+Controller (t: Timer, sec1: Sector, sec2: Sector, w: Wireless, this: Controller) {
+ try_update_1 -> update_ok {
+  this.try_update; w.start; w.start_ok; w.request; w.request_ok; w.stop; 
+ }
+ try_update_2 -> update_failed {
+  this.try_update; w.start; {w.start_ok; w.request; w.request_error;} + {w.start_failed;} w.stop; 
+ }
+ initial try_update -> try_update_1, try_update_2 {}
+ update_failed -> try_update, update_failed_last_try {
+  this.update_failed; 
+ }
+ update_failed_last_try -> sequential_plan {
+  this.update_failed_last_try; 
+ }
+ update_ok_1 -> sequential_plan {
+  this.update_ok; 
+ }
+ update_ok_2 -> parallel_plan {
+  {this.update_ok;} + {this.update_ok;} 
+ }
+ update_ok -> update_ok_1, update_ok_2 {}
+ initial sequential_plan -> sleep {
+  this.sequential_plan; sec1.try_open; {sec1.ok; t.wait; sec1.close; sec2.try_open; {sec2.ok; t.wait; sec2.close;} + {sec2.fail;}} + {sec1.fail;} 
+ }
+ parallel_plan -> sleep {
+  this.parallel_plan; sec1.try_open; {sec1.ok; sec2.try_open; {sec2.ok; t.wait; sec2.close; sec1.close;} + {sec2.fail; t.wait; sec1.close;}} + {sec1.fail; sec2.try_open; {sec2.ok; t.wait; sec2.close;} + {sec2.fail;}} 
+ }
+ initial final sleep -> try_update, sequential_plan {
+  this.sleep; 
+ }
+
+ integration check G (this.update_failed_last_try -> ((F this.sequential_plan) & ((! this.parallel_plan) U (w.start | END))));
+ integration check ((! this.parallel_plan) U w.stop) | (G (! this.parallel_plan));
+ integration check G (w.start -> (((! this.sleep) U sec1.try_open) | (G (! this.sleep))));
+ integration check G ((w.start & (! (F w.request_ok))) -> (F this.sequential_plan));
+ integration check G ((w.start & ((! (F w.request_error)) & ((F w.request_ok) & (F this.parallel_plan)))) -> (F sec2.try_open));
+ integration check ((! sec2.try_open) U sec1.try_open) | (G (! sec2.try_open));
+ integration check G ((sec1.ok -> (F (t.wait & (F sec1.close)))) & (sec2.ok -> (X (t.wait & (X sec2.close)))));
+ integration check G (this.sequential_plan -> (((sec1.ok -> ((! sec2.try_open) U sec1.close)) & (sec2.ok -> ((! sec1.try_open) U sec2.close))) U this.sleep));
+ integration check G (this.sequential_plan -> (((sec1.try_open -> ((! sec2.try_open) U (sec1.close | sec1.fail))) & (sec2.try_open -> ((! sec1.try_open) U (sec2.close | sec2.fail)))) U this.sleep));
+
+}

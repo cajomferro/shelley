@@ -1,0 +1,9 @@
+base Valve {
+ initial status -> ready, error ;
+ ready -> on, off ;
+ error -> clean ;
+ final clean -> status ;
+ on -> off ;
+ final off -> status ;
+
+}

@@ -1,0 +1,9 @@
+Blink (l: Led, t: Timer) {
+ final off -> on {
+  t.start; {t.timeout; l.off; } + {l.off; t.cancel; }
+ }
+ initial on -> off {
+  t.start; {t.timeout; l.on; } + {l.on; t.cancel; }
+ }
+
+}

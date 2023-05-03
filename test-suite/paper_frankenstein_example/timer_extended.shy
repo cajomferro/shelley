@@ -1,0 +1,6 @@
+base Timer {
+ initial start -> cancel, done ;
+ final cancel -> start ;
+ final done -> start ;
+
+}

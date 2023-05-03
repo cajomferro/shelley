@@ -1,0 +1,46 @@
+Wireless (http: HTTPClient, gprs: GPRSClient) {
+ initial begin -> connect, connect_err, stop {
+  gprs.network_join; 
+ }
+ initial final begin_err -> begin_err, begin {
+  gprs.network_error; 
+ }
+ final stop -> begin, begin_err {
+  gprs.network_leave; 
+ }
+ connect -> disconnect, send {
+  gprs.connect; 
+ }
+ connect_err -> connect_err, stop, connect {
+  gprs.connect_timeout; 
+ }
+ disconnect -> connect_err, stop, connect {
+  gprs.disconnect; 
+ }
+ send -> send_ok, send_err_401, send_err_404, send_err_500, send_err_timeout, disconnect {
+  {http.get; } + {http.post; }gprs.write; 
+ }
+ send_ok -> disconnect, send {
+  gprs.write_data_ready; http.response200; 
+ }
+ send_err_401 -> disconnect, send {
+  gprs.write_data_ready; http.response401; 
+ }
+ send_err_404 -> disconnect, send {
+  gprs.write_data_ready; http.response404; 
+ }
+ send_err_500 -> disconnect, send {
+  gprs.write_data_ready; http.response500; 
+ }
+ send_err_timeout -> disconnect, send {
+  gprs.write_timeout; 
+ }
+
+ system check G (begin -> F stop); # no matter what, the plan is always executed (variation)
+ integration check G (gprs.write -> F (gprs.write_data_ready | gprs.write_timeout | gprs.disconnect)); # If device is unlocked, eventually it will sleep
+ #integration check G (http.get -> X gprs.write); #
+ integration check G ( (http.get | http.post) -> X gprs.write); # stronger than line before
+ #integration check G ( (! (http.get | http.post) ) -> X ! gprs.write); # THIS IS FALSE
+ integration check G ( (! (http.get | http.post)) -> ((X ! gprs.write) | (! X true))); # the only way to make gprs.write is to make http.get or http.post before
+ integration check G (((! (http.get | http.post)) -> ((X ! gprs.write) | END)));
+}

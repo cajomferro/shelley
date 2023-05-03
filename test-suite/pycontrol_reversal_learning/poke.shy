@@ -1,0 +1,7 @@
+base Poke {
+ initial led_on -> led_off ;
+ final led_off -> sol_on, led_on ;
+ initial sol_on -> sol_off ;
+ final sol_off -> sol_on, led_on ;
+
+}

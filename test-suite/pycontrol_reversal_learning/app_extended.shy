@@ -1,0 +1,6 @@
+App (task: Task) {
+ initial final main ->  {
+  task.init_trial; task.stop_trial; 
+ }
+
+}

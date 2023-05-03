@@ -1,0 +1,9 @@
+ThreeButtons (b1: Button, b2: Button, b3: Button) {
+ initial final button1AndOther -> button1AndOther, button3OrOthers {
+  {{b1.press; b2.press; } + {b1.press; b3.press; }} + {{b2.press; b1.press; } + {b3.press; b1.press; }}
+ }
+ initial final button3OrOthers -> button1AndOther, button3OrOthers {
+  {{b1.press; b2.press; } + {b2.press; b1.press; }} + {b3.press; }
+ }
+
+}

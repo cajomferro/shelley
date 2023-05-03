@@ -1,0 +1,6 @@
+base LED {
+ initial on -> off, blink ;
+ initial blink -> off ;
+ final off -> blink, on ;
+
+}

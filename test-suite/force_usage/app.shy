@@ -1,0 +1,9 @@
+App (led: Led) {
+ initial final start ->  {
+  loop{led.on; led.off;}
+ }
+
+ integration check F led.on;
+ integration check F led.off;
+# subsystem led check F switch;
+}

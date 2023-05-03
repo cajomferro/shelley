@@ -1,0 +1,54 @@
+Controller (v: ValveHandler, m: MagneticButton, p: PowerHandler, w: Wireless) {
+
+ initial boot -> hello, wireless_failed {
+  m.locked; m.unlocked; p.cancel;
+ }
+
+ wake_up -> hello, wireless_failed {
+  {m.locked; m.unlocked; p.cancel;} + {p.wakeup;}
+ }
+
+ wireless_failed -> hello, wireless_failed, follow_plan{
+  w.begin_err;
+ }
+
+ hello -> request {
+  w.begin;
+  w.connect;
+ }
+
+ request -> request, bye {
+  w.send;
+  {w.send_ok; } + {w.send_err_401; } + {w.send_err_500; } + {w.send_err_timeout; }
+ }
+
+ bye -> follow_plan {
+  w.disconnect; w.stop; 
+ }
+
+ follow_plan -> sleep {
+  v.v1_execute;
+  v.v2_execute;
+  v.v3_execute;
+  v.v4_execute;
+ }
+
+ final sleep -> wake_up {
+  p.sleep;
+ }
+
+ system check G (boot -> F sleep); # if controller boots, eventually sleeps
+ system check G (hello -> F bye); # if controller says hello, eventually says bye
+ system check F follow_plan; # no matter what, the plan is always executed
+ system check G (boot -> F follow_plan); # no matter what, the plan is always executed (variation)
+ integration check G (m.unlocked -> F p.sleep); # If device is unlocked, eventually it will sleep
+ integration check G (m.unlocked -> F v.v4_execute); # If device is unlocked, eventually it will irrigate section 4
+ integration check G (w.connect -> F v.v1_execute); # If device is unlocked, eventually it will irrigate section 1
+ integration check G (w.connect -> F w.disconnect); # If wireless connects, eventually it will disconnect
+ integration check G (w.disconnect -> F p.sleep); # if wireless disconnects, eventually it will sleep
+ #integration check G (p.cancel -> X p.sleep); #
+ integration check G (p.cancel -> F p.sleep); #
+ integration check G (v.v1_execute -> F v.v2_execute); #
+ integration check G (v.v1_execute -> F v.v3_execute); #
+ integration check G (v.v1_execute -> X v.v2_execute); #
+}

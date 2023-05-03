@@ -1,0 +1,21 @@
+RadioClient (hc: HTTPClient, wc: WiFiClient) {
+ initial begin -> stopped, send {
+  wc.ssid_joined; wc.connected; hc.connected; 
+ }
+ initial final begin_err -> begin_err, begin {
+  {wc.ssid_joined; wc.connected; hc.connect_failed; wc.disconnected; wc.ssid_left; } + {wc.ssid_joined; wc.connection_timeout; } + {wc.ssid_failed; }
+ }
+ final stopped -> begin, begin_err {
+  wc.disconnected; hc.disconnected; wc.ssid_left; 
+ }
+ send -> send_ok, send_err {
+  {hc.get; } + {hc.post; }
+ }
+ send_ok -> stopped, send {
+  wc.print_data_ready; hc.response200; 
+ }
+ send_err -> stopped {
+  {wc.print_data_ready; hc.response401; } + {wc.print_data_ready; hc.response404; } + {wc.print_data_ready; hc.response500; } + {wc.print_timeout; }
+ }
+
+}

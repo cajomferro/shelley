@@ -1,0 +1,8 @@
+base ValveHandler {
+ initial try_open -> fail, close ;
+ final fail -> try_open ;
+ final close -> try_open ;
+
+ system check F try_open;
+
+}

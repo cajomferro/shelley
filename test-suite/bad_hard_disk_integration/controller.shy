@@ -1,0 +1,13 @@
+Controller(
+	b: Bit) {
+
+    initial write -> fetch {
+        { b.write_0;} + {b.write_1;}
+    }
+
+    final fetch -> write {
+        { b.read_0;} + {b.read_1;}
+    }
+
+}
+

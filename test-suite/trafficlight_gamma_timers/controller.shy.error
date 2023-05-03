@@ -1,0 +1,21 @@
+Controller (SecondaryTimeout2: Timer, SecondaryPreparesTimeout3: Timer, PriorityTimeout4: Timer, InitTimeout5: Timer, PriorityPreparesTimeout6: Timer, PriorityControl: Control, SecondaryControl: Control, PoliceInterrupt: PoliceInterrupt, PriorityPolice: PoliceInterrupt, SecondaryPolice: PoliceInterrupt) {
+ initial operating_init -> operating_priority_prepares, interrupted {
+  {PriorityControl.toggle; InitTimeout5.begin; } + {PoliceInterrupt.police; PriorityPolice.police; SecondaryPolice.police; }
+ }
+ operating_priority_prepares -> operating_secondary, interrupted {
+  {InitTimeout5.timeout; PriorityControl.toggle; } + {PriorityTimeout4.timeout; PriorityControl.toggle; }PriorityPreparesTimeout6.begin; 
+ }
+ operating_secondary -> operating_secondary_prepares, interrupted {
+  PriorityPreparesTimeout6.timeout; SecondaryControl.toggle; PriorityControl.toggle; SecondaryTimeout2.begin; 
+ }
+ operating_secondary_prepares -> operating_priority {
+  SecondaryTimeout2.timeout; SecondaryControl.toggle; SecondaryPreparesTimeout3.begin; 
+ }
+ operating_priority -> operating_priority_prepares {
+  SecondaryPreparesTimeout3.timeout; SecondaryControl.toggle; PriorityControl.toggle; PriorityTimeout4.begin; 
+ }
+ final interrupted -> operating_init {
+  SecondaryTimeout2.end; SecondaryPreparesTimeout3.end; PriorityTimeout4.end; InitTimeout5.end; PoliceInterrupt.police; PriorityPolice.police; SecondaryPolice.police; 
+ }
+
+}

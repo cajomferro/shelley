@@ -1,0 +1,8 @@
+Valve: ../aquamote_v1/valve.scy
+Timer: ../base/timer.scy
+Magnetic: ../aquamote_v1/magnetic.scy
+LowPowerStrict: ../aquamote_v1/lowpower-strict.scy
+ValveHandlerTimer: ../aquamote_v1/valvehandlertimer.scy
+WiFiClient: wificlient.scy
+HTTPClient: httpclient.scy
+RadioClient: radioclient.scy

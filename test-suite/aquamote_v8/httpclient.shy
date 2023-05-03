@@ -1,0 +1,12 @@
+base HTTPClient {
+ initial connected -> get, post, connect_failed, disconnected ;
+ initial final connect_failed -> connected, connect_failed ;
+ get -> response200, response404, response401, response500, disconnected ;
+ post -> response200, response404, response401, response500, disconnected ;
+ response200 -> get, post, disconnected ;
+ response401 -> get, post, disconnected ;
+ response404 -> get, post, disconnected ;
+ response500 -> get, post, disconnected ;
+ final disconnected -> connected, connect_failed, disconnected ;
+
+}

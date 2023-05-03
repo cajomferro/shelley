@@ -1,0 +1,11 @@
+App (c: Controller, t: Timer, this: App) {
+ final run_1 ->  {
+  {{this.run; c.try_update; c.update_ok; {c.sequential_plan;} + {c.parallel_plan;} c.sleep;} + {this.run; c.try_update; c.update_failed; t.wait; loop{c.try_update; c.update_failed; t.wait;} c.try_update; c.update_ok; {c.sequential_plan;} + {c.parallel_plan;} c.sleep;}} + {this.run; c.try_update; c.update_failed; t.wait; loop{c.try_update; c.update_failed; t.wait;} c.update_failed_last_try; c.sequential_plan; c.sleep;} 
+ }
+ initial run -> run_1 {}
+
+ integration check (F c.sequential_plan) | (F c.parallel_plan);
+ integration check F (c.sleep & END);
+ integration check F c.try_update;
+
+}

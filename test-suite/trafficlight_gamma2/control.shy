@@ -1,0 +1,4 @@
+base Control {
+ initial final toggle -> toggle ;
+
+}

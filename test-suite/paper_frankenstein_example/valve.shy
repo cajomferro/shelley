@@ -1,0 +1,8 @@
+base Valve {
+ initial on -> off ;
+ final off -> on ;
+
+ system check on;
+ system check F (off & END);
+
+}

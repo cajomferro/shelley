@@ -1,0 +1,9 @@
+Magnetic: ../aquamote_v1/magnetic.scy
+Valve: ../aquamote_v1/valve.scy
+Timer: ../base/timer.scy
+LowPowerStrict: ../aquamote_v1/lowpower-strict.scy
+ValveHandlerTimer: ../aquamote_v1/valvehandlertimer.scy
+GPRSClient: ../aquamote_v1/gprsclient.scy
+HTTPClientV2: ../aquamote_v1/httpclient.scy
+RadioClientV2: ../aquamote_v1/radioclient.scy
+Controller: aquamote_controller_radioclient_v2.scy

@@ -1,0 +1,12 @@
+base AquamoteCoreOriginal {
+ initial wake_up_manual -> wake_up_manual, start_http_ok, start_http_err_max ;
+ wake_up_timeout -> wake_up_timeout, start_http_ok, start_http_err_max ;
+ start_http_err_max -> follow_plan ;
+ start_http_ok -> hello ;
+ hello -> handle_request ;
+ handle_request -> handle_request, stop_http ;
+ stop_http -> follow_plan ;
+ follow_plan -> sleep ;
+ final sleep -> wake_up_manual, wake_up_timeout ;
+
+}

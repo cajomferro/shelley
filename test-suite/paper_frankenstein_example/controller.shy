@@ -1,0 +1,9 @@
+base Controller {
+ initial level1 -> standby1, level2 ;
+ level2 -> standby2 ;
+ final standby1 -> level1 ;
+ final standby2 -> level1 ;
+
+ system check G (level1 -> (X (standby1 | ((level2 & (X standby2)) | END))));
+
+}

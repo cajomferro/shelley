@@ -1,0 +1,24 @@
+TrafficLightCtrl (PoliceInterrupt: PoliceInterrupt, Control: Control, BlinkingYellowTimeout3: Timer, BlackTimeout4: Timer, LightCommands: LightCommands) {
+ initial init_normal -> normal_green, init_interrupted {
+  LightCommands.displayRed; 
+ }
+ reset_normal -> init_interrupted, normal_green {
+  PoliceInterrupt.off; LightCommands.displayRed; 
+ }
+ normal_red -> normal_green, init_interrupted {
+  Control.toggle; LightCommands.displayRed; 
+ }
+ normal_green -> normal_yellow, init_interrupted {
+  Control.toggle; LightCommands.displayGreen; 
+ }
+ normal_yellow -> normal_red, init_interrupted {
+  Control.toggle; LightCommands.displayYellow; 
+ }
+ init_interrupted -> interrupted_blinkingyellow {
+  PoliceInterrupt.on; 
+ }
+ final interrupted_blinkingyellow -> reset_normal, interrupted_blinkingyellow {
+  BlackTimeout4.timeout; LightCommands.displayYellow; BlinkingYellowTimeout3.timeout; LightCommands.displayNone; 
+ }
+
+}

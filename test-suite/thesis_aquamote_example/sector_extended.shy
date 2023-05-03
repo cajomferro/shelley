@@ -1,0 +1,23 @@
+Sector (a: Valve, b: Valve, this: Sector) {
+ try_open_1 -> ok {
+  this.try_open; a.test; a.open; b.test; b.open; 
+ }
+ try_open_2 -> fail {
+  {this.try_open; a.test; a.open; b.test; b.clean; a.close;} + {this.try_open; a.test; a.clean;} 
+ }
+ initial try_open -> try_open_1, try_open_2 {}
+ final fail -> try_open {
+  this.fail; 
+ }
+ ok -> close {
+  this.ok; 
+ }
+ final close -> try_open {
+  this.close; a.close; b.close; 
+ }
+
+ integration check ((! b.open) U a.open) | (G (! b.open));
+
+ subsystem b check G (open -> (X close));
+
+}

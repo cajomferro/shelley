@@ -1,0 +1,10 @@
+base Controller {
+ initial step1_test -> step1_start, step1_handle_error ;
+ step1_start -> step1_stop, step2 ;
+ final step1_handle_error -> step1_test ;
+ final step1_stop -> step1_test ;
+ final step2 -> step1_test ;
+
+ system check G (step1_test -> (F (((step1_handle_error & END) | (step1_stop & END)) | (step2 & END))));
+
+}

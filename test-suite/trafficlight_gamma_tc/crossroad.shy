@@ -1,0 +1,15 @@
+Controller (dir1: TrafficController, dir2: TrafficController) {
+ initial xinit -> dir2go {
+  dir2.halt; 
+ }
+ final dir1go -> dir2go {
+  {dir1.run; dir2.halt; } + {dir2.halt; dir1.run; }
+ }
+ final dir2go -> dir1go, police {
+  {dir1.halt; dir2.run; } + {dir2.run; dir1.halt; }
+ }
+ final police -> police, dir1go {
+  {dir1.police; dir2.police; } + {dir2.police; dir1.police; }
+ }
+
+}

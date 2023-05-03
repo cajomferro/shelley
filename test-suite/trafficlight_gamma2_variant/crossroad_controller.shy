@@ -1,0 +1,27 @@
+CrossroadController (SecondaryTimeout2: Timer, SecondaryPreparesTimeout3: Timer, PriorityTimeout4: Timer, InitTimeout5: Timer, PriorityPreparesTimeout6: Timer, PriorityControl: TrafficLightCtrl, SecondaryControl: TrafficLightCtrl) {
+ initial operating_init -> operating_priority_prepares, interrupted {
+  PriorityControl.init_normal; SecondaryControl.init_normal; PriorityControl.normal_green; 
+ }
+ operating_reset -> operating_priority_prepares {
+  PriorityControl.reset_normal; SecondaryControl.reset_normal; PriorityControl.normal_green; 
+ }
+ operating_priority_prepares -> operating_secondary, interrupted {
+  {InitTimeout5.timeout; } + {PriorityTimeout4.timeout; }PriorityControl.normal_yellow; 
+ }
+ operating_secondary -> operating_secondary_prepares, interrupted {
+  PriorityPreparesTimeout6.timeout; SecondaryControl.normal_green; PriorityControl.normal_red; 
+ }
+ operating_secondary_prepares -> operating_priority, interrupted {
+  SecondaryTimeout2.timeout; SecondaryControl.normal_yellow; 
+ }
+ operating_priority -> operating_priority_prepares, interrupted {
+  SecondaryPreparesTimeout3.timeout; SecondaryControl.normal_red; PriorityControl.normal_green; 
+ }
+ interrupted -> interrupted_blinkingyellow {
+  PriorityControl.init_interrupted; SecondaryControl.init_interrupted; 
+ }
+ final interrupted_blinkingyellow -> operating_reset, interrupted_blinkingyellow {
+  PriorityControl.interrupted_blinkingyellow; SecondaryControl.interrupted_blinkingyellow; 
+ }
+
+}

@@ -1,0 +1,7 @@
+base LowPowerStrict {
+ initial final setup -> sleep ;
+ initial final cancel -> setup, cancel ;
+ final sleep -> wakeup, cancel ;
+ final wakeup -> setup ;
+
+}

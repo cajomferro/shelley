@@ -1,0 +1,34 @@
+Controller (a: Valve, b: Valve, t: Timer, l: LED) {
+ step1_test_1 -> step1_start {
+  l.on; a.test; a.open; 
+ }
+ step1_test_2 -> step1_handle_error {
+  l.on; a.test; a.clean; 
+ }
+ initial step1_test -> step1_test_1, step1_test_2 {}
+ step1_start -> step1_stop, step2 {}
+ final step1_handle_error -> step1_test {
+  l.off; 
+ }
+ final step1_stop -> step1_test {
+  t.wait; a.close; l.off; 
+ }
+ final step2_1 -> step1_test {
+  b.test; b.open; t.wait; a.close; b.close; l.off; 
+ }
+ final step2_2 -> step1_test {
+  b.test; b.open; t.wait; b.close; a.close; l.off; 
+ }
+ final step2_3 -> step1_test {
+  b.test; b.clean; t.wait; a.close; l.off; 
+ }
+ final step2_4 -> step1_test {
+  b.test; t.wait; a.close; l.off; 
+ }
+ step2 -> step2_1, step2_2, step2_3, step2_4 {}
+
+ integration check G ((a.open -> (F (t.wait & (F a.close)))) & (b.open -> (F (t.wait & (F b.close)))));
+
+ subsystem va check G (test -> (X (! test)));
+
+}

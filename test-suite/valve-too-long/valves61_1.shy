@@ -1,0 +1,186 @@
+Valves61_1 (v: Valve61) {
+ initial final go1 -> go1, go2, go3, go4, go5, go6, go7, go8, go9, go10, go11, go12, go13, go14, go15, go16, go17, go18, go19, go20, go21, go22, go23, go24, go25, go26, go27, go28, go29, go30, go31, go32, go33, go34, go35, go36, go37, go38, go39, go40, go41, go42, go43, go44, go45, go46, go47, go48, go49, go50, go51, go52, go53, go54, go55, go56, go57, go58, go59, go60, go61 {
+  v.x1; 
+ }
+ final go2 -> go1 {
+  v.x2; 
+ }
+ final go3 -> go1 {
+  v.x3; 
+ }
+ final go4 -> go1 {
+  v.x4; 
+ }
+ final go5 -> go1 {
+  v.x5; 
+ }
+ final go6 -> go1 {
+  v.x6; 
+ }
+ final go7 -> go1 {
+  v.x7; 
+ }
+ final go8 -> go1 {
+  v.x8; 
+ }
+ final go9 -> go1 {
+  v.x9; 
+ }
+ final go10 -> go1 {
+  v.x10; 
+ }
+ final go11 -> go1 {
+  v.x11; 
+ }
+ final go12 -> go1 {
+  v.x12; 
+ }
+ final go13 -> go1 {
+  v.x13; 
+ }
+ final go14 -> go1 {
+  v.x14; 
+ }
+ final go15 -> go1 {
+  v.x15; 
+ }
+ final go16 -> go1 {
+  v.x16; 
+ }
+ final go17 -> go1 {
+  v.x17; 
+ }
+ final go18 -> go1 {
+  v.x18; 
+ }
+ final go19 -> go1 {
+  v.x19; 
+ }
+ final go20 -> go1 {
+  v.x20; 
+ }
+ final go21 -> go1 {
+  v.x21; 
+ }
+ final go22 -> go1 {
+  v.x22; 
+ }
+ final go23 -> go1 {
+  v.x23; 
+ }
+ final go24 -> go1 {
+  v.x24; 
+ }
+ final go25 -> go1 {
+  v.x25; 
+ }
+ final go26 -> go1 {
+  v.x26; 
+ }
+ final go27 -> go1 {
+  v.x27; 
+ }
+ final go28 -> go1 {
+  v.x28; 
+ }
+ final go29 -> go1 {
+  v.x29; 
+ }
+ final go30 -> go1 {
+  v.x30; 
+ }
+ final go31 -> go1 {
+  v.x31; 
+ }
+ final go32 -> go1 {
+  v.x32; 
+ }
+ final go33 -> go1 {
+  v.x33; 
+ }
+ final go34 -> go1 {
+  v.x34; 
+ }
+ final go35 -> go1 {
+  v.x35; 
+ }
+ final go36 -> go1 {
+  v.x36; 
+ }
+ final go37 -> go1 {
+  v.x37; 
+ }
+ final go38 -> go1 {
+  v.x38; 
+ }
+ final go39 -> go1 {
+  v.x39; 
+ }
+ final go40 -> go1 {
+  v.x40; 
+ }
+ final go41 -> go1 {
+  v.x41; 
+ }
+ final go42 -> go1 {
+  v.x42; 
+ }
+ final go43 -> go1 {
+  v.x43; 
+ }
+ final go44 -> go1 {
+  v.x44; 
+ }
+ final go45 -> go1 {
+  v.x45; 
+ }
+ final go46 -> go1 {
+  v.x46; 
+ }
+ final go47 -> go1 {
+  v.x47; 
+ }
+ final go48 -> go1 {
+  v.x48; 
+ }
+ final go49 -> go1 {
+  v.x49; 
+ }
+ final go50 -> go1 {
+  v.x50; 
+ }
+ final go51 -> go1 {
+  v.x51; 
+ }
+ final go52 -> go1 {
+  v.x52; 
+ }
+ final go53 -> go1 {
+  v.x53; 
+ }
+ final go54 -> go1 {
+  v.x54; 
+ }
+ final go55 -> go1 {
+  v.x55; 
+ }
+ final go56 -> go1 {
+  v.x56; 
+ }
+ final go57 -> go1 {
+  v.x57; 
+ }
+ final go58 -> go1 {
+  v.x58; 
+ }
+ final go59 -> go1 {
+  v.x59; 
+ }
+ final go60 -> go1 {
+  v.x60; 
+ }
+ final go61 -> go1 {
+  v.x61; 
+ }
+
+}

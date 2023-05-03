@@ -1,0 +1,15 @@
+base TrafficLightCtrl {
+ final toggle_red -> display_red ;
+ initial final display_red -> toggle_green, police_on ;
+ final toggle_yellow -> display_yellow ;
+ final display_yellow -> toggle_red, police_on ;
+ final toggle_green -> display_green ;
+ final display_green -> toggle_yellow, police_on ;
+ final police_on -> display_byellow ;
+ final police_off -> display_red ;
+ final display_byellow -> BlackTimeout4 ;
+ final display_black -> BlinkingYellowTimeout3 ;
+ final BlinkingYellowTimeout3 -> display_byellow, police_off ;
+ final BlackTimeout4 -> display_black, police_off ;
+
+}

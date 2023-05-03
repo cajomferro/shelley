@@ -1,0 +1,5 @@
+base SOL {
+ initial on -> off ;
+ final off -> on ;
+
+}

@@ -1,0 +1,6 @@
+base App {
+ initial final main ->  ;
+
+ system check G (main -> (F (main & END)));
+
+}

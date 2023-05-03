@@ -1,0 +1,9 @@
+AmbiguousButton (b: SingleClickButton, t: Timer) {
+ initial final buttonPressedOnce -> buttonPressedOnce, buttonPressedTwice {
+  b.pressed; t.start; b.released; t.cancel; t.start; t.timeout; 
+ }
+ initial final buttonPressedTwice -> buttonPressedTwice, buttonPressedOnce {
+  b.pressed; t.start; b.released; t.cancel; t.start; t.timeout; 
+ }
+
+}

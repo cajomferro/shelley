@@ -1,0 +1,15 @@
+Controller (a: Valve, b: Valve, t: Timer) {
+ initial level1 -> standby1, level2, levelX {
+  a.on; t.begin; 
+ }
+ level2 -> standby2 {
+  t.end; b.on; t.begin; 
+ }
+ final standby1 -> level1 {
+  t.out; a.off; 
+ }
+ final standby2 -> level1 {
+  t.out; {b.off; a.off; } + {a.off; b.off; }
+ }
+
+}

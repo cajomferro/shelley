@@ -1,0 +1,11 @@
+base WiFiClient {
+ initial ssid_joined -> connected, connection_timeout, ssid_left ;
+ initial final ssid_failed -> ssid_failed, ssid_joined ;
+ final ssid_left -> ssid_joined, ssid_failed ;
+ print_timeout -> print_timeout, disconnected ;
+ print_data_ready -> print_data_ready, disconnected, print_timeout ;
+ connected -> disconnected, print_timeout, print_data_ready ;
+ disconnected -> connected, connection_timeout, ssid_left ;
+ final connection_timeout -> connected, ssid_failed, ssid_joined ;
+
+}

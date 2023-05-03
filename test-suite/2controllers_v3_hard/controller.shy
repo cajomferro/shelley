@@ -1,0 +1,34 @@
+Controller(
+	a: Valve,
+    b: Valve,
+    t: Timer) {
+
+    initial level1 -> level1_ok, level1_error {
+        a.on;
+    }
+
+    final level1_ok -> level1, level2 {
+        a.ready;
+		t.wait;
+		a.off;
+    }
+
+    final level1_error -> level1 {
+        a.error;
+    }
+
+    level2 -> level2_ok, level2_error {
+        b.on;
+    }
+
+    final level2_ok -> level1 {
+        b.ready;
+        t.wait;
+        b.off;
+    }
+
+    final level2_error -> level1, level2 {
+        b.error;
+    }
+
+}

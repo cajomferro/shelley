@@ -1,0 +1,27 @@
+CrossroadController (SecondaryTimeout2: Timer, SecondaryPreparesTimeout3: Timer, PriorityTimeout4: Timer, InitTimeout5: Timer, PriorityPreparesTimeout6: Timer, PriorityControl: TrafficLightCtrl, SecondaryControl: TrafficLightCtrl) {
+ initial final operating_entry0_init -> operating_priority_prepares, interrupted {
+  PriorityControl.normal_entry0; SecondaryControl.normal_entry0; PriorityControl.normal_green; 
+ }
+ final operating_entry1_init -> operating_priority_prepares, interrupted {
+  PriorityControl.normal_entry2; SecondaryControl.normal_entry2; PriorityControl.normal_green; 
+ }
+ final operating_priority_prepares -> operating_secondary, interrupted {
+  {InitTimeout5.timeout; } + {PriorityTimeout4.timeout; }PriorityControl.normal_yellow; 
+ }
+ final operating_secondary -> operating_secondary_prepares, interrupted {
+  PriorityPreparesTimeout6.timeout; SecondaryControl.normal_green; PriorityControl.normal_red; 
+ }
+ final operating_secondary_prepares -> operating_priority, interrupted {
+  SecondaryTimeout2.timeout; SecondaryControl.normal_yellow; 
+ }
+ final operating_priority -> operating_priority_prepares, interrupted {
+  SecondaryPreparesTimeout3.timeout; SecondaryControl.normal_red; PriorityControl.normal_green; 
+ }
+ final interrupted -> operating_entry1_init, blinking {
+  {PriorityControl.interrupted_entry1; SecondaryControl.interrupted_entry1; } + {SecondaryControl.interrupted_entry1; PriorityControl.interrupted_entry1; }
+ }
+ final blinking -> operating_entry1_init, blinking {
+  PriorityControl.interrupted_black; SecondaryControl.interrupted_black; PriorityControl.interrupted_blinkingyellow; SecondaryControl.interrupted_blinkingyellow; 
+ }
+
+}

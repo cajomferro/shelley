@@ -1,0 +1,16 @@
+App (c1: Controller, c2: Controller) {
+ final main_1 ->  {
+  c1.step1_test; c1.step1_start; c1.step2; 
+ }
+ final main_2 ->  {
+  c1.step1_test; c1.step1_start; c1.step1_stop; 
+ }
+ final main_3 ->  {
+  c1.step1_test; c1.step1_handle_error; c2.step1_test; c2.step1_start; c2.step1_stop; 
+ }
+ final main_4 ->  {
+  c1.step1_test; c1.step1_handle_error; c2.step1_test; c2.step1_handle_error; 
+ }
+ initial main -> main_1, main_2, main_3, main_4 {}
+
+}

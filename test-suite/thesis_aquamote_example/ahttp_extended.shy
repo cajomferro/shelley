@@ -1,0 +1,13 @@
+base HTTP {
+ initial connect -> connect_failed, connect_ok ;
+ connect_ok -> get, post, disconnect ;
+ connect_failed -> disconnect ;
+ get -> get_ok, get_error ;
+ get_ok -> get, post, disconnect ;
+ get_error -> get, post, disconnect ;
+ post -> post_error, post_ok ;
+ post_ok -> get, post, disconnect ;
+ post_error -> get, post, disconnect ;
+ final disconnect -> connect ;
+
+}

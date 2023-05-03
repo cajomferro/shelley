@@ -1,0 +1,4 @@
+base PoliceInterrupt {
+ initial final police -> police ;
+
+}

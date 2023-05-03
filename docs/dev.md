@@ -8,11 +8,11 @@
 
 ### Building the project
 
-`make docker-build`
+`make -f host.mk build`
 
 ### Spawning a bash environment
 
-`make docker-run`
+`make -f host.mk run`
 
 The commands above use docker which is the recommended way of using this project. 
 The poetry.lock file is also mounted in order to be able to commit this file after updating.

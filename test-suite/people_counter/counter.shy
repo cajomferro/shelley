@@ -1,0 +1,5 @@
+base Counter {
+ initial final inc -> reset, inc ;
+ initial final reset -> reset, inc ;
+
+}

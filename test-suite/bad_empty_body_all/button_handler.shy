@@ -1,0 +1,8 @@
+ButtonHandler (b: Button) {
+ initial begin -> end  {
+
+ }
+  initial final end -> begin {
+
+ }
+}

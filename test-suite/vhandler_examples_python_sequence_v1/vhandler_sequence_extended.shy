@@ -1,0 +1,9 @@
+App (a: Valve, b: Valve) {
+ initial open_valves -> close_valves {
+  a.open; b.open; 
+ }
+ final close_valves -> open_valves {
+  a.close; b.close; 
+ }
+
+}

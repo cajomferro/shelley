@@ -1,0 +1,21 @@
+Controller (v: ValveHandler, m: Magnetic, rs: RadioV3, lp: LowPowerStrict) {
+ initial final start -> activateAllValves {
+  m.locked; m.unlocked; lp.cancel; 
+ }
+ final wakeup -> activateAllValves {
+  lp.wakeup; 
+ }
+ final update -> deactivateAllValves {
+  rs.send; rs.ok; 
+ }
+ final activateAllValves -> update {
+  v.on; 
+ }
+ final deactivateAllValves -> sleep {
+  v.off; 
+ }
+ final sleep -> start, wakeup {
+  lp.setup; lp.sleep; 
+ }
+
+}

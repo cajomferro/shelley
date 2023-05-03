@@ -1,0 +1,21 @@
+Controller (v: ValveHandlerTimer, m: Magnetic, r: RadioClient, lp: LowPowerStrict) {
+ initial wakeup -> update, update_err {
+  m.locked; m.unlocked; lp.cancel; 
+ }
+ sleepTimeout -> update, update_err {
+  lp.wakeup; 
+ }
+ update -> runValves, update, update_err {
+  r.begin; r.send; r.send_ok; r.stopped; 
+ }
+ update_err -> update, update_err, sleep {
+  {r.begin; r.send; r.send_err; r.stopped; } + {r.begin_err; }
+ }
+ runValves -> sleep {
+  v.v1; v.v2; v.v3; v.v4; 
+ }
+ final sleep -> wakeup, sleepTimeout {
+  lp.setup; lp.sleep; 
+ }
+
+}

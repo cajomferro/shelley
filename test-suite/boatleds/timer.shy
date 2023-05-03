@@ -1,0 +1,7 @@
+base Timer {
+ initial start -> cancel, timeout ;
+ final cancel -> start ;
+ final timeout -> start ;
+
+  system check G (start -> F (cancel | timeout));
+}

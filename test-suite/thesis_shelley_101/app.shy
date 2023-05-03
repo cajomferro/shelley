@@ -1,0 +1,5 @@
+base App {
+ initial start -> blink ;
+ final blink ->  ;
+
+}

@@ -1,0 +1,10 @@
+App (a: Valve, b: Valve) {
+ final main_1 -> main {
+  a.open; a.close; 
+ }
+ final main_2 -> main {
+  b.open; b.close; 
+ }
+ initial main -> main_1, main_2 {}
+
+}

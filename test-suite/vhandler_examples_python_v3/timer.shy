@@ -1,0 +1,6 @@
+base Timer {
+ initial final wait -> wait ;
+
+ system check F (wait | END);
+
+}

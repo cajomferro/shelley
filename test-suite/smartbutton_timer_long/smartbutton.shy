@@ -1,0 +1,12 @@
+SmartButton (b: PressedButton, t: Timer) {
+ initial final single -> single, double, long {
+  b.but_in; t.start; b.but_out; t.cancel; t.start; t.timeout; 
+ }
+ initial final double -> single, double, long {
+  b.but_in; t.start; b.but_out; t.cancel; t.start; b.but_in; {t.cancel; b.but_out; } + {b.but_out; t.cancel; }
+ }
+ initial final long -> single, double, long {
+  b.but_in; t.start; t.timeout; b.but_out; 
+ }
+
+}

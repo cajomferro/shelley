@@ -1,0 +1,6 @@
+Desklamp (l: LedFree) {
+ initial final on -> on {
+  l.o; 
+ }
+
+}

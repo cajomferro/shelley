@@ -1,0 +1,9 @@
+ClickButton (B: Button, T: Timer) {
+ initial final single -> single, double {
+  B.press; T.start; {T.timeout; B.release; } + {B.release; T.start; }
+ }
+ initial final double -> single, double {
+  B.press; T.start; B.release; B.press; {T.timeout; B.release; } + {B.release; T.cancel; }
+ }
+
+}

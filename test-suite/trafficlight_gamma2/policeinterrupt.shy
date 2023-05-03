@@ -1,0 +1,5 @@
+base PoliceInterrupt {
+ initial final on -> off ;
+ final off -> on ;
+
+}

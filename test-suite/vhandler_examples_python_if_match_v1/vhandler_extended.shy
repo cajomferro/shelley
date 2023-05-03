@@ -1,0 +1,25 @@
+App (a: Valve, b: Valve, led: LED) {
+ try_open_1 -> close_a {
+  a.test; a.open; loop{led.on; led.off;} 
+ }
+ try_open_2 -> close_a {
+  a.test; a.open; 
+ }
+ try_open_3 -> try_open {
+  a.test; a.clean; 
+ }
+ try_open_4 -> close_b {
+  b.test; b.open; 
+ }
+ try_open_5 -> try_open {
+  b.test; b.clean; 
+ }
+ initial try_open -> try_open_1, try_open_2, try_open_3, try_open_4, try_open_5 {}
+ final close_a -> try_open {
+  a.close; 
+ }
+ final close_b -> try_open {
+  b.close; 
+ }
+
+}

@@ -1,0 +1,9 @@
+SmartLed (l: Led, t: Timer) {
+ initial active -> standby {
+  l.on; t.start; 
+ }
+ final standby -> active {
+  {t.timeout; l.off; } + {l.off; t.cancel; }
+ }
+
+}

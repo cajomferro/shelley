@@ -1,0 +1,8 @@
+MagneticButton: ../paper_aquamote/magnetic.scy
+PowerHandler: ../paper_aquamote/power_handler.scy
+Valve: ../paper_aquamote/valve.scy
+Timer: ../paper_aquamote/timer.scy
+ValveHandler: ../paper_aquamote/valvehandler.scy
+HTTPClient: ../paper_aquamote/httpclient.scy
+GPRSClient: ../paper_aquamote/gprsclient.scy
+Wireless: ../paper_aquamote/wireless.scy

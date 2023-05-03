@@ -1,0 +1,11 @@
+base Bit {
+
+  initial write_0 -> read_0;
+
+  initial write_1 -> read_1;
+
+  final read_0 -> write_0, write_1;
+
+  final read_1 -> write_0, write_1;
+
+}

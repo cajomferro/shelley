@@ -1,0 +1,34 @@
+Controller (va: Valve, vb: Valve, t: Timer, l: LED) {
+ sector1_try_1 -> run1 {
+  l.on; va.status; 
+ }
+ sector1_try_2 -> error1 {
+  l.on; va.status; 
+ }
+ initial sector1_try -> sector1_try_1, sector1_try_2 {}
+ run1 -> close1, sector2 {
+  va.ready; va.on; 
+ }
+ final error1 -> sector1_try {
+  l.off; va.error; va.clean; 
+ }
+ final close1 -> sector1_try {
+  t.wait; va.off; l.off; 
+ }
+ final sector2_1 -> sector1_try {
+  vb.status; vb.ready; vb.on; t.wait; va.off; vb.off; l.off; 
+ }
+ final sector2_2 -> sector1_try {
+  vb.status; vb.ready; vb.on; t.wait; vb.off; va.off; l.off; 
+ }
+ final sector2_3 -> sector1_try {
+  vb.status; vb.error; vb.clean; t.wait; va.off; l.off; 
+ }
+ sector2 -> sector2_1, sector2_2, sector2_3 {}
+
+ integration check G ((va.on -> (F (t.wait & (F va.off)))) & (vb.on -> (F (t.wait & (F vb.off)))));
+
+ subsystem va check G (on -> (X off));
+ subsystem t check F wait;
+
+}

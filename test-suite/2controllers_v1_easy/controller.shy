@@ -1,0 +1,10 @@
+Controller( a: Valve, b: Valve, t: Timer) {
+
+    initial final level1 -> level1, level2 {
+        a.on; t.wait; a.off;
+    }
+
+    final level2 -> level1 {
+        b.on; t.wait; b.off;
+    }
+}

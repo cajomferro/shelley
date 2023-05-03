@@ -1,0 +1,10 @@
+base RadioFinalStates {
+ initial start -> HTTPsetup ;
+ HTTPsetup -> HTTPconnect ;
+ HTTPconnect -> HTTPsend ;
+ HTTPsend -> HTTPsend, HTTPreceive, HTTPdisconnect ;
+ HTTPreceive -> HTTPsend, HTTPdisconnect ;
+ HTTPdisconnect -> HTTPdisable ;
+ final HTTPdisable -> start ;
+
+}

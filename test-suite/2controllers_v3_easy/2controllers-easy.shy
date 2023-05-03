@@ -1,0 +1,37 @@
+TwoControllers(
+	c1: Controller,
+    c2: Controller) {
+
+    initial level1 -> level2, level2_error {
+        { c1.level1; c1.level1_ok; c2.level1; c2.level1_ok; }
+        +
+        { c2.level1; c2.level1_ok; c1.level1; c1.level1_ok; }
+    }
+
+    initial final level1_error -> level1 {
+        { c1.level1; c1.level1_error; }
+        +
+        { c1.level1; c1.level1_ok; c2.level1; c2.level1_error; }
+        +
+        { c2.level1; c2.level1_error; }
+        +
+        { c2.level1; c2.level1_ok; c1.level1; c1.level1_error; }
+    }
+
+    final level2 -> level1 {
+        { c1.level2; c1.level2_ok; c2.level2; c2.level2_ok; }
+        +
+        { c2.level2; c2.level2_ok; c1.level2; c1.level2_ok; }
+    }
+
+    final level2_error -> level1 {
+        { c1.level2; c1.level2_error; }
+        +
+        { c2.level2; c2.level2_error; }
+        +
+        { c1.level2; c1.level2_ok; c2.level2; c2.level2_error; }
+        +
+        { c2.level2; c2.level2_ok; c1.level2; c1.level2_error; }
+    }
+
+}

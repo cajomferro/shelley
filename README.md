@@ -30,8 +30,6 @@ The structure of this container:
 
 First, [install and start Docker](https://docs.docker.com/get-started/).
 
-### Loading Docker from online
-
 1. Build container:
 
    ```bash

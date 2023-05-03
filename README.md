@@ -30,8 +30,6 @@ The structure of this container:
 
 First, [install and start Docker](https://docs.docker.com/get-started/).
 
-The Docker image is available [online](https://gitlab.com/safeiot/shelley-artefact-coordination23). 
-
 ### Loading Docker from online
 
 1. Build container:

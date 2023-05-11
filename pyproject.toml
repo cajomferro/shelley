@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "shelley"
-version = "1.1"
+version = "1.2"
 description = "A model checker for calls ordering"
 authors = ["Carlos Mão de Ferro", "Tiago Cogumbreiro", "Francisco Martins"]
 license = "MIT"

@@ -73,9 +73,9 @@ class MethodDecoratorsVisitor(AsStringVisitor):
                     self.method_name, is_initial=True, is_final=True
                 )
 
-    # TODO: deprecated! this should be removed in the future
     def visit_call(self, node: Call) -> Any:
         # logger.debug(f"Method decorator: {node.func.name}")
+        # TODO: deprecated! this should be removed in the future
         if node.func.name == "operation":
             self.decorator = ShelleyOpDecorator(self.method_name)
             for kw in node.keywords:
@@ -87,7 +87,14 @@ class MethodDecoratorsVisitor(AsStringVisitor):
                     case "next":
                         for op in kw.value.elts:
                             self.decorator.next_ops.add(op.value)
-
+        elif node.func.name == "op": # this is the most Pythonic way!
+            self.decorator = ShelleyOpDecorator(self.method_name)
+            for kw in node.keywords:
+                match kw.arg:
+                    case "initial":
+                        self.decorator.is_initial = kw.value.value
+                    case "final":
+                        self.decorator.is_final = kw.value.value
 
 @dataclass
 class ClassDecoratorsVisitor(AsStringVisitor):

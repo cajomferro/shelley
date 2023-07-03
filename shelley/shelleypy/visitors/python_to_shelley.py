@@ -87,7 +87,7 @@ class MethodDecoratorsVisitor(AsStringVisitor):
                     case "next":
                         for op in kw.value.elts:
                             self.decorator.next_ops.add(op.value)
-        elif node.func.name == "op": # this is the most Pythonic way!
+        elif node.func.name == "op":  # this is the most Pythonic way!
             self.decorator = ShelleyOpDecorator(self.method_name)
             for kw in node.keywords:
                 match kw.arg:
@@ -95,6 +95,7 @@ class MethodDecoratorsVisitor(AsStringVisitor):
                         self.decorator.is_initial = kw.value.value
                     case "final":
                         self.decorator.is_final = kw.value.value
+
 
 @dataclass
 class ClassDecoratorsVisitor(AsStringVisitor):

@@ -2,11 +2,14 @@
 
 ### WIP
 
+###  v1.3.1
+Fixed problem and format with black.
+
 ###  v1.3
-Added script to generate subsystem usage
+Added script to generate subsystem usage.
 
 ###  v1.2
-Shelley annotations new style (more pythonic)
+Shelley annotations new style (more pythonic).
 
 ###  v1.1
-ShelleyPy: support for match cases with lists
+ShelleyPy: support for match cases with lists.

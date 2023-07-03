@@ -9,6 +9,7 @@ from dataclasses import dataclass
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleyv")
 
+
 def fsm2smv(
     fsm_model: Path,
     smv_model: Path,

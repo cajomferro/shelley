@@ -4,9 +4,7 @@ from shelley.shelleyv.main import main as shelleyv_main
 
 
 def create_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Generate subsystem usage"
-    )
+    parser = argparse.ArgumentParser(description="Generate subsystem usage")
 
     parser.add_argument(
         "input",
@@ -33,15 +31,18 @@ def create_parser() -> argparse.ArgumentParser:
 def main() -> None:
     parser = create_parser()
     args: argparse.Namespace = parser.parse_args()
-    shelleyv_main(["--dfa",
-                   "--dfa-no-empty-string",
-                   "--nfa-no-sink",
-                   "--dfa-no-sink",
-                   f"--subsystem_name={args.subsystem_name}.",
-                   f"--format={args.format}",
-                   "sector_extended-i.scy",
-                   f"-o=sector_extended-d-{args.subsystem_name}.{args.format}"
-                   ])
+    shelleyv_main(
+        [
+            "--dfa",
+            "--dfa-no-empty-string",
+            "--nfa-no-sink",
+            "--dfa-no-sink",
+            f"--subsystem_name={args.subsystem_name}.",
+            f"--format={args.format}",
+            "sector_extended-i.scy",
+            f"-o=sector_extended-d-{args.subsystem_name}.{args.format}",
+        ]
+    )
 
 
 if __name__ == "__main__":

@@ -19,9 +19,7 @@ def create_parser() -> argparse.ArgumentParser:
         description="Visualize compiled files as state diagrams"
     )
     parser.add_argument(
-        "input",
-        type=Path,
-        help="Path to the compiled file (.scy or .scb)",
+        "input", type=Path, help="Path to the compiled file (.scy or .scb)"
     )
     parser.add_argument("--dfa", action="store_true", help="Convert to DFA first")
     parser.add_argument(
@@ -80,7 +78,7 @@ def main(unparsed_args=None) -> None:
     parser = create_parser()
 
     if not unparsed_args:
-        unparsed_args = sys.argv
+        unparsed_args = sys.argv[1:]
     args: argparse.Namespace = parser.parse_args(unparsed_args)
 
     if args.verbosity:
@@ -107,13 +105,12 @@ def main(unparsed_args=None) -> None:
         dfa_minimize=args.minimize,
         nfa_no_sink=args.nfa_no_sink,
         no_epsilon=args.no_epsilon,
-        project_prefix=args.subsystem_name
+        project_prefix=args.subsystem_name,
     )
 
     n: regular.NFA[Any, str] = fsm_stats.result
 
     logger.debug(str(fsm_stats))
-    # print(str(fsm_stats))
 
     fp = sys.stdout if args.output is None else open(args.output, "w")
 

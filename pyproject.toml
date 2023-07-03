@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "shelley"
-version = "1.2"
+version = "1.3"
 description = "A model checker for calls ordering"
 authors = ["Carlos Mão de Ferro", "Tiago Cogumbreiro", "Francisco Martins"]
 license = "MIT"
@@ -36,6 +36,7 @@ shelleyv = "shelley.shelleyv.main:main"
 shelleys = "shelley.shelleys.main:main"
 shelley-makefile = "shelley.util.generate_makefile:main"
 shelley-makefile-bad = "shelley.util.generate_makefile_bad:main"
+shelley-subsystem-usage = "shelley.util.generate_subsystem_usage:main"
 shelleypy = "shelley.shelleypy.checker.main:main"
 
 [build-system]

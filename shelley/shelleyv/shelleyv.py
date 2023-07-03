@@ -9,28 +9,6 @@ from dataclasses import dataclass
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("shelleyv")
 
-
-def dump_subsystem_fsm(
-    integration_fsm: Path, submodel_fsm: Path, project_prefix: str
-) -> None:
-    with integration_fsm.open("r") as fp:
-        fsm_dict = yaml.load(fp, Loader=yaml.FullLoader)
-
-    fsm_stats: FSMStats = handle_fsm(
-        regular.NFA.from_dict(fsm_dict),
-        dfa=True,
-        dfa_no_empty_string=True,
-        nfa_no_sink=True,
-        project_prefix=project_prefix,
-    )
-
-    n: regular.NFA[Any, str] = fsm_stats.result
-
-    # dump the .scy file for the submodule
-    with submodel_fsm.open("w") as fp:
-        yaml.dump(n.as_dict(flatten=True), fp)
-
-
 def fsm2smv(
     fsm_model: Path,
     smv_model: Path,

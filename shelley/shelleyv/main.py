@@ -58,6 +58,11 @@ def create_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--minimize", action="store_true", help="Minimize the DFA")
     parser.add_argument(
+        "--subsystem_name",
+        default=None,
+        help="Work with operations from a specific subsystem only",
+    )
+    parser.add_argument(
         "-v", "--verbosity", help="increase output verbosity", action="store_true"
     )
     parser.add_argument(
@@ -71,9 +76,12 @@ def create_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> None:
+def main(unparsed_args=None) -> None:
     parser = create_parser()
-    args: argparse.Namespace = parser.parse_args()
+
+    if not unparsed_args:
+        unparsed_args = sys.argv
+    args: argparse.Namespace = parser.parse_args(unparsed_args)
 
     if args.verbosity:
         logger.setLevel(logging.DEBUG)
@@ -99,6 +107,7 @@ def main() -> None:
         dfa_minimize=args.minimize,
         nfa_no_sink=args.nfa_no_sink,
         no_epsilon=args.no_epsilon,
+        project_prefix=args.subsystem_name
     )
 
     n: regular.NFA[Any, str] = fsm_stats.result

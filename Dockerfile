@@ -20,7 +20,7 @@ ENV PYTHONUNBUFFERED 1
 RUN apt-get update -y
 
 # Install required build dependencies
-RUN apt-get install -y build-essential python3-dev musl-dev libpq-dev libffi-dev curl git graphviz
+RUN apt-get install -y build-essential python3-dev musl-dev libpq-dev libffi-dev curl git graphviz vim nano emacs
 
 ## Install Pillow deps
 #RUN apt-get -y install zlib1g zlib1g-dev libjpeg-dev libjpeg-turbo-progs \

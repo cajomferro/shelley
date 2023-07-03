@@ -39,8 +39,8 @@ def main() -> None:
             "--dfa-no-sink",
             f"--subsystem_name={args.subsystem_name}.",
             f"--format={args.format}",
-            "sector_extended-i.scy",
-            f"-o=sector_extended-d-{args.subsystem_name}.{args.format}",
+            f"{args.input}-i.scy",
+            f"-o={args.input}-d-{args.subsystem_name}.{args.format}",
         ]
     )
 

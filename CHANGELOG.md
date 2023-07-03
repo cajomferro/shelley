@@ -2,8 +2,11 @@
 
 ### WIP
 
+###  v1.3.2
+Fixed problem with generate subsystem usage.
+
 ###  v1.3.1
-Fixed problem and format with black.
+Fixed problem with generate subsystem usage and format with black.
 
 ###  v1.3
 Added script to generate subsystem usage.

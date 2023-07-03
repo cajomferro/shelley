@@ -37,6 +37,7 @@ def main() -> None:
             "--dfa-no-empty-string",
             "--nfa-no-sink",
             "--dfa-no-sink",
+            "--minimize",
             f"--subsystem_name={args.subsystem_name}.",
             f"--format={args.format}",
             f"{args.input}-i.scy",

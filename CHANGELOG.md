@@ -2,6 +2,9 @@
 
 ### WIP
 
+###  v1.3.3
+Minimize generate subsystem usage.
+
 ###  v1.3.2
 Fixed problem with generate subsystem usage.
 

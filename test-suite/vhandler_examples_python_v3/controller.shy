@@ -1,6 +1,6 @@
 base Controller {
- initial step1_test -> step1_start, step1_handle_error ;
- step1_start -> step1_stop, step2 ;
+ initial step1_test -> step1_handle_error, step1_start ;
+ step1_start -> step2, step1_stop ;
  final step1_handle_error -> step1_test ;
  final step1_stop -> step1_test ;
  final step2 -> step1_test ;

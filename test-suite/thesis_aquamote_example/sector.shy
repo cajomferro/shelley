@@ -1,5 +1,5 @@
 base Sector {
- initial try_open -> ok, fail ;
+ initial try_open -> fail, ok ;
  final fail -> try_open ;
  ok -> close ;
  final close -> try_open ;

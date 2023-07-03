@@ -1,4 +1,4 @@
-from shelley.shelleypy import system, claim, op_initial, op, op_final
+from shelley.shelleypy import system, op
 from machine import Pin
 
 
@@ -9,7 +9,7 @@ class Valve:
         self.clean = Pin(28, Pin.OUT)
         self.status = Pin(29, Pin.IN)
 
-    @op_initial
+    @op(initial=True)
     def test(self):
         if self.status.value():
             return "open"
@@ -21,12 +21,13 @@ class Valve:
         self.control.on()
         return "close"
 
-    @op_final
+    @op(final=True)
     def close(self):
         self.control.off()
         return "test"
 
-    @op_final
+    @op(final=True)
     def clean(self):
         self.clean.on()
         return "test"
+

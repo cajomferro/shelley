@@ -6,7 +6,7 @@ Controller (t: Timer, sec1: Sector, sec2: Sector, w: Wireless, this: Controller)
   this.try_update; w.start; {w.start_ok; w.request; w.request_error;} + {w.start_failed;} w.stop; 
  }
  initial try_update -> try_update_1, try_update_2 {}
- update_failed -> try_update, update_failed_last_try {
+ update_failed -> update_failed_last_try, try_update {
   this.update_failed; 
  }
  update_failed_last_try -> sequential_plan {
@@ -25,7 +25,7 @@ Controller (t: Timer, sec1: Sector, sec2: Sector, w: Wireless, this: Controller)
  parallel_plan -> sleep {
   this.parallel_plan; sec1.try_open; {sec1.ok; sec2.try_open; {sec2.ok; t.wait; sec2.close; sec1.close;} + {sec2.fail; t.wait; sec1.close;}} + {sec1.fail; sec2.try_open; {sec2.ok; t.wait; sec2.close;} + {sec2.fail;}} 
  }
- initial final sleep -> try_update, sequential_plan {
+ initial final sleep -> sequential_plan, try_update {
   this.sleep; 
  }
 

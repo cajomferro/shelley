@@ -1,5 +1,5 @@
 base EventHandler {
- initial next -> error, center_poke, left_poke, session_timer, nop, right_poke ;
+ initial next -> session_timer, left_poke, nop, right_poke, center_poke, error ;
  final center_poke -> next ;
  final left_poke -> next ;
  final right_poke -> next ;

@@ -1,5 +1,5 @@
 base Controller {
- initial level1 -> standby1, level2 ;
+ initial level1 -> level2, standby1 ;
  level2 -> standby2 ;
  final standby1 -> level1 ;
  final standby2 -> level1 ;

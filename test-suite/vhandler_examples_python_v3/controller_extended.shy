@@ -6,7 +6,7 @@ Controller (a: Valve, b: Valve, t: Timer, l: LED) {
   l.on; a.test; a.clean; 
  }
  initial step1_test -> step1_test_1, step1_test_2 {}
- step1_start -> step1_stop, step2 {}
+ step1_start -> step2, step1_stop {}
  final step1_handle_error -> step1_test {
   l.off; 
  }

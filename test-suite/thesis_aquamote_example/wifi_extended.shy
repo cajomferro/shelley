@@ -1,9 +1,9 @@
 base WiFi {
  initial enable -> connect ;
  final disable -> enable ;
- connect -> connect_ok, connect_error ;
- connect_ok -> get_rssi, disable ;
+ connect -> connect_error, connect_ok ;
+ connect_ok -> disable, get_rssi ;
  connect_error -> disable ;
- get_rssi -> get_rssi, disable ;
+ get_rssi -> disable, get_rssi ;
 
 }

@@ -1,8 +1,8 @@
 base Wireless {
- initial start -> start_ok, start_failed ;
+ initial start -> start_failed, start_ok ;
  start_ok -> request ;
  start_failed -> stop ;
- request -> request_ok, request_error ;
+ request -> request_error, request_ok ;
  request_error -> request, stop ;
  request_ok -> request, stop ;
  final stop -> start ;

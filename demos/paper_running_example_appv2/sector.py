@@ -9,7 +9,7 @@ class Sector:
         self.a = Valve()
         self.b = Valve()
 
-    @op_initial
+    @op(initial=True)
     def try_open(self):
         match self.a.test():
             case "open":
@@ -26,7 +26,7 @@ class Sector:
                 self.a.clean()
                 return "fail"
 
-    @op_final
+    @op(final=True)
     def fail(self):
         print("Failed to open valves")
         return "try_open"

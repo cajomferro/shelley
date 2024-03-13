@@ -5,7 +5,7 @@ FROM python:3.11-slim-bookworm
 RUN apt-get update -y
 
 # Install required build dependencies
-RUN apt-get install -y wget git graphviz vim nano emacs
+RUN apt-get install -y wget git graphviz vim nano emacs make
 
 WORKDIR /opt
 
@@ -16,6 +16,7 @@ RUN wget http://nusmv.fbk.eu/distrib/NuSMV-2.6.0-zchaff-linux64.tar.gz && \
 RUN cd nusmv/bin && \
     ln -s NuSMV nusmv
 
+ENV PATH="/opt/nusmv/bin:${PATH}"
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
 ENV POETRY_NO_INTERACTION=1

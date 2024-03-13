@@ -8,7 +8,7 @@ readme = 'README.md'
 
 [tool.poetry.dependencies]
 python = ">=3.8"
-pyyaml = "^5.3.1"
+pyyaml = "5.3.1"
 graphviz = "^0.14"
 radon = "^4.3.2"
 karukuri = {git = "https://gitlab.com/umb-svl/karakuri.git", rev = "adc33180dd4f073958cc374246d1f75a11af22eb"}

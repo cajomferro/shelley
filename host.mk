@@ -12,6 +12,8 @@ run:
 		-v $(PWD)/shelley:/app/shelley \
 		-v $(PWD)/shelleybench:/app/shelleybench \
 		-v $(PWD)/benchmark:/app/benchmark \
+		-v $(PWD)/poetry.lock:/app/poetry.lock \
+		-v $(PWD)/pyproject.toml:/app/pyproject.toml \
 		-v $(PWD)/$(DEMOS):/app/$(DEMOS) \
 		-v $(PWD)/$(TEST_SUITE_EXAMPLES):/app/$(TEST_SUITE_EXAMPLES) \
 		-v $(PWD)/tests:/app/tests \
